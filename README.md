@@ -1,4 +1,7 @@
-### Hi there 👋
+### Hi! I'm Emilia
+
+For more information, you can find me in <a href="https://www.linkedin.com/in/em3c2">LinkedIn</a>
+
 
 <!--
 **Em3c2/Em3c2** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
