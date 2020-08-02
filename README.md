@@ -9,13 +9,12 @@
             <dl>
                 <dt>Pure CSS</dt>
                 <dd>-> https://github.com/Em3c2/TaskKillerIconCSS </dd>
-                <img src='/Task.png'/> 
+                <img  width='200' src='/Task.png'/> 
                 <dd>-> https://github.com/Em3c2/HenryLogoCss </dd>
-                <img src='/Henry.png'/> 
+                <img width='200' src='/Henry.png'/> 
                 <dt>Pure CSS and JS Vanilla</dt>
                 <dd>-> https://github.com/Em3c2/ResponsiveWebCSS </dd>
-                <img src='/Resp.png'/>
-                <dd>-> https://github.com/Em3c2/AnimationPureCSSandJs </dd>
+                <img width='500' src='/Resp.png'/>
             </dl>
         </div>
     <hr/>
