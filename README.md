@@ -26,14 +26,14 @@
         <div> 
             <dl>
                 <dt>Pure CSS</dt>
-                <dd>-> Repo: https://github.com/Em3c2/TaskKillerIconCSS </dd>
+                <dd>-> Repo: https://github.com/Em3c2/TaskKillerIconCSS -> Gh-page: Click on the img</dd>
                 <a href='https://em3c2.github.io/TaskKillerIconCSS/'><img  width='200' src='https://github.com/Em3c2/Em3c2/blob/master/Task.png?raw=true'/></a> 
                 <br/><br/><br/>
-                <dd>-> Repo: https://github.com/Em3c2/HenryLogoCss </dd>
+                <dd>-> Repo: https://github.com/Em3c2/HenryLogoCss -> Gh-page: Click on the img</dd>
                 <a href='https://em3c2.github.io/HenryLogoCss/'><img width='200' src='https://github.com/Em3c2/Em3c2/blob/master/Henry.png?raw=true'/></a>
                 <br/><br/><br/>
                 <dt>Pure CSS and JS Vanilla</dt>
-                <dd>-> Repo: https://github.com/Em3c2/ResponsiveWebCSS </dd>
+                <dd>-> Repo: https://github.com/Em3c2/ResponsiveWebCSS -> Gh-page: Click on the img</dd>
                 <a href='https://em3c2.github.io/ResponsiveWebCSS'><img width='500' src='https://github.com/Em3c2/Em3c2/blob/master/Resp.png?raw=true'/></a>
             </dl>
         </div>
