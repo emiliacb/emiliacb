@@ -27,14 +27,14 @@
             <dl>
                 <dt>Pure CSS</dt>
                 <dd>-> https://github.com/Em3c2/TaskKillerIconCSS </dd>
-                <img  width='200' src='Em3c2/Task.png'/> 
+                <img  width='200' src='./Task.png'/> 
                 <br/><br/><br/>
                 <dd>-> https://github.com/Em3c2/HenryLogoCss </dd>
-                <img width='200' src='Em3c2/Henry.png'/>
+                <img width='200' src='./Henry.png'/>
                 <br/><br/><br/>
                 <dt>Pure CSS and JS Vanilla</dt>
                 <dd>-> https://github.com/Em3c2/ResponsiveWebCSS </dd>
-                <img width='500' src='Em3c2/Resp.png'/>
+                <img width='500' src='./Resp.png'/>
             </dl>
         </div>
     <hr/>
