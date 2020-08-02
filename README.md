@@ -1,6 +1,26 @@
-### Hi! I'm Emilia
 
-For more information, you can find me in <a href="https://www.linkedin.com/in/em3c2">LinkedIn</a>
+<hr/>
+<h2> Hi! I'm Emilia</h2>
+<hr/>
+<div>
+  <il>
+  <li><h3> 🌱  I'm currently learning Fullstack Web Development at SoyHenry</h3></li> 
+<hr/>
+  <li><h3> ⚡  Practice repositories:</h3></li> 
+        <div> 
+            <dl>
+                <dt>Pure CSS</dt>
+                <dd>-> https://github.com/Em3c2/TaskKillerIconCSS</dd>
+                <dd>-> https://github.com/Em3c2/HenryLogoCss</dd>
+                <dt>Pure CSS and JS Vanilla</dt>
+                <dd>-> https://github.com/Em3c2/ResponsiveWebCSS</dd>
+                <dd>-> https://github.com/Em3c2/AnimationPureCSSandJs</dd>
+            </dl>
+        </div>
+    <li><h3> 📫  For more information, you can find me in <a href="https://www.linkedin.com/in/em3c2">LinkedIn</a></h3></li> 
+  </il>
+</div>
+<hr/>
 
 
 <!--
