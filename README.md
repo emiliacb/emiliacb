@@ -4,7 +4,7 @@
 <div>
   <h3> 🌱  I'm currently learning Fullstack Web Development at SoyHenry</h3>
   <br/>
-      <il>
+      <ul>
         <li> [x] HTML </li>
         <li> [x] CSS </li>
         <li> [x] GIT </li>
@@ -20,7 +20,7 @@
         <li> [ ] Node.js </li>
         <li> [ ] Microservices </li>
         <li> [ ] Testing </li>
-      </il>
+      </ul>
   <br/><br/><br/>
   <h3> ⚡  Practice repositories:</h3></li> 
         <div> 
