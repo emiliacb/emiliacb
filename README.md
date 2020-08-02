@@ -28,7 +28,7 @@
                 <dt>Pure CSS</dt>
                 <dd><p>-> Repo: https://github.com/Em3c2/TaskKillerIconCSS</p><p>-> Gh-page: Click on the img</p></dd>
                 <a href='https://em3c2.github.io/TaskKillerIconCSS/'><img  width='200' src='https://github.com/Em3c2/Em3c2/blob/master/Task.png?raw=true'/></a> 
-                <br/><br/><br/>
+                <br/>
                 <dd><p>-> Repo: https://github.com/Em3c2/HenryLogoCss<p></p> -> Gh-page: Click on the img</p></dd>
                 <a href='https://em3c2.github.io/HenryLogoCss/'><img width='200' src='https://github.com/Em3c2/Em3c2/blob/master/Henry.png?raw=true'/></a>
                 <br/><br/><br/>
