@@ -17,6 +17,7 @@
         <li> [x] AJAX </li>
         <li> [x] React.js </li>
         <li> [x] Redux.js </li>
+        <li> [x] Formik.js </li>
         <li> [ ] API release </li> 
         <li> [ ] Node.js </li>
         <li> [ ] Microservices </li>
