@@ -7,9 +7,11 @@
       <ul>
         <li> [x] HTML </li>
         <li> [x] CSS </li>
+        <li> [x] Boostrap </li>
         <li> [x] GIT </li>
         <li> [x] LESS </li>
         <li> [x] Javascript </li>
+        <li> [x] ES6 </li>
         <li> [x] Search Algorithms </li>
         <li> [x] Discrete Structures </li>
         <li> [X] DOM </li>
@@ -18,7 +20,8 @@
         <li> [x] React.js </li>
         <li> [x] Redux.js </li>
         <li> [x] Formik.js </li>
-        <li> [ ] API release </li> 
+        <li> [ ] API release </li>
+        <li> [ ] SQL.js </li>
         <li> [ ] Node.js </li>
         <li> [ ] Microservices </li>
         <li> [ ] Testing </li>
