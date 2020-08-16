@@ -19,12 +19,17 @@
         <li> [x] AJAX </li>
         <li> [x] React.js </li>
         <li> [x] Redux.js </li>
-        <li> [x] Formik.js </li>
-        <li> [ ] API release </li>
-        <li> [ ] SQL.js </li>
-        <li> [ ] Node.js </li>
+        <li> [x] Node.js </li>
+        <li> [x] Promises </li>
+        <li> [x] API release </li>
+        <li> [x] Express.js </li>
+        <li> [ ] SQL </li>
+        <li> [ ] ORMs </li>
         <li> [ ] Microservices </li>
         <li> [ ] Testing </li>
+        <li> [ ] Scrum
+        
+        
       </ul>
   <br/><br/><br/>
   <h3> ⚡  Practice repositories:</h3></li> 
