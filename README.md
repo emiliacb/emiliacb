@@ -27,10 +27,11 @@
         <li> [ ] ORMs </li>
         <li> [ ] Microservices </li>
         <li> [ ] Testing </li>
-        <li> [ ] Scrum
-        
-        
+        <li> [ ] Scrum </li>
       </ul>
+        
+        
+     
   <br/><br/><br/>
   <h3> ⚡  Practice repositories:</h3></li> 
         <div> 
