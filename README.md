@@ -21,7 +21,7 @@
         <li> [x] Redux.js </li>
         <li> [x] Node.js </li>
         <li> [x] Promises </li>
-        <li> [x] API release </li>
+        <li> [x] API rest </li>
         <li> [x] Express.js </li>
         <li> [ ] SQL </li>
         <li> [ ] ORMs </li>
