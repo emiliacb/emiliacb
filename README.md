@@ -5,10 +5,10 @@
   <h3> 🌱  I'm currently learning Fullstack Web Development at SoyHenry</h3>
   <br/>
       <ul>
+        <li> [x] GIT </li>
         <li> [x] HTML </li>
         <li> [x] CSS </li>
         <li> [x] Boostrap </li>
-        <li> [x] GIT </li>
         <li> [x] LESS </li>
         <li> [x] Javascript </li>
         <li> [x] ES6 </li>
@@ -23,10 +23,10 @@
         <li> [x] Promises </li>
         <li> [x] API rest </li>
         <li> [x] Express.js </li>
+        <li> [x] Unit Testing </li>
+        <li> [ ] DBMS's </li>
         <li> [ ] SQL </li>
-        <li> [ ] ORMs </li>
-        <li> [ ] Microservices </li>
-        <li> [ ] Testing </li>
+        <li> [ ] ORM's </li>
         <li> [ ] Scrum </li>
       </ul>
         
