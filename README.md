@@ -24,6 +24,7 @@
         <li> [x] API rest </li>
         <li> [x] Express.js </li>
         <li> [x] Unit Testing </li>
+        <li> [x] TDD </li>
         <li> [ ] DBMS's </li>
         <li> [ ] SQL </li>
         <li> [ ] ORM's </li>
