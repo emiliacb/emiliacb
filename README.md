@@ -47,7 +47,7 @@
                 <br/><br/><br/>
                 <dt>Pure CSS cartoon portrait</dt>
                 <dd><p>-> Repo: https://github.com/Em3c2/portraitCSSPURE<p></p> -> Gh-page: Click on the img to view it</p></dd>
-                <a href='https://em3c2.github.io/portraitCSSPURE/'><img width='200' src='https://github.com/Em3c2/Em3c2/blob/master/portrait.jpeg?raw=true'/></a>
+                <a href='https://em3c2.github.io/portraitCSSPURE/'><img width='200' src='https://github.com/Em3c2/portraitCSSPURE/blob/gh-pages/img/iter4.jpeg?raw=true'/></a>
                 <br/><br/><br/><br/><br/>
                 <dt>Pure CSS and JS Vanilla responsive web nav/menu</dt>
                 <dd><p> -> Repo: https://github.com/Em3c2/ResponsiveWebCSS</p><p> -> Gh-page: Click on the img</p></dd>
