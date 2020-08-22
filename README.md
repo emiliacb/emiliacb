@@ -55,7 +55,7 @@
             </dl>
         </div>
     <hr/>
-    <h3> 📫  For more information, you can find me in <a href="https://www.linkedin.com/in/em3c2">LinkedIn</a>and <a href="https://https://www.instagram.com/em3_c2/">Instagram</a></h3>
+    <h3> 📫  For more information, you can find me in <a href="https://www.linkedin.com/in/em3c2">LinkedIn </a>and <a href="https://www.instagram.com/em3_c2/">Instagram</a></h3>
     <hr/>
 </div>
 
