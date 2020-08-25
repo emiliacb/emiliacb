@@ -1,9 +1,9 @@
 
 <h2> Hi! I'm Emilia</h2>
-<hr/>
+<hr>
 <div>
   <h3> 🌱  I'm currently learning Fullstack Web Development at SoyHenry</h3>
-  <br/>
+  <br>
       <ul>
         <li> [x] GIT </li>
         <li> [x] HTML </li>
@@ -30,41 +30,42 @@
         <li> [ ] ORM's </li>
         <li> [ ] Scrum </li>
       </ul>
-  <br/><br/><br/>
+  <br><br><br>
   <h3> ⚡ VisualSizer:</h3></li> 
   <dl>
       <dt>Mobile compatible JS Vanilla app </dt>
       <dt>This tool allow you to obtain the code to embed a youtube video, resizing it in a visual form.</dt>
       <dd><p> -> Repo: https://github.com/Em3c2/VisualSizer</p><p> -> Gh-page: Click on the img to go to the web version</p></dd>
-      <a href='https://em3c2.github.io/VisualSizer/'><img width='500' src='https://github.com/Em3c2/Em3c2/VisualSizer/blob/gh-pages/img/iter5m.png?raw=true'/></a>
+      <br><br>
+      <a href='https://em3c2.github.io/VisualSizer/'><img width='400' src='https://github.com/Em3c2/VisualSizer/blob/gh-pages/img/iter5m.png?raw=true'/></a>
   </dl>
-  <br/><br/><br/>
+  <br><br><br>
   <h3> ⚡  Practice repositories:</h3></li> 
         <div> 
             <dl>
                 <dt>Pure CSS interactive icon</dt>
                 <dd><p>-> Repo: https://github.com/Em3c2/TaskKillerIconCSS</p><p>-> Click on the img to view onclick animation</p></dd>
                 <a href='https://em3c2.github.io/TaskKillerIconCSS/'><img  width='200' src='https://github.com/Em3c2/Em3c2/blob/master/Task.png?raw=true'/></a> 
-                <br/><br/><br/>
+                <br><br<<br>
                 <dt>Pure CSS logo from https://www.soyhenry.com/</dt>
                 <dd><p>-> Repo: https://github.com/Em3c2/HenryLogoCss<p></p> -> Gh-page: Click on the img to view it animated</p></dd>
                 <a href='https://em3c2.github.io/HenryLogoCss/'><img width='200' src='https://github.com/Em3c2/Em3c2/blob/master/Henry.png?raw=true'/></a>
-                <br/><br/><br/>
+                <br><br><br>
                 <dt>Pure CSS cartoon portrait</dt>
                 <dd><p>-> Repo: https://github.com/Em3c2/portraitCSSPURE<p></p> -> Gh-page: Click on the img to view it in html</p></dd>
                 <a href='https://em3c2.github.io/portraitCSSPURE/'><img width='400' src='https://github.com/Em3c2/portraitCSSPURE/blob/gh-pages/img/iter5.jpeg?raw=true'/></a>
-                <br/><br/><br/><br/><br/>
+                <br><br><br><br>
                 <dt>Pure CSS and JS Vanilla responsive web nav/menu</dt>
                 <dd><p> -> Repo: https://github.com/Em3c2/ResponsiveWebCSS</p><p> -> Gh-page: Click on the img to go to the web version</p></dd>
                 <a href='https://em3c2.github.io/ResponsiveWebCSS'><img width='500' src='https://github.com/Em3c2/Em3c2/blob/master/Resp.png?raw=true'/></a>
             </dl>
         </div>
-    <hr/>
+    <hr>
     <h3> 📫  For more information, you can find me in <a href="https://www.linkedin.com/in/em3c2">LinkedIn </a>and <a href="https://www.instagram.com/em3_c2/">Instagram</a></h3>
-    <hr/>
+    <hr>
 </div>
 
-<br/><br/><br/>
+<br><br><br>
 
 
 <!--
