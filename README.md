@@ -25,14 +25,19 @@
         <li> [x] Express.js </li>
         <li> [x] Unit Testing </li>
         <li> [x] TDD </li>
-        <li> [ ] DBMS's </li>
-        <li> [ ] SQL </li>
+        <li> [x] DBMS's </li>
+        <li> [x] SQL </li>
         <li> [ ] ORM's </li>
         <li> [ ] Scrum </li>
       </ul>
-        
-        
-     
+  <br/><br/><br/>
+  <h3> ⚡ VisualSizer:</h3></li> 
+  <dl>
+      <dt>Mobile compatible JS Vanilla app </dt>
+      <dt>This tool allow you to obtain the code to embed a youtube video, resizing it in a visual form.</dt>
+      <dd><p> -> Repo: https://github.com/Em3c2/VisualSizer</p><p> -> Gh-page: Click on the img to go to the web version</p></dd>
+      <a href='https://em3c2.github.io/VisualSizer/'><img width='500' src='https://github.com/Em3c2/Em3c2/VisualSizer/blob/gh-pages/img/iter5m.png?raw=true'/></a>
+  </dl>
   <br/><br/><br/>
   <h3> ⚡  Practice repositories:</h3></li> 
         <div> 
