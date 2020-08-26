@@ -10,24 +10,24 @@
         <li> [x] CSS </li>
         <li> [x] Boostrap </li>
         <li> [x] LESS </li>
-        <li> [x] Javascript </li>
+        <li> [x] <b>Javascript</b> </li>
         <li> [x] ES6 </li>
         <li> [x] Search Algorithms </li>
         <li> [x] Discrete Structures </li>
         <li> [X] DOM </li>
         <li> [X] API request </li>
         <li> [x] AJAX </li>
-        <li> [x] React.js </li>
-        <li> [x] Redux.js </li>
-        <li> [x] Node.js </li>
+        <li> [x] <b>React.js</b> </li>
+        <li> [x] <b>Redux.js</b> </li>
+        <li> [x] <b>Node.js</b> </li>
         <li> [x] Promises </li>
         <li> [x] API rest </li>
         <li> [x] Express.js </li>
         <li> [x] Unit Testing </li>
         <li> [x] TDD </li>
         <li> [x] DBMS's </li>
-        <li> [x] SQL </li>
-        <li> [ ] ORM's </li>
+        <li> [x] SQL (PostgreSQL)</li>
+        <li> [x] ORM's (Secualize) </li>
         <li> [ ] Scrum </li>
       </ul>
   <br><br><br>
