@@ -4,31 +4,21 @@
 <div>
   <h3> 🌱  I'm already completed all the subjet at Fullstack Web Development at SoyHenry bootcamp</h3>
   <br>
+      
+### Mi principal knoledges ate: 
       <ul>
-        <li> [x] ## GIT </li>
-        <li> [x] ## HTML </li>
-        <li> [x] ## CSS </li>
-        <li> [x] ## Boostrap </li>
+        <li> [x] GIT </li>
+        <li> [x] HTML </li>
+        <li> [x] CSS </li>
+        <li> [x] Boostrap </li>
         <li> [x] LESS </li>
-        <li> [x] ### Javascript Vainilla </li>
-        <li> [x] ES6 </li>
-        <li> [x] Search Algorithms </li>
-        <li> [x] Discrete Structures </li>
-        <li> [X] DOM </li>
-        <li> [X] API request </li>
-        <li> [x] AJAX </li>
-        <li> [x] ## React.js</b> </li>
-        <li> [x] ## Redux.js</b> </li>
-        <li> [x] ## Node.js</b> </li>
-        <li> [x] Promises </li>
-        <li> [x] API rest </li>
-        <li> [x] Express.js </li>
+        <li> [x] Javascript Vainilla </li>
+        <li> [x] React.js</b> </li>
+        <li> [x] Redux.js</b> </li>
+        <li> [x] Node.js</b> </li>
         <li> [x] Unit Testing </li>
-        <li> [x] TDD </li>
-        <li> [x] DBMS's </li>
-        <li> [x] ## SQL (PostgreSQL)</li>
-        <li> [x] ORM's (Secualize) </li>
-        <li> [x] Scrum </li>
+        <li> [x] PostgreSQL</li>
+        <li> [x] Secualize </li>
       </ul>
   <br><br><br>
   <h3> ⚡ VisualSizer:</h3></li> 
