@@ -1,25 +1,20 @@
-
-<h2> Hi! I'm Emilia</h2>
-<hr>
-<div>
-  <h3> 🌱  I'm already completed all the subjet at Fullstack Web Development at SoyHenry bootcamp</h3>
-  <br>
-      
-### Mi principal knoledges ate: 
-      <ul>
-        <li> [x] GIT </li>
-        <li> [x] HTML </li>
-        <li> [x] CSS </li>
-        <li> [x] Boostrap </li>
-        <li> [x] LESS </li>
-        <li> [x] Javascript Vainilla </li>
-        <li> [x] React.js</b> </li>
-        <li> [x] Redux.js</b> </li>
-        <li> [x] Node.js</b> </li>
-        <li> [x] Unit Testing </li>
-        <li> [x] PostgreSQL</li>
-        <li> [x] Secualize </li>
-      </ul>
+# Hi! I'm Emilia
+### 🌱  I'm already completed all the subjet at Fullstack Web Development at SoyHenry bootcamp
+### My principal knowledges are:
+   <ul>
+    <li> [x] GIT </li>
+    <li> [x] HTML </li>
+    <li> [x] CSS </li>
+    <li> [x] Boostrap </li>
+    <li> [x] LESS </li>
+    <li> [x] Javascript Vainilla </li>
+    <li> [x] React.js</b> </li>
+    <li> [x] Redux.js</b> </li>
+    <li> [x] Node.js</b> </li>
+    <li> [x] Unit Testing </li>
+    <li> [x] PostgreSQL</li>
+    <li> [x] Secualize </li>
+  </ul>
   <br><br><br>
   <h3> ⚡ VisualSizer:</h3></li> 
   <dl>
