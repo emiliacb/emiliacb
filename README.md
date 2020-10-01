@@ -13,7 +13,7 @@
     <li> [x] Node.js</b> </li>
     <li> [x] Unit Testing </li>
     <li> [x] PostgreSQL</li>
-    <li> [x] Secualize </li>
+    <li> [x] Sequalize </li>
   </ul>
   <br><br><br>
   <h3> ⚡ VisualSizer:</h3></li> 
