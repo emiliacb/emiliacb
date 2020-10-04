@@ -1,10 +1,10 @@
 # Hi! I'm Emilia
-### 🌱  I'm already completed all the subjet at Fullstack Web Development at SoyHenry bootcamp
-### My principal knowledges are:
+### 🌱My principal tecnical knowledges are:
    <ul>
     <li> [x] GIT </li>
     <li> [x] HTML </li>
     <li> [x] CSS </li>
+    <li> [x] Figma </li>
     <li> [x] Boostrap </li>
     <li> [x] LESS </li>
     <li> [x] Javascript Vainilla </li>
@@ -16,7 +16,15 @@
     <li> [x] Sequalize </li>
   </ul>
   <br><br><br>
-  <h3> ⚡ VisualSizer:</h3></li> 
+<h2> ⚡ E-commerce!:</h2></li> 
+      <dt> <b>SCRUM team work</b> - Final proyect at SoyHenry </dt>
+      <dt> For more info <a href='../Em3c2/Henry-e-commerce-Robbo-Store'>click here!</a></dt>
+      <br>
+  <img width='600' src='https://raw.githubusercontent.com/Em3c2/Henry-e-commerce-Robbo-Store/master/Readme_Images/Home_Page.jpeg?raw=true'/>
+  <img width='600' src='https://raw.githubusercontent.com/Em3c2/Henry-e-commerce-Robbo-Store/master/Readme_Images/Product_Page.jpeg?raw=true'/>
+      <br>
+      <fr>
+<h3> ⚡ VisualSizer:</h3></li> 
   <dl>
       <dt>Mobile compatible JS Vanilla app </dt>
       <dt>This tool allow you to obtain the code to embed a youtube video, resizing it in a visual form.</dt>
