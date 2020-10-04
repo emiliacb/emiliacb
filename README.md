@@ -17,13 +17,13 @@
   </ul>
   <br><br><br>
 <h2> ⚡ E-commerce!:</h2></li> 
-      <dt> <b>SCRUM team work</b> - Final proyect at SoyHenry </dt>
-      <dt> For more info <a href='../Em3c2/Henry-e-commerce-Robbo-Store'>click here!</a></dt>
+      <dt> <h3><b>SCRUM team work</b> - Final proyect at SoyHenry <h3></dt>
+      <dt> <h3>For more info <a href='../Em3c2/Henry-e-commerce-Robbo-Store'>click here!</a></h3></dt>
       <br>
   <img width='600' src='https://raw.githubusercontent.com/Em3c2/Henry-e-commerce-Robbo-Store/master/Readme_Images/Home_Page.jpeg?raw=true'/>
   <img width='600' src='https://raw.githubusercontent.com/Em3c2/Henry-e-commerce-Robbo-Store/master/Readme_Images/Product_Page.jpeg?raw=true'/>
       <br>
-      <fr>
+      <hr>
 <h3> ⚡ VisualSizer:</h3></li> 
   <dl>
       <dt>Mobile compatible JS Vanilla app </dt>
@@ -33,6 +33,7 @@
       <a href='https://em3c2.github.io/VisualSizer/'><img width='500' src='https://github.com/Em3c2/VisualSizer/blob/gh-pages/img/iter5m.png?raw=true'/></a>
   </dl>
   <br><br><br>
+  <hr>
   <h3> ⚡  Practice repositories:</h3></li> 
         <div> 
             <dl>
