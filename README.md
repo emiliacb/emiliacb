@@ -1,20 +1,5 @@
 # Hi! I'm Emilia
-### 🌱My principal tecnical knowledges are:
-   <ul>
-    <li> [x] GIT </li>
-    <li> [x] HTML </li>
-    <li> [x] CSS </li>
-    <li> [x] Figma </li>
-    <li> [x] Boostrap </li>
-    <li> [x] LESS </li>
-    <li> [x] Javascript Vainilla </li>
-    <li> [x] React.js</b> </li>
-    <li> [x] Redux.js</b> </li>
-    <li> [x] Node.js</b> </li>
-    <li> [x] Unit Testing </li>
-    <li> [x] PostgreSQL</li>
-    <li> [x] Sequalize </li>
-  </ul>
+
   <br><br><br>
 <h2> ⚡ E-commerce!:</h2></li> 
       <dt> <h3><b>SCRUM team work</b> - Final proyect at SoyHenry <h3></dt>
