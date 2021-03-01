@@ -1,5 +1,22 @@
 # Hi! I'm Emilia
 
+<h3> ⚡ My web resume!:</h3></li> 
+  <dl>
+       <dt> Change the colors in a darkmode like function</dt>
+      I used the css variables to this
+       <dt> Change the lenguaje</dt>
+      I do it with a serverles api, where I store two diferent json archives. with react-router, the links send you to a new component and do a new request to the api. This is not the mor eficient way, because I can do it without api or with only one request, but I implemented it in this way in order to demostrate the interaction with a api in my web.
+       <dt> Print the web in resume like style.</dt>
+      with mediaquerys I set a print style and added a QR code.
+       <dt> Send me a email!</dt>
+      Thanks to the dwyl script.
+  <br><br>
+      <a href='https://github.com/Em3c2/eme-resume'><img width='500' src='https://github.com/Em3c2/eme-resume/blob/master/public/preview.jpg?raw=true'/></a>
+  </dl>
+  <br><br><br>
+  <hr>
+
+
   <br><br><br>
 <h2> ⚡ E-commerce!:</h2></li> 
       <dt> <h3><b>SCRUM team work</b> - Final proyect at SoyHenry <h3></dt>
