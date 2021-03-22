@@ -38,6 +38,14 @@
   <h3> ⚡  Practice repositories:</h3></li> 
         <div> 
             <dl>
+                <dt>Dali Clock in *one div* pure CSS</dt>
+                <dd><p>-> Live/code: https://3bxpz.csb.app/</p><p>-> 
+                <img  width='400' src='dali-clock.jpg?raw=true'/>
+                <br><br><br>
+                <dt>Pure CSS and JS Vanilla responsive web nav/menu</dt>
+                <dd><p> -> Repo: https://github.com/Em3c2/ResponsiveWebCSS</p><p> -> Gh-page: Click on the img to go to the web version</p></dd>
+                <a href='https://em3c2.github.io/ResponsiveWebCSS'><img width='800' src='https://github.com/Em3c2/Em3c2/blob/master/Resp.png?raw=true'/></a>
+                <br><br><br>
                 <dt>Pure CSS interactive icon</dt>
                 <dd><p>-> Repo: https://github.com/Em3c2/TaskKillerIconCSS</p><p>-> Click on the img to view onclick animation</p></dd>
                 <a href='https://em3c2.github.io/TaskKillerIconCSS/'><img  width='400' src='https://github.com/Em3c2/Em3c2/blob/master/Task.png?raw=true'/></a> 
@@ -49,14 +57,10 @@
                 <dt>Pure CSS cartoon portrait</dt>
                 <dd><p>-> Repo: https://github.com/Em3c2/portraitCSSPURE<p></p> -> Gh-page: Click on the img to view it in html</p></dd>
                 <a href='https://em3c2.github.io/portraitCSSPURE/'><img width='400' src='https://github.com/Em3c2/portraitCSSPURE/blob/gh-pages/img/iter5.jpeg?raw=true'/></a>
-                <br><br><br><br>
-                <dt>Pure CSS and JS Vanilla responsive web nav/menu</dt>
-                <dd><p> -> Repo: https://github.com/Em3c2/ResponsiveWebCSS</p><p> -> Gh-page: Click on the img to go to the web version</p></dd>
-                <a href='https://em3c2.github.io/ResponsiveWebCSS'><img width='800' src='https://github.com/Em3c2/Em3c2/blob/master/Resp.png?raw=true'/></a>
             </dl>
         </div>
     <hr>
-    <h3> 📫  For more information, you can find me in <a href="https://www.linkedin.com/in/em3c2">LinkedIn </a>and <a href="https://www.instagram.com/em3_c2/">Instagram</a></h3>
+    <h3> 📫  For more information, you can find me in <a href="https://www.linkedin.com/in/em3c2">LinkedIn </a></h3>
     <hr>
 </div>
 
