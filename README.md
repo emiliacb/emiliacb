@@ -38,7 +38,7 @@
   <h3> ⚡  Practice repositories:</h3></li> 
         <div> 
             <dl>
-                <dt>Dali Clock in *one div* pure CSS</dt>
+              <dt>Dali Clock in <strong>one div</strong> pure CSS</dt>
                 <dd><p>-> Live/code: https://3bxpz.csb.app/</p><p>-> 
                 <img  width='400' src='dali-clock.jpg?raw=true'/>
                 <br><br><br>
