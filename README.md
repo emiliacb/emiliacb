@@ -4,4 +4,4 @@ My latest proyects are [emilia-about](https://github.com/Em3c2/emilia-about), [s
 
 🌱👀 I am looking to join part-time to projects with social or environmental impact.
 
-⚛️ https://emilia-about.vercel.app/
+⚛️ [www.emiliacabral.com](https://www.emiliacabral.com)
