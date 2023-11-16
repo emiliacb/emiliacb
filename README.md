@@ -1,5 +1,7 @@
-### Hi! How it's goin? 🌱 
+🧚🏽💻 Engineer. Librarian. Transgender person. Mixing what I know from different worlds makes me a better software engineer. Sharing knowledge and creating are two of my favorite things.
 
-I'm Emi, 👩🏽‍💻 developer, 📚 librarian , 👩🏽‍🏫 teacher, and 🏳️‍🌈 trans person. I think I have a multidisciplinary mind. I love to create new things and sharing knowledge too. I like talking about science, art and education.
+My latest proyects are [emilia-about](https://github.com/Em3c2/emilia-about) and [sande-landing](https://github.com/Em3c2/sande-landing).
 
-My latest proyects are [emilia-about](https://github.com/Em3c2/emilia-about) and [sande-landing](https://github.com/Em3c2/sande-landing), and I'm currently working on [junior-docs](https://github.com/Em3c2/junior-doc)
+🌱👀 I am looking to join part-time to projects with social or environmental impact.
+
+⚛️ https://emilia-about.vercel.app/
