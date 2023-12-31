@@ -1,7 +1,10 @@
-🧚🏽💻 Engineer. Librarian. Transgender person. Mixing what I know from different worlds makes me a better software engineer. Sharing knowledge and creating are two of my favorite things.
+🧚🏽💻 Engineer, designer, and former librarian. My mixed background makes me a unique software engineer. I love blending technical skills with user empathy.
+
+In the last 3+ years, I've:
+• Developed scalable full-stack features using diverse technologies.
+• Worked on generative AI projects tackling customer pain points.
+• Promoted cross-functional collaboration and interdisciplinary thinking.
 
 My latest proyects are [emilia-about](https://github.com/Em3c2/emilia-about), [sande-landing](https://github.com/Em3c2/sande-landing) and starting [Junior Docs](https://github.com/Em3c2/junior-doc) 
-
-🌱👀 I am looking to join part-time to projects with social or environmental impact.
 
 ⚛️ [www.emiliacabral.com](https://www.emiliacabral.com)
