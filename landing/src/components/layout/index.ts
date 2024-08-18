@@ -42,7 +42,7 @@ export default function layout({ siteData, children }: LayoutProps) {
         class="flex flex-col h-screen bg-stone-200 text-stone-800 dark:bg-stone-800 dark:text-stone-100"
       >
         <div
-          class="w-full grid place-content-center bg-yellow-200 text-black dark:bg-yellow-400 dark:text-yellow-900 py-2"
+          class="w-full grid place-content-center bg-yellow-200 text-black dark:bg-orange-700 dark:text-yellow-200 py-2"
         >
           <div class="flex items-center dark:font-[500]">
             <div
