@@ -14,7 +14,7 @@ export default function navbar() {
         <a class="px-2 py-0 h-fit hidden md:block" href="/services">services</a>
       </div>
     </nav>
-    <div class="flex justify-end py-2 md:hidden ml-auto sticky top-[3.3rem] w-full bg-stone-200/70 backdrop-blur-sm dark:bg-stone-800">
+    <div class="flex justify-end py-2 md:hidden ml-auto sticky top-[3.3rem] w-full bg-stone-200/70 backdrop-blur-sm dark:bg-stone-800/80">
       <a class="px-2 py-0 h-fit" href="/blog">blog</a>
       <a class="px-2 py-0 h-fit" href="/services">services</a>
     </div>
