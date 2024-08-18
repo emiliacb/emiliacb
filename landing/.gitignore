@@ -25,7 +25,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 #build
-.dist/
+dist/
 
 # misc
 .DS_Store
