@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "baseUrl": "./",
-    "moduleResolution": "node",
+    "moduleResolution": "NodeNext",
+    "module": "NodeNext",
     "strict": true,
     "outDir": "./dist",
     "skipLibCheck": true,
