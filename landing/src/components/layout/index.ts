@@ -27,7 +27,7 @@ export default function layout({ siteData, children }: LayoutProps) {
         <script src="https://cdn.tailwindcss.com"></script>
         <script>
           tailwind.config = {
-            darkMode: "selector",
+            darkMode: "media",
             theme: {
               extend: {
                 fontFamily: {
@@ -37,20 +37,9 @@ export default function layout({ siteData, children }: LayoutProps) {
             },
           };
         </script>
-        <script>
-          if (
-            localStorage.theme === "dark" ||
-            (!("theme" in localStorage) &&
-              window.matchMedia("(prefers-color-scheme: dark)").matches)
-          ) {
-            document.documentElement.classList.add("dark");
-          } else {
-            document.documentElement.classList.remove("dark");
-          }
-        </script>
       </head>
       <body
-        class="flex flex-col h-screen bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-100"
+        class="flex flex-col h-screen bg-stone-200 text-stone-800 dark:bg-stone-800 dark:text-stone-100"
       >
         <div
           class="w-full grid place-content-center bg-yellow-200 text-black dark:bg-yellow-400 dark:text-yellow-900 py-2"
@@ -65,7 +54,7 @@ export default function layout({ siteData, children }: LayoutProps) {
           </div>
         </div>
         ${navbar()}
-        <main class="w-full m-auto max-w-[60rem] h-full p-2">${children}</main>
+        <main id="content" class="w-full px-2 py-16 md:py-24 m-auto max-w-[60rem] h-full">${children}</main>
       </body>
     </html>
   `;
