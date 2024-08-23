@@ -3,7 +3,7 @@ import { Context } from "hono";
 import { html, raw } from "hono/html";
 
 import layout from "../../components/layout";
-import { getContent } from "src/services/content";
+import { getContent } from "../../services/content";
 
 export default async function handler(c: Context) {
   const filePath = path.join(__dirname, `./content.md`);

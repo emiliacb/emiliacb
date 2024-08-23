@@ -32,15 +32,16 @@ export default async function handler(c: Context, next: Next) {
     siteData: {
       title: "blog | emiliacb",
     },
-    children: html`<div class="flex flex-col space-y-8">
+    children: html`<div class="flex flex-col space-y-10">
       ${raw(
         posts
           .map(
             (post) => `
           <a class="group" href="/blog/${post.slug}">
-          <article class="flex flex-col justify-center border-l-2 border-transparent p-2 pl-4 group-hover:border-stone-400 transition duration-100 min-h-12">
-            <h2 class="font-bold">${post.title}</h2>
-           ${post.description && `<span>${post.description}</span>`}
+          <article class="flex flex-col space-y-2 justify-center border-l-2 border-transparent p-2 pl-4 group-hover:border-stone-400 transition duration-100 min-h-12">
+          <h2 class="font-bold">${post.title} </h2>
+          ${post.description && `<span>${post.description}</span>`}
+          <span class="text-xs font-light">${post.date.toLocaleDateString()}</span>  
           </article>
           </a>`
           )
