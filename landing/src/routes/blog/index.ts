@@ -2,7 +2,7 @@ import { Context, Next } from "hono";
 import { html, raw } from "hono/html";
 
 import layout from "../../components/layout";
-import { getAllPosts, getPost } from "src/services/posts";
+import { getAllPosts, getPost } from "../../services/posts";
 
 export default async function handler(c: Context, next: Next) {
   const slug = c.req.path.replace(/^\/blog\/?/, "");
