@@ -1,15 +1,22 @@
+import path from "path";
 import { Context } from "hono";
-import { html } from "hono/html";
+import { html, raw } from "hono/html";
 
 import layout from "../../components/layout";
+import { getContent } from "src/services/content";
 
 export default async function handler(c: Context) {
-  const siteData = {
-    title: "emiliacb",
-  };
+  const filePath = path.join(__dirname, `./content.md`);
+  const htmlContent = await getContent(filePath);
 
-  const content = html`<p>emiliacb</p>`;
-  const view = layout({ siteData, children: content });
+  const view = layout({
+    siteData: {
+      title: "emiliacb",
+    },
+    children: html`<div class="prose prose-stone dark:prose-invert">
+      ${raw(htmlContent)}
+    </div>`,
+  });
 
   return c.html(view);
 }
