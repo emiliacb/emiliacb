@@ -37,6 +37,57 @@ export default function layout({ siteData, children }: LayoutProps) {
             },
           };
         </script>
+        <style>
+        @keyframes move-out {
+          0% {
+            transform-origin: left;
+            transform: scale(1) translateX(0);
+            opacity: 100%;
+          }
+
+          50% {
+            transform-origin: left;
+            transform: scale(1) translateX(0);
+            opacity: 0%;
+          }
+
+          100% {
+            transform-origin: left;
+            transform: scale(0.8) translateX(-100%);
+            opacity: 0%;
+          }
+        }
+
+        @keyframes move-in {
+          from {
+            transform: translateX(100%);
+            opacity: 0%;
+          }
+
+          to {
+            transform: translateX(0%);
+            opacity: 100%;
+          }
+        }
+
+        @view-transition {
+          navigation: auto;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+          ::view-transition-old(content) {
+            animation: 150ms cubic-bezier(.17,.67,.81,.35) both move-out;
+          }
+          ::view-transition-new(content) {
+            animation: 300ms cubic-bezier(.42,.28,.42,.89) both move-in;
+          }
+        }
+
+        #content {
+          view-transition-name: content;
+        }
+
+        </style>
       </head>
       <body
         class="flex flex-col h-screen bg-stone-200 text-stone-800 dark:bg-stone-800 dark:text-stone-100"
