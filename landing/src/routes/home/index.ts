@@ -14,7 +14,8 @@ export default async function handler(c: Context) {
       title: "emiliacb",
     },
     children: html`
-      <div class="font-mono scale-50 origin-top-left whitespace-pre leading-[8px]">
+    <div class="prose prose-stone dark:prose-invert">
+      <div aria-hidden="true" class="font-mono scale-50 origin-top-left whitespace-pre leading-[8px]">
         <div>           __________                              </div>
         <div>         .'----------\`.                           </div>
         <div>         | .--------. |                           </div>
@@ -28,6 +29,7 @@ export default async function handler(c: Context) {
         <div>|     ^^^^^^^^^^^^^^^^^^^^                       | </div>
         <div>+-----------------------------------------------+  </div>
         <div>^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</div>
+        <div aria-hidden="true" class="opacity-0">from https://www.asciiart.eu/</div>
       </div>
       ${raw(htmlContent)}
     </div>`,
