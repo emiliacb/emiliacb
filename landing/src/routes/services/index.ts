@@ -6,7 +6,7 @@ import layout from "../../components/layout";
 import { getContent } from "../../services/content";
 
 export default async function handler(c: Context) {
-  const filePath = path.join(__dirname, `./content.md`);
+  const filePath = path.join(__dirname, `../../../content/pages/services.md`);
   const htmlContent = await getContent(filePath)
 
   const view = layout({

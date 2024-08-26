@@ -2,7 +2,7 @@
     "frontMatter.content.pageFolders": [
         {
             "title": "frontmatter",
-            "path": "[[workspace]]/landing/src/frontmatter"
+            "path": "[[workspace]]/landing/src/content/blog"
         }
     ],
     "[markdown]": {

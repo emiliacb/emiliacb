@@ -5,7 +5,7 @@ import matter from "gray-matter";
 
 export async function getAllPosts() {
   try {
-    const directoryPath = path.join(__dirname, "../frontmatter");
+    const directoryPath = path.join(__dirname, "../../content/blog");
     const files = fs.readdirSync(directoryPath);
 
     const posts = await Promise.all(
@@ -31,7 +31,7 @@ export async function getAllPosts() {
 
 export async function getPost(slug: string) {
   try {
-    const filePath = path.join(__dirname, `../frontmatter/${slug}.md`);
+    const filePath = path.join(__dirname, `../../content/blog/${slug}.md`);
     const file = fs.readFileSync(filePath, "utf8");
     const { data, content } = matter(file);
     const htmlContent = await marked(content);
