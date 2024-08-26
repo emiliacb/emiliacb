@@ -8,14 +8,14 @@ import aboutHandler from "./routes/about";
 import notFoundHandler from "./routes/not-found";
 
 const router = new Hono();
-const cacheVersion = 1;
+const cacheVersion = 2;
 
 router
   .get(
     '*',
     cache({
       cacheName: `emiliacb-v${cacheVersion}`,
-      cacheControl: 'max-age=3600',
+      cacheControl: 'public',
     }))
   .get("/", homeHandler)
   .get("/about", aboutHandler)
