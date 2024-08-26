@@ -7,6 +7,5 @@ With a unique blend of engineering, design, and AI expertise, I transform ideas 
 
 📧 [emiliacabralb@gmail.com](mailto:emiliacabralb@gmail.com)  
 🔗 [LinkedIn](https://www.linkedin.com/in/emiliacb)  
-🌐 [Personal Website](https://www.emiliacabral.com)  
 🐱 [GitHub](https://github.com/emiliacb)  
 📅 [Schedule a Meeting](https://calendly.com/emilia-cb)
