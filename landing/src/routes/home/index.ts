@@ -13,7 +13,23 @@ export default async function handler(c: Context) {
     siteData: {
       title: "emiliacb",
     },
-    children: html`<div class="prose prose-stone dark:prose-invert">
+    children: html`
+    <div class="prose prose-stone dark:prose-invert">
+      <div class="font-mono whitespace-pre leading-[8px]">
+            <div>           __________                              </div>
+            <div>         .'----------\`.                           </div>
+            <div>         | .--------.  |                           </div>
+            <div>         | |########|  |      __________           </div>
+            <div>         | |########|  |     /__________\          </div>
+            <div>.--------| \`--------' |-----|    --=-- |--------. </div>
+            <div>|        \`----,-.-----'     |o ======  |        | </div>
+            <div>|       ______|_|_______     |__________|        | </div>
+            <div>|      /  %%%%%%%%%%%%  \                        | </div>
+            <div>|     /  %%%%%%%%%%%%%%  \                       | </div>
+            <div>|     ^^^^^^^^^^^^^^^^^^^^                       | </div>
+            <div>+-----------------------------------------------+  </div>
+            <div>^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</div>
+        </div>
       ${raw(htmlContent)}
     </div>`,
   });
