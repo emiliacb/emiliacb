@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { cache } from 'hono/cache'
+import { cache } from "hono/cache";
 
 import homeHandler from "./routes/home";
 import blogHandler from "./routes/blog";
@@ -15,7 +15,7 @@ router
     '*',
     cache({
       cacheName: `emiliacb-v${cacheVersion}`,
-      cacheControl: 'public',
+      cacheControl: 'public, max-age=3605',
     }))
   .get("/", homeHandler)
   .get("/about", aboutHandler)
