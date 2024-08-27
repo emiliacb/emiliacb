@@ -86,11 +86,10 @@ export default function layout({ siteData, children }: LayoutProps) {
         #content {
           view-transition-name: content;
         }
-
         </style>
       </head>
       <body
-        class="flex flex-col h-screen bg-stone-200 text-stone-800 dark:bg-stone-800 dark:text-stone-100"
+        class="flex flex-col h-screen bg-stone-200 text-stone-800 dark:bg-stone-800 dark:text-stone-100 prose-h1:text-3xl"
       >
         <div>
           ${navbar()}

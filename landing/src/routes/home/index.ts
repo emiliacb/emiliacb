@@ -15,7 +15,7 @@ export default async function handler(c: Context) {
     },
     children: html`
     <div class="prose prose-stone dark:prose-invert text-pretty">
-      <div aria-hidden="true" class="font-mono text-[14px] origin-top-left whitespace-pre leading-[6px]">
+      <div aria-hidden="true" class="font-mono text-[14px] origin-top-left scale-75 -mb-4 md:scale-90 md:mb-4  whitespace-pre leading-[6px]">
         <div>           __________                              </div>
         <div>         .'----------\`.                           </div>
         <div>         | .--------. |                           </div>
