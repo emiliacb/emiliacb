@@ -1,10 +1,10 @@
 
 
-# Engineer, Designer and Librarian
+# 👁️ Engineer and librarian with design sight.
 
-I am an **engineer** and **former librarian** with a **design eye**. Over the past **four years**, I've focused on **developing scalable full-stack products** using diverse technologies tackling customer pain points. [Yes, including **Generative AI**]  
+Over the past **four years**, I've focused on developing scalable **full-stack products** using diverse technologies tackling customer pain points. Yes, including **Generative AI**. 
 
-[more about me](/about)
+[More about me](/about)
 
 ---
 
