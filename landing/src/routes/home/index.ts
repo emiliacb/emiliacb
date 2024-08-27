@@ -35,5 +35,10 @@ export default async function handler(c: Context) {
     </div>`,
   });
 
-  return c.html(view);
+  return c.html(view, {
+    headers: {
+      "Content-Type": "text/html",
+      "Cache-Control": "public, max-age=3605",
+    }
+  });
 }
