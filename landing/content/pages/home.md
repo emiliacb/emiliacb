@@ -1,6 +1,6 @@
 # Engineer and librarian with design sight
 
-Over the past **four years**, I've focused on developing scalable **full-stack products** using diverse technologies tackling customer pain points. Yes, including **Generative AI**. 
+Over the past **four years**, I've focused on developing scalable **full-stack products** using diverse technologies tackling customer pain points. Yes, including **Generative AI** products. 
 
 [More about me](/about)
 
