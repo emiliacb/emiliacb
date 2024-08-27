@@ -89,7 +89,7 @@ export default function layout({ siteData, children }: LayoutProps) {
         </style>
       </head>
       <body
-        class="flex flex-col h-screen bg-stone-200 text-stone-800 dark:bg-stone-800 dark:text-stone-100 prose-h1:text-3xl"
+        class="flex flex-col h-screen bg-stone-200 text-stone-800 dark:bg-stone-800 dark:text-stone-100 prose-h1:text-3xl prose-strong:whitespace-nowrap"
       >
         <div>
           ${navbar()}

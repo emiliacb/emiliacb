@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { cache } from "hono/cache";
 
 import homeHandler from "./routes/home";
 import blogHandler from "./routes/blog";
