@@ -14,7 +14,7 @@ export default async function handler(c: Context) {
       title: "ємιℓιαċв",
     },
     children: html`
-    <div class="prose prose-stone dark:prose-invert">
+    <div class="prose prose-stone dark:prose-invert text-pretty">
       <div aria-hidden="true" class="font-mono text-[14px] origin-top-left whitespace-pre leading-[6px]">
         <div>           __________                              </div>
         <div>         .'----------\`.                           </div>

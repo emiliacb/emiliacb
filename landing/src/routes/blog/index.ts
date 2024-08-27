@@ -16,7 +16,7 @@ export default async function handler(c: Context, next: Next) {
       siteData: {
         title: `${post.data.title} | ємιℓιαċв`,
       },
-      children: html`<div class="prose prose-stone dark:prose-invert">
+      children: html`<div class="prose prose-stone dark:prose-invert text-pretty">
         ${raw(post.htmlContent)}
       </div>`,
     });
@@ -32,7 +32,7 @@ export default async function handler(c: Context, next: Next) {
     siteData: {
       title: "blog | ємιℓιαċв",
     },
-    children: html`<div class="flex flex-col space-y-10">
+    children: html`<div class="flex flex-col space-y-10 text-pretty">
       ${raw(
         posts
           .map(

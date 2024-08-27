@@ -13,7 +13,7 @@ export default async function handler(c: Context) {
     siteData: {
       title: "services | ємιℓιαċв",
     },
-    children: html`<div class="prose prose-stone dark:prose-invert">
+    children: html`<div class="prose prose-stone dark:prose-invert text-pretty">
       ${raw(htmlContent)}
     </div>`,
   });
