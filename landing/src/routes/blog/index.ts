@@ -14,7 +14,7 @@ export default async function handler(c: Context, next: Next) {
 
     const view = layout({
       siteData: {
-        title: `${post.data.title} | emiliacb`,
+        title: `${post.data.title} | ємιℓιαċв`,
       },
       children: html`<div class="prose prose-stone dark:prose-invert">
         ${raw(post.htmlContent)}
@@ -30,7 +30,7 @@ export default async function handler(c: Context, next: Next) {
 
   const view = layout({
     siteData: {
-      title: "blog | emiliacb",
+      title: "blog | ємιℓιαċв",
     },
     children: html`<div class="flex flex-col space-y-10">
       ${raw(

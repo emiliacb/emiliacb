@@ -11,7 +11,7 @@ export default async function handler(c: Context) {
 
   const view = layout({
     siteData: {
-      title: "emiliacb",
+      title: "ємιℓιαċв",
     },
     children: html`
     <div class="prose prose-stone dark:prose-invert">

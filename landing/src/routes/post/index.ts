@@ -6,7 +6,7 @@ import { getAllPosts } from "src/services/posts";
 
 export default async function handler(c: Context) {
   const siteData = {
-    title: "blog | emiliacb",
+    title: "blog | ємιℓιαċв",
   };
 
   const posts = await getAllPosts();
