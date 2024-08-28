@@ -19,8 +19,8 @@ export default async function handler(c: Context) {
         <div>           __________                              </div>
         <div>         .'----------\`.                           </div>
         <div>         | .--------. |                           </div>
-        <div>         | |########| |         ________           </div>
-        <div>         | |########| |       /_________\\          </div>
+        <div>         | |<span class="text-white animate-pulse">########</span>| |         ________           </div>
+        <div>         | |<span class="text-white animate-pulse">########</span>| |       /_________\\          </div>
         <div>.--------| \`--------' |------|    --=-- |--------. </div>
         <div>|        \`----,-.-----'      |o ======  |        | </div>
         <div>|       ______|_|_______     |__________|        | </div>
