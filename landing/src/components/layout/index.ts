@@ -24,11 +24,8 @@ export default function layout({ siteData, children }: LayoutProps) {
           rel="stylesheet"
         />
         <title>${siteData.title}</title>
-        <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
-        <script src="
-https://cdn.jsdelivr.net/npm/@tailwindcss/typography@0.5.15/src/index.min.js
-"></script>
-        <script>
+        <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+        <!-- <script>
           tailwind.config = {
             darkMode: "media",
             theme: {
@@ -39,7 +36,7 @@ https://cdn.jsdelivr.net/npm/@tailwindcss/typography@0.5.15/src/index.min.js
               },
             },
           };
-        </script>
+        </script> -->
         <style>
         @keyframes move-out {
           0% {
