@@ -22,6 +22,9 @@ export default async function handler(c: Context) {
       <p>
         I will fix this issue when I have some time.
       </p>
+      <p>
+        Thank you for your patience.
+      </p>
     </div>
   `);
 
