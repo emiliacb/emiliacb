@@ -15,8 +15,8 @@ export default async function handler(c: Context) {
     >
       <p>Hello there! 👷‍♂️</p>
       <p>
-        Thank you for visiting our page. Unfortunately, the server is
-        experiencing some technical difficulties and, as this site is
+        Thank you for visiting our page. Unfortunately, the CDN is
+        experiencing some technical difficulties so this site is
         temporarily unavailable.
       </p>
       <p>
