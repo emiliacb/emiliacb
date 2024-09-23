@@ -1,17 +1,17 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-import { cache } from 'hono/cache'
+// import { cache } from 'hono/cache'
 
 import router from "./router";
 
 const app = new Hono()
-app.get(
-  '*',
-  cache({
-    cacheName: 'emiliacb',
-    cacheControl: 'public, max-age=86400',
-  })
-)
+// app.get(
+//   '*',
+//   cache({
+//     cacheName: 'emiliacb',
+//     cacheControl: 'public, max-age=86400',
+//   })
+// )
 
 app.route("/", router);
 
