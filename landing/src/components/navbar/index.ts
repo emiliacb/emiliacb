@@ -8,8 +8,8 @@ export default function navbar() {
       <a class="sr-only focus:not-sr-only focus:absolute top-1 left-1 focus:p-3 text-white bg-black" href="#content">skip to content</a>
       <a class="px-2 py-0 h-fit font-[500] text-xl" href="/">ємιℓιαċв</a>
       <div class="flex space-x-4">
-        <a class="px-2 py-0 h-fit" href="/about">about</a>
-        <a class="px-2 py-0 h-fit" href="/services">services</a>
+        <!-- <a class="px-2 py-0 h-fit" href="/about">about</a>
+        <a class="px-2 py-0 h-fit" href="/services">services</a> -->
       </div>
     </nav>
   `;

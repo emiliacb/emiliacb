@@ -24,7 +24,10 @@ export default function layout({ siteData, children }: LayoutProps) {
           rel="stylesheet"
         />
         <title>${siteData.title}</title>
-        <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+        <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+        <script src="
+https://cdn.jsdelivr.net/npm/@tailwindcss/typography@0.5.15/src/index.min.js
+"></script>
         <script>
           tailwind.config = {
             darkMode: "media",
