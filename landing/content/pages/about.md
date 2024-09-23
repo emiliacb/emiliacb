@@ -1,13 +1,11 @@
 # About
 
-Over the past **four years**, I've focused on developing scalable **full-stack products** using diverse technologies tackling customer pain points. Yes, including **Generative AI** products. 
+Over the past **four years**, I've focused on developing scalable **full-stack products** using diverse technologies tackling customer pain points. Including **Generative AI** products. 
 
-**Table of Contents**
-
-- [About](#about)
-- [Why Work With Me?](#why-work-with-me)
-- [Professional Journey](#professional-journey)
-- [Skills & Expertise](#skills-&-expertise)
+Table of Contents:
+- [Why Work With Me?](#why%20work%20with%20me%3F)
+- [Professional Journey](#professional%20journey)
+- [Skills & Expertise](#skills%20%26%20expertise)
 - [Languages](#languages)
 
 --- 
@@ -50,4 +48,4 @@ I bring a holistic approach to every project. My background as a former libraria
 
 ---
  
-📅 [Schedule a Meeting](https://calendly.com/emilia-cb)
+[📅 Schedule a Meeting](https://calendly.com/emilia-cb)

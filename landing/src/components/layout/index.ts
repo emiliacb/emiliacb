@@ -73,18 +73,26 @@ export default function layout({ siteData, children }: LayoutProps) {
         @view-transition {
           navigation: auto;
         }
+        
+        html {
+          scroll-behavior: auto;
+        }
+        
+        #content {
+          view-transition-name: content;
+        }
 
         @media (prefers-reduced-motion: no-preference) {
+          html {
+            scroll-behavior: smooth;
+          }
+
           ::view-transition-old(content) {
             animation: 150ms cubic-bezier(.17,.67,.81,.35) both move-out;
           }
           ::view-transition-new(content) {
             animation: 300ms cubic-bezier(.42,.28,.42,.89) both move-in;
           }
-        }
-
-        #content {
-          view-transition-name: content;
         }
         </style>
       </head>
