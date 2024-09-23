@@ -9,6 +9,13 @@ export default async function handler(c: Context) {
   const filePath = path.join(__dirname, `../../../content/pages/home.md`);
   const htmlContent = await getContent(filePath);
 
+  return c.html(html`
+     <div style="width: 100%; height: 100%; max-width: 40rem; display: grid; place-content: center; margin: auto;">
+      <p>Hello there! 👷‍♂️</p>
+      <p>Thank you for visiting our page. Unfortunately, we're experiencing some technical difficulties and our site is temporarily unavailable.</p>
+    </div>
+  `)
+
   const view = layout({
     siteData: {
       title: "ємιℓιαċв",
