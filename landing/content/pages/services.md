@@ -1,13 +1,64 @@
 # Services
 
-| Service | Description | Examples |
-|-------------|-----------------|--------------|
-| Full-Stack Web Development | **Custom development** of scalable web applications using technologies like React, Next.js and Serverless. | Highly personalized landings or web applications, **E-commerce** platforms with dynamic product catalogs, applications with **real-time updates**, and content management systems with **custom admin panels**. |
-| No-code Solutions | Design and development using platforms like Framer, Zapier, or Retool for **faster delivery** and **lower costs**, with some limitations in customization. | **MVPs**, blog sites with ready-to-use themes, small business websites with pre-built templates, proof of concepts, and landing pages with standard design features. |
-| Generative AI Solutions | Implementation and optimization of GenAI technologies tailored to your business needs, reducing costs and enhancing performance. | Automated customer support **chatbots**, personalized marketing **content generators**, image and video generation platforms. |
-| Mentorship | Personalized **1:1 mentorship** focusing on full-stack development or AI technologies. | Guidance on building a portfolio project, mentorship on scaling a web application. |
-| Corporate Training & Workshops | Custom **training sessions for teams** on web development and AI, leveraging the latest industry practices. | Workshops on modern JavaScript frameworks for developers, **web accesibility**, training sessions on implementing **GenAI solutions** for business applications. |
+I offer a complete range of technological services designed to boost your business. I'm here to help you transform your ideas into reality.
+
+**Table of Contents**
+
+- [Full-Stack Web Development](#full-stack-web-development)
+- [No-code Solutions](#no-code-solutions)
+- [Generative AI Solutions](#generative-ai-solutions)
+- [Mentorship](#mentorship)
+- [Corporate Training & Workshops](#corporate-training--workshops)
+
+--- 
+
+### Full-Stack Web Development
+
+**Custom development** of scalable web applications using technologies like React, Next.js and Serverless.
+
+Examples:
+- Highly personalized landings or web applications
+- **E-commerce** platforms with dynamic product catalogs
+- Applications with **real-time updates**
+- Content management systems with **custom admin panels**
+
+### No-code Solutions
+
+Design and development using platforms like Framer, Zapier, or Retool for **faster delivery** and **lower costs**, with some limitations in customization.
+
+Examples:
+- **MVPs**
+- Blog sites with ready-to-use themes
+- Small business websites with pre-built templates
+- Proof of concepts
+- Landing pages with standard design features
+
+### Generative AI Solutions
+
+Implementation and optimization of GenAI technologies tailored to your business needs, reducing costs and enhancing performance.
+
+Examples:
+- Automated customer support **chatbots**
+- Personalized marketing **content generators**
+- Image and video generation platforms
+
+### Mentorship
+
+Personalized **1:1 mentorship** focusing on full-stack development or AI technologies.
+
+Examples:
+- Guidance on building a portfolio project
+- Mentorship on scaling a web application
+
+### Corporate Training & Workshops
+
+Custom **training sessions for teams** on web development and AI, leveraging the latest industry practices.
+
+Examples:
+- Workshops on modern JavaScript frameworks for developers
+- **Web accessibility**
+- Training sessions on implementing **GenAI solutions** for business applications
 
 ---
 
-📅 [Schedule a Meeting](https://calendly.com/emilia-cb)
+[📅 Schedule a Meeting](https://calendly.com/emilia-cb)

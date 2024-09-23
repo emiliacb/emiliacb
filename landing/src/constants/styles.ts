@@ -1,0 +1,1 @@
+export const markdownContentClasses = "prose prose-stone dark:prose-invert text-pretty prose-a:outline prose-a:outline-yellow-100 dark:prose-a:outline-yellow-900 prose-a:outline-offset-0 prose-a:outline-4 prose-a:bg-yellow-100 dark:prose-a:bg-yellow-900 prose-a:no-underline prose-a:font-light";

@@ -3,6 +3,7 @@ import { html, raw } from "hono/html";
 
 import layout from "../../components/layout";
 import { getAllPosts, getPost } from "../../services/posts";
+import { markdownContentClasses } from "../../constants/styles";
 
 export default async function handler(c: Context, next: Next) {
   const slug = c.req.path.replace(/^\/blog\/?/, "");
@@ -16,7 +17,7 @@ export default async function handler(c: Context, next: Next) {
       siteData: {
         title: `${post.data.title} | ємιℓιαċв`,
       },
-      children: html`<div class="prose prose-stone dark:prose-invert text-pretty">
+      children: html`<div class="${markdownContentClasses}">
         ${raw(post.htmlContent)}
       </div>`,
     });

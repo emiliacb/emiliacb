@@ -2,9 +2,20 @@
 
 Over the past **four years**, I've focused on developing scalable **full-stack products** using diverse technologies tackling customer pain points. Yes, including **Generative AI** products. 
 
+**Table of Contents**
+
+- [About](#about)
+- [Why Work With Me?](#why-work-with-me)
+- [Professional Journey](#professional-journey)
+- [Skills & Expertise](#skills-&-expertise)
+- [Languages](#languages)
+
+--- 
+
 ## Why Work With Me?
 
-#### I'm ready to jump into your project and take full ownership, whether working autonomously or collaboratively leading global and agile teams. 
+**I'm ready to jump into your project** **and take full** **ownership,** **whether** **working autonomously or** **collaboratively leading global and agile teams.**
+
 I bring a holistic approach to every project. My background as a former librarian gives me a unique perspective on **information architecture** and **knowledge management**, which I incorporate into my engineering and design work. I constantly push for cross-functional collaboration and **interdisciplinary thinking**.
 
 ## Professional Journey

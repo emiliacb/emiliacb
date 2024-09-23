@@ -4,6 +4,7 @@ import { html, raw } from "hono/html";
 
 import layout from "../../components/layout";
 import { getContent } from "../../services/content";
+import { markdownContentClasses } from "../../constants/styles";
 
 export default async function handler(c: Context) {
   const filePath = path.join(__dirname, `../../../content/pages/about.md`);
@@ -13,7 +14,7 @@ export default async function handler(c: Context) {
     siteData: {
       title: "about | ємιℓιαċв",
     },
-    children: html`<div class="prose prose-stone dark:prose-invert text-pretty">
+    children: html`<div class="${markdownContentClasses}">
       ${raw(htmlContent)}
     </div>`,
   });
