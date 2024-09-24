@@ -14,7 +14,7 @@ function parseContent(file: string) {
       return `<h${depth} id="${slug}">${text}</h${depth}>`;
     }
 
-    return `<h${depth} id="${slug}">${text}<a class="!ml-2 px-1 font-bold mb-2 h-fit text-center align-middle no-underline opacity-70 focus:opacity-100 hover:opacity-100 !bg-transparent !outline-none hover:!bg-black" href="#${slug}" aria-label="${text}">#</a></h${depth}>`;
+    return `<h${depth} id="${slug}">${text}<a class="!ml-2 px-1 font-bold mb-2 h-fit text-center align-middle no-underline opacity-70 focus:opacity-100 hover:opacity-100 !bg-transparent !outline-none hover:!bg-black dark:hover:!bg-white hover:!text-white dark:hover:!text-black" href="#${slug}" aria-label="${text}">#</a></h${depth}>`;
   };
 
   marked.setOptions({ renderer });
