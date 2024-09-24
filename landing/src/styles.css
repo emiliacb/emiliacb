@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes move-out {
+  0% {
+    transform-origin: left;
+    transform: scale(1) translateX(0);
+    opacity: 100%;
+  }
+
+  50% {
+    transform-origin: left;
+    transform: scale(1) translateX(0);
+    opacity: 0%;
+  }
+
+  100% {
+    transform-origin: left;
+    transform: scale(0.8) translateX(-100%);
+    opacity: 0%;
+  }
+}
+
+@keyframes move-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0%;
+  }
+
+  to {
+    transform: translateX(0%);
+    opacity: 100%;
+  }
+}
+
+@view-transition {
+  navigation: auto;
+}
+
+html {
+  scroll-behavior: auto;
+}
+
+#content {
+  view-transition-name: content;
+}
+
+.lucide {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+@layer utilities {
+  .markdown-content {
+    @apply prose prose-stone dark:prose-invert text-pretty prose-h1:mb-10 prose-h2:my-20 prose-h1:font-light prose-h2:font-normal prose-a:ml-1 prose-a:outline prose-a:outline-yellow-100 dark:prose-a:outline-yellow-900 prose-a:outline-offset-0 prose-a:outline-4 prose-a:bg-yellow-100 dark:prose-a:bg-yellow-900 prose-a:no-underline prose-a:font-light focus-visible:prose-a:outline-red-500 hover:prose-a:bg-black hover:prose-a:text-white hover:prose-a:outline-black;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  ::view-transition-old(content) {
+    animation: 150ms cubic-bezier(0.17, 0.67, 0.81, 0.35) both move-out;
+  }
+  ::view-transition-new(content) {
+    animation: 300ms cubic-bezier(0.42, 0.28, 0.42, 0.89) both move-in;
+  }
+}

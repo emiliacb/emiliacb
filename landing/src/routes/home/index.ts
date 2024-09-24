@@ -5,7 +5,6 @@ import { html, raw } from "hono/html";
 import { getContent } from "../../services/content";
 import layout from "../../components/layout";
 import contact from "../../components/contacts";
-import { markdownContentClasses } from "../../constants/styles";
 
 export default async function handler(c: Context) {
   const filePath = path.join(__dirname, `../../../content/pages/home.md`);
@@ -15,7 +14,7 @@ export default async function handler(c: Context) {
     siteData: {
       title: "ємιℓιαċв",
     },
-    children: html`<div class="${markdownContentClasses}">
+    children: html`<div class="markdown-content">
         ${raw(htmlContent)}
       </div>
       <div class="mt-24">${contact()}</div> `,
