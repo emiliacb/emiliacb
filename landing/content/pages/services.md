@@ -9,8 +9,6 @@ Table of Contents:
 - [Mentorship](#mentorship)
 - [Corporate Training & Workshops](#corporate%20training%20%26%20workshops)
 
---- 
-
 ## Full-Stack Web Development
 
 **Custom development** of scalable web applications using technologies like React, Next.js and Serverless.

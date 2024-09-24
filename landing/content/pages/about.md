@@ -8,8 +8,6 @@ Table of Contents:
 - [Skills & Expertise](#skills%20%26%20expertise)
 - [Languages](#languages)
 
---- 
-
 ## Why Work With Me?
 
 **I'm ready to jump into your project** **and take full** **ownership,** **whether** **working autonomously or** **collaboratively leading global and agile teams.**
