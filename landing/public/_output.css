@@ -738,18 +738,18 @@ video {
   background-color: rgb(0 0 0 / var(--tw-bg-opacity));
 }
 
-.bg-stone-200 {
+.bg-stone-100 {
   --tw-bg-opacity: 1;
-  background-color: rgb(231 229 228 / var(--tw-bg-opacity));
+  background-color: rgb(245 245 244 / var(--tw-bg-opacity));
 }
 
-.bg-stone-200\/70 {
-  background-color: rgb(231 229 228 / 0.7);
+.bg-stone-100\/70 {
+  background-color: rgb(245 245 244 / 0.7);
 }
 
-.bg-yellow-100 {
+.bg-yellow-200 {
   --tw-bg-opacity: 1;
-  background-color: rgb(254 249 195 / var(--tw-bg-opacity));
+  background-color: rgb(254 240 138 / var(--tw-bg-opacity));
 }
 
 .p-2 {
@@ -1470,13 +1470,13 @@ video {
 .markdown-content :is(:where(a):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
   margin-left: 0.25rem;
   --tw-bg-opacity: 1;
-  background-color: rgb(254 249 195 / var(--tw-bg-opacity));
+  background-color: rgb(254 240 138 / var(--tw-bg-opacity));
   font-weight: 300;
   text-decoration-line: none;
   outline-style: solid;
   outline-width: 2px;
   outline-offset: 0px;
-  outline-color: #fef9c3;
+  outline-color: #fef08a;
 }
 
 .markdown-content :is(:where(a):not(:where([class~="not-prose"],[class~="not-prose"] *))):hover {
