@@ -599,6 +599,10 @@ video {
   margin-left: 0.5rem !important;
 }
 
+.-ml-1 {
+  margin-left: -0.25rem;
+}
+
 .-ml-2 {
   margin-left: -0.5rem;
 }
@@ -621,6 +625,10 @@ video {
 
 .flex {
   display: flex;
+}
+
+.hidden {
+  display: none;
 }
 
 .h-fit {
@@ -657,14 +665,6 @@ video {
   flex-direction: column;
 }
 
-.flex-wrap {
-  flex-wrap: wrap;
-}
-
-.items-center {
-  align-items: center;
-}
-
 .justify-center {
   justify-content: center;
 }
@@ -675,10 +675,6 @@ video {
 
 .gap-2 {
   gap: 0.5rem;
-}
-
-.gap-4 {
-  gap: 1rem;
 }
 
 .space-x-4 > :not([hidden]) ~ :not([hidden]) {
@@ -697,6 +693,10 @@ video {
   --tw-space-y-reverse: 0;
   margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
   margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
+}
+
+.overflow-hidden {
+  overflow: hidden;
 }
 
 .text-pretty {
@@ -1454,8 +1454,9 @@ video {
 }
 
 .markdown-content :is(:where(h1, h2, h3, h4, h5, h6, th):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
+  margin-top: -1rem;
   margin-bottom: 0.5rem;
-  padding-top: 2rem;
+  padding-top: 5rem;
 }
 
 .markdown-content :is(:where(h1):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
@@ -1554,8 +1555,15 @@ html {
 }
 
 .lucide {
-  width: 1.2rem;
-  height: 1.2rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+@media (min-width: 768px) {
+  .lucide {
+    width: 1.3rem;
+    height: 1.3rem;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1629,18 +1637,22 @@ html {
   line-height: 2.25rem;
 }
 
-.prose-strong\:whitespace-nowrap :is(:where(strong):not(:where([class~="not-prose"],[class~="not-prose"] *))) {
-  white-space: nowrap;
-}
-
 @media (min-width: 768px) {
   .md\:mb-0 {
     margin-bottom: 0px;
   }
 
+  .md\:block {
+    display: block;
+  }
+
   .md\:w-fit {
     width: -moz-fit-content;
     width: fit-content;
+  }
+
+  .md\:flex-row-reverse {
+    flex-direction: row-reverse;
   }
 
   .md\:gap-6 {
@@ -1653,6 +1665,11 @@ html {
 
   .md\:pt-4 {
     padding-top: 1rem;
+  }
+
+  .md\:text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
   }
 }
 

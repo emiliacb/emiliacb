@@ -29,11 +29,11 @@ export default function layout({ siteData, withFooter, children }: LayoutProps) 
         <link rel="stylesheet" href="/public/_output.css" />
       </head>
       <body
-        class="flex flex-col h-screen bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-100 prose-h1:text-3xl prose-strong:whitespace-nowrap"
+        class="flex flex-col h-screen bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-100 prose-h1:text-3xl "
       >
         <div>
           ${navbar()}
-          <main id="content" class="w-full px-8 pt-16 md:pt-24 m-auto max-w-[60rem] h-full">${children}</main>
+          <main id="content" class="overflow-hidden w-full px-8 pt-16 md:pt-24 m-auto max-w-[60rem] h-full">${children}</main>
           ${withFooter ? html`<footer class="w-full flex px-8 justify-center bg-yellow-200 dark:bg-yellow-900">${contact()}</footer>` : null}
         <div>
       </body>
