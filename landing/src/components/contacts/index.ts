@@ -8,7 +8,7 @@ export default function contact() {
     >
       <li>
         <a
-          class="flex w-fit border border-transparent dark:border-white px-2 py-1 hover:bg-black hover:text-white hover:border-black"
+          class="flex w-fit border border-transparent px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white"
           href="mailto:emiliacabralb@gmail.com"
           target="_blank"
           norel="noreferrer"
@@ -18,7 +18,7 @@ export default function contact() {
       </li>
       <li>
         <a
-          class="flex w-fit border border-transparent dark:border-white px-2 py-1 hover:bg-black hover:text-white hover:border-black"
+          class="flex w-fit border border-transparent px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white"
           href="https://www.linkedin.com/in/emiliacb"
           target="_blank"
           norel="noreferrer"
@@ -28,7 +28,7 @@ export default function contact() {
       </li>
       <li>
         <a
-          class="flex w-fit border border-transparent dark:border-white px-2 py-1 hover:bg-black hover:text-white hover:border-black"
+          class="flex w-fit border border-transparent px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white"
           href="https://github.com/emiliacb"
           target="_blank"
           norel="noreferrer"
@@ -38,7 +38,7 @@ export default function contact() {
       </li>
       <li>
         <a
-          class="flex gap-2 w-fit border border-black dark:border-white px-2 py-1 hover:bg-black hover:text-white hover:border-black"
+          class="flex gap-2 w-fit border border-black dark:border-white px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white"
           href="https://calendly.com/emilia-cb"
           target="_blank"
           norel="noreferrer"
