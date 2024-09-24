@@ -14,6 +14,7 @@ export default async function handler(c: Context) {
     siteData: {
       title: "ємιℓιαċв",
     },
+    withIlustration: true,
     children: html`<div class="markdown-content">
         ${raw(htmlContent)}
       </div>

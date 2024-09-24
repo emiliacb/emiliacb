@@ -9,10 +9,16 @@ type LayoutProps = {
     title: string;
   };
   withFooter?: boolean;
+  withIlustration?: boolean;
   children?: HtmlEscapedString | Promise<HtmlEscapedString>;
 };
 
-export default function layout({ siteData, withFooter, children }: LayoutProps) {
+export default function layout({
+  siteData,
+  withFooter,
+  withIlustration,
+  children,
+}: LayoutProps) {
   return html`
     <!DOCTYPE html>
     <html lang="en">
@@ -31,11 +37,26 @@ export default function layout({ siteData, withFooter, children }: LayoutProps) 
       <body
         class="flex flex-col h-screen bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-100 prose-h1:text-3xl"
       >
-        <img src="/public/tree.svg" alt="Emilia" class="absolute hidden md:block right-6 bottom-0 dark:invert" />
+      ${
+        withIlustration &&
+        html`<img
+          src="/public/tree.svg"
+          alt="Emilia"
+          class="absolute hidden md:block right-6 bottom-0 dark:invert"
+        />`
+      }
         <div>
           ${navbar()}
           <main id="content" class="overflow-hidden w-full px-8 md:pt-24 m-auto max-w-[60rem] h-full">${children}</main>
-          ${withFooter ? html`<footer class="w-full flex px-8 justify-center bg-yellow-200 dark:bg-yellow-900">${contact()}</footer>` : null}
+          ${
+            withFooter
+              ? html`<footer
+                  class="w-full flex px-8 justify-center bg-yellow-200 dark:bg-yellow-900"
+                >
+                  ${contact()}
+                </footer>`
+              : null
+          }
         <div>
       </body>
     </html>
