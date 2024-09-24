@@ -29,8 +29,9 @@ export default function layout({ siteData, withFooter, children }: LayoutProps) 
         <link rel="stylesheet" href="/public/_output.css" />
       </head>
       <body
-        class="flex flex-col h-screen bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-100 prose-h1:text-3xl "
+        class="flex flex-col h-screen bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-100 prose-h1:text-3xl"
       >
+        <img src="/public/tree.svg" alt="Emilia" class="absolute hidden md:block right-6 bottom-0 dark:invert" />
         <div>
           ${navbar()}
           <main id="content" class="overflow-hidden w-full px-8 md:pt-24 m-auto max-w-[60rem] h-full">${children}</main>
