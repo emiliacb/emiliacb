@@ -4,7 +4,7 @@ import { html, raw } from "hono/html";
 
 import layout from "../../components/layout";
 import { getContent } from "../../services/content";
-import { markdownContentClasses } from "src/constants/styles";
+import { markdownContentClasses } from "../../constants/styles";
 
 export default async function handler(c: Context) {
   const filePath = path.join(__dirname, `../../../content/pages/services.md`);
