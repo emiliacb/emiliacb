@@ -36,10 +36,10 @@ I bring a holistic approach to every project. My background as a former libraria
 
 ## Skills & Expertise
 
-- **Frontend & Backend Development**: React, Next.js, Express, Vue, Gatsby, Langchain, PostgreSQL, others, Lerna, Strapi, Tailwind
-- **Design**: Figma, Photoshop, Krita, Gimp, Sketch Up
-- **AI & Data**: GenAI solutions, Langchain, Langsmith
-- **Tools & Platforms**: DataDog, Kibana, NewRelic, Framer, Retool, Posthog, Hotjar
+- **Frontend & Backend Development**: React, Next.js, Express, Vue, Gatsby, Langchain, PostgreSQL, Lerna, Strapi, Tailwind...
+- **Design**: Figma, Photoshop, Miro, Krita, Gimp
+- **AI & Data**: GenAI solutions, Langchain, Langsmith, TensorFlow, Ollama, Replicate, VectorDB, Knowledge Graphs
+- **Tools & Platforms**: DataDog, Kibana, NewRelic, Framer, Retool, Posthog, Hotjar...
 
 ## Languages
 
