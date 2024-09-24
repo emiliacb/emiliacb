@@ -17,7 +17,7 @@ export default async function handler(c: Context) {
     children: html`<div class="markdown-content">
         ${raw(htmlContent)}
       </div>
-      <div class="mt-24">${contact()}</div> `,
+      <footer class="mt-24">${contact()}</footer> `,
   });
 
   return c.html(view, {
