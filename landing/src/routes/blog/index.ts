@@ -17,6 +17,7 @@ export default async function handler(c: Context, next: Next) {
       siteData: {
         title: `${post.data.title} | ємιℓιαċв`,
       },
+      withFooter: true,
       children: html`<div class="${markdownContentClasses}">
         ${raw(post.htmlContent)}
       </div>`,
@@ -33,6 +34,7 @@ export default async function handler(c: Context, next: Next) {
     siteData: {
       title: "blog | ємιℓιαċв",
     },
+    withFooter: true,
     children: html`<div class="flex flex-col space-y-10 text-pretty">
       ${raw(
         posts

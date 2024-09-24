@@ -57,7 +57,3 @@ Examples:
 - Workshops on modern JavaScript frameworks for developers
 - **Web accessibility**
 - Training sessions on implementing **GenAI solutions** for business applications
-
----
-
-[📅 Schedule a Meeting](https://calendly.com/emilia-cb)

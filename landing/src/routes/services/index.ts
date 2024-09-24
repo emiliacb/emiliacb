@@ -8,12 +8,13 @@ import { markdownContentClasses } from "../../constants/styles";
 
 export default async function handler(c: Context) {
   const filePath = path.join(__dirname, `../../../content/pages/services.md`);
-  const htmlContent = await getContent(filePath)
+  const htmlContent = await getContent(filePath);
 
   const view = layout({
     siteData: {
       title: "services | ємιℓιαċв",
     },
+    withFooter: true,
     children: html`<div class="${markdownContentClasses}">
       ${raw(htmlContent)}
     </div>`,

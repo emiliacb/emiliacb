@@ -9,7 +9,7 @@ export default async function handler(c: Context) {
   };
 
   const content = html`<p>404</p>`;
-  const view = layout({ siteData, children: content });
+  const view = layout({ siteData, withFooter: true, children: content });
 
   return c.html(view);
 }

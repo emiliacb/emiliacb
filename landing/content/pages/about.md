@@ -45,7 +45,3 @@ I bring a holistic approach to every project. My background as a former libraria
 
 - English: Full Professional Proficiency.
 - Spanish: Native Proficiency
-
----
- 
-[📅 Schedule a Meeting](https://calendly.com/emilia-cb)

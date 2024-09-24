@@ -2,15 +2,17 @@ import { html } from "hono/html";
 import { HtmlEscapedString } from "hono/utils/html";
 
 import navbar from "../navbar";
+import contact from "../contacts";
 
 type LayoutProps = {
   siteData: {
     title: string;
   };
+  withFooter?: boolean;
   children?: HtmlEscapedString | Promise<HtmlEscapedString>;
 };
 
-export default function layout({ siteData, children }: LayoutProps) {
+export default function layout({ siteData, withFooter, children }: LayoutProps) {
   return html`
     <!DOCTYPE html>
     <html lang="en">
@@ -82,6 +84,11 @@ export default function layout({ siteData, children }: LayoutProps) {
           view-transition-name: content;
         }
 
+        .lucide {
+          width: 1.2rem;
+          height: 1.2rem;
+        }
+
         @media (prefers-reduced-motion: no-preference) {
           html {
             scroll-behavior: smooth;
@@ -101,7 +108,8 @@ export default function layout({ siteData, children }: LayoutProps) {
       >
         <div>
           ${navbar()}
-          <main id="content" class="w-full px-2 py-16 md:py-24 m-auto max-w-[60rem] h-full">${children}</main>
+          <main id="content" class="w-full px-8 pt-16 md:pt-24 m-auto max-w-[60rem] h-full">${children}</main>
+          ${withFooter ? html`<footer class="w-full flex px-8 justify-center bg-yellow-100 dark:bg-yellow-900">${contact()}</footer>` : null}
         <div>
       </body>
     </html>
