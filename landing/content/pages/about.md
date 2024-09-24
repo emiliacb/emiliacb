@@ -32,7 +32,7 @@ I bring a holistic approach to every project. My background as a former libraria
 
 ### Freelance Fullstack Developer
   **Argentina & Chile** - *September 2020 - February 2024*  
-  As a freelancer, I developed web pages and apps using Vue, Gatsby, Next, Drupal, and Strapi. I designed user interfaces with Figma, **communicating directly with clients and stakeholders** to deliver high-quality products.
+  As a freelancer, I developed web pages and apps using Vue, Gatsby, Next, Drupal, and Strapi. I designed user interfaces with Figma, communicating directly with **clients and stakeholders** to deliver high-quality products.
 
 ## Skills & Expertise
 
