@@ -3,7 +3,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts & npx tailwindcss -i ./src/styles.css -o ./public/_output.css --watch",
     "start": "node dist/index.js",
-    "build": "rm -rf dist && tsc"
+    "build": "rm -rf dist && tsc & npx tailwindcss -i ./src/styles.css -o ./public/_output.css --minify"
   },
   "dependencies": {
     "@hono/node-server": "1.12.0",
