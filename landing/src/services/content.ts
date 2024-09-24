@@ -25,7 +25,7 @@ function parseContent(file: string) {
 export async function getContent(filePath: string) {
   try {
     if (cache.has(filePath)) {
-      // return cache.get(filePath);
+      return cache.get(filePath);
     }
     if (!fs.existsSync(filePath)) {
       throw new Error(`File not found: ${filePath}`);
