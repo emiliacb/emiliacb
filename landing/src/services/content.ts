@@ -11,10 +11,10 @@ function parseContent(file: string) {
     const slug = encodeURIComponent(text.toLowerCase());
 
     if (depth === 1) {
-      return `<h${depth} class="md:my-12" id="${slug}">${text}</h${depth}>`;
+      return `<h${depth} id="${slug}">${text}</h${depth}>`;
     }
 
-    return `<h${depth} class="pt-24 -mt-12 inline mr-2" id="${slug}">${text}</h${depth}><a class="no-underline opacity-30 hover:opacity-90 hover:underline" href="#${slug}" aria-label="${text}">#</a><br />`;
+    return `<h${depth} id="${slug}">${text}<a class="!ml-2 px-1 font-bold mb-2 h-fit text-center align-middle no-underline opacity-70 focus:opacity-100 hover:opacity-100 !bg-transparent !outline-none hover:!bg-black" href="#${slug}" aria-label="${text}">#</a></h${depth}>`;
   };
 
   marked.setOptions({ renderer });
