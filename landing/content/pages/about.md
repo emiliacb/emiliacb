@@ -1,6 +1,6 @@
 # About
 
-Over the past **four years**, I've focused on developing scalable **full-stack products** using diverse technologies tackling customer pain points. Including **Generative AI** products. 
+Over the past **four years**, I've focused on developing scalable **full-stack products** using diverse technologies tackling customer pain points, including **Generative AI**. 
 
 Table of Contents:
 - [Why Work With Me?](#why%20work%20with%20me%3F)
