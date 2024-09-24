@@ -4,7 +4,7 @@ import { Mail, Linkedin, Github, Calendar } from "lucide-static";
 export default function contact() {
   return html`
     <ul
-      class="flex md:flex-row-reverse w-full md:w-fit justify-between md:gap-6 py-8 -ml-2"
+      class="flex md:flex-row-reverse w-full md:w-fit justify-between md:gap-6 py-8 md:-ml-2"
     ><li>
         <a
           class="flex gap-2 w-fit border border-black dark:border-white px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white"

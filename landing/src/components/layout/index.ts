@@ -33,7 +33,7 @@ export default function layout({ siteData, withFooter, children }: LayoutProps) 
       >
         <div>
           ${navbar()}
-          <main id="content" class="overflow-hidden w-full px-8 pt-16 md:pt-24 m-auto max-w-[60rem] h-full">${children}</main>
+          <main id="content" class="overflow-hidden w-full px-8 md:pt-24 m-auto max-w-[60rem] h-full">${children}</main>
           ${withFooter ? html`<footer class="w-full flex px-8 justify-center bg-yellow-200 dark:bg-yellow-900">${contact()}</footer>` : null}
         <div>
       </body>
