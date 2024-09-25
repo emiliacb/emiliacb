@@ -42,7 +42,7 @@ export default function layout({
         html`<img
           src="/public/tree.svg"
           alt="Emilia"
-          class="absolute opacity-20 lg:opacity-80 right-6 bottom-0 dark:invert"
+          class="absolute opacity-10 lg:opacity-80 right-6 bottom-0 dark:invert"
         />`
       }
         <div>
@@ -51,7 +51,7 @@ export default function layout({
           ${
             withFooter
               ? html`<footer
-                  class="w-full flex px-8 justify-center bg-yellow-200 dark:bg-yellow-900"
+                  class="w-full flex px-8 mt-24 md:mt-32 justify-center bg-yellow-200 dark:bg-yellow-900"
                 >
                   ${contact()}
                 </footer>`
