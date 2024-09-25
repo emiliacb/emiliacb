@@ -15,8 +15,8 @@ type LayoutProps = {
 
 export default function layout({
   siteData,
-  withFooter,
-  withIlustration,
+  withFooter = true,
+  withIlustration = true,
   children,
 }: LayoutProps) {
   return html`
@@ -35,14 +35,14 @@ export default function layout({
         <link rel="stylesheet" href="/public/_output.css" />
       </head>
       <body
-        class="flex flex-col h-screen bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-100 prose-h1:text-3xl"
+        class="flex flex-col h-full min-h-screen bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-100 prose-h1:text-3xl"
       >
       ${
         withIlustration &&
         html`<img
           src="/public/tree.svg"
           alt="Emilia"
-          class="absolute hidden md:block right-6 bottom-0 dark:invert"
+          class="absolute opacity-20 lg:opacity-80 right-6 bottom-0 dark:invert"
         />`
       }
         <div>
