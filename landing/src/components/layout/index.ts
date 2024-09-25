@@ -35,7 +35,7 @@ export default function layout({
         <link rel="stylesheet" href="/public/_output.css" />
       </head>
       <body
-        class="flex flex-col h-full min-h-screen bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-100 prose-h1:text-3xl"
+        class="flex flex-col h-full min-h-[100svh] bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-100 prose-h1:text-3xl"
       >
       ${
         withIlustration &&
