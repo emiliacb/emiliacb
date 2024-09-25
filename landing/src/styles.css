@@ -52,7 +52,7 @@ html {
 
 @layer utilities {
   .markdown-content {
-    @apply prose prose-stone dark:prose-invert text-pretty prose-headings:pt-20 prose-headings:-mt-4 prose-headings:mb-2 prose-h1:mb-10 prose-h1:font-light prose-h2:font-normal prose-a:ml-1 prose-a:outline prose-a:outline-yellow-200 dark:prose-a:outline-yellow-900 prose-a:outline-offset-0 prose-a:outline-2 prose-a:bg-yellow-200 dark:prose-a:bg-yellow-900 prose-a:no-underline prose-a:font-light focus-visible:prose-a:outline-red-500 hover:prose-a:bg-black hover:prose-a:text-white hover:prose-a:outline-black dark:hover:prose-a:bg-white dark:hover:prose-a:text-black dark:hover:prose-a:border-white dark:hover:prose-a:outline-white;
+    @apply prose prose-stone dark:prose-invert text-pretty prose-headings:pt-20 prose-headings:-mt-4 prose-headings:mb-2 prose-h1:mb-10 prose-h1:font-light prose-h2:font-normal prose-a:ml-[2px] prose-a:outline prose-a:outline-yellow-200 dark:prose-a:outline-yellow-900 prose-a:outline-offset-0 prose-a:outline-2 prose-a:bg-yellow-200 dark:prose-a:bg-yellow-900 prose-a:no-underline prose-a:font-light focus-visible:prose-a:outline-red-500 hover:prose-a:bg-black hover:prose-a:text-white hover:prose-a:outline-black dark:hover:prose-a:bg-white dark:hover:prose-a:text-black dark:hover:prose-a:border-white dark:hover:prose-a:outline-white;
   }
 }
 
