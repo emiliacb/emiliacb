@@ -16,7 +16,7 @@ type LayoutProps = {
 export default function layout({
   siteData,
   withFooter = true,
-  withIlustration = true,
+  withIlustration = false,
   children,
 }: LayoutProps) {
   return html`

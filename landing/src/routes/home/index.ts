@@ -15,6 +15,7 @@ export default async function handler(c: Context) {
       title: "ємιℓιαċв",
     },
     withFooter: false,
+    withIlustration: true,
     children: html`<div class="markdown-content">
         ${raw(htmlContent)}
       </div>
