@@ -1,4 +1,4 @@
-# About
+# Who I Am
 
 Over the past **four years**, I've focused on developing scalable **full-stack products** using diverse technologies tackling customer pain points, including **Generative AI**. 
 

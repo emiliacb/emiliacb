@@ -1,4 +1,4 @@
-# Services
+# What I Offer?
 
 Designed to boost your business from an **interdisciplinary** **perspective**. I'm here to help you transform your ideas into **real products** that your users love.
 

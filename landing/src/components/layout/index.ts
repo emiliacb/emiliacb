@@ -45,11 +45,11 @@ export default function layout({
       }
         <div class="flex flex-col h-full min-h-[100svh]">
           ${navbar()}
-          <main id="content" class="overflow-hidden w-full px-8 md:pt-24 m-auto max-w-[60rem] h-full">${children}</main>
+          <main id="content" class="min-h-static-screen-minus-nav overflow-hidden flex flex-col justify-between md:justify-start w-full px-4 sm:px-8 md:pt-24 m-auto max-w-[60rem] h-full">${children}</main>
           ${
             withFooter
               ? html`<footer
-                  class="w-full flex px-8 mt-24 md:mt-32 justify-center bg-yellow-200 dark:bg-yellow-900"
+                  class="w-full flex px-4 sm:px-8 mt-24 md:mt-32 justify-center bg-yellow-200 dark:bg-yellow-900"
                 >
                   ${contact()}
                 </footer>`

@@ -11,7 +11,7 @@ export default async function handler(c: Context) {
 
   const view = layout({
     siteData: {
-      title: "about | ємιℓιαċв",
+      title: "Who I Am | ємιℓιαċв",
     },
     withFooter: true,
     children: html`<div class="markdown-content">
