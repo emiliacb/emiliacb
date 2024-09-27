@@ -26,6 +26,7 @@ lerna-debug.log*
 
 # build
 dist/
+public/_output.css
 
 # misc
 .DS_Store

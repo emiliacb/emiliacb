@@ -39,13 +39,11 @@ export default function layout({
       >
       ${
         withIlustration &&
-        html`<img
-          src="/public/tree.svg"
-          alt="Emilia"
-          class="absolute opacity-10 lg:opacity-80 right-6 bottom-0 dark:invert"
-        />`
+        html`<div class="absolute w-screen h-screen overflow-hidden">
+          <img src="/public/tree.svg" alt="Emilia" id="cover-tree" />
+        </div> `
       }
-        <div>
+        <div class="flex flex-col h-full min-h-[100svh]">
           ${navbar()}
           <main id="content" class="overflow-hidden w-full px-8 md:pt-24 m-auto max-w-[60rem] h-full">${children}</main>
           ${
