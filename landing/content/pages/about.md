@@ -22,7 +22,7 @@ I bring a holistic approach to every project. My background as a former libraria
 - Implemented full-stack solutions using **Next.js**, **Langchain**, Langsmith, and **PostgreSQL**
 - Conducted user interviews and significantly contributed to **UI and product design**
 - Delivered **technical talks on Generative AI**
-- Developed POC and MVP of a generative learning feature within tight deadlines
+- Developed **POC and MVP** of a generative learning feature within **tight deadlines**
 - Improved team workflows, including implementing **coding guidelines** and **enhancing communications**
 - Contributed to company strategy through **business modeling** and **MVP scoping**
 - Enhanced advanced **accessibility** features for improved inclusivity
@@ -30,7 +30,7 @@ I bring a holistic approach to every project. My background as a former libraria
 ### Founding Software Engineer @ Fair Share Group
 **Dec 2023 - Feb 2024** | Remote, Melbourne, Australia
 - Joined as an **equity-only founding engineer** in this early-stage startup
-- Developed initial codebase and **implemented **CI automation** workflows
+- Developed initial codebase and **implemented** **CI automation** workflows
 - Led engineering architecture decisions for **offshore startup** with global team
 - Collaborated with **distributed teams** across India, Australia, and China
 
@@ -51,7 +51,6 @@ I bring a holistic approach to every project. My background as a former libraria
 - Direct communication with **clients and stakeholders**
 
 ## Skills & Expertise
-
 - **Frontend & Backend Development**: React, Next.js, Express, Vue, Gatsby, Langchain, PostgreSQL, Lerna, Strapi, Tailwind...
 - **Design**: Figma, Photoshop, Miro, Krita, Gimp
 - **AI & Data**: GenAI solutions, Langchain, Langsmith, TensorFlow, Ollama, Replicate, VectorDB, Knowledge Graphs
