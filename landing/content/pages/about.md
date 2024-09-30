@@ -21,7 +21,7 @@ I bring a holistic approach to every project. My background as a former libraria
 - Led development of complete AI features, **reducing generation costs by 80%**
 - Implemented full-stack solutions using **Next.js**, **Langchain**, Langsmith, and **PostgreSQL**
 - Conducted user interviews and significantly contributed to **UI and product design**
-- Mentored junior engineers and facilitated improved team workflows
+- Drove **improved workflows and communication** for engineering and product teams
 - Delivered **technical talks on Generative AI**
 
 ### FOUNDING SOFTWARE ENGINEER, Fair Share Group
