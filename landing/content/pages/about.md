@@ -16,21 +16,35 @@ I bring a holistic approach to every project. My background as a former libraria
 
 ## Professional Journey
 
-### Software Engineer at BuildWithin
-  **USA** - *February 2024 - Present*  
-  Ownership of complete GenAI features. **Reduced AI generation costs by 80%**. Conducted user interviews, contribute significantly to UI and **product design+*, and mentor junior engineers. My role has a high impact on both the product and the team organization, fostering better workflows and communication.
+### SOFTWARE ENGINEER - AI TEAM, BuildWithin
+*Feb 2024 - Present | Remote, USA*
+- Led development of complete AI features, **reducing generation costs by 80%**
+- Implemented full-stack solutions using **Next.js**, **Langchain**, Langsmith, and **PostgreSQL**
+- Conducted user interviews and significantly contributed to **UI and product design**
+- Mentored junior engineers and facilitated improved team workflows
+- Delivered **technical talks on Generative AI**
 
-### Founding Software Engineer at Fair Share Group
-  **Australia** - *December 2023 - February 2024*  
-  Played a crucial role in developing the initial codebase and implementing **CI pipeline**. Leading a globally distributed team. Deeply involved in decision-making for engineering architecture.
+### FOUNDING SOFTWARE ENGINEER, Fair Share Group
+*Dec 2023 - Feb 2024 | Remote, Melbourne, Australia*
+- Joined as an **equity-only founding engineer** in this early-stage startup
+- Developed initial codebase and **implemented **CI automation** workflows
+- Led engineering architecture decisions for **offshore startup** with global team
+- Collaborated with **distributed teams** across India, Australia, and China
 
-### Software Engineer at Mercado Libre
-  **Argentina** - *March 2021 - February 2024*  
-  Developed scalable user interfaces using Server Side React and Node, and became a go-to person for **LLM-based solutions** and **web accessibility**. Responsible for delivering key features, building tracking dashboards, and contributing to internal UI libraries. I also led the creation of an internal onboarding site now used by multiple teams.
+### SOFTWARE ENGINEER, Mercado Libre
+*Mar 2021 - Feb 2024 | Argentina*
+- Developed scalable user interfaces using **React** with server-side rendering
+- Became **go-to person for LLM-based solutions** across multiple teams
+- Built tracking dashboards using **DataDog**, Kibana, and NewRelic
+- Contributed to **internal UI libraries** and created onboarding documentation
+- Delivered technical talks on **accessibility** and frontend development
 
-### Freelance Fullstack Developer
-  **Argentina & Chile** - *September 2020 - February 2024*  
-  As a freelancer, I developed web pages and apps using Vue, Gatsby, Next, Drupal, and Strapi. I designed user interfaces with Figma, communicating directly with **clients and stakeholders** to deliver high-quality products.
+### FULL STACK ENGINEER (Freelance)
+*Sep 2020 - Feb 2024 | Remote*
+- Developed web applications using **Typescript**, React, Vue, Gatsby, Node, Express, Hono and **Strapi** (CMS)
+- Designed user interfaces and interactive **prototypes with Figma**
+- **Rapidly adapted to new technologies** based on customer requirements
+- Direct communication with **clients and stakeholders**
 
 ## Skills & Expertise
 
