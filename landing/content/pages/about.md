@@ -16,31 +16,35 @@ I bring a holistic approach to every project. My background as a former libraria
 
 ## Professional Journey
 
-### SOFTWARE ENGINEER - AI TEAM, BuildWithin
-*Feb 2024 - Present | Remote, USA*
-- Led development of complete AI features, **reducing generation costs by 80%**
+### Product Engineer - AI Team @ BuildWithin
+**Feb 2024 - Present** | Remote, USA
+- Led development of AI features, resulting in **80% reduction in** **generation costs**
 - Implemented full-stack solutions using **Next.js**, **Langchain**, Langsmith, and **PostgreSQL**
 - Conducted user interviews and significantly contributed to **UI and product design**
-- Drove **improved workflows and communication** for engineering and product teams
 - Delivered **technical talks on Generative AI**
+- Developed POC and MVP of a generative learning feature within tight deadlines
+- Improved team workflows, including implementing **coding guidelines** and **enhancing communications**
+- Contributed to company strategy through **business modeling** and **MVP scoping**
+- Enhanced advanced **accessibility** features for improved inclusivity
 
-### FOUNDING SOFTWARE ENGINEER, Fair Share Group
-*Dec 2023 - Feb 2024 | Remote, Melbourne, Australia*
+### Founding Software Engineer @ Fair Share Group
+**Dec 2023 - Feb 2024** | Remote, Melbourne, Australia
 - Joined as an **equity-only founding engineer** in this early-stage startup
 - Developed initial codebase and **implemented **CI automation** workflows
 - Led engineering architecture decisions for **offshore startup** with global team
 - Collaborated with **distributed teams** across India, Australia, and China
 
-### SOFTWARE ENGINEER, Mercado Libre
-*Mar 2021 - Feb 2024 | Argentina*
+### Software Engineer @ Mercado Libre
+**Mar 2021 - Feb 2024** | Remote, Argentina
 - Developed scalable user interfaces using **React** with server-side rendering
+- Developed **POC, MVP and V1** of a Customer Service **LLM-based feature**, achieving a **90% success rate** in responses.
 - Became **go-to person for LLM-based solutions** across multiple teams
 - Built tracking dashboards using **DataDog**, Kibana, and NewRelic
 - Contributed to **internal UI libraries** and created onboarding documentation
 - Delivered technical talks on **accessibility** and frontend development
 
-### FULL STACK ENGINEER (Freelance)
-*Sep 2020 - Feb 2024 | Remote*
+### Full Stack Engineer @ Freelance
+**Sep 2020 - Feb 2024** | Remote
 - Developed web applications using **Typescript**, React, Vue, Gatsby, Node, Express, Hono and **Strapi** (CMS)
 - Designed user interfaces and interactive **prototypes with Figma**
 - **Rapidly adapted to new technologies** based on customer requirements
