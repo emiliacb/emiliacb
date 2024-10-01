@@ -39,7 +39,7 @@ export default function layout({
       >
       ${
         withIlustration &&
-        html`<div class="absolute w-screen h-screen overflow-hidden">
+        html`<div class="absolute w-screen h-[100svh] overflow-hidden">
           <img src="/public/tree.svg" alt="Emilia" id="cover-tree" />
         </div> `
       }
