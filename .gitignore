@@ -30,4 +30,4 @@ public/_output.css
 
 # misc
 .DS_Store
-landing/public/_output.css
+**/public/_output.css
