@@ -3,6 +3,7 @@ import { HtmlEscapedString } from "hono/utils/html";
 
 import navbar from "../navbar";
 import contact from "../contacts";
+import tree from "../tree";
 
 type LayoutProps = {
   siteData: {
@@ -16,7 +17,6 @@ type LayoutProps = {
 export default function layout({
   siteData,
   withFooter = true,
-  withIlustration = false,
   children,
 }: LayoutProps) {
   return html`
@@ -35,21 +35,18 @@ export default function layout({
         <link rel="stylesheet" href="/public/_output.css" />
       </head>
       <body
-        class="flex flex-col h-full min-h-[100svh] bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-100 prose-h1:text-3xl"
+        class="flex flex-col h-full min-h-static-screen bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-100 prose-h1:text-3xl"
       >
-      ${
-        withIlustration &&
-        html`<div class="absolute w-screen h-[100svh] overflow-hidden">
-          <img src="/public/tree.svg" alt="Emilia" id="cover-tree" />
-        </div> `
-      }
-        <div class="flex flex-col h-full min-h-[100svh]">
+        <div class="fixed w-[50vw] right-0 h-static-screen overflow-hidden">
+          ${tree()}
+        </div> 
+        <div class="flex flex-col h-full min-h-static-screen-minus-nav">
           ${navbar()}
           <main id="content" class="min-h-static-screen-minus-nav overflow-hidden flex flex-col justify-between md:justify-start w-full px-4 sm:px-8 md:pt-24 m-auto max-w-[60rem] h-full">${children}</main>
           ${
             withFooter
               ? html`<footer
-                  class="w-full flex px-4 sm:px-8 mt-24 md:mt-32 justify-center bg-yellow-200 dark:bg-yellow-900"
+                  class="w-full z-10 md:z-auto flex px-4 sm:px-8 mt-24 md:mt-32 justify-center bg-yellow-200 dark:bg-yellow-900"
                 >
                   ${contact()}
                 </footer>`
