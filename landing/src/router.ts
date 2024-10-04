@@ -10,7 +10,6 @@ import notFoundHandler from "./routes/not-found";
 const router = new Hono();
 
 router
-  .get("/", homeHandler)
   .get(
     "/public/*",
     serveStatic({
@@ -20,9 +19,10 @@ router
       },
     })
   )
-  .get("/about", aboutHandler)
-  .get("/blog/*", blogHandler)
-  .get("/services", servicesHandler)
+  .get("/:lang?", homeHandler)
+  .get("/:lang/about", aboutHandler)
+  .get("/:lang/blog/*", blogHandler)
+  .get("/:lang/services", servicesHandler)
   .get("*", notFoundHandler);
 
 export default router;

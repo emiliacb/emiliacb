@@ -1,19 +1,29 @@
 import { html, raw } from "hono/html";
 import { Mail, Linkedin, Github, Calendar } from "lucide-static";
 
-export default function contact() {
+export default function contact({ lang }: { lang: string }) {
+  // TODO: Implement i18n library
+  const scheduleCaption: Record<string, string[]> = {
+    en: ["Schedule", "a Meeting", "Schedule a Meeting"],
+    es: ["Agendar", "una consulta", "Agendar una consulta"],
+  };
+
   return html`
     <ul
       class="flex md:flex-row-reverse w-full md:w-fit justify-between md:gap-6 py-8 md:-ml-2"
-    ><li>
+    >
+      <li>
         <a
           class="flex gap-2 w-fit border border-black dark:border-white px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white"
           href="https://calendly.com/emilia-cb"
           target="_blank"
           norel="noreferrer"
-          aria-label="Schedule a Meeting"
+          aria-label="${scheduleCaption[lang][2]}"
           >${raw(Calendar)}
-          <span class="text-xs md:text-sm">Schedule</span> <span class="-ml-1 hidden md:block text-sm">a Meeting</span>
+          <span class="text-xs md:text-sm">${scheduleCaption[lang][0]}</span
+          ><span class="-ml-1 hidden md:block text-sm"
+            >${scheduleCaption[lang][1]}</span
+          >
         </a>
       </li>
       <li>
@@ -46,7 +56,6 @@ export default function contact() {
           >${raw(Github)}</a
         >
       </li>
-      
     </ul>
   `;
 }

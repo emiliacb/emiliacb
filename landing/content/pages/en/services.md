@@ -1,13 +1,13 @@
-# What I Offer?
+# What I Do?
 
 Designed to boost your business from an **interdisciplinary** **perspective**. I'm here to help you transform your ideas into **real products** that your users love.
 
 Table of Contents:
-- [Full-Stack Web Development](#full-stack%20web%20development)
-- [No-code Solutions](#no-code%20solutions)
-- [Generative AI Solutions](#generative%20ai%20solutions)
+- [Full-Stack Web Development](#fullstack-web-development)
+- [No-code Solutions](#nocode-solutions)
+- [Generative AI Solutions](#generative-ai-solutions)
 - [Mentorship](#mentorship)
-- [Corporate Training & Workshops](#corporate%20training%20%26%20workshops)
+- [Corporate Training & Workshops](#corporate-training--workshops)
 
 ## Full-Stack Web Development
 

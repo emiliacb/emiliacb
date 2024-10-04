@@ -15,6 +15,8 @@ export default async function handler(c: Context, next: Next) {
     const view = layout({
       siteData: {
         title: `${post.data.title} | ємιℓιαċв`,
+        description: post.data.description,
+        lang: "en",
       },
       withFooter: true,
       children: html`<div class="markdown-content">
@@ -32,6 +34,8 @@ export default async function handler(c: Context, next: Next) {
   const view = layout({
     siteData: {
       title: "blog | ємιℓιαċв",
+      description: "blog | ємιℓιαċв",
+      lang: "en",
     },
     withFooter: true,
     children: html`<div class="flex flex-col space-y-10 text-pretty">

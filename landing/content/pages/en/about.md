@@ -1,23 +1,26 @@
 # Who I Am
 
-Over the past **four years**, I've focused on developing scalable **full-stack products** using diverse technologies tackling customer pain points, including **Generative AI**. 
+Over the past **four years**, I've focused on developing scalable **full-stack products** using diverse technologies tackling customer pain points, including **Generative AI**.
 
 Table of Contents:
-- [Why Work With Me?](#why%20work%20with%20me%3F)
-- [Professional Journey](#professional%20journey)
-- [Skills & Expertise](#skills%20%26%20expertise)
+
+- [Why Work With Me?](#why-work-with-me)
+- [Professional Journey](#professional-journey)
+- [Skills & Expertise](#skills--expertise)
 - [Languages](#languages)
 
 ## Why Work With Me?
 
-**I'm ready to jump into your project** **and take full** **ownership,** **whether** **working autonomously or** **collaboratively leading global and agile teams.**
+**I'm ready to jump into your project** **and take full** **ownership,** **whether** **working autonomously or** **collaboratively in teams.**
 
 I bring a holistic approach to every project. My background as a former librarian gives me a unique perspective on **information architecture** and **knowledge management**, which I incorporate into my engineering and design work. I constantly push for cross-functional collaboration and **interdisciplinary thinking**.
 
 ## Professional Journey
 
 ### Product Engineer - AI Team @ BuildWithin
+
 **Feb 2024 - Present** | Remote, USA
+
 - Led development of AI features, resulting in **80% reduction in** **generation costs**
 - Implemented full-stack solutions using **Next.js**, **Langchain**, Langsmith, and **PostgreSQL**
 - Conducted user interviews and significantly contributed to **UI and product design**
@@ -28,14 +31,18 @@ I bring a holistic approach to every project. My background as a former libraria
 - Enhanced advanced **accessibility** features for improved inclusivity
 
 ### Founding Software Engineer @ Fair Share Group
+
 **Dec 2023 - Feb 2024** | Remote, Melbourne, Australia
+
 - Joined as an **equity-only founding engineer** in this early-stage startup
 - Developed initial codebase and **implemented** **CI automation** workflows
 - Led engineering architecture decisions for **offshore startup** with global team
 - Collaborated with **distributed teams** across India, Australia, and China
 
 ### Software Engineer @ Mercado Libre
+
 **Mar 2021 - Feb 2024** | Remote, Argentina
+
 - Developed scalable user interfaces using **React** with server-side rendering
 - Developed **POC, MVP and V1** of a Customer Service **LLM-based feature**, achieving a **90% success rate** in responses.
 - Became **go-to person for LLM-based solutions** across multiple teams
@@ -44,13 +51,16 @@ I bring a holistic approach to every project. My background as a former libraria
 - Delivered technical talks on **accessibility** and frontend development
 
 ### Full Stack Engineer @ Freelance
+
 **Sep 2020 - Feb 2024** | Remote
+
 - Developed web applications using **Typescript**, React, Vue, Gatsby, Node, Express, Hono and **Strapi** (CMS)
 - Designed user interfaces and interactive **prototypes with Figma**
 - **Rapidly adapted to new technologies** based on customer requirements
 - Direct communication with **clients and stakeholders**
 
 ## Skills & Expertise
+
 - **Frontend & Backend Development**: React, Next.js, Express, Vue, Gatsby, Langchain, PostgreSQL, Lerna, Strapi, Tailwind...
 - **Design**: Figma, Photoshop, Miro, Krita, Gimp
 - **AI & Data**: GenAI solutions, Langchain, Langsmith, TensorFlow, Ollama, Replicate, VectorDB, Knowledge Graphs

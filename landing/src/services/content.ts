@@ -8,7 +8,7 @@ function parseContent(file: string) {
 
   // Add id to headings
   renderer.heading = ({ text, depth }: Tokens.Heading) => {
-    const slug = encodeURIComponent(text.toLowerCase());
+    const slug = text.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/ /g, "-");
 
     if (depth === 1) {
       return `<h${depth} id="${slug}">${text}</h${depth}>`;
@@ -25,7 +25,7 @@ function parseContent(file: string) {
 export async function getContent(filePath: string) {
   try {
     if (cache.has(filePath)) {
-      return cache.get(filePath);
+      //return cache.get(filePath);
     }
     if (!fs.existsSync(filePath)) {
       throw new Error(`File not found: ${filePath}`);
