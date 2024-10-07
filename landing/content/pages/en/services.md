@@ -11,7 +11,7 @@ Table of Contents:
 
 ## Full-Stack Web Development
 
-**Custom development** of scalable web applications using technologies like React, Next.js and Serverless.
+**Custom development** of scalable web applications using technologies like React, Next.js, Node and AWS.
 
 Examples:
 - Highly personalized landings or web applications

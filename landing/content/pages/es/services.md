@@ -1,6 +1,6 @@
 # Qué Hago
 
-Diseñado para impulsar tu negocio desde una **perspectiva interdisciplinaria**. Estoy aquí para ayudarte a transformar tus ideas en **productos reales** que tus usuarios amen.
+Servicios pensados para impulsar tu negocio desde una **perspectiva interdisciplinaria**. Mi objetivo es ayudarte a transformar tus ideas en **productos reales** que tus usuarios amen.
 
 Tabla de Contenidos:
 - [Desarrollo Web Full-Stack](#desarrollo-web-fullstack)
@@ -11,7 +11,7 @@ Tabla de Contenidos:
 
 ## Desarrollo Web Full-Stack
 
-**Desarrollo personalizado** de aplicaciones web escalables utilizando tecnologías como React, Next.js y Serverless.
+**Desarrollo personalizado** de aplicaciones web escalables utilizando tecnologías como React, Next.js, Node y AWS.
 
 Ejemplos:
 - Landings o aplicaciones web altamente personalizadas
