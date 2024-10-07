@@ -9,7 +9,6 @@ export default function tree() {
     <dotlottie-player
       src="/public/tree.lottie"
       background="transparent"
-      speed="0.4"
       class="cover-tree"
       loop
       autoplay
