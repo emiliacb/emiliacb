@@ -38,6 +38,65 @@ export default function layout({
         <meta name="description" content="${siteData.description}" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>" />
         <link rel="stylesheet" href="/public/_output.css" />
+        <style>
+          @keyframes move-out {
+            0% {
+              transform-origin: left;
+              transform: scale(1) translateX(0);
+              opacity: 100%;
+            }
+
+            50% {
+              transform-origin: left;
+              transform: scale(1) translateX(0);
+              opacity: 0%;
+            }
+
+            100% {
+              transform-origin: left;
+              transform: scale(0.8) translateX(-100%);
+              opacity: 0%;
+            }
+          }
+
+          @keyframes move-in {
+            from {
+              transform: translateX(100%);
+              opacity: 0%;
+            }
+
+            to {
+              transform: translateX(0%);
+              opacity: 100%;
+            }
+          }
+
+          @view-transition {
+            navigation: auto;
+          }
+          
+          #content {
+            view-transition-name: content;
+          }
+
+          html {
+            scroll-behavior: auto;
+          }
+          
+          @media (prefers-reduced-motion: no-preference) {
+            html {
+              scroll-behavior: smooth;
+            }
+
+            ::view-transition-old(content) {
+              animation: 150ms cubic-bezier(0.17, 0.67, 0.81, 0.35) both move-out;
+            }
+
+            ::view-transition-new(content) {
+              animation: 300ms cubic-bezier(0.42, 0.28, 0.42, 0.89) both move-in;
+            }
+          }
+        </style>
       </head>
       <body
         class="flex flex-col h-full min-h-static-screen bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-100 prose-h1:text-3xl"
