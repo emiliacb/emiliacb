@@ -10,6 +10,7 @@ export default function tree() {
       src="/public/tree.lottie"
       background="transparent"
       class="cover-tree"
+      speed="0.5"
       loop
       autoplay
     >
