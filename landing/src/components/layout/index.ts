@@ -28,14 +28,33 @@ export default function layout({
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        
+        <!-- Primary Meta Tags -->
+        <title>${siteData.title}</title>
+        <meta name="title" content="Emilia" />
+        <meta name="description" content=${siteData.description} />
+
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://emiliacabral.com/" />
+        <meta property="og:title" content="Emilia" />
+        <meta property="og:description" content=${siteData.description} />
+        <meta property="og:image" content="/public/preview.png" />
+
+        <!-- Twitter -->
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://emiliacabral.com/" />
+        <meta property="twitter:title" content="Emilia" />
+        <meta property="twitter:description" content=${siteData.description} />
+        <meta property="twitter:image" content="/public/preview.png" />
+
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
           href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
           rel="stylesheet"
         />
-        <title>${siteData.title}</title>
-        <meta name="description" content="${siteData.description}" />
+        
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>" />
         <link rel="stylesheet" href="/public/_output.css" />
         <style>

@@ -16,7 +16,7 @@ export default async function handler(c: Context) {
   const view = layout({
     siteData: {
       title: "What I Offer | ємιℓιαċв",
-      description: "What I Offer | ємιℓιαċв",
+      description: "Product Engineer and former librarian",
       lang,
     },
     withFooter: true,
