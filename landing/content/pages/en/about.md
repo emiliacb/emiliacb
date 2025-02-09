@@ -1,6 +1,6 @@
 # Who I Am
 
-Over the past **four years**, I've focused on developing scalable **full-stack products** using diverse technologies tackling customer pain points, including **Generative AI**.
+**Senior Software Engineer with a product mindset**. Specializing in web full-stack development and applied ML/**GenAI integration**, with almost **five years of experience** from ideation to deployment. 
 
 Table of Contents:
 
