@@ -1,6 +1,6 @@
 # Quién Soy
 
-Durante los últimos **cuatro años**, me enfoqué en desarrollar **productos _full-stack_ escalables** utilizando diversas tecnologías para abordar los _pain points_ de los clientes, incluyendo **GenAI**.
+**Senior Software Engineer con mentalidad de producto**. Especializada en desarrollo web full-stack y applicación de ML/**GenAI**, con casi **cinco años de experiencia** desde la idea hasta el deploy.
 
 Tabla de Contenidos:
 - [¿Por Qué Trabajar Conmigo?](#por-qu-trabajar-conmigo)
