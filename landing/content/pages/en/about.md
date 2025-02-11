@@ -1,6 +1,6 @@
 # Who I Am
 
-**Senior Software Engineer with a product mindset**. Specializing in web full-stack development and applied ML/**GenAI integration**, with almost **five years of experience** from ideation to deployment. 
+**Senior Software Engineer with a product mindset**. Specializing in web full-stack development and **GenAI integration**, with almost **five years of experience** from iͪ̔d̴eḁͯti͕on to deployment. 
 
 Table of Contents:
 

@@ -1,6 +1,6 @@
 # Quién Soy
 
-**Senior Software Engineer con mentalidad de producto**. Especializada en desarrollo web full-stack y applicación de ML/**GenAI**, con casi **cinco años de experiencia** desde la idea hasta el deploy.
+**Senior Software Engineer con mentalidad de producto**. Especializada en desarrollo web full-stack y **la integración de GenAI**, con casi **cinco años de experiencia** desde la idea hasta el deploy.
 
 Tabla de Contenidos:
 - [¿Por Qué Trabajar Conmigo?](#por-qu-trabajar-conmigo)
