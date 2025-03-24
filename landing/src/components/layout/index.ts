@@ -215,7 +215,7 @@ export default function layout({
           </main>
           ${withFooter
             ? html`<footer
-                class="w-full z-10 md:z-auto flex px-4 sm:px-8 mt-24 md:mt-32 justify-center bg-yellow-200 dark:bg-yellow-900"
+                class="w-full z-10 md:z-auto flex px-4 sm:px-8 mt-24 md:mt-32 justify-center bg-yellow-200 dark:bg-blue-900"
               >
                 ${contact({
                   lang: siteData.lang,
