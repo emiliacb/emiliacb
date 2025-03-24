@@ -9,7 +9,7 @@ export default function navbar({ lang }: { lang: string }) {
 
   return html`
     <nav
-      class="sticky px-4 sm:pl-6 sm:pr-8 top-0 pt-2 md:pt-4 pb-2 mb-4 md:mb-0 flex flex-wrap mt-4 md:mt-12 justify-between w-full max-w-[60rem] m-auto bg-stone-100/70 backdrop-blur-sm dark:bg-stone-800/80 border-b border-stone-400 z-50 light-gradient-projection before:border-b-[2px] before:-bottom-[1px] before:border-green-300 dark:before:border-blue-700 before:!rotate-0 [clip-path:polygon(0_0,100%_0,100%_100%,0_100%)]"
+      class="sticky px-4 sm:pl-6 sm:pr-8 top-0 pt-2 md:pt-4 pb-2 mb-4 md:mb-0 flex flex-wrap mt-4 md:mt-12 justify-between w-full max-w-[60rem] m-auto bg-stone-100/70 backdrop-blur-sm dark:bg-stone-800/80 border-b border-stone-400 z-50 light-gradient-projection before:border-b-[2px] before:-bottom-[1px] before:border-green-300 dark:before:border-blue-700 before:!rotate-0 before:blur-0 [clip-path:polygon(0_0,100%_0,100%_100%,0_100%)]"
     >
       <a
         class="sr-only focus:not-sr-only focus:absolute top-1 left-1 focus:p-3 text-white bg-black"
