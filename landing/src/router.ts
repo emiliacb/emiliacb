@@ -6,6 +6,7 @@ import blogHandler from "./routes/blog";
 import servicesHandler from "./routes/services";
 import aboutHandler from "./routes/about";
 import notFoundHandler from "./routes/not-found";
+import { langMiddleware } from "./middleware/lang";
 
 const router = new Hono();
 
@@ -19,6 +20,7 @@ router
       },
     })
   )
+  .use("*", langMiddleware)
   .get("/:lang?", homeHandler)
   .get("/:lang/about", aboutHandler)
   .get("/:lang/blog/*", blogHandler)

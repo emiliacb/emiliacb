@@ -5,9 +5,11 @@ import layout from "../../components/layout";
 import { getAllPosts, getPost } from "../../services/posts";
 
 export default async function handler(c: Context, next: Next) {
-  const slug = c.req.path.replace(/^\/blog\/?/, "");
+  const lang = c.req.param("lang");
+  const slug = c.req.path.split("/").pop();
+  const isPost = slug && slug !== "blog";
 
-  if (slug) {
+  if (isPost) {
     const post = await getPost(slug);
 
     if (!post) return await next();
@@ -16,7 +18,7 @@ export default async function handler(c: Context, next: Next) {
       siteData: {
         title: `${post.data.title} | ємιℓιαċв`,
         description: post.data.description,
-        lang: "en",
+        lang: lang,
       },
       withFooter: true,
       children: html`<div class="markdown-content">
@@ -35,7 +37,7 @@ export default async function handler(c: Context, next: Next) {
     siteData: {
       title: "blog | ємιℓιαċв",
       description: "blog | ємιℓιαċв",
-      lang: "en",
+      lang: lang,
     },
     withFooter: true,
     children: html`<div class="flex flex-col space-y-10 text-pretty">
@@ -43,9 +45,11 @@ export default async function handler(c: Context, next: Next) {
         posts
           .map(
             (post) => `
-          <a class="group" href="/blog/${post.slug}">
-          <article class="flex flex-col space-y-2 justify-center border-l-2 border-transparent p-2 pl-4 group-hover:border-stone-400 transition duration-100 min-h-12">
-          <h2 class="font-bold">${post.title} </h2>
+          <a class="group light-gradient-projection before:border-b-[5px] before:border-green-50 dark:before:border-blue-900/40 hover:bg-stone-600 hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-900" href="/${lang}/blog/${
+              post.slug
+            }">
+          <article class="flex flex-col space-y-2 justify-center p-2 pl-4 transition duration-100 min-h-12">
+          <h2 class="font-bold ">${post.title} </h2>
           ${post.description && `<span>${post.description}</span>`}
           <span class="text-xs font-light">${post.date.toLocaleDateString()}</span>  
           </article>

@@ -2,18 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --tree-invert: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tree-invert: 1;
+  }
+}
+
+@keyframes gradientAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes treeAppear {
+  from {
+    opacity: 0.7;
+    filter: saturate(0.6) invert(var(--tree-invert, 0));
+  }
+  to {
+    opacity: 1;
+    filter: saturate(0.9) invert(var(--tree-invert, 0));
+  }
+}
+
 .lucide {
   @apply size-4 md:size-[1.3rem];
 }
 
 .markdown-content {
-  @apply prose prose-stone dark:prose-invert text-pretty prose-headings:pt-20 prose-headings:-mt-4 prose-headings:mb-2 prose-h1:mb-10 prose-h1:font-light prose-h2:font-normal prose-a:ml-[2px] prose-a:outline prose-a:outline-yellow-200 dark:prose-a:outline-yellow-900 prose-a:outline-offset-0 prose-a:outline-2 prose-a:bg-yellow-200 dark:prose-a:bg-yellow-900 prose-a:no-underline prose-a:font-light focus-visible:prose-a:outline-red-500 hover:prose-a:bg-black hover:prose-a:text-white hover:prose-a:outline-black dark:hover:prose-a:bg-white dark:hover:prose-a:text-black dark:hover:prose-a:border-white dark:hover:prose-a:outline-white;
+  @apply prose prose-stone dark:prose-invert;
+  @apply text-pretty;
+  @apply prose-headings:pt-20 prose-headings:-mt-4 prose-headings:mb-2;
+  @apply prose-h1:mb-10 prose-h1:font-light;
+  @apply prose-h2:font-normal;
+  @apply prose-a:ml-[2px] prose-a:outline prose-a:outline-yellow-200 prose-a:outline-offset-0 prose-a:outline-2;
+  @apply prose-a:bg-yellow-200 prose-a:no-underline prose-a:font-light;
+  @apply dark:prose-a:outline-blue-900 dark:prose-a:bg-blue-900;
+  @apply focus-visible:prose-a:outline-red-500;
+  @apply hover:prose-a:bg-black hover:prose-a:text-white hover:prose-a:outline-black;
+  @apply dark:hover:prose-a:bg-white dark:hover:prose-a:text-black dark:hover:prose-a:border-white dark:hover:prose-a:outline-white;
+  @apply prose-a:relative prose-a:light-gradient-projection;
 }
 
 .cover-tree {
   @apply absolute h-[80%] 2xl:h-[80vh] max-h-[1000px] opacity-20 md:opacity-40 lg:opacity-80 w-auto bottom-0 object-cover dark:invert;
   right: max(30vw, 200px);
   margin-right: -300px;
+
+  @media (prefers-reduced-motion: no-preference) {
+    animation: treeAppear 1s ease-in forwards;
+    transform-origin: bottom left;
+    will-change: opacity, saturate;
+  }
 }
 
 @layer utilities {
@@ -45,5 +94,55 @@
   .no-scrollbar {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
+  }
+
+  .light-gradient-projection {
+    @apply relative;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100%), 0 calc(100% + 3px));
+  }
+
+  .light-gradient-projection::before {
+    @apply absolute pointer-events-none -bottom-[3px] -left-[3px] w-full h-12 border-b-[3px] border-green-50 dark:border-blue-700;
+    content: "";
+    transform-origin: bottom left;
+    rotate: 1.5deg;
+
+    @media (prefers-reduced-motion: no-preference) {
+      animation: gradientAppear 1.2s ease-out forwards;
+    }
+  }
+
+  .radial-maroon-gradient {
+    background-image: radial-gradient(
+      circle at bottom left,
+      rgba(118, 51, 75, 0.4) 10%,
+      rgba(118, 51, 75, 0.2) 11%,
+      rgba(0, 68, 165, 0.4) 20%,
+      rgba(0, 68, 165, 0.2) 21%,
+      transparent 40%
+    );
+
+    @media (prefers-reduced-motion: no-preference) {
+      animation: gradientAppear 1s ease-in forwards;
+      transform-origin: bottom left;
+      will-change: transform, opacity;
+    }
+  }
+
+  .radial-green-gradient {
+    background-image: radial-gradient(
+      circle at bottom left,
+      rgba(252, 190, 80, 0.7) 10%,
+      rgba(252, 190, 80, 0.4) 11%,
+      rgba(135, 207, 183, 0.7) 20%,
+      rgba(135, 207, 183, 0.4) 21%,
+      transparent 50%
+    );
+
+    @media (prefers-reduced-motion: no-preference) {
+      animation: gradientAppear 1s ease-in forwards;
+      transform-origin: bottom left;
+      will-change: transform, opacity;
+    }
   }
 }

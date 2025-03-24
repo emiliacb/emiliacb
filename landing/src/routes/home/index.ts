@@ -6,17 +6,13 @@ import { getContent } from "../../services/content";
 import layout from "../../components/layout";
 import contact from "../../components/contacts";
 
+// We don't want to add a /lang path in the home route for aesthetic reasons
 const getLang = (c: Context) => {
-  let lang;
-
   const paramLang = c.req.param("lang");
-  if (paramLang) {
-    lang = paramLang;
-  } else {
-    const acceptLang = c.req.header("accept-language")?.split(",")[0];
-    console.log(acceptLang);
-    lang = acceptLang && acceptLang.includes("es") ? "es" : "en";
-  }
+  if (paramLang) return paramLang;
+
+  const acceptLang = c.req.header("accept-language")?.split(",")[0];
+  const lang = acceptLang && acceptLang.includes("es") ? "es" : "en";
 
   return lang;
 };

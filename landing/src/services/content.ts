@@ -6,9 +6,13 @@ const cache = new Map();
 function parseContent(file: string) {
   const renderer = new marked.Renderer();
 
-  // Add id to headings
+  // Customize the renderer to add id attributes to heading elements
+  // This enables direct linking to specific sections via anchor tags
   renderer.heading = ({ text, depth }: Tokens.Heading) => {
-    const slug = text.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/ /g, "-");
+    const slug = text
+      .toLowerCase()
+      .replace(/[^a-z0-9 ]/g, "")
+      .replace(/ /g, "-");
 
     if (depth === 1) {
       return `<h${depth} id="${slug}">${text}</h${depth}>`;

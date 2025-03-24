@@ -1,7 +1,0 @@
-{
-  "landing": {
-    "src": { "routes": { "post": {} } },
-    "dist": { "routes": { "post": {} } },
-    "public": {}
-  }
-}
