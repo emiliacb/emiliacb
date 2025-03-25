@@ -4,6 +4,11 @@ class DropdownTrigger extends HTMLElement {
     this.attachShadow({ mode: "open" });
     this.shadowRoot.innerHTML = `
       <style>
+        /* Hide the slot content until the component is defined */
+        :host(:not(:defined)) slot {
+          display: none;
+        }
+
         .dropdown-content {
           display: none;
           position: absolute;
@@ -52,6 +57,7 @@ class DropdownTrigger extends HTMLElement {
     this.content = this.shadowRoot.querySelector('[part="content"]');
     this.label = this.shadowRoot.querySelector('[part="label"]');
     this.icon = this.shadowRoot.querySelector(".icon");
+
     this.trigger.addEventListener("click", () => this.toggle());
     this.label.textContent = this.getAttribute("label") || "";
 
