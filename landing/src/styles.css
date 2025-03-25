@@ -163,10 +163,6 @@
   }
 }
 
-dropdown-trigger:not(:defined) * {
-  @apply hidden;
-}
-
 dropdown-trigger:not(:defined) dropdown-trigger::part(content) {
   @apply hidden;
 }
