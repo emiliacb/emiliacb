@@ -34,7 +34,6 @@ export default async function handler(c: Context) {
       lang,
     },
     withFooter: false,
-    withIlustration: true,
     children: html`<div class="markdown-content">${raw(htmlContent)}</div>
       <footer class="mt-12 md:mt-24">${contact({ lang })}</footer> `,
   });

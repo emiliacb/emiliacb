@@ -162,3 +162,11 @@
     }
   }
 }
+
+dropdown-trigger::part(trigger) {
+  @apply px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit;
+}
+
+dropdown-trigger::part(icon) {
+  @apply dark:stroke-white;
+}

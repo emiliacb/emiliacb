@@ -223,6 +223,7 @@ export default function layout({
             : null}
         </div>
       </body>
+      <script src="/public/dropdown.js"></script>
     </html>
   `;
 }
