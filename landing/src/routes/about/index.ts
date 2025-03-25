@@ -14,7 +14,7 @@ export default async function handler(c: Context) {
 
   console.log(filePath);
 
-  const htmlContent = await getContent(filePath);
+  const htmlContent = await getContent(filePath, lang);
 
   const view = layout({
     siteData: {

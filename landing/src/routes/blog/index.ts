@@ -40,23 +40,36 @@ export default async function handler(c: Context, next: Next) {
       lang: lang,
     },
     withFooter: true,
-    children: html`<div class="flex flex-col space-y-10 text-pretty">
-      ${raw(
-        posts
-          .map(
-            (post) => `
-          <a class="group light-gradient-projection before:border-b-[5px] before:border-green-50 dark:before:border-blue-900/40 hover:bg-stone-600 hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-900" href="/${lang}/blog/${
-              post.slug
-            }">
-          <article class="flex flex-col space-y-2 justify-center p-2 pl-4 transition duration-100 min-h-12">
-          <h2 class="font-bold ">${post.title} </h2>
-          ${post.description && `<span>${post.description}</span>`}
+    withIlustration: true,
+    children: html` <div>
+      <div class="markdown-content">
+        <h1 class="text-2xl font-bold">Journal</h1>
+      </div>
+      <div class="flex flex-col space-y-3 text-pretty">
+        ${!posts.length &&
+        html`<div class="text-left text-stone-800 dark:text-stone-300">
+          <h2 class="text-xl">Posts coming soon...</h2>
+        </div>`}
+        ${raw(
+          posts
+            .map(
+              (post) => `
+          <a class="group max-w-3xl bg-yellow-200 dark:bg-blue-900 hover:bg-black hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-900" href="/${lang}/blog/${
+                post.slug
+              }">
+          <article class="flex flex-col space-y-2 justify-center p-2 pl-4 min-h-12">
+          <h2 class="font-bold">${post.title} </h2>
+          ${
+            post.description &&
+            `<span class="text-sm text-stone-800 dark:text-stone-300 group-hover:text-stone-100 dark:group-hover:text-stone-900 line-clamp-3">${post.description}</span>`
+          }
           <span class="text-xs font-light">${post.date.toLocaleDateString()}</span>  
           </article>
           </a>`
-          )
-          .join("")
-      )}
+            )
+            .join("")
+        )}
+      </div>
     </div>`,
   });
 

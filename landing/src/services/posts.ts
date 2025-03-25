@@ -1,7 +1,10 @@
 import fs from "fs";
 import path from "path";
+
 import { marked } from "marked";
 import matter from "gray-matter";
+
+import { parseContent } from "../utils/parse-content";
 
 export async function getAllPosts() {
   try {
@@ -34,7 +37,7 @@ export async function getPost(slug: string) {
     const filePath = path.join(__dirname, `../../content/blog/${slug}.md`);
     const file = fs.readFileSync(filePath, "utf8");
     const { data, content } = matter(file);
-    const htmlContent = await marked(content);
+    const htmlContent = await parseContent(content, "en");
 
     return { data, htmlContent };
   } catch (error: any) {

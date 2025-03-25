@@ -25,7 +25,7 @@ export default async function handler(c: Context) {
     `../../../content/pages/${lang}/home.md`
   );
 
-  const htmlContent = await getContent(filePath);
+  const htmlContent = await getContent(filePath, lang);
 
   const view = layout({
     siteData: {

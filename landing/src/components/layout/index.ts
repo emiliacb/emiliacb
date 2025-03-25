@@ -136,7 +136,7 @@ export default function layout({
               opacity: 100%;
             }
 
-            50% {
+            20% {
               transform-origin: left;
               transform: scale(1) translateX(0);
               opacity: 0%;
@@ -179,12 +179,11 @@ export default function layout({
             }
 
             ::view-transition-old(content) {
-              animation: 150ms cubic-bezier(0.17, 0.67, 0.81, 0.35) both
-                move-out;
+              animation: 50ms cubic-bezier(0.17, 0.67, 0.81, 0.35) both move-out;
             }
 
             ::view-transition-new(content) {
-              animation: 300ms cubic-bezier(0.42, 0.28, 0.42, 0.89) both move-in;
+              animation: 200ms cubic-bezier(0.42, 0.28, 0.42, 0.89) both move-in;
             }
           }
         </style>

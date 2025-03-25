@@ -36,7 +36,7 @@
 }
 
 .lucide {
-  @apply size-4 md:size-[1.3rem];
+  @apply relative size-4 md:size-[1.3rem];
 }
 
 .markdown-content {
@@ -87,40 +87,54 @@
     height: 100svh;
   }
 
-  /* Chrome, Safari and Opera */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
+  /* Scrollbar */
   .no-scrollbar {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
   }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
 
   .light-gradient-projection {
-    @apply relative;
-    clip-path: polygon(0 0, 100% 0, 100% calc(100%), 0 calc(100% + 3px));
+    @apply relative py-1 px-2;
+    clip-path: polygon(
+      -2px -2px,
+      calc(100% + 2px) -2px,
+      calc(100% + 2px) calc(100% + 2px),
+      -2px calc(100% + 3px)
+    );
+  }
+
+  .light-gradient-projection:focus-visible {
+    clip-path: polygon(
+      -2px -2px,
+      calc(100% + 2px) -2px,
+      calc(100% + 2px) calc(100% + 2px),
+      -2px calc(100% + 2px)
+    );
   }
 
   .light-gradient-projection::before {
-    @apply absolute pointer-events-none -bottom-[3px] -left-[3px] w-full h-12 border-b-[3px] border-green-50 dark:border-blue-700;
+    @apply absolute pointer-events-none -bottom-[3px] -left-[3px] w-full h-12 border-b-[3px] border-green-300 dark:border-blue-700 focus-visible:border-red-500;
     content: "";
-    transform-origin: bottom left;
     rotate: 1.5deg;
     filter: blur(1px) drop-shadow(0 0 5px rgba(200, 200, 200, 0.2));
 
     @media (prefers-reduced-motion: no-preference) {
       animation: gradientAppear 1.2s ease-out forwards;
+      transform-origin: bottom left;
+      will-change: transform, opacity;
     }
   }
 
   .radial-maroon-gradient {
     background-image: radial-gradient(
       circle at bottom left,
-      rgba(118, 51, 75, 0.4) 10%,
-      rgba(118, 51, 75, 0.2) 11%,
-      rgba(0, 68, 165, 0.4) 20%,
-      rgba(0, 68, 165, 0.2) 21%,
+      rgba(118, 51, 75, 0.3) 10%,
+      rgba(118, 51, 75, 0.1) 11%,
+      rgba(0, 68, 165, 0.3) 20%,
+      rgba(0, 68, 165, 0.1) 21%,
       transparent 40%
     );
 
@@ -134,10 +148,10 @@
   .radial-green-gradient {
     background-image: radial-gradient(
       circle at bottom left,
-      rgba(252, 190, 80, 0.7) 10%,
-      rgba(252, 190, 80, 0.4) 11%,
-      rgba(135, 207, 183, 0.7) 20%,
-      rgba(135, 207, 183, 0.4) 21%,
+      rgba(252, 190, 80, 0.3) 10%,
+      rgba(252, 190, 80, 0.1) 11%,
+      rgba(135, 207, 183, 0.3) 20%,
+      rgba(135, 207, 183, 0.1) 21%,
       transparent 50%
     );
 

@@ -2,11 +2,7 @@
 
 **Senior Software Engineer con mentalidad de producto**. Especializada en desarrollo web full-stack y **la integración de GenAI**, con casi **cinco años de experiencia** desde la idea hasta el deploy.
 
-Tabla de Contenidos:
-- [¿Por Qué Trabajar Conmigo?](#por-qu-trabajar-conmigo)
-- [Trayectoria Profesional](#trayectoria-profesional)
-- [Habilidades](#habilidades)
-- [Idiomas](#idiomas)
+%table-of-contents%
 
 ## ¿Por Qué Trabajar Conmigo?
 
@@ -17,7 +13,9 @@ Aporto un enfoque holístico a cada proyecto. Mi experiencia como ex bibliotecar
 ## Trayectoria Profesional
 
 ### Ingeniera de Producto - Equipo de IA @ BuildWithin
+
 **Feb 2024 - Presente** | Remoto, EE. UU.
+
 - Lideré el desarrollo de funciones de IA, resultando en una **reducción del 80% en los costos de generación**
 - Implementé soluciones full-stack utilizando **Next.js**, **Langchain**, Langsmith y **PostgreSQL**
 - Realicé entrevistas con usuarios y contribuí significativamente al **diseño de UI y producto**
@@ -28,14 +26,18 @@ Aporto un enfoque holístico a cada proyecto. Mi experiencia como ex bibliotecar
 - Mejoré las funciones avanzadas de **accesibilidad** para una mayor inclusividad
 
 ### Ingeniera de Software Fundadora @ Fair Share Group
+
 **Dic 2023 - Feb 2024** | Remoto, Melbourne, Australia
+
 - Me uní como **ingeniera fundadora solo con participación accionaria** en esta startup en etapa temprana
 - Desarrollé la base de código inicial e **implementé** flujos de trabajo de **automatización de CI**
 - Lideré decisiones de arquitectura de ingeniería para **startup offshore** con equipo global
 - Colaboré con **equipos distribuidos** en India, Australia y China
 
 ### Ingeniera de Software @ Mercado Libre
+
 **Mar 2021 - Feb 2024** | Remoto, Argentina
+
 - Desarrollé interfaces de usuario escalables utilizando **React** con renderizado del lado del servidor
 - Desarrollé **POC, MVP y V1** de una **función basada en LLM** para Servicio al Cliente, logrando una **tasa de éxito del 90%** en las respuestas.
 - Me convertí en la **persona de referencia para soluciones basadas en LLM** en múltiples equipos
@@ -44,13 +46,16 @@ Aporto un enfoque holístico a cada proyecto. Mi experiencia como ex bibliotecar
 - Impartí charlas técnicas sobre **accesibilidad** y desarrollo frontend
 
 ### Ingeniera Full Stack @ Freelance
+
 **Sep 2020 - Feb 2024** | Remoto
+
 - Desarrollé aplicaciones web utilizando **Typescript**, React, Vue, Gatsby, Node, Express, Hono y **Strapi** (CMS)
 - Diseñé interfaces de usuario y **prototipos interactivos con Figma**
 - **Me adapté rápidamente a nuevas tecnologías** basadas en los requisitos del cliente
 - Comunicación directa con **clientes y partes interesadas**
 
 ## Habilidades
+
 - **Desarrollo Frontend y Backend**: React, Next.js, Express, Vue, Gatsby, Langchain, PostgreSQL, Lerna, Strapi, Tailwind...
 - **Diseño**: Figma, Photoshop, Miro, Krita, Gimp
 - **IA y Datos**: Soluciones de GenAI, Langchain, Langsmith, TensorFlow, Ollama, Replicate, VectorDB, Grafos de Conocimiento

@@ -6,7 +6,7 @@ import blogHandler from "./routes/blog";
 import servicesHandler from "./routes/services";
 import aboutHandler from "./routes/about";
 import notFoundHandler from "./routes/not-found";
-import { langMiddleware } from "./middleware/lang";
+import { langMiddleware } from "./middlewares/lang";
 
 const router = new Hono();
 

@@ -6,6 +6,8 @@ import layout from "../../components/layout";
 export default async function handler(c: Context) {
   const siteData = {
     title: "404 | ємιℓιαċв",
+    description: "Page not found",
+    lang: "en",
   };
 
   const content = html`<p>404</p>`;

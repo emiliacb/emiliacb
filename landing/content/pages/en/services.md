@@ -2,18 +2,14 @@
 
 Designed to boost your business from an **interdisciplinary** **perspective**. I'm here to help you transform your ideas into **real products** that your users love.
 
-Table of Contents:
-- [Full-Stack Web Development](#fullstack-web-development)
-- [No-code Solutions](#nocode-solutions)
-- [Generative AI Solutions](#generative-ai-solutions)
-- [Mentorship](#mentorship)
-- [Corporate Training & Workshops](#corporate-training--workshops)
+%table-of-contents%
 
 ## Full-Stack Web Development
 
 **Custom development** of scalable web applications using technologies like React, Next.js, Node and AWS.
 
 Examples:
+
 - Highly personalized landings or web applications
 - **E-commerce** platforms with dynamic product catalogs
 - Applications with **real-time updates**
@@ -24,6 +20,7 @@ Examples:
 Design and development using platforms like Framer, Zapier, or Retool for **faster delivery** and **lower costs**, with some limitations in customization.
 
 Examples:
+
 - **Minimum viable products**
 - Blog sites with ready-to-use themes
 - Small business websites with pre-built templates
@@ -35,6 +32,7 @@ Examples:
 Implementation and optimization of GenAI technologies tailored to your business needs, reducing costs and enhancing performance.
 
 Examples:
+
 - Automated customer support **chatbots**
 - Personalized marketing **content generators**
 - Image and video generation platforms
@@ -44,6 +42,7 @@ Examples:
 Personalized **1:1 mentorship** focusing on full-stack development or AI technologies.
 
 Examples:
+
 - Guidance on building a portfolio project
 - Mentorship on scaling a web application
 
@@ -52,6 +51,7 @@ Examples:
 Custom **training sessions for teams** on web development and AI, leveraging the latest industry practices.
 
 Examples:
+
 - Workshops on modern JavaScript frameworks for developers
 - **Web accessibility**
 - Training sessions on implementing **GenAI solutions** for business applications
