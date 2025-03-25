@@ -163,6 +163,14 @@
   }
 }
 
+dropdown-trigger:not(:defined) * {
+  @apply hidden;
+}
+
+dropdown-trigger:not(:defined) dropdown-trigger::part(content) {
+  @apply hidden;
+}
+
 dropdown-trigger::part(trigger) {
   @apply px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit;
 }

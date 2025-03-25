@@ -33,6 +33,7 @@ export default async function handler(c: Context) {
       description: "Senior Software Engineer with a product mindset",
       lang,
     },
+    withIlustration: true,
     withFooter: false,
     children: html`<div class="markdown-content">${raw(htmlContent)}</div>
       <footer class="mt-12 md:mt-24">${contact({ lang })}</footer> `,

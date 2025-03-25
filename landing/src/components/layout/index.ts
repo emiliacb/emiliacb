@@ -55,6 +55,16 @@ export default function layout({
         />
         <meta property="twitter:image" content="/public/preview.png" />
 
+        <!-- Dropdown -->
+        <script src="/public/dropdown.js"></script>
+
+        <!-- Lottie -->
+        <script
+          preload="preload"
+          src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs"
+          type="module"
+        ></script>
+
         <!-- Posthog -->
         <script>
           !(function (t, e) {
@@ -223,7 +233,6 @@ export default function layout({
             : null}
         </div>
       </body>
-      <script src="/public/dropdown.js"></script>
     </html>
   `;
 }
