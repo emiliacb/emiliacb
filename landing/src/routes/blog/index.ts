@@ -48,7 +48,7 @@ export default async function handler(c: Context, next: Next) {
       <div class="flex flex-col space-y-3 text-pretty">
         ${!posts.length &&
         html`<div class="text-left text-stone-800 dark:text-stone-300">
-          <h2 class="text-xl">Posts coming soon...</h2>
+          <h2 class="text-lg font-light">Posts coming soon...</h2>
         </div>`}
         ${raw(
           posts

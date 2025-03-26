@@ -11,6 +11,10 @@ import { langMiddleware } from "./middlewares/lang";
 const router = new Hono();
 
 router
+  .get("/public/*", (c, next) => {
+    c.header("Cache-Control", `public, max-age=86400`);
+    return next();
+  })
   .get(
     "/public/*",
     serveStatic({
