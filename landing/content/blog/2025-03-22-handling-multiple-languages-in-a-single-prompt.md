@@ -4,7 +4,7 @@ slug: handling-mixed-languages-with-a-single-prompt
 description: Exploring how to handle multilingual cases and testing various prompt engineering approaches
 date: 2025-03-25T19:56:27.278Z
 preview: ""
-draft: false
+draft: true
 tags: ["prompt engineering"]
 categories: ["blog"]
 ---
@@ -26,7 +26,9 @@ The context is a variable, but not the only one, the training dataset of the mod
 
 In this article, we'll examine various cases and prompt engineering techniques aiming to solve the issues we could encounter. At the end we will test some techniques using a evaluation suite.
 
-## Cases
+## Scenario
+
+### Cases
 
 In this section we will see the different cases we could encounter. When we say "context" we mean the retrieved context, the chat history, the system prompt or the shot cases.
 
@@ -42,7 +44,13 @@ A part of the context is in a different language than the expected output.
 
 The context is in a different language than the expected output.
 
-## Prompt Techniques
+## Evaluation
+
+### Hypothesis
+
+### Scope
+
+### Prompt Techniques
 
 We will test the following techniques:
 
@@ -54,7 +62,7 @@ We will test the following techniques:
 - 6. Example of the system prompt in the same language as target language.
 - 7. Language as an directive appended to the user message.
 
-## Models
+### Models
 
 In our case, we will focus on small models only, but with a range of multilingual capabilities.
 
@@ -67,11 +75,11 @@ We will test the following models:
 
 The language detection model will be mistral-7b.
 
-## Dataset
+### Dataset
 
 The dataset will be a prompt template per case and a retrieved context from the wikimedia dataset. Wikimedia is a great source of context for our use case since it is real world data and it is available in different languages.
 
-## Evaluation Script
+### Implementation
 
 The evaluation script is quite simple. Let's look at how it works:
 
