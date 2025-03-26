@@ -5,8 +5,8 @@ description: Exploring how to handle multilingual cases and testing various prom
 date: 2025-03-25T19:56:27.278Z
 preview: ""
 draft: true
-tags: ["prompt engineering"]
-categories: ["blog"]
+tags: []
+categories: []
 ---
 
 # Handling multiple languages with a single prompt
