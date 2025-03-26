@@ -9,7 +9,7 @@ export default function navbar({ lang }: { lang: string }) {
 
   return html`
     <nav
-      class="stiky px-4 sm:pl-6 sm:pr-8 top-0 pt-2 md:pt-4 pb-2 mb-4 md:mb-0 flex flex-wrap mt-4 md:mt-12 justify-between w-full max-w-[60rem] m-auto bg-stone-100/70 dark:bg-stone-800/80 backdrop-blur-sm z-50 "
+      class="sticky px-4 sm:pl-6 sm:pr-8 top-0 pt-2 md:pt-4 pb-2 mb-4 md:mb-0 flex flex-wrap mt-4 md:mt-12 justify-between w-full max-w-[60rem] m-auto bg-stone-100/70 dark:bg-stone-800/80 backdrop-blur-sm z-50 "
     >
       <div
         class="pointer-events-none border-b border-stone-400 light-gradient-projection !absolute bottom-0 left-0 h-12 w-full before:border-b-[2px] before:-bottom-[1px] before:border-green-300 dark:before:border-blue-700 before:!rotate-0 before:blur-0 [clip-path:polygon(0_0,100%_0,100%_100%,0_100%)]"
@@ -45,17 +45,17 @@ export default function navbar({ lang }: { lang: string }) {
           </dropdown-trigger>
         </div>
         <a
-          class="px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit"
+          class="px-1 md:px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit"
           href="/${lang}/about"
           >${wordings[lang][1]}</a
         >
         <a
-          class="px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit"
+          class="px-1 md:px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit"
           href="/${lang}/services"
           >${wordings[lang][2]}</a
         >
         <a
-          class="px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit"
+          class="px-1 md:px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit"
           href="/${lang}/blog"
           >${wordings[lang][3]}</a
         >
