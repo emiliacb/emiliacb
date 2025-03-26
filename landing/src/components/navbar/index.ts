@@ -28,7 +28,9 @@ export default function navbar({ lang }: { lang: string }) {
       <div
         class="flex text-sm h-fit items-center sm:text-base space-x-1 md:space-x-4"
       >
-        <div class="relative text-stone-800 dark:text-stone-100 ">
+        <div
+          class="relative block md:hidden text-stone-800 dark:text-stone-100"
+        >
           <dropdown-trigger label="${wordings[lang][4]}">
             <div class="flex flex-col p-2 bg-black dark:bg-white shadow-lg">
               <a
@@ -44,6 +46,16 @@ export default function navbar({ lang }: { lang: string }) {
             </div>
           </dropdown-trigger>
         </div>
+        <a
+          class="hidden md:block px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit"
+          href="/${lang}/about"
+          >${wordings[lang][1]}</a
+        >
+        <a
+          class="hidden md:block px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit"
+          href="/${lang}/services"
+          >${wordings[lang][2]}</a
+        >
         <a
           class="px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit"
           href="/${lang}/blog"

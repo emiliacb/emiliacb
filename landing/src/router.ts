@@ -12,7 +12,10 @@ const router = new Hono();
 
 router
   .get("/public/*", (c, next) => {
-    c.header("Cache-Control", `public, max-age=86400`);
+    const path = c.req.path;
+    if (!path.endsWith(".css")) {
+      c.header("Cache-Control", `public, max-age=86400`);
+    }
     return next();
   })
   .get(
