@@ -4,7 +4,7 @@ slug: handling-mixed-languages-with-a-single-prompt
 description: Exploring how to handle multilingual cases and testing various prompt engineering approaches
 date: 2025-03-25T19:56:27.278Z
 preview: ""
-draft: true
+draft: false
 tags: []
 categories: []
 ---
@@ -50,7 +50,11 @@ The context is in a different language than the expected output.
 
 ### Hypothesis
 
+// WIP
+
 ### Scope
+
+// WIP
 
 ### Prompt Techniques
 
@@ -128,3 +132,11 @@ for prompt_template in prompt_templates:
             )
             results.append(output)
 ```
+
+## Results
+
+// WIP
+
+## Conclusion
+
+// WIP
