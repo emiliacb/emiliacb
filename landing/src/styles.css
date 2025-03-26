@@ -42,9 +42,8 @@
 .markdown-content {
   @apply prose prose-stone dark:prose-invert;
   @apply text-pretty;
-  @apply prose-headings:pt-20 prose-headings:-mt-4 prose-headings:mb-2;
-  @apply prose-h1:mb-10 prose-h1:font-light;
-  @apply prose-h2:font-normal;
+  @apply prose-h1:pt-20 prose-h1:-mt-4 prose-h1:mb-10 prose-h1:font-light;
+  @apply prose-h2:font-normal prose-h2:pt-[5rem] prose-h2:-mt-12 prose-h2:mb-2;
   @apply prose-a:ml-[2px] prose-a:outline prose-a:outline-yellow-200 prose-a:outline-offset-0 prose-a:outline-2;
   @apply prose-a:bg-yellow-200 prose-a:no-underline prose-a:font-light;
   @apply dark:prose-a:outline-blue-900 dark:prose-a:bg-blue-900;
@@ -52,6 +51,7 @@
   @apply hover:prose-a:bg-black hover:prose-a:text-white hover:prose-a:outline-black;
   @apply dark:hover:prose-a:bg-white dark:hover:prose-a:text-black dark:hover:prose-a:border-white dark:hover:prose-a:outline-white;
   @apply prose-a:relative prose-a:light-gradient-projection;
+  @apply prose-code:text-orange-300;
 }
 
 .cover-tree {
