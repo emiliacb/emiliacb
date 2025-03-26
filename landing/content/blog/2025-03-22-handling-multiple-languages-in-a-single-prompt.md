@@ -26,7 +26,7 @@ The context is a variable, but not the only one, the training dataset of the mod
 
 In this article, we'll examine various cases and prompt engineering techniques aiming to solve the issues we could encounter. At the end we will test some techniques using a evaluation suite.
 
-## Scenario
+## Scenarios
 
 ### Cases
 
