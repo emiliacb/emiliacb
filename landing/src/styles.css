@@ -163,12 +163,8 @@
   }
 }
 
-dropdown-trigger:not(:defined) *:not(dropdown-trigger::part(trigger)) {
-  @apply hidden opacity-0 transition-opacity duration-300;
-}
-
-dropdown-trigger:defined {
-  @apply opacity-100 transition-opacity duration-300;
+dropdown-trigger:not(:defined) * {
+  @apply hidden;
 }
 
 dropdown-trigger::part(trigger) {
