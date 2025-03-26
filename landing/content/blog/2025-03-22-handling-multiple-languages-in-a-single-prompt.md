@@ -11,6 +11,8 @@ categories: ["blog"]
 
 # Handling multiple languages with a single prompt
 
+⚠️ This article is under construction.
+
 %table-of-contents%
 
 ## Introduction
@@ -126,7 +128,3 @@ for prompt_template in prompt_templates:
             )
             results.append(output)
 ```
-
-## Results
-
-## Conclusion
