@@ -4,6 +4,19 @@ import { html, raw } from "hono/html";
 import layout from "../../components/layout";
 import { getAllPosts, getPost } from "../../services/posts";
 
+const wordings: Record<string, { title: string; description: string }> = {
+  en: {
+    title: "Journal",
+    description:
+      "This journal aims to be a collection of my thoughts and projects. With the purpose of diving into a more detailed way of understanding and sharing.",
+  },
+  es: {
+    title: "Diario",
+    description:
+      "Este diario intenta ser una colección de pensamientos y proyectos. Con el objetivo de profundizar en una forma más detallada de entender y compartir.",
+  },
+} as const;
+
 export default async function handler(c: Context, next: Next) {
   const lang = c.req.param("lang");
   const slug = c.req.path.split("/").pop();
@@ -35,16 +48,20 @@ export default async function handler(c: Context, next: Next) {
 
   const view = layout({
     siteData: {
-      title: "blog | ємιℓιαċв",
-      description: "blog | ємιℓιαċв",
+      title: `${wordings[lang].title} | ємιℓιαċв`,
+      description: `${wordings[lang].description} | ємιℓιαċв`,
       lang: lang,
     },
     withFooter: true,
     withIlustration: true,
-    children: html` <div>
+    children: html`<div>
       <div class="markdown-content">
-        <h1 class="text-2xl font-bold">Journal</h1>
+        <h1 class="text-2xl font-bold">${wordings[lang].title}</h1>
+        <p class="text-sm text-stone-800 dark:text-stone-300 !pb-6 !-mt-6">
+          ${wordings[lang].description}
+        </p>
       </div>
+
       <div class="flex flex-col space-y-3 text-pretty">
         ${!posts.length &&
         html`<div class="text-left text-stone-800 dark:text-stone-300">
