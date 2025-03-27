@@ -13,14 +13,18 @@ const router = new Hono();
 router
   .get("/public/*", (c, next) => {
     const path = c.req.path;
+    const maxAge = 86400;
+
     if (path.endsWith(".css")) {
       c.header(
         "Cache-Control",
-        `public, max-age=86400, stale-while-revalidate`
+        `public, max-age=${maxAge}, stale-while-revalidate`
       );
-    } else {
-      c.header("Cache-Control", `public, max-age=86400`);
+      return next();
     }
+
+    c.header("Cache-Control", `public, max-age=${maxAge}`);
+
     return next();
   })
   .get(
