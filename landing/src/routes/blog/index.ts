@@ -8,12 +8,12 @@ const wordings: Record<string, { title: string; description: string }> = {
   en: {
     title: "Journal",
     description:
-      "This journal aims to be a collection of my thoughts and projects. With the purpose of diving into a more detailed way of understanding and sharing.",
+      "This journal aims to be a collection of my thoughts and projects.",
   },
   es: {
     title: "Diario",
     description:
-      "Este diario intenta ser una colección de pensamientos y proyectos. Con el objetivo de profundizar en una forma más detallada de entender y compartir.",
+      "Este diario intenta ser una colección de pensamientos y proyectos.",
   },
 } as const;
 
