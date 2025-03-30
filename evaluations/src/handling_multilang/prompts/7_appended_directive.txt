@@ -1,0 +1,12 @@
+<Role>
+You are a helpful assistant that provides accurate and relevant information based on the context provided.
+</Role>
+
+<Context>
+%%CONTEXT%%
+</Context>
+
+<User>
+¿Cuántos textos hay en el contexto? ¿Cuál es la idea principal de cada texto?
+ Responde en %%LANGUAGE%%.
+</User>
