@@ -1,3 +1,6 @@
+import { Readable } from "node:stream";
+import { createReadStream } from "node:fs";
+
 import { Hono } from "hono";
 import { serveStatic } from "@hono/node-server/serve-static";
 
@@ -37,6 +40,19 @@ router
       },
     })
   )
+  .get("/cv", (c) => {
+    const nodeStream = createReadStream("./public/cv.pdf");
+
+    c.header("Content-Type", "application/pdf");
+    c.header(
+      "Content-Disposition",
+      'attachment; filename="Emilia_C_B_Resume.pdf"'
+    );
+
+    const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
+
+    return c.body(webStream);
+  })
   .use("*", langMiddleware)
   .get("/:lang?", homeHandler)
   .get("/:lang/about", aboutHandler)
