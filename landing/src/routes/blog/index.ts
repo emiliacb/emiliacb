@@ -53,7 +53,6 @@ export default async function handler(c: Context, next: Next) {
       lang: lang,
     },
     withFooter: true,
-    withIlustration: true,
     children: html`<div>
       <div class="markdown-content">
         <h1 class="text-2xl font-bold">${wordings[lang].title}</h1>
