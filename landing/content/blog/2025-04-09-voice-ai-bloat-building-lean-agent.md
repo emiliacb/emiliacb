@@ -13,9 +13,8 @@ categories: ["AI/ML Development", "Web Technology", "Case Study"]
 
 **Experience the lean agent:** [https://voice-agent-front.onrender.com/](https://voice-agent-front.onrender.com/) 
 
-Let's be honest: the AI landscape often feels like an arms race towards complexity. Frameworks pile on frameworks, architectures balloon, and the simple goal of creating a useful AI interaction can get lost in translation. But does it *have* to be this way? This project screams "No!" It's a deliberately lean voice agent, built with accessible web tech and direct API calls, proving that you don't need a labyrinthine setup or bloated libraries like LangChain to build something functional and engaging.
+The AI landscape often feels like an arms race towards complexity. But does it *have* to be this way? This project is a deliberately lean voice agent, built with accessible web tech and direct API calls, proving that you don't need a labyrinthine setup to build something functional and engaging.
 
-The mission? Demonstrate that a focus on core functionality and a commitment to simplicity can yield powerful results, even with a consciously "cheap" and straightforward setup.
 
 ## The Straightforward Path: Core Voice Agent Steps
 
