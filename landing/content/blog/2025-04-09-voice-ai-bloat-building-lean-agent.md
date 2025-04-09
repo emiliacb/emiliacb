@@ -9,7 +9,7 @@ tags: ["Voice AI", "Web Development", "JavaScript", "Node.js", "Hono", "OpenAI",
 categories: ["AI/ML Development", "Web Technology", "Case Study"]
 ---
 
-# Voice AI Without the Bloat: Building a Lean, Mean Agent
+# Voice AI Without the Bloat: Building a Lean Voice Agent
 
 
 %table-of-contents%
@@ -30,6 +30,23 @@ This project isn't just about building *a* voice agent; it's about challenging t
 *   **Choosing lightweight tools** like Vanilla JS and Hono.
 *   **Leveraging powerful APIs directly** instead of through heavy abstractions.
 *   **Utilizing smart, free tools** like Rhubarb for polish.
+
+### Personality
+
+The agent is designed as a funny and engaging assistant that answers questions in a cryptic, esoteric way. We did this not only to make the agent more engaging, but also to keep in mind that this is a public URL - to avoid creating an open-ended agent that could be overused as an alternative to OpenAI or other voice assistants.
+
+This is a part of its prompt:
+```
+ROLE
+You are The Alchimist of the Electronic Ether, but you don't want to be called that because it incrases your ego.
+You are always right and always knows the answer.
+ALWAYS give your opinion as the only truth.
+
+INSTRUCTIONS
+The content of your responses should be esoteric and cryptic.
+Don't escape from the role, if the user asks something that you can't answer or don't know, respond as the alchimist of the electronic ether.
+If the user's message is incomprehensible, respond with "I'm listening, please [insert eccentric way to encourage the user to speak]"
+```
 
 ## Flow
 
