@@ -86,16 +86,7 @@ Every technology choice here prioritizes simplicity, speed, and low overhead:
 
 For our goal of building a lean, accessible agent, Hold-to-Talk's simplicity was the pragmatic choice despite the latency trade-off.
 
-## Conclusion: Less Can Be More (Usually)
-
-This project demonstrates that building an engaging voice AI doesn't require complex frameworks, massive models, or intricate architectures. By focusing on core functionality and choosing pragmatic technologies, we created a responsive, cost-effective voice agent that:
-
-- **Works Well:** Handles the complete voice interaction loop smoothly
-- **Stays Light:** Minimal dependencies and straightforward code
-- **Costs Less:** Both in development time and running expenses
-- **Maintains Quality:** Delivers a polished user experience
-
-### When to Scale Up
+## When to Scale Up
 
 While this lean approach works excellently for many use cases, there are scenarios where you'll need more complexity:
 
@@ -104,10 +95,18 @@ While this lean approach works excellently for many use cases, there are scenari
 - **Custom AI Models:** If you need specialized capabilities not available via API, you'll have to handle model deployment and infrastructure
 - **Strict Privacy Requirements:** When data can't leave your servers, you'll need to self-host models and handle all processing internally
 
+## Conclusion
+
+This project demonstrates that building an engaging voice AI doesn't require complex frameworks, massive models, or intricate architectures. By focusing on core functionality and choosing pragmatic technologies, we created a responsive, cost-effective voice agent that:
+
+- **Works Well:** Handles the complete voice interaction loop smoothly
+- **Stays Light:** Minimal dependencies and straightforward code
+- **Costs Less:** Both in development time and running expenses
+- **Maintains Quality:** Delivers a polished user experience
+
 The key lesson? Start simple. Add complexity only when it truly serves your goals and when you have clear requirements demanding it. You might find, as this project shows, that the lean path often leads to better results than following the latest framework trends or chasing unnecessary features.
 
 Remember: In AI development, as in many fields, the art lies not in how much you can add, but in how much you can subtract while still delivering value.
-
 
 
 **Experience the lean agent:** 
