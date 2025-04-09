@@ -39,19 +39,6 @@ Without proper language handling, the chatbot might:
 
 This could frustrate users who expect or require consistent Portuguese responses.
 
-### Cases
-
-In this section we will see the different cases we could encounter. The context could be the retrieved information, chat history, system prompt or shot cases.
-
-**Non-mixed context**  
-All context documents are in the same language as the expected output.
-
-**Partially mixed context**  
-Some context documents are in a different language than the expected output.
-
-**Fully foreign context**  
-All context documents are in a different language than the expected output.
-
 ## Evaluation
 
 ### Hypothesis
@@ -73,10 +60,8 @@ We will test the following techniques:
 - 1. No technique.
 - 2. Instruction to answer in the same language as the user message.
 - 3. Language as a section at the beginning of the prompt.
-- 4. Language as a section at the end of the prompt.
-- 5. Language as an constraint in the prompt.
-- 6. Example of the system prompt in the same language as target language.
-- 7. Language as an directive appended to the user message.
+- 4. Language as an constraint in the prompt.
+- 5. Language as an directive appended to the user message.
 
 ### Models
 
