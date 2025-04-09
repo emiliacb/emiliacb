@@ -1,17 +1,23 @@
 import fs from "fs";
 import path from "path";
 
-import { marked } from "marked";
 import matter from "gray-matter";
 
 import { parseContent } from "../utils/parse-content";
+
+type Post = {
+  date: string;
+  draft: boolean;
+  slug: string;
+  title: string;
+};
 
 export async function getAllPosts() {
   try {
     const directoryPath = path.join(__dirname, "../../content/blog");
     const files = fs.readdirSync(directoryPath);
 
-    const posts = await Promise.all(
+    const postsData = await Promise.all(
       files
         .filter((file) => path.extname(file) === ".md")
         .map(async (file) => {
@@ -20,9 +26,11 @@ export async function getAllPosts() {
           const { data } = matter(fileContent);
           data.slug = file.replace(".md", "");
 
-          return data;
+          return data as Post;
         })
     );
+
+    const posts = postsData.sort((a: Post, b: Post) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return posts.filter((post) => !post.draft);
   } catch (error: any) {
