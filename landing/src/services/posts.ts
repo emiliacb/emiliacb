@@ -10,6 +10,7 @@ type Post = {
   draft: boolean;
   slug: string;
   title: string;
+  description: string;
 };
 
 export async function getAllPosts() {

@@ -79,7 +79,7 @@ export default async function handler(c: Context, next: Next) {
             post.description &&
             `<span class="text-sm text-stone-800 dark:text-stone-300 group-hover:text-stone-100 dark:group-hover:text-stone-900 line-clamp-3">${post.description}</span>`
           }
-          <span class="text-xs font-light">${post.date.toLocaleDateString()}</span>  
+          <span class="text-xs font-light">${new Date(post.date).toLocaleDateString()}</span>  
           </article>
           </a>`
             )
