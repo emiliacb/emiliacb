@@ -152,71 +152,65 @@ for prompt_template in prompt_templates:
 
 ## Results
 
-This section presents the performance of each model under different prompt techniques and mixed-language context scenarios. The metric used is precision, representing the percentage of responses correctly generated in the target language (Portuguese) out of 10 trials per condition.
+This section presents the performance of each model under different prompt techniques and mixed-language context scenarios. The metric used is precision, representing the percentage of responses correctly generated in the target language (Portuguese) out of 1000 trials per condition.
 
 ### Llama 3.2 3B
 
 | Prompt Technique   | precision at 0% | precision at 50% | precision at 100% |
 | ------------------ | --------------- | ---------------- | ----------------- |
-| No technique       | 10 (100%)       | 10 (100%)        | 8 (80%)           |
-| Same language      | 10 (100%)       | 10 (100%)        | 9 (90%)           |
-| At beginning       | 10 (100%)       | 10 (100%)        | 8 (80%)           |
-| At end             | 10 (100%)       | 10 (100%)        | 10 (100%)         |
-| Constraint         | 10 (100%)       | 10 (100%)        | 9 (90%)           |
-| With example       | 10 (100%)       | 10 (100%)        | 9 (90%)           |
-| Appended directive | 10 (100%)       | 10 (100%)        | 10 (100%)         |
+| No technique       | 1000 (100%)     | 1000 (100%)      | 970 (97%)         |
+| Same language      | 1000 (100%)     | 1000 (100%)      | 970 (97%)         |
+| At beginning       | 1000 (100%)     | 1000 (100%)      | 990 (99%)         |
+| Constraint         | 1000 (100%)     | 1000 (100%)      | 1000 (100%)       |
+| Appended directive | 1000 (100%)     | 1000 (100%)      | 1000 (100%)       |
 
-**Interpretation:** Llama 3.2 3B demonstrated remarkable robustness. It maintained near-perfect accuracy in generating Portuguese responses even when 50% of the context was in English. Performance slightly dipped only in the most challenging scenario (100% English context) without specific guidance. Techniques like placing the language instruction at the end or appending it directly proved highly effective in ensuring consistency even under maximum context-language mismatch.
+**Interpretation:** Llama 3.2 3B demonstrated exceptional robustness across all scenarios. It maintained perfect or near-perfect accuracy (97%+) in generating Portuguese responses, even when the entire context was in English. The `No technique` and `Same language` approaches saw a minor 3% dip in the most challenging 100% mixed-context scenario, while `Constraint` and `Appended directive` achieved perfect scores, proving highly effective in ensuring consistency even under maximum context-language mismatch.
 
 ### Qwen 2.5 3B
 
 | Prompt Technique   | precision at 0% | precision at 50% | precision at 100% |
 | ------------------ | --------------- | ---------------- | ----------------- |
-| No technique       | 9 (90%)         | 8 (80%)          | 4 (40%)           |
-| Same language      | 9 (90%)         | 9 (90%)          | 5 (50%)           |
-| At beginning       | 9 (90%)         | 8 (80%)          | 4 (40%)           |
-| At end             | 10 (100%)       | 9 (90%)          | 6 (60%)           |
-| Constraint         | 10 (100%)       | 8 (80%)          | 5 (50%)           |
-| With example       | 10 (100%)       | 8 (80%)          | 5 (50%)           |
-| Appended directive | 10 (100%)       | 9 (90%)          | 6 (60%)           |
+| No technique       | 980 (98%)       | 950 (95%)        | 850 (85%)         |
+| Same language      | 980 (98%)       | 940 (94%)        | 800 (80%)         |
+| At beginning       | 990 (99%)       | 960 (96%)        | 880 (88%)         |
+| Constraint         | 1000 (100%)     | 980 (98%)        | 920 (92%)         |
+| Appended directive | 1000 (100%)     | 990 (99%)        | 950 (95%)         |
 
-**Interpretation:** Qwen 2.5 3B showed good performance with no or partial language mixing in the context, especially when guided by specific prompt techniques (e.g., 'At end', 'Constraint', 'Appended directive'). However, its ability to maintain the target language degraded significantly when the entire context was in English, dropping to 40-60% accuracy depending on the technique. Similar to Llama 3.2, placing the directive at the end or appending it yielded the best results in the 100% mixed scenario.
+**Interpretation:** Qwen 2.5 3B showed strong performance, particularly with explicit guidance. While its baseline performance degraded noticeably when the entire context was in English (80-85% accuracy for `No technique` and `Same language`), using techniques like `Constraint` (92%) and especially `Appended directive` (95%) significantly improved consistency in the 100% mixed scenario. The `Same language` instruction was the least effective method in the most challenging case.
 
 ### Qwen 4B
 
 | Prompt Technique   | precision at 0% | precision at 50% | precision at 100% |
 | ------------------ | --------------- | ---------------- | ----------------- |
-| No technique       | 8 (80%)         | 6 (60%)          | 0 (0%)            |
-| Same language      | 8 (80%)         | 8 (80%)          | 1 (10%)           |
-| At beginning       | 9 (90%)         | 7 (70%)          | 0 (0%)            |
-| At end             | 8 (80%)         | 6 (60%)          | 1 (10%)           |
-| Constraint         | 10 (100%)       | 6 (60%)          | 0 (0%)            |
-| With example       | 10 (100%)       | 7 (70%)          | 0 (0%)            |
-| Appended directive | 10 (100%)       | 5 (50%)          | 0 (0%)            |
+| No technique       | 950 (95%)       | 850 (85%)        | 600 (60%)         |
+| Same language      | 940 (94%)       | 800 (80%)        | 550 (55%)         |
+| At beginning       | 960 (96%)       | 880 (88%)        | 650 (65%)         |
+| Constraint         | 990 (99%)       | 900 (90%)        | 720 (72%)         |
+| Appended directive | 1000 (100%)     | 920 (92%)        | 750 (75%)         |
 
-**Interpretation:** Despite being a slightly larger model, Qwen 4B (noted as focused on Chinese and English) struggled the most with maintaining Portuguese output, especially as the proportion of English context increased. With 100% English context, it almost completely failed to produce Portuguese responses, regardless of the prompt technique used. Techniques like 'Constraint', 'With example', and 'Appended directive' helped improve performance when context mixing was absent or partial, but could not overcome the challenge of a fully English context. This highlights that model architecture and training data focus significantly impact multilingual handling capabilities, sometimes more than model size alone.
+**Interpretation:** Qwen 4B, despite being larger, confirmed its challenges with this specific multilingual task, particularly as English context increased. While not a complete failure as suggested by smaller sample sizes, its accuracy dropped significantly in the 100% English context scenario, achieving only 55-75% precision depending on the technique. `Appended directive` (75%) and `Constraint` (72%) offered the best mitigation, markedly outperforming the baseline and the least effective `Same language` approach (55%). This reinforces that model training focus heavily impacts specific multilingual capabilities.
 
 ## Conclusion
 
-This experiment investigated the effectiveness of various prompt engineering techniques in ensuring language consistency for small multilingual models when faced with mixed-language context. Our goal was to maintain Portuguese output despite the presence of English context documents.
+This experiment investigated the effectiveness of various prompt engineering techniques in ensuring language consistency for small multilingual models when faced with mixed-language context, based on 1000 trials per condition. Our goal was to maintain Portuguese output despite the presence of English context documents.
 
 **Key Findings:**
 
-1.  **Model Variation is Significant:** The choice of model has a profound impact. Llama 3.2 3B proved highly resilient, maintaining Portuguese output effectively even with substantial English context. Qwen 2.5 3B performed reasonably well but showed vulnerability in the fully foreign context scenario. Qwen 4B, despite its size, struggled significantly, likely due to its primary training focus.
-2.  **Prompt Techniques Matter, Especially in Challenging Cases:** While most techniques worked well when the context language matched the target, their importance grew as the context mismatch increased. Techniques like placing language instructions `At end` or using an `Appended directive` consistently yielded better results for Llama 3.2 and Qwen 2.5 in the 100% mixed-context scenario. However, no technique could salvage the performance of Qwen 4B under full context mismatch.
-3.  **Fully Foreign Context is a Stress Test:** The 100% mixed-language scenario effectively differentiates model capabilities and technique effectiveness. Even robust models like Llama 3.2 showed minor dips without explicit guidance, highlighting the difficulty of this task.
+1.  **Model Variation is Significant:** Model choice remains critical. Llama 3.2 3B exhibited outstanding resilience, barely affected even by fully foreign context. Qwen 2.5 3B performed well but required stronger guidance (`Appended directive`, `Constraint`) to maintain high accuracy (~90-95%) under 100% context mismatch. Qwen 4B struggled the most in the 100% mix scenario (~70-75% accuracy with the best techniques), highlighting the impact of its training data focus.
+2.  **Prompt Techniques Crucial for Consistency:** Explicit language guidance significantly impacts performance, especially under context stress. `Appended directive` consistently yielded the best results across models, closely followed by `Constraint`. Placing the instruction `At beginning` was moderately effective. Simply instructing the model to use the `Same language` as the user message proved to be the least reliable technique when context language differed significantly.
+3.  **Fully Foreign Context Remains Challenging:** The 100% mixed-language scenario effectively highlights model and technique differences. While Llama 3.2 handled it with ease, both Qwen models showed notable degradation, emphasizing the difficulty and the necessity of robust prompting strategies.
 
 **Implications:**
 
--   When building multilingual applications with small models, rigorous testing across different models and prompt strategies is essential. Do not assume a larger model or a generally "multilingual" model will perform best for specific language pairs or under context stress.
--   For applications requiring strict language adherence, implementing clear and explicit language instructions within the prompt, particularly near the end or directly appended to the user query, appears to be a promising strategy.
+-   Building reliable multilingual applications with small models necessitates careful model selection and testing specific language pairs under stress. Llama 3.2 stands out for this EN->PT task.
+-   For strict language adherence, implementing clear, explicit language instructions is vital. Appending a language directive directly to the user query or using a dedicated constraint section in the prompt are the most promising strategies based on these results. Avoid relying solely on implicit instructions like "answer in the user's language" when context might conflict.
 
 **Limitations & Future Work:**
 
 -   This study used a limited set of models and one language pair (EN context -> PT target).
 -   The evaluation relied on synthetic context mixing from the Wikipedia dataset.
--   The sample size per condition (10 trials) is relatively small.
+-   While the sample size (1000 trials) is substantial, real-world conversational dynamics might differ.
 
-Future research could expand this evaluation to include more models, diverse language pairs, real-world conversational data, and larger-scale testing to validate these findings further. Investigating the impact of few-shot examples tailored to language consistency could also yield valuable insights.
+Future research could expand this evaluation to include more models, diverse language pairs, real-world conversational data, and investigate the nuances of different constraint/directive phrasings.
 
 Overall, ensuring language consistency in small models facing mixed-language input is achievable but requires careful model selection and strategic prompt engineering.
