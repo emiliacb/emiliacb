@@ -66,6 +66,38 @@ Every technology choice here prioritizes simplicity, speed, and low overhead:
 5.  **Backend:** Sends `Response Audio` (base64) and `Lip Sync Cues` (JSON) back.
 6.  **Frontend:** Plays audio while animating the **CSS mouth** using the cues.
 
+## Tradeoffs
+
+### Hold-to-Talk vs Real-time Streaming
+
+**Our Choice: Hold-to-Talk**
+- Full audio sent after recording completes
+- Simpler implementation using standard web tech (`MediaRecorder`, HTTP)
+- Lower infrastructure costs
+- Accepts higher latency as trade-off
+
+**Trade-offs:**
+- User experiences pause after speaking while:
+  - Audio uploads
+  - Speech-to-text processes
+  - LLM generates response
+  - Text-to-speech generates audio
+- No real-time conversation capabilities
+- Cannot start responding before user finishes speaking
+- No barge-in support (interrupting the agent)
+
+**Why Not Real-time Streaming?**
+- Would enable faster, more conversational responses
+- Could start TTS before user finishes speaking
+- Allows barge-in functionality
+- BUT requires:
+  - More complex frontend/backend logic
+  - Persistent connections (WebRTC)
+  - Higher server load
+  - More infrastructure costs
+
+For our goal of building a lean, accessible agent, Hold-to-Talk's simplicity was the pragmatic choice despite the latency trade-off.
+
 ## Conclusion: Less Can Be More (Usually)
 
 This project demonstrates that building an engaging voice AI doesn't require complex frameworks, massive models, or intricate architectures. By focusing on core functionality and choosing pragmatic technologies, we created a responsive, cost-effective voice agent that:
