@@ -35,8 +35,40 @@
   }
 }
 
+@keyframes roundScrollMobile {
+  from {
+    border-radius: 0;
+  }
+  to {
+    border-radius: 2rem;
+  }
+}
+
+@keyframes roundScrollDesktop {
+  from {
+    border-radius: 0;
+  }
+  to {
+    border-radius: 5rem;
+  }
+}
+
 html {
   @apply bg-stone-100 dark:bg-stone-800;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #overlay-content {
+    animation-timeline: scroll();
+    animation-name: roundScrollMobile;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
+  #overlay-content {
+    animation-timeline: scroll();
+    animation-name: roundScrollDesktop;
+  }
 }
 
 .lucide {

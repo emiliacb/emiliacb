@@ -1,6 +1,8 @@
 import { html } from "hono/html";
 import contact from "../contacts";
 
+const DELTA_HEIGHT = 200;
+
 type FooterProps = {
   lang: string;
 };
@@ -55,7 +57,7 @@ function footerContent({ lang }: FooterProps) {
 
       <!-- Copyright -->
       <div
-        class="w-full text-center py-4 text-xs opacity-75"
+        class="w-full text-center pt-8 text-xs opacity-75"
       >
         © ${new Date().getFullYear()} Licensed under Apache 2.0 and CC BY 4.0.
       </div>
@@ -65,7 +67,8 @@ function footerContent({ lang }: FooterProps) {
 
 function footerFixed({ lang }: FooterProps) {
   return html`<footer
-    class="fixed bottom-0 h-fit py-4 -mt-24 pt-32 pb-8 z-0 w-full flex px-4 sm:px-8 justify-center bg-yellow-300 dark:bg-blue-900 items-center"
+    class="fixed bottom-0 h-fit py-4 pb-8 z-0 w-full flex px-4 sm:px-8 justify-center bg-yellow-300 dark:bg-blue-900 items-center"
+    style="margin-top: ${DELTA_HEIGHT}px; padding-top: calc(${DELTA_HEIGHT}px + 2rem)"
   >
     ${footerContent({ lang })}
   </footer>`;
