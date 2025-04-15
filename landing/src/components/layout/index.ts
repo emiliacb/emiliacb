@@ -198,13 +198,13 @@ export default function layout({
         </style>
       </head>
 
-      <body class="text-stone-800 dark:text-stone-100">
+      <body class="text-stone-800 dark:text-stone-100 overscroll-none md:overscroll-auto">
         <div
           id="overlay-content"
-          class="relative overflow-hidden shadow-lg flex flex-col h-full min-h-static-screen bg-stone-100 z-10 dark:bg-stone-800 prose-h1:text-3xl "
-        >
+          class="relative overflow-hidden shadow-lg flex flex-col min-h-static-screen bg-stone-100 z-10 dark:bg-stone-800 prose-h1:text-3xl"
+        > 
           <div
-            class="absolute -z-10 bottom-0 left-0 w-full h-full radial-green-gradient dark:radial-maroon-gradient"
+            class="absolute -z-10 top-[50vh] left-0 w-full h-[100vh] radial-green-gradient dark:radial-maroon-gradient"
           ></div>
           ${withIlustration
             ? html`
@@ -219,7 +219,7 @@ export default function layout({
             ${navbar({ lang: siteData.lang })}
             <main
               id="content"
-              class="min-h-static-screen-minus-nav overflow-hidden flex flex-col justify-between md:justify-start w-full px-4 sm:px-8 md:pt-24 m-auto max-w-[60rem] h-full"
+              class="min-h-static-screen-minus-nav overflow-hidden flex flex-col justify-between md:justify-start w-full px-4 sm:px-8 md:pt-24 m-auto max-w-[60rem] h-full pb-16 md:pb-24"
             >
               ${children}
             </main>
@@ -228,6 +228,18 @@ export default function layout({
         ${withFooter ? footer({ lang: siteData.lang }) : null}
         <!-- Dropdown -->
         <script src="/public/dropdown.js"></script>
+
+        <script>
+        if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+          const overlayContent = document.getElementById('overlay-content');
+          if (overlayContent) {
+            window.addEventListener('scroll', () => {
+              const scrolled = window.scrollY > 0;
+              overlayContent.classList.toggle('scrolled', scrolled);
+            });
+          }
+        }
+        </script>
       </body>
     </html>
   `;

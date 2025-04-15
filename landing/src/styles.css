@@ -17,6 +17,7 @@
     opacity: 0;
     transform: scale(0.5);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -27,29 +28,13 @@
   0% {
     filter: saturate(0.4) blur(1px) invert(var(--tree-invert, 0));
   }
+
   40% {
     filter: saturate(0.6) blur(0) invert(var(--tree-invert, 0));
   }
+
   to {
     filter: saturate(1.1) blur(0) invert(var(--tree-invert, 0));
-  }
-}
-
-@keyframes roundScrollMobile {
-  from {
-    border-radius: 0;
-  }
-  to {
-    border-radius: 2rem;
-  }
-}
-
-@keyframes roundScrollDesktop {
-  from {
-    border-radius: 0;
-  }
-  to {
-    border-radius: 5rem;
   }
 }
 
@@ -57,17 +42,13 @@ html {
   @apply bg-stone-100 dark:bg-stone-800;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  #overlay-content {
-    animation-timeline: scroll();
-    animation-name: roundScrollMobile;
-  }
+#overlay-content.scrolled  {
+  @apply rounded-b-[2rem] transition-all duration-100;
 }
 
-@media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
-  #overlay-content {
-    animation-timeline: scroll();
-    animation-name: roundScrollDesktop;
+@media (min-width: 768px) {
+  #overlay-content.scrolled {
+    @apply rounded-b-[5rem] transition-all duration-100;
   }
 }
 
@@ -125,30 +106,30 @@ html {
 
   /* Scrollbar */
   .no-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
   }
+
   .no-scrollbar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+    display: none;
+    /* Chrome, Safari and Opera */
   }
 
   .light-gradient-projection {
     @apply relative py-1 px-2;
-    clip-path: polygon(
-      -2px -2px,
-      calc(100% + 2px) -2px,
-      calc(100% + 2px) calc(100% + 2px),
-      -2px calc(100% + 3px)
-    );
+    clip-path: polygon(-2px -2px,
+        calc(100% + 2px) -2px,
+        calc(100% + 2px) calc(100% + 2px),
+        -2px calc(100% + 3px));
   }
 
   .light-gradient-projection:focus-visible {
-    clip-path: polygon(
-      -2px -2px,
-      calc(100% + 2px) -2px,
-      calc(100% + 2px) calc(100% + 2px),
-      -2px calc(100% + 2px)
-    );
+    clip-path: polygon(-2px -2px,
+        calc(100% + 2px) -2px,
+        calc(100% + 2px) calc(100% + 2px),
+        -2px calc(100% + 2px));
   }
 
   .light-gradient-projection::before {
@@ -166,14 +147,12 @@ html {
 
   .radial-maroon-gradient {
     user-select: none;
-    background-image: radial-gradient(
-      circle at bottom left,
-      rgba(118, 51, 75, 0.3) 10%,
-      rgba(118, 51, 75, 0.1) 11%,
-      rgba(0, 68, 165, 0.3) 20%,
-      rgba(0, 68, 165, 0.1) 21%,
-      transparent 40%
-    );
+    background-image: radial-gradient(circle at center left,
+        rgba(118, 51, 75, 0.3) 10%,
+        rgba(118, 51, 75, 0.1) 11%,
+        rgba(0, 68, 165, 0.3) 20%,
+        rgba(0, 68, 165, 0.1) 21%,
+        transparent 40%);
 
     @media (prefers-reduced-motion: no-preference) {
       animation: gradientAppear 1s ease-in forwards;
@@ -184,14 +163,12 @@ html {
 
   .radial-green-gradient {
     user-select: none;
-    background-image: radial-gradient(
-      circle at bottom left,
-      rgba(252, 190, 80, 0.3) 10%,
-      rgba(252, 190, 80, 0.1) 11%,
-      rgba(135, 207, 183, 0.3) 20%,
-      rgba(135, 207, 183, 0.1) 21%,
-      transparent 50%
-    );
+    background-image: radial-gradient(circle at center left,
+        rgba(252, 190, 80, 0.3) 10%,
+        rgba(252, 190, 80, 0.1) 11%,
+        rgba(135, 207, 183, 0.3) 20%,
+        rgba(135, 207, 183, 0.1) 21%,
+        transparent 50%);
 
     @media (prefers-reduced-motion: no-preference) {
       animation: gradientAppear 1s ease-in forwards;
