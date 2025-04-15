@@ -20,18 +20,18 @@ function footerContent({ lang }: FooterProps) {
   return html`
     <div>
       <div
-        class="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 w-full px-4 py-6"
+        class="mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 w-full px-4 py-6 md:text-left"
       >
         <!-- Column 1: Logo and tagline -->
-        <div class="flex flex-col">
+        <div class="flex flex-col mx-auto">
           <h4 class="text-xl font-bold mb-4">ємιℓιαċв</h3>
-          <p class="text-sm pr-8">
+          <p class="text-sm pr-6 lg:pr-24">
             Senior Software Engineer with a product mindset.
           </p>
         </div>
 
         <!-- Column 2: Navigation links -->
-        <div class="flex flex-col">
+        <div class="flex flex-col mx-auto">
           <h4 class="text-md italic mb-1 md:mb-2">Navigation</h4>
           <nav>
             <ul class="flex flex-col">
@@ -49,7 +49,7 @@ function footerContent({ lang }: FooterProps) {
         </div>
 
         <!-- Column 3: Contact information -->
-        <div class="flex flex-col">
+        <div class="flex flex-col mx-auto">
           <h4 class="text-md italic mb-1 md:mb-2">Contact</h4>
           <div class="text-sm">${contact({ lang, columnMode: true })}</div>
         </div>
