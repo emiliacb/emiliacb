@@ -5,7 +5,7 @@ import matter from "gray-matter";
 
 import { parseContent } from "../utils/parse-content";
 
-type Post = {
+export type Post = {
   date: string;
   draft: boolean;
   slug: string;

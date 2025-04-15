@@ -12,7 +12,7 @@ if (!fs.existsSync(vendorDir)) {
 async function bundleDotlottiePlayer() {
   try {
     await esbuild.build({
-      entryPoints: ["src/client-side/dotlottie-entry.js"],
+      entryPoints: ["src/entrypoints/dotlottie-entry.js"],
       bundle: true,
       minify: true,
       format: "esm",

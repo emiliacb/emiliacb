@@ -14,6 +14,14 @@ import { langMiddleware } from "./middlewares/lang";
 const router = new Hono();
 
 router
+  .use("*", (c, next) => {
+    const time = new Date().toISOString();
+    console.log(`${time} - ${c.req.method} ${c.req.path}`);
+    return next();
+  })
+  .get("/health", (c) => {
+    return c.json({ status: "ok" });
+  })
   .get("/public/*", (c, next) => {
     const path = c.req.path;
     const oneHour = 3600;
