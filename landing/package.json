@@ -3,9 +3,9 @@
   "scripts": {
     "dev": "npm run bundle-vendor && tsx watch src/index.ts & npx tailwindcss -i ./src/styles.css -o ./public/_output.css --watch",
     "start": "node dist/src/index.js",
-    "bundle-vendor": "tsx ./scripts/bundle-vendor.ts",
+    "bundle-vendor": "tsx ./scripts/bundle-vendor.ts", 
     "build": "rm -rf dist && tsc && cp -R content dist/ && npm run bundle-vendor && npx tailwindcss -i ./src/styles.css -o ./public/_output.css --minify",
-    "export": "tsx ./scripts/generate-static.ts"
+    "export": "npm run build && (npm run start & pid=$! && tsx ./scripts/generate-static.ts && kill $pid)"
   },
   "dependencies": {
     "@dotlottie/player-component": "^2.7.12",
