@@ -1,5 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import dotenv from "dotenv";
+
 import { getAllPosts } from "../src/services/posts";
 
 /**
@@ -7,16 +9,21 @@ import { getAllPosts } from "../src/services/posts";
  * The goal is to fetch and save static HTML versions of the site's pages that could be 
  * served directly from a CDN. This is an initial proof-of-concept implementation.
  */
+dotenv.config();
 
+// Config
 const supportedLanguages = ["en", "es"];
 const defaultLanguage = "en";
 const outputDir = "export";
 const publicDir = "public";
-const baseUrl = "http://127.0.0.1:10000";
+const baseUrl = process.env.BASE_URL || "http://localhost:3000";
 const scriptDir = __dirname;
 const projectRoot = path.resolve(scriptDir, "..");
 const outputDirPath = path.join(projectRoot, outputDir);
 const publicDirPath = path.join(projectRoot, publicDir);
+
+// Routes
+const baseRoutes = ["/", "/about", "/services"];
 
 class ServerNotRunningError extends Error {
   constructor(message: string) {
@@ -28,17 +35,16 @@ class ServerNotRunningError extends Error {
 /**
  * Fetches HTML content from the specified route path
  * @param routePath - The URL path to fetch (e.g. "/about" or "/en/blog")
- * @returns {Promise<{ html: string, status: number }>} A promise that resolves to an object containing the HTML content and status code
+ * @returns {Promise<string>} A promise that resolves to the HTML content
  * @throws {Error} If there is an error fetching the route or if the content type is not text/html
  */
-async function fetchRoute(routePath: string): Promise<{ html: string; status: number }> {
+async function fetchRoute(routePath: string): Promise<string> {
   const url = `${baseUrl}${routePath}`;
 
   try {
-    const response = await fetch(url, { redirect: "manual" });
+    const response = await fetch(url);
 
     if (response.status === 404) {
-      const html = await response.text().catch(() => "");
       throw new Error("404");
     }
 
@@ -49,7 +55,7 @@ async function fetchRoute(routePath: string): Promise<{ html: string; status: nu
     const contentType = response.headers.get("content-type");
     if (contentType?.includes("text/html")) {
       const html = await response.text();
-      return { html, status: response.status };
+      return html;
     }
 
     throw new Error("Invalid content type");
@@ -68,12 +74,12 @@ async function fetchRoute(routePath: string): Promise<{ html: string; status: nu
  */
 async function saveHtml(routePath: string, html: string) {
   try {
-    let filePathLang = routePath === "/" ? `/${defaultLanguage}` : routePath;
+    let filePathLang = routePath;
     let filePath = path.join(outputDirPath, filePathLang, "index.html");
 
     switch (routePath) {
       case "/":
-        filePath = path.join(outputDirPath, defaultLanguage, "index.html");
+        filePath = path.join(outputDirPath, "index.html");
         break;
       case `/${defaultLanguage}`:
         filePath = path.join(outputDirPath, defaultLanguage, "index.html");
@@ -134,7 +140,6 @@ async function main() {
 
   try {
     await checkServer();
-    const baseRoutes = ["/", "/about", "/services"];
 
     let blogPosts: { slug: string }[] = [];
 
@@ -150,6 +155,17 @@ async function main() {
 
     let allRoutes: string[] = [];
 
+    // Fetch all pages without language
+    for (const route of baseRoutes) {
+      allRoutes.push(route);
+    }
+
+    // Fetch all blog posts without language
+    for (const post of blogPosts) {
+      allRoutes.push(`/blog/${post.slug}`);
+    }
+
+    // Fetch all with language
     for (const lang of supportedLanguages) {
       baseRoutes.forEach((route) => {
         if (route === "/") {
@@ -167,24 +183,15 @@ async function main() {
         }
       });
     }
-
-    if (!allRoutes.includes(`/${defaultLanguage}`)) {
-      allRoutes.push(`/${defaultLanguage}`);
-    }
-    if (!allRoutes.includes("/")) {
-      allRoutes.push("/");
-    }
-
+    
     for (const route of allRoutes) {
-      const result = await fetchRoute(route);
-      if (result && result.status !== 404) {
-        await saveHtml(route, result.html);
-      }
+      const html = await fetchRoute(route);
+      await saveHtml(route, html);
     }
 
-    await copyRecursive(publicDirPath, outputDirPath);
+    await copyRecursive(publicDirPath, path.join(outputDirPath, "public"));
 
-    console.log(`Static site generation complete. Output in ${outputDir}.`);
+    console.log(`Static site generation complete. Output in ./${outputDir}/`);
   } catch (error) {
     console.error("\nError during static site generation:", error);
     process.exitCode = 1;

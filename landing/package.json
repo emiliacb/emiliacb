@@ -3,20 +3,21 @@
   "scripts": {
     "dev": "npm run bundle-vendor && tsx watch src/index.ts & npx tailwindcss -i ./src/styles.css -o ./public/_output.css --watch",
     "start": "node dist/src/index.js",
-    "bundle-vendor": "tsx ./scripts/bundle-vendor.ts", 
+    "bundle-vendor": "tsx ./scripts/bundle-vendor.ts",
     "build": "rm -rf dist && tsc && cp -R content dist/ && npm run bundle-vendor && npx tailwindcss -i ./src/styles.css -o ./public/_output.css --minify",
-    "export": "npm run build && (npm run start & pid=$! && tsx ./scripts/generate-static.ts && kill $pid)"
+    "export": "rm -rf export && npm run build && (npm run start & pid=$! && (tsx ./scripts/generate-static.ts || (kill $pid && exit 1)) && kill $pid)"
   },
   "dependencies": {
     "@dotlottie/player-component": "^2.7.12",
     "@hono/node-server": "1.12.0",
     "@lottiefiles/dotlottie-web": "^0.34.0",
+    "caniuse-lite": "latest",
+    "dotenv": "^16.5.0",
     "esbuild": "^0.25.1",
     "gray-matter": "^4.0.3",
     "hono": "^4.7.5",
     "lucide-static": "^0.445.0",
-    "marked": "^14.0.0",
-    "caniuse-lite": "latest"
+    "marked": "^14.0.0"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.15",
