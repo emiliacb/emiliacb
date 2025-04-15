@@ -43,7 +43,7 @@ html {
 }
 
 #overlay-content {
-  @apply transition-all duration-600;
+  @apply transition-all duration-500;
 }
 
 #overlay-content.scrolled {
