@@ -23,7 +23,7 @@ const outputDirPath = path.join(projectRoot, outputDir);
 const publicDirPath = path.join(projectRoot, publicDir);
 
 // Routes
-const baseRoutes = ["/", "/about", "/services"];
+const baseRoutes = ["/", "/about", "/services", "/blog"];
 
 class ServerNotRunningError extends Error {
   constructor(message: string) {
