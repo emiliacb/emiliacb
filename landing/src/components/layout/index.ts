@@ -234,7 +234,8 @@ export default function layout({
           const overlayContent = document.getElementById('overlay-content');
           if (overlayContent) {
             window.addEventListener('scroll', () => {
-              const scrolled = window.scrollY > 0;
+              const overlayContentHeight = overlayContent.offsetHeight;
+              const scrolled = window.scrollY > overlayContentHeight - window.innerHeight;
               overlayContent.classList.toggle('scrolled', scrolled);
             });
           }
