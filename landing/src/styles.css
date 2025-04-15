@@ -35,6 +35,10 @@
   }
 }
 
+html {
+  @apply bg-stone-100 dark:bg-stone-800;
+}
+
 .lucide {
   @apply relative size-4 md:size-[1.3rem];
 }
@@ -44,8 +48,8 @@
   @apply text-pretty;
   @apply prose-h1:pt-20 prose-h1:-mt-4 prose-h1:mb-10 prose-h1:font-light;
   @apply prose-h2:font-normal prose-h2:pt-[5rem] prose-h2:-mt-12 prose-h2:mb-2;
-  @apply prose-a:ml-[2px] prose-a:outline prose-a:outline-yellow-200 prose-a:outline-offset-0 prose-a:outline-2;
-  @apply prose-a:bg-yellow-200 prose-a:no-underline prose-a:font-light;
+  @apply prose-a:ml-[2px] prose-a:outline prose-a:outline-yellow-300 prose-a:outline-offset-0 prose-a:outline-2;
+  @apply prose-a:bg-yellow-300 prose-a:no-underline prose-a:font-light;
   @apply dark:prose-a:outline-blue-900 dark:prose-a:bg-blue-900;
   @apply focus-visible:prose-a:outline-red-500;
   @apply hover:prose-a:bg-black hover:prose-a:text-white hover:prose-a:outline-black;
@@ -129,6 +133,7 @@
   }
 
   .radial-maroon-gradient {
+    user-select: none;
     background-image: radial-gradient(
       circle at bottom left,
       rgba(118, 51, 75, 0.3) 10%,
@@ -146,6 +151,7 @@
   }
 
   .radial-green-gradient {
+    user-select: none;
     background-image: radial-gradient(
       circle at bottom left,
       rgba(252, 190, 80, 0.3) 10%,

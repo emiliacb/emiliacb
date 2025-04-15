@@ -1,16 +1,48 @@
 import { html, raw } from "hono/html";
 import { Mail, Linkedin, Github, Calendar } from "lucide-static";
 
-export default function contact({ lang }: { lang: string }) {
-  // TODO: Implement i18n library
-  const scheduleCaption: Record<string, string[]> = {
-    en: ["Schedule", "a Meeting", "Schedule a Meeting"],
-    es: ["Agendar", "una consulta", "Agendar una consulta"],
-  };
+type ContactProps = {
+  lang: string;
+  columnMode?: boolean;
+};
+
+// TODO: Implement i18n library
+const scheduleCaption: Record<string, string[]> = {
+  en: ["Schedule", "a Meeting", "Schedule a Meeting"],
+  es: ["Agendar", "una consulta", "Agendar una consulta"],
+};
+
+export function contactColumn({ lang }: ContactProps) {
+  return html`
+    <ul class="flex flex-col gap-1">
+      <li>
+        <a class="hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black px-1 py-0.5 -ml-1" href="mailto:emiliacabralb@gmail.com" target="_blank">Email</a>
+      </li>
+      <li>
+        <a class="hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black px-1 py-0.5 -ml-1" href="https://www.linkedin.com/in/emiliacb" target="_blank"
+          >LinkedIn</a
+        >
+      </li>
+      <li>
+        <a class="hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black px-1 py-0.5 -ml-1" href="https://github.com/emiliacb" target="_blank">GitHub</a>
+      </li>
+      <li class="underline underline-offset-4 mt-1">
+        <a class="hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black px-1 pt-1 pb-2 -ml-1" href="https://calendly.com/emilia-cb" target="_blank">
+          ${scheduleCaption[lang][2]}
+        </a>
+      </li>
+    </ul>
+  `;
+}
+
+export function contact({ lang, columnMode = false }: ContactProps) {
+  if (columnMode) {
+    return contactColumn({ lang });
+  }
 
   return html`
     <ul
-      class="flex md:flex-row-reverse w-full md:w-fit justify-between md:gap-6 py-8 md:-ml-2"
+      class="flex md:flex-row-reverse py-8 md:-ml-2 justify-between md:gap-6 w-full md:w-fit"
     >
       <li>
         <a
@@ -59,3 +91,5 @@ export default function contact({ lang }: { lang: string }) {
     </ul>
   `;
 }
+
+export default contact;

@@ -4,6 +4,7 @@ import { HtmlEscapedString } from "hono/utils/html";
 import navbar from "../navbar";
 import contact from "../contacts";
 import tree from "../tree";
+import footer from "../footer";
 
 type LayoutProps = {
   siteData: {
@@ -197,40 +198,34 @@ export default function layout({
         </style>
       </head>
 
-      <body
-        class="flex flex-col h-full min-h-static-screen bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-100 prose-h1:text-3xl "
-      >
-        <a
-          class="fixed -z-10 bottom-0 left-0 w-full h-full radial-green-gradient dark:radial-maroon-gradient"
-        ></a>
-        ${withIlustration
-          ? html`
-              <div
-                class="fixed w-[50vw] right-0 h-static-screen overflow-hidden"
-              >
-                ${tree()}
-              </div>
-            `
-          : null}
-        <div class="flex flex-col h-full min-h-static-screen-minus-nav">
-          ${navbar({ lang: siteData.lang })}
-          <main
-            id="content"
-            class="min-h-static-screen-minus-nav overflow-hidden flex flex-col justify-between md:justify-start w-full px-4 sm:px-8 md:pt-24 m-auto max-w-[60rem] h-full"
-          >
-            ${children}
-          </main>
-          ${withFooter
-            ? html`<footer
-                class="w-full z-10 md:z-auto flex px-4 sm:px-8 mt-24 md:mt-32 justify-center bg-yellow-200 dark:bg-blue-900"
-              >
-                ${contact({
-                  lang: siteData.lang,
-                })}
-              </footer>`
+      <body class="text-stone-800 dark:text-stone-100">
+        <div
+          id="overlay-content"
+          class="relative overflow-hidden shadow-lg flex flex-col h-full min-h-static-screen bg-stone-100 z-10 dark:bg-stone-800 prose-h1:text-3xl "
+        >
+          <div
+            class="absolute -z-10 bottom-0 left-0 w-full h-full radial-green-gradient dark:radial-maroon-gradient"
+          ></div>
+          ${withIlustration
+            ? html`
+                <div
+                  class="absolute bottom-0 w-[50vw] right-0 h-static-screen overflow-hidden"
+                >
+                  ${tree()}
+                </div>
+              `
             : null}
+          <div class="flex flex-col h-fit">
+            ${navbar({ lang: siteData.lang })}
+            <main
+              id="content"
+              class="min-h-static-screen-minus-nav overflow-hidden flex flex-col justify-between md:justify-start w-full px-4 sm:px-8 md:pt-24 m-auto max-w-[60rem] h-full"
+            >
+              ${children}
+            </main>
+          </div>
         </div>
-
+        ${withFooter ? footer({ lang: siteData.lang }) : null}
         <!-- Dropdown -->
         <script src="/public/dropdown.js"></script>
       </body>
