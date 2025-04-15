@@ -204,7 +204,7 @@ export default function layout({
           class="relative overflow-hidden shadow-lg flex flex-col min-h-static-screen bg-stone-100 z-10 dark:bg-stone-800 prose-h1:text-3xl"
         > 
           <div
-            class="absolute -z-10 top-[50vh] left-0 w-full h-[100vh] radial-green-gradient dark:radial-maroon-gradient"
+            class="absolute -z-10 top-[25vh] left-0 w-full h-[150vh] radial-green-gradient dark:radial-maroon-gradient"
           ></div>
           ${withIlustration
             ? html`

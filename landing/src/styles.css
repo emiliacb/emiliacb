@@ -42,13 +42,17 @@ html {
   @apply bg-stone-100 dark:bg-stone-800;
 }
 
-#overlay-content.scrolled  {
-  @apply rounded-b-[2rem] transition-all duration-100;
+#overlay-content {
+  @apply transition-all duration-600;
+}
+
+#overlay-content.scrolled {
+  @apply rounded-b-[2rem] transition-all duration-200;
 }
 
 @media (min-width: 768px) {
   #overlay-content.scrolled {
-    @apply rounded-b-[5rem] transition-all duration-100;
+    @apply rounded-b-[5rem] transition-all duration-200;
   }
 }
 
