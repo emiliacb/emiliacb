@@ -31,6 +31,10 @@ This project isn't just about building *a* voice agent; it's about challenging t
 *   **Leveraging powerful APIs directly** instead of through heavy abstractions.
 *   **Utilizing smart, free tools** like Rhubarb for polish.
 
+### Agent definition
+
+While in general my personal definition of an agent centers on autonomous decision-making and inter-agent interaction capabilities, for the purposes of this project we'll use a more practical definition: a voice-enabled AI system that can engage in natural language dialogue through speech. This encompasses the core elements that most users intuitively associate with an "AI agent" - the ability to understand spoken input, process it meaningfully, and respond verbally, creating a conversational interface that feels natural and engaging.
+
 ### Personality
 
 The agent is designed as a funny and engaging assistant that answers questions in a cryptic, esoteric way. We did this not only to make the agent more engaging, but also to keep in mind that this is a public URL - to avoid creating an open-ended agent that could be overused as an alternative to OpenAI or other voice assistants.
@@ -50,7 +54,7 @@ If the user's message is incomprehensible, respond with "I'm listening, please [
 
 ## Flow
 
-1.  **User:** Holds the button.
+1.  **User:** Holds the button. Like a walkie-talkie.
 2.  **Browser:** Records audio.
 3.  **Frontend:** Sends audio blob to the Hono backend (`/message`).
 4.  **Backend:** Orchestrates the magic:

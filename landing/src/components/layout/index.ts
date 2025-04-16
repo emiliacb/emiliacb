@@ -140,21 +140,18 @@ export default function layout({
         <style>
           @keyframes move-out {
             0% {
-              transform-origin: left;
-              transform: scale(1) translateX(0);
               opacity: 100%;
+              filter: blur(0px);
             }
 
-            20% {
-              transform-origin: left;
-              transform: scale(1) translateX(0);
+            80% {
               opacity: 0%;
+              filter: blur(10px);
             }
 
             100% {
-              transform-origin: left;
-              transform: scale(0.8) translateX(-100%);
               opacity: 0%;
+              filter: blur(10px);
             }
           }
 
@@ -176,6 +173,7 @@ export default function layout({
 
           #content {
             view-transition-name: content;
+            contain: paint;
           }
 
           html {
@@ -184,25 +182,29 @@ export default function layout({
 
           @media (prefers-reduced-motion: no-preference) {
             html {
-              /* scroll-behavior: smooth; */
+              scroll-behavior: smooth;
             }
 
             ::view-transition-old(content) {
-              animation: 50ms cubic-bezier(0.17, 0.67, 0.81, 0.35) both move-out;
+              animation: 100ms cubic-bezier(0.17, 0.67, 0.81, 0.35) both
+                move-out;
             }
 
             ::view-transition-new(content) {
-              animation: 200ms cubic-bezier(0.42, 0.28, 0.42, 0.89) both move-in;
+              animation: 300ms cubic-bezier(0.42, 0.28, 0.42, 0.89) both move-in;
+              animation-delay: 100ms;
             }
           }
         </style>
       </head>
 
-      <body class="text-stone-800 dark:text-stone-100 overscroll-none md:overscroll-auto">
+      <body
+        class="text-stone-800 dark:text-stone-100 overscroll-none md:overscroll-auto"
+      >
         <div
           id="overlay-content"
           class="relative overflow-hidden shadow-lg flex flex-col min-h-static-screen bg-stone-100 z-10 dark:bg-stone-800 prose-h1:text-3xl"
-        > 
+        >
           <div
             class="absolute -z-10 top-[25vh] left-0 w-full h-[150vh] radial-green-gradient dark:radial-maroon-gradient"
           ></div>
@@ -230,23 +232,30 @@ export default function layout({
         <script src="/public/dropdown.js"></script>
 
         <script>
-        if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
-          const overlayContent = document.getElementById('overlay-content');
-          if (overlayContent) {
-            let timeout;
-            window.addEventListener('scroll', () => {
-              const overlayContentHeight = overlayContent.offsetHeight;
-              const scrolled = window.scrollY > overlayContentHeight - window.innerHeight;
-              overlayContent.classList.toggle('scrolled', scrolled);
+          if (
+            window.matchMedia("(prefers-reduced-motion: no-preference)").matches
+          ) {
+            const overlayContent = document.getElementById("overlay-content");
+            if (overlayContent) {
+              let timeout;
+              window.addEventListener("scroll", () => {
+                const overlayContentHeight = overlayContent.offsetHeight;
+                const scrolled =
+                  window.scrollY >
+                  overlayContentHeight - window.innerHeight + 1;
+                overlayContent.classList.toggle("scrolled", scrolled);
 
-              clearTimeout(timeout);
-              timeout = setTimeout(() => {
-                const scrolledPast = window.scrollY > overlayContentHeight - window.innerHeight;
-                overlayContent.classList.toggle('scrolled-past', scrolledPast);
-              }, 3000);
-            });
+                // Debounce scroll handler to handle inertial scrolling animations
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                  const scrolledPast =
+                    window.scrollY >
+                    overlayContentHeight - window.innerHeight + 1;
+                  overlayContent.classList.toggle("scrolled", scrolledPast);
+                }, 1000);
+              });
+            }
           }
-        }
         </script>
       </body>
     </html>
