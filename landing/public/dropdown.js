@@ -1,3 +1,5 @@
+// TODO: Move this to src/components/dropdown and create a entrypoint to generate this file with esbuild.
+
 class DropdownTrigger extends HTMLElement {
   constructor() {
     super();
@@ -34,6 +36,7 @@ class DropdownTrigger extends HTMLElement {
           height: 1rem;
           transform: rotate(0deg);
           transition: transform 0.2s ease-in-out;
+          mix-blend-mode: difference;
         }
 
         .icon.open {

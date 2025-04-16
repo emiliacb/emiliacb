@@ -25,7 +25,7 @@ function footerContent({ lang }: FooterProps) {
         <!-- Column 1: Logo and tagline -->
         <div class="flex flex-col lg:mx-auto">
           <h4 class="text-xl font-bold mb-4">ємιℓιαċв</h3>
-          <p class="text-sm pr-6 lg:pr-24">
+          <p class="text-sm pr-6 lg:pr-24 text-pretty">
             Senior Software Engineer with a product mindset.
           </p>
         </div>

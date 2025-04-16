@@ -184,7 +184,7 @@ export default function layout({
 
           @media (prefers-reduced-motion: no-preference) {
             html {
-              scroll-behavior: smooth;
+              /* scroll-behavior: smooth; */
             }
 
             ::view-transition-old(content) {
@@ -233,10 +233,17 @@ export default function layout({
         if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
           const overlayContent = document.getElementById('overlay-content');
           if (overlayContent) {
+            let timeout;
             window.addEventListener('scroll', () => {
               const overlayContentHeight = overlayContent.offsetHeight;
               const scrolled = window.scrollY > overlayContentHeight - window.innerHeight;
               overlayContent.classList.toggle('scrolled', scrolled);
+
+              clearTimeout(timeout);
+              timeout = setTimeout(() => {
+                const scrolledPast = window.scrollY > overlayContentHeight - window.innerHeight;
+                overlayContent.classList.toggle('scrolled-past', scrolledPast);
+              }, 3000);
             });
           }
         }
