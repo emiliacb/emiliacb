@@ -47,12 +47,12 @@ html {
 }
 
 #overlay-content.scrolled {
-  @apply rounded-b-[2rem] transition-all duration-200;
+  @apply rounded-b-[2.5rem] transition-all duration-200;
 }
 
 @media (min-width: 768px) {
   #overlay-content.scrolled {
-    @apply rounded-b-[5rem] transition-all duration-200;
+    @apply rounded-b-[6rem] transition-all duration-200;
   }
 }
 
