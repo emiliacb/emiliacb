@@ -29,7 +29,7 @@ This project isn't just about building *a* voice agent; it's about challenging t
 *   **Prioritizing core needs** over framework features.
 *   **Choosing lightweight tools** like Vanilla JS and Hono.
 *   **Leveraging powerful APIs directly** instead of through heavy abstractions.
-*   **Utilizing smart, free tools** like Rhubarb for polish.
+*   **Utilizing smart, free tools** like Rhubarb for lip sync cues generation.
 
 ### Agent definition
 
