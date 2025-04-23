@@ -143,8 +143,8 @@ This section presents the performance of each model under different prompt techn
 
 | Prompt Technique   | precision at 0% | precision at 50% | precision at 100% |
 | ------------------ | --------------- | ---------------- | ----------------- |
-| No technique       | 1000 (100%)     | 1000 (100%)      | 970 (97%)         |
-| Same language      | 1000 (100%)     | 1000 (100%)      | 970 (97%)         |
+| No technique       | 1000 (100%)     | 1000 (100%)      | 971 (97%)         |
+| Same language      | 1000 (100%)     | 1000 (100%)      | 968 (96%)         |
 | At beginning       | 1000 (100%)     | 1000 (100%)      | 990 (99%)         |
 | Constraint         | 1000 (100%)     | 1000 (100%)      | 1000 (100%)       |
 | Appended directive | 1000 (100%)     | 1000 (100%)      | 1000 (100%)       |
@@ -155,11 +155,11 @@ This section presents the performance of each model under different prompt techn
 
 | Prompt Technique   | precision at 0% | precision at 50% | precision at 100% |
 | ------------------ | --------------- | ---------------- | ----------------- |
-| No technique       | 980 (98%)       | 950 (95%)        | 850 (85%)         |
-| Same language      | 980 (98%)       | 940 (94%)        | 800 (80%)         |
-| At beginning       | 990 (99%)       | 960 (96%)        | 880 (88%)         |
-| Constraint         | 1000 (100%)     | 980 (98%)        | 920 (92%)         |
-| Appended directive | 1000 (100%)     | 990 (99%)        | 950 (95%)         |
+| No technique       | 980 (98%)       | 949 (95%)        | 850 (85%)         |
+| Same language      | 982 (98%)       | 940 (94%)        | 811 (81%)         |
+| At beginning       | 990 (99%)       | 962 (96%)        | 880 (88%)         |
+| Constraint         | 1000 (100%)     | 978 (98%)        | 920 (92%)         |
+| Appended directive | 1000 (100%)     | 991 (99%)        | 950 (95%)         |
 
 **Interpretation:** Qwen 2.5 3B showed strong performance, particularly with explicit guidance. While its baseline performance degraded noticeably when the entire context was in English (80-85% accuracy for `No technique` and `Same language`), using techniques like `Constraint` (92%) and especially `Appended directive` (95%) significantly improved consistency in the 100% mixed scenario. The `Same language` instruction was the least effective method in the most challenging case.
 
@@ -167,10 +167,10 @@ This section presents the performance of each model under different prompt techn
 
 | Prompt Technique   | precision at 0% | precision at 50% | precision at 100% |
 | ------------------ | --------------- | ---------------- | ----------------- |
-| No technique       | 950 (95%)       | 850 (85%)        | 600 (60%)         |
-| Same language      | 940 (94%)       | 800 (80%)        | 550 (55%)         |
-| At beginning       | 960 (96%)       | 880 (88%)        | 650 (65%)         |
-| Constraint         | 990 (99%)       | 900 (90%)        | 720 (72%)         |
+| No technique       | 954 (95%)       | 852 (85%)        | 602 (60%)         |
+| Same language      | 943 (94%)       | 810 (80%)        | 557 (56%)         |
+| At beginning       | 960 (96%)       | 883 (88%)        | 652 (65%)         |
+| Constraint         | 992 (99%)       | 900 (90%)        | 721 (72%)         |
 | Appended directive | 1000 (100%)     | 920 (92%)        | 750 (75%)         |
 
 **Interpretation:** Qwen 4B, despite being larger, confirmed its challenges with this specific multilingual task, particularly as English context increased. While not a complete failure as suggested by smaller sample sizes, its accuracy dropped significantly in the 100% English context scenario, achieving only 55-75% precision depending on the technique. `Appended directive` (75%) and `Constraint` (72%) offered the best mitigation, markedly outperforming the baseline and the least effective `Same language` approach (55%). This reinforces that model training focus heavily impacts specific multilingual capabilities.
