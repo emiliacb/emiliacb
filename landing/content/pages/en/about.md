@@ -19,7 +19,7 @@ I bring a holistic approach to every project. My background as a former libraria
 - Working on a chatbot and agentic pipelines for a high-impact international fintech project
 - Implementing solutions using **Python**, Streamlit, Langchain, React, and **Next.js**
 
-### Product Engineer - AI Team @ BuildWithin
+### Senior Software Engineer - AI Team @ BuildWithin
 
 **Feb 2024 - May 2025** | Remote, USA
 
@@ -32,7 +32,7 @@ I bring a holistic approach to every project. My background as a former libraria
 - Contributed to company strategy through **business modeling** and **MVP scoping**
 - Enhanced advanced **accessibility** features for improved inclusivity
 
-### Founding Software Engineer @ Fair Share Group
+### Founding Software Engineer [Part-Time] @ Fair Share Group
 
 **Dec 2023 - Feb 2024** | Remote, Melbourne, Australia
 
@@ -52,7 +52,7 @@ I bring a holistic approach to every project. My background as a former libraria
 - Contributed to **internal UI libraries** and created onboarding documentation
 - Delivered technical talks on **accessibility** and frontend development
 
-### Full Stack Engineer @ Freelance
+### Full Stack Engineer [Part-Time] @ Freelance
 
 **Sep 2020 - Feb 2024** | Remote
 
