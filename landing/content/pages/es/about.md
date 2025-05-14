@@ -12,9 +12,16 @@ Aporto un enfoque holístico a cada proyecto. Mi experiencia como ex bibliotecar
 
 ## Trayectoria Profesional
 
+### Ingeniera Senior de Machine Learning @ Marvik
+
+**Mayo 2024 - Presente** | Remoto, Uruguay
+
+- Trabajando en un chatbot y agentic pipelines para un proyecto fintech internacional de alto impacto
+- Implementando soluciones utilizando **Python**, Streamlit, Langchain, React y **Next.js**
+
 ### Ingeniera de Producto - Equipo de IA @ BuildWithin
 
-**Feb 2024 - Presente** | Remoto, EE. UU.
+**Feb 2024 - Mayo 2025** | Remoto, EE. UU.
 
 - Lideré el desarrollo de funciones de IA, resultando en una **reducción del 80% en los costos de generación**
 - Implementé soluciones full-stack utilizando **Next.js**, **Langchain**, Langsmith y **PostgreSQL**
