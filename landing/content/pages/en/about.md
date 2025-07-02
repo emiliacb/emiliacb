@@ -12,12 +12,12 @@ I bring a holistic approach to every project. My background as a former libraria
 
 ## Professional Journey
 
-### Senior Machine Learning Engineer @ Marvik
+### Senior AI Engineer @ Marvik
 
 **May 2024 - Present** | Remote, Uruguay
 
-- Working on a chatbot and agentic pipelines for a high-impact international fintech project
-- Implementing solutions using **Python**, Streamlit, Langchain, React, and **Next.js**
+- Working on agentic pipelines for a high-impact international fintech project
+- Implementing solutions using **Python**, Streamlit, Langchain, and **Next.js**
 
 ### Senior Software Engineer - AI Team @ BuildWithin
 
