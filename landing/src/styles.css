@@ -43,7 +43,7 @@ html {
 }
 
 #overlay-content {
-  @apply transition-all delay-100 duration-1000 ease-out;
+  transition: border-radius 1.5s ease-out 200ms;
 }
 
 #overlay-content.scrolled {
@@ -123,17 +123,21 @@ html {
 
   .light-gradient-projection {
     @apply relative py-1 px-2;
-    clip-path: polygon(-2px -2px,
-        calc(100% + 2px) -2px,
-        calc(100% + 2px) calc(100% + 2px),
-        -2px calc(100% + 3px));
+    clip-path: polygon(
+      -2px -2px,
+      calc(100% + 2px) -2px,
+      calc(100% + 2px) calc(100% + 2px),
+      -2px calc(100% + 3px)
+    );
   }
 
   .light-gradient-projection:focus-visible {
-    clip-path: polygon(-2px -2px,
-        calc(100% + 2px) -2px,
-        calc(100% + 2px) calc(100% + 2px),
-        -2px calc(100% + 2px));
+    clip-path: polygon(
+      -2px -2px,
+      calc(100% + 2px) -2px,
+      calc(100% + 2px) calc(100% + 2px),
+      -2px calc(100% + 2px)
+    );
   }
 
   .light-gradient-projection::before {
@@ -151,12 +155,14 @@ html {
 
   .radial-maroon-gradient {
     user-select: none;
-    background-image: radial-gradient(circle at center left,
-        rgba(118, 51, 75, 0.3) 10%,
-        rgba(118, 51, 75, 0.1) 11%,
-        rgba(0, 68, 165, 0.3) 20%,
-        rgba(0, 68, 165, 0.1) 21%,
-        transparent 40%);
+    background-image: radial-gradient(
+      circle at center left,
+      rgba(118, 51, 75, 0.3) 10%,
+      rgba(118, 51, 75, 0.1) 11%,
+      rgba(0, 68, 165, 0.3) 20%,
+      rgba(0, 68, 165, 0.1) 21%,
+      transparent 40%
+    );
 
     @media (prefers-reduced-motion: no-preference) {
       animation: gradientAppear 1s ease-in forwards;
@@ -167,12 +173,14 @@ html {
 
   .radial-green-gradient {
     user-select: none;
-    background-image: radial-gradient(circle at center left,
-        rgba(252, 190, 80, 0.3) 10%,
-        rgba(252, 190, 80, 0.1) 11%,
-        rgba(135, 207, 183, 0.3) 20%,
-        rgba(135, 207, 183, 0.1) 21%,
-        transparent 50%);
+    background-image: radial-gradient(
+      circle at center left,
+      rgba(252, 190, 80, 0.3) 10%,
+      rgba(252, 190, 80, 0.1) 11%,
+      rgba(135, 207, 183, 0.3) 20%,
+      rgba(135, 207, 183, 0.1) 21%,
+      transparent 50%
+    );
 
     @media (prefers-reduced-motion: no-preference) {
       animation: gradientAppear 1s ease-in forwards;

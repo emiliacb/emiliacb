@@ -3,6 +3,7 @@ import { createReadStream } from "node:fs";
 
 import { Hono } from "hono";
 import { serveStatic } from "@hono/node-server/serve-static";
+import { RateLimiterMemory } from "rate-limiter-flexible";
 
 import homeHandler from "./routes/home";
 import blogHandler from "./routes/blog";
@@ -11,13 +12,37 @@ import aboutHandler from "./routes/about";
 import notFoundHandler from "./routes/not-found";
 import { langMiddleware } from "./middlewares/lang";
 
+const BLOCK_SECONDS = 120;
+
 const router = new Hono();
+const ipLimiter = new RateLimiterMemory({
+  points: 20,
+  duration: 60,
+});
 
 router
   .use("*", (c, next) => {
     const time = new Date().toISOString();
     console.log(`${time} - ${c.req.method} ${c.req.path}`);
     return next();
+  })
+  .use("*", async (c, next) => {
+    // @ts-expect-error: req.ip exists
+    const ip = c.req.ip;
+    const { msBeforeNext } = (await ipLimiter.get(ip)) || {};
+
+    try {
+      await ipLimiter.consume(ip);
+      await next();
+    } catch (error) {
+      await ipLimiter.block(ip, BLOCK_SECONDS);
+      return c.html(
+        `You have been blocked due too many requests. Please wait ${
+          msBeforeNext ? Math.trunc(msBeforeNext / 1000) : BLOCK_SECONDS
+        } seconds.`,
+        429
+      );
+    }
   })
   .get("/health", (c) => {
     return c.json({ status: "ok" });

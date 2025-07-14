@@ -202,7 +202,7 @@ export default function layout({
           ? html`<script>
               if ("scrollRestoration" in history) {
                 history.scrollRestoration = "manual";
-                window.scrollTo(0, 0);
+                window.scrollTo({ top: 0, left: 0, behavior: "auto" });
               }
             </script> `
           : ""}
@@ -231,7 +231,7 @@ export default function layout({
             ${navbar({ lang: siteData.lang })}
             <main
               id="content"
-              class="min-h-static-screen-minus-nav overflow-hidden flex flex-col justify-between md:justify-start w-full px-4 sm:px-8 md:pt-24 m-auto max-w-[60rem] h-full pb-16 md:pb-24"
+              class="min-h-static-screen-minus-nav overflow-hidden flex flex-col justify-between md:justify-start w-full px-4 sm:px-8 md:pt-6 m-auto max-w-[60rem] h-full pb-16 md:pb-24"
             >
               ${children}
             </main>
