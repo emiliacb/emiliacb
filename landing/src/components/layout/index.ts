@@ -14,6 +14,7 @@ type LayoutProps = {
   };
   withFooter?: boolean;
   withIlustration?: boolean;
+  resetScroll?: boolean;
   children?: HtmlEscapedString | Promise<HtmlEscapedString>;
 };
 
@@ -21,6 +22,7 @@ export default function layout({
   siteData,
   withFooter = true,
   withIlustration = false,
+  resetScroll = false,
   children,
 }: LayoutProps) {
   return html`
@@ -196,6 +198,14 @@ export default function layout({
             }
           }
         </style>
+        ${resetScroll
+          ? html`<script>
+              if ("scrollRestoration" in history) {
+                history.scrollRestoration = "manual";
+                window.scrollTo(0, 0);
+              }
+            </script> `
+          : ""}
       </head>
 
       <body
