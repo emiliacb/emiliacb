@@ -10,6 +10,15 @@ if (!fs.existsSync(vendorDir)) {
   fs.mkdirSync(vendorDir, { recursive: true });
 }
 
+/**
+ * Bundles a single client-side JavaScript file using esbuild. This allows control over how much client side code we send.
+ *
+ * @param {object} options - The options for bundling.
+ * @param {string} options.entry - The entry point file.
+ * @param {string} options.outfile - The output file name.
+ * @param {string} options.label - A descriptive label for the bundle.
+ * @returns {Promise<void>} - A promise that resolves when the bundling is complete.
+ */
 async function bundleClientFile({ entry, outfile, label }: {
   entry: string;
   outfile: string;
@@ -34,12 +43,12 @@ async function bundleClientFile({ entry, outfile, label }: {
 (async () => {
   await bundleClientFile({
     entry: "src/client/dotlottie.js",
-    outfile: "dotlottie-bundle.js",
+    outfile: "_dotlottie-bundle.js",
     label: "Dotlottie player",
   });
   await bundleClientFile({
     entry: "src/client/dropdown.js",
-    outfile: "dropdown-bundle.js",
+    outfile: "_dropdown-bundle.js",
     label: "Dropdown",
   });
 })();

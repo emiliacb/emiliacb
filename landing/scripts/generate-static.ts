@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import { getAllPosts } from "../src/services/posts";
 
 /**
- * This is a test script for static site generation to evaluate CDN deployment feasibility.
+ * This is an EXPERIMENTAL script for static site generation to evaluate CDN deployment feasibility.
  * The goal is to fetch and save static HTML versions of the site's pages that could be 
  * served directly from a CDN. This is an initial proof-of-concept implementation.
  */
