@@ -4,6 +4,7 @@ import { createReadStream } from "node:fs";
 import { Hono } from "hono";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { RateLimiterMemory } from "rate-limiter-flexible";
+import { config } from 'dotenv';
 
 import homeHandler from "./routes/home";
 import blogHandler from "./routes/blog";
@@ -11,8 +12,11 @@ import servicesHandler from "./routes/services";
 import aboutHandler from "./routes/about";
 import notFoundHandler from "./routes/not-found";
 import { langMiddleware } from "./middlewares/lang";
+import { generalCacheMiddleware, cacheVersionMiddleware, versionedStaticCacheMiddleware, CACHE_VERSION } from "./middlewares/cache";
 
-const BLOCK_SECONDS = 120;
+config();
+
+const BLOCK_SECONDS: number = 120;
 
 const router = new Hono();
 const ipLimiter = new RateLimiterMemory({
@@ -21,6 +25,7 @@ const ipLimiter = new RateLimiterMemory({
 });
 
 router
+  .use("*", generalCacheMiddleware)
   .use("*", (c, next) => {
     const time = new Date().toISOString();
     console.log(`${time} - ${c.req.method} ${c.req.path}`);
@@ -44,19 +49,17 @@ router
       );
     }
   })
-  .get("/health", (c) => {
-    return c.json({ status: "ok" });
-  })
-  .get("/public/*.css)", (c, next) => {
-    const oneHour = 3600;
-    const sixHours = 21600;
-
-    c.header(
-      "Cache-Control",
-      `public, max-age=${oneHour}, stale-while-revalidate=${sixHours}`
-    );
-    return next();
-  })
+  .use("*", cacheVersionMiddleware)
+  .use(
+    `/public/${CACHE_VERSION}/*`,
+    versionedStaticCacheMiddleware,
+    serveStatic({
+      root: "./public",
+      rewriteRequestPath(path) {
+        return path.replace(/^\/public\/[^/]+/, "");
+      },
+    })
+  )
   .use(
     "/public/*",
     serveStatic({
@@ -67,6 +70,9 @@ router
     })
   )
   .use('/robots.txt', serveStatic({ path: './public/robots.txt' }))
+  .get("/health", (c) => {
+    return c.json({ status: "ok" });
+  })
   .get("/cv", (c) => {
     const nodeStream = createReadStream("./public/cv.pdf");
 

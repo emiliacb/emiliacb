@@ -1,10 +1,13 @@
 import { html } from "hono/html";
 import { HtmlEscapedString } from "hono/utils/html";
-
+import { config } from "dotenv";
 import navbar from "../navbar";
-import contact from "../contacts";
 import tree from "../tree";
 import footer from "../footer";
+
+config();
+
+const CACHE_VERSION = process.env.CACHE_VERSION!;
 
 type LayoutProps = {
   siteData: {
@@ -124,7 +127,7 @@ export default function layout({
         <!-- Lottie -->
         <link
           rel="preload"
-          href="/public/vendor/dotlottie-bundle.js"
+          href="/public/${CACHE_VERSION}/dotlottie-bundle.js"
           as="script"
           crossorigin="anonymous"
         />
@@ -138,7 +141,7 @@ export default function layout({
         />
 
         <!-- CSS -->
-        <link rel="stylesheet" href="/public/_output.css" />
+        <link rel="stylesheet" href="/public/${CACHE_VERSION}/_output.css" />
         <style>
           @keyframes move-out {
             0% {
@@ -239,7 +242,7 @@ export default function layout({
         </div>
         ${withFooter ? footer({ lang: siteData.lang }) : null}
         <!-- Dropdown -->
-        <script src="/public/dropdown.js"></script>
+        <script src="/public/${CACHE_VERSION}/dropdown.js"></script>
 
         <script>
           if (
