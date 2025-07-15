@@ -10,7 +10,7 @@ export default function tree() {
     <script type="module" src="/public/vendor/dotlottie-bundle.js"></script>
 
     <dotlottie-player
-      src="/public/${CACHE_VERSION}tree.lottie"
+      src="/public/${CACHE_VERSION}/tree.lottie"
       background="transparent"
       class="cover-tree"
       speed="0.5"
