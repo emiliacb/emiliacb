@@ -28,6 +28,20 @@ function footerContent({ lang }: FooterProps) {
           <p class="text-sm pr-6 lg:pr-24 text-pretty">
             Senior Software Engineer with a product mindset.
           </p>
+          <div class="mt-2 relative w-fit z-10">
+            <dropdown-trigger variant="small" label="Language">
+              <div class="flex flex-col -ml-4 p-[0.2rem] bg-black dark:bg-white shadow-lg w-fit">
+                <a
+                  class="block text-sm px-[0.2rem] py-[0.2rem] text-white dark:text-black bg-black dark:bg-white hover:bg-white hover:text-black dark:hover:bg-black dark:hover:text-white whitespace-nowrap"
+                  href="/en"
+                >English<span aria-label="Flag emoji" class="ml-[0.4rem]">🇺🇸</span></a>
+                <a
+                  class="block text-sm px-[0.2rem] py-[0.2rem] text-white dark:text-black bg-black dark:bg-white hover:bg-white hover:text-black dark:hover:bg-black dark:hover:text-white whitespace-nowrap"
+                  href="/es"
+                >Español<span aria-label="Flag emoji" class="ml-[0.4rem]">🇪🇸</span></a>
+              </div>
+            </dropdown-trigger>
+          </div>
         </div>
 
         <!-- Column 2: Navigation links -->
@@ -39,7 +53,7 @@ function footerContent({ lang }: FooterProps) {
                 (route) => html`<li>
                   <a
                     href="${baseLangPath}${route.path}"
-                    class="text-sm hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black px-1 py-0.5 -ml-1"
+                    class="text-sm hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 py-0.5 -ml-1"
                     >${route.name}</a
                   >
                 </li>`
