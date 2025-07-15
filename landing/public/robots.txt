@@ -1,2 +1,3 @@
+# This is a private website. Please do not crawl.
 User-agent: *
 Disallow: /

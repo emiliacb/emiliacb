@@ -47,24 +47,17 @@ router
   .get("/health", (c) => {
     return c.json({ status: "ok" });
   })
-  .get("/public/*", (c, next) => {
-    const path = c.req.path;
+  .get("/public/*.css)", (c, next) => {
     const oneHour = 3600;
-    const oneDay = 86400;
+    const sixHours = 21600;
 
-    if (path.endsWith(".css")) {
-      c.header(
-        "Cache-Control",
-        `public, max-age=${oneHour}, stale-while-revalidate`
-      );
-      return next();
-    }
-
-    c.header("Cache-Control", `public, max-age=${oneDay}`);
-
+    c.header(
+      "Cache-Control",
+      `public, max-age=${oneHour}, stale-while-revalidate=${sixHours}`
+    );
     return next();
   })
-  .get(
+  .use(
     "/public/*",
     serveStatic({
       root: "./public",
@@ -73,6 +66,7 @@ router
       },
     })
   )
+  .use('/robots.txt', serveStatic({ path: './public/robots.txt' }))
   .get("/cv", (c) => {
     const nodeStream = createReadStream("./public/cv.pdf");
 
