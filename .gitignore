@@ -28,6 +28,7 @@ lerna-debug.log*
 dist/
 public/_output.css
 export/
+*-bundle.js
 
 # misc
 .DS_Store
