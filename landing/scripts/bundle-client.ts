@@ -29,7 +29,6 @@ async function bundleClientFile({ entry, outfile, label }: {
       entryPoints: [entry],
       bundle: true,
       minify: true,
-      format: "esm",
       outfile: `${OUTPUT_DIR}/${outfile}`,
     });
     console.log(`${label} bundled successfully to ${outfile}`);

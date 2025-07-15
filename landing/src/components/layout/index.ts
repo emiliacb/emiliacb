@@ -125,12 +125,10 @@ export default function layout({
         </script>
 
         <!-- Lottie -->
-        <link
-          rel="preload"
-          href="/public/${CACHE_VERSION}/dotlottie-bundle.js"
-          as="script"
-          crossorigin="anonymous"
-        />
+        <script src="/public/${CACHE_VERSION}/_dotlottie-bundle.js"></script>
+
+        <!-- Dropdown -->
+        <script src="/public/${CACHE_VERSION}/_dropdown-bundle.js"></script>
 
         <!-- Google Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -241,9 +239,6 @@ export default function layout({
           </div>
         </div>
         ${withFooter ? footer({ lang: siteData.lang }) : null}
-        <!-- Dropdown -->
-        <script src="/public/${CACHE_VERSION}/dropdown-bundle.js"></script>
-
         <script>
           if (
             window.matchMedia("(prefers-reduced-motion: no-preference)").matches

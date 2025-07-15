@@ -1,11 +1,16 @@
 import { html } from "hono/html";
+import { config } from 'dotenv';
+
+config()
+
+const CACHE_VERSION = process.env.CACHE_VERSION!;
 
 export default function tree() {
   return html`
     <script type="module" src="/public/vendor/dotlottie-bundle.js"></script>
 
     <dotlottie-player
-      src="/public/tree.lottie"
+      src="/public/${CACHE_VERSION}tree.lottie"
       background="transparent"
       class="cover-tree"
       speed="0.5"

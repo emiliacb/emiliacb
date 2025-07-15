@@ -3,7 +3,6 @@ import { createReadStream } from "node:fs";
 
 import { Hono } from "hono";
 import { serveStatic } from "@hono/node-server/serve-static";
-import { RateLimiterMemory } from "rate-limiter-flexible";
 import { config } from 'dotenv';
 
 import homeHandler from "./routes/home";
@@ -13,16 +12,11 @@ import aboutHandler from "./routes/about";
 import notFoundHandler from "./routes/not-found";
 import { langMiddleware } from "./middlewares/lang";
 import { generalCacheMiddleware, cacheVersionMiddleware, versionedStaticCacheMiddleware, CACHE_VERSION } from "./middlewares/cache";
+import { rateLimiterMiddleware } from "./middlewares/rateLimiter";
 
 config();
 
-const BLOCK_SECONDS: number = 120;
-
 const router = new Hono();
-const ipLimiter = new RateLimiterMemory({
-  points: 20,
-  duration: 60,
-});
 
 router
   .use("*", generalCacheMiddleware)
@@ -31,24 +25,7 @@ router
     console.log(`${time} - ${c.req.method} ${c.req.path}`);
     return next();
   })
-  .use("*", async (c, next) => {
-    // @ts-expect-error: req.ip exists
-    const ip = c.req.ip;
-    const { msBeforeNext } = (await ipLimiter.get(ip)) || {};
-
-    try {
-      await ipLimiter.consume(ip);
-      await next();
-    } catch (error) {
-      await ipLimiter.block(ip, BLOCK_SECONDS);
-      return c.html(
-        `You have been blocked due too many requests. Please wait ${
-          msBeforeNext ? Math.trunc(msBeforeNext / 1000) : BLOCK_SECONDS
-        } seconds.`,
-        429
-      );
-    }
-  })
+  .use("*", rateLimiterMiddleware)
   .use("*", cacheVersionMiddleware)
   .use(
     `/public/${CACHE_VERSION}/*`,
