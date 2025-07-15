@@ -14,7 +14,7 @@ Aporto un enfoque holístico a cada proyecto. Mi experiencia como ex bibliotecar
 
 ### Senior AI Engineer @ Marvik
 
-**Mayo 2024 - Presente** | Remoto, Uruguay
+**Mayo 2025 - Presente** | Remoto, Uruguay
 
 - Trabajando en agentic pipelines para un proyecto fintech internacional de alto impacto
 - Implementando soluciones utilizando **Python**, Streamlit, Langchain y **Next.js**
