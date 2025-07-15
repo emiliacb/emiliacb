@@ -242,7 +242,7 @@ export default function layout({
         </div>
         ${withFooter ? footer({ lang: siteData.lang }) : null}
         <!-- Dropdown -->
-        <script src="/public/${CACHE_VERSION}/dropdown.js"></script>
+        <script src="/public/${CACHE_VERSION}/dropdown-bundle.js"></script>
 
         <script>
           if (

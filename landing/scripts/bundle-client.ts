@@ -33,7 +33,7 @@ async function bundleClientFile({ entry, outfile, label }: {
 // Execute bundles
 (async () => {
   await bundleClientFile({
-    entry: "src/client/dotlottie-entry.js",
+    entry: "src/client/dotlottie.js",
     outfile: "dotlottie-bundle.js",
     label: "Dotlottie player",
   });
