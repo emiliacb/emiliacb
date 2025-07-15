@@ -28,7 +28,7 @@ lerna-debug.log*
 dist/
 public/_output.css
 export/
-**/public/_**-bundle.js
+**/public/_**-bundle**
 **/public/_output.css
 
 # misc

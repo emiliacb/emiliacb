@@ -29,6 +29,7 @@ async function bundleClientFile({ entry, outfile, label }: {
       entryPoints: [entry],
       bundle: true,
       minify: true,
+      sourcemap: true,
       outfile: `${OUTPUT_DIR}/${outfile}`,
     });
     console.log(`${label} bundled successfully to ${outfile}`);

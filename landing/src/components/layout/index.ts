@@ -125,7 +125,12 @@ export default function layout({
         </script>
 
         <!-- Lottie -->
-        <script src="/public/${CACHE_VERSION}/_dotlottie-bundle.js"></script>
+        <link
+          rel="preload"
+          href="/public/${CACHE_VERSION}/_dotlottie-bundle.js"
+          as="script"
+          crossorigin="anonymous"
+        />
 
         <!-- Dropdown -->
         <script src="/public/${CACHE_VERSION}/_dropdown-bundle.js"></script>
