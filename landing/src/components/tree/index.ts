@@ -7,7 +7,7 @@ const CACHE_VERSION = process.env.CACHE_VERSION!;
 
 export default function tree() {
   return html`
-    <script type="module" src="/public/${CACHE_VERSION}/_dotlottie-bundle.js"></script>
+    <script type="module" src="/public/${CACHE_VERSION}/_dotlottie-bundle.js" crossorigin="anonymous"></script>
 
     <dotlottie-player
       src="/public/${CACHE_VERSION}/tree.lottie"
