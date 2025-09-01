@@ -1,6 +1,6 @@
 # Quién Soy
 
-**Senior Software Engineer con mentalidad de producto**. Especializada en desarrollo web full-stack y **la integración de GenAI**, con casi **cinco años de experiencia** desde la idea hasta el deploy.
+**Senior Software Engineer con mentalidad de producto**. Especializada en desarrollo web full-stack y **la integración de GenAI**, con casi **cinco años de experiencia** desde la ideación hasta el deploy.
 
 %table-of-contents%
 
@@ -16,59 +16,51 @@ Aporto un enfoque holístico a cada proyecto. Mi experiencia como ex bibliotecar
 
 **Mayo 2025 - Presente** | Remoto, Uruguay
 
-- Trabajando en agentic pipelines para un proyecto fintech internacional de alto impacto
-- Implementando soluciones utilizando **Python**, Streamlit, Langchain y **Next.js**
+* Automaticé 80 horas manuales al transformar un proyecto de Agente LLM de un POC no funcional a un MVP listo para producción. Stack: Gemini, LangChain, LangGraph, Playwright, FastAPI y AWS.
+* Reduje en un 50% la carga de trabajo de front-end mediante la automatización del desarrollo para aplicaciones de backoffice a través de un flujo de trabajo impulsado por IA. Stack: v0, Typescript, Python, Streamlit, FastAPI, AWS, React, Shadcn y Vite.
 
 ### Senior Software Engineer - Equipo de IA @ BuildWithin
 
 **Feb 2024 - Mayo 2025** | Remoto, EE. UU.
 
-- Lideré el desarrollo de funciones de IA, resultando en una **reducción del 80% en los costos de generación**
-- Implementé soluciones full-stack utilizando **Next.js**, **Langchain**, Langsmith y **PostgreSQL**
-- Realicé entrevistas con usuarios y contribuí significativamente al **diseño de UI y producto**
-- Impartí **charlas técnicas sobre IA Generativa**
-- Desarrollé **POC y MVP** de una función de aprendizaje generativo dentro de **plazos ajustados**
-- Mejoré los flujos de trabajo del equipo, incluyendo la implementación de **pautas de codificación** y **mejora de las comunicaciones**
-- Contribuí a la estrategia de la empresa a través de **modelado de negocios** y **definición de alcance de MVP**
-- Mejoré las funciones avanzadas de **accesibilidad** para una mayor inclusividad
+* Lideré a diez ingenieros en la refactorización a gran escala de la plataforma, cumpliendo con un plazo de un mes. Stack: TypeScript, Next.js, tRPC, PostgreSQL, SST y AWS.
+* Lideré un equipo de tres ingenieros en el desarrollo de un sistema de matching de candidatos laborales impulsado por IA, construyendo un conjunto de datos de prueba y pipelines ETL para la ingesta y evaluación. Stack: Python, FastAPI, HuggingFace, AWS, S3 y Qdrant.
+* Reduje el uso de tokens en un 80% al diseñar una solución de Memoria a Largo Plazo para LLM con arquitectura multi-tenant escalable y versionado. Stack: TypeScript, Next.js, tRPC, Langchain y ElasticSearch.
+* Lideré la refactorización del producto, realizando entrevistas con usuarios y sesiones de Business Model Canvas con 20 stakeholders para identificar problemas centrales de negocio y usabilidad, y proponer una estrategia.
 
-### Ingeniera de Software Fundadora @ Fair Share Group
+### Ingeniera de Software Fundadora [Part-Time] @ Fair Share Group
 
 **Dic 2023 - Feb 2024** | Remoto, Melbourne, Australia
 
-- Me uní como **ingeniera fundadora solo con participación accionaria** en esta startup en etapa temprana
-- Desarrollé la base de código inicial e **implementé** flujos de trabajo de **automatización de CI**
-- Lideré decisiones de arquitectura de ingeniería para **startup offshore** con equipo global
-- Colaboré con **equipos distribuidos** en India, Australia y China
+* Me uní como **ingeniera fundadora solo con participación accionaria** en esta startup en etapa temprana.
+* Desarrollé la base de código inicial e **implementé** flujos de trabajo de **automatización de CI**.
+* Lideré decisiones de arquitectura de ingeniería para una **startup offshore** con un equipo global.
+* Colaboré con **equipos distribuidos** en India, Australia y China.
 
 ### Ingeniera de Software @ Mercado Libre
 
 **Mar 2021 - Feb 2024** | Remoto, Argentina
 
-- Desarrollé interfaces de usuario escalables utilizando **React** con renderizado del lado del servidor
-- Desarrollé **POC, MVP y V1** de una **función basada en LLM** para Servicio al Cliente, logrando una **tasa de éxito del 90%** en las respuestas.
-- Me convertí en la **persona de referencia para soluciones basadas en LLM** en múltiples equipos
-- Construí paneles de seguimiento utilizando **DataDog**, Kibana y NewRelic
-- Contribuí a **bibliotecas de UI internas** y creé documentación de incorporación
-- Impartí charlas técnicas sobre **accesibilidad** y desarrollo frontend
+* Lideré y desarrollé un chatbot RAG con LLM para el Centro de Ayuda impulsado por IA, reduciendo la carga del equipo de CS en un 45%. Fui pionera en una de las primeras funcionalidades de LLM en la empresa, convirtiéndome en la persona de referencia para GenAI en la vertical. Stack: OpenAI, TypeScript, React, Express, Python, Langchain, ChromaDB, DynamoDB, DataDog.
+* Referente de GenAI y Accesibilidad dentro de la vertical, liderando talleres y capacitaciones para más de 100 diseñadores y miembros del equipo de producto.
 
-### Ingeniera Full Stack @ Freelance
+### Ingeniera Full Stack [Part-Time] @ Freelance
 
-**Sep 2020 - Feb 2024** | Remoto
+**Jul 2020 - Feb 2024** | Remoto
 
-- Desarrollé aplicaciones web utilizando **Typescript**, React, Vue, Gatsby, Node, Express, Hono y **Strapi** (CMS)
-- Diseñé interfaces de usuario y **prototipos interactivos con Figma**
-- **Me adapté rápidamente a nuevas tecnologías** basadas en los requisitos del cliente
-- Comunicación directa con **clientes y partes interesadas**
+* Desarrollé aplicaciones web utilizando **Typescript**, React, Vue, Gatsby, Node, Express, Hono y **Strapi** (CMS).
+* Diseñé interfaces de usuario y **prototipos interactivos con Figma**.
+* **Me adapté rápidamente a nuevas tecnologías** según los requisitos del cliente.
+* Comunicación directa con **clientes y stakeholders**.
 
-## Habilidades
+## Habilidades y Expertise
 
-- **Desarrollo Frontend y Backend**: React, Next.js, Express, Vue, Gatsby, Langchain, PostgreSQL, Lerna, Strapi, Tailwind...
-- **Diseño**: Figma, Photoshop, Miro, Krita, Gimp
-- **IA y Datos**: Soluciones de GenAI, Langchain, Langsmith, TensorFlow, Ollama, Replicate, VectorDB, Grafos de Conocimiento
-- **Herramientas y Plataformas**: DataDog, Kibana, NewRelic, Framer, Retool, Posthog, Hotjar...
+* **Desarrollo Frontend y Backend**: React, Next.js, Express, Vue, Gatsby, Langchain, PostgreSQL, Lerna, Strapi, Tailwind...
+* **Diseño**: Figma, Photoshop, Miro, Krita, Gimp
+* **IA y Datos**: Soluciones de GenAI, Langchain, Langsmith, TensorFlow, Ollama, Replicate, VectorDB, Grafos de Conocimiento
+* **Herramientas y Plataformas**: DataDog, Kibana, NewRelic, Framer, Retool, Posthog, Hotjar...
 
 ## Idiomas
 
-- Inglés: Dominio Profesional Completo.
-- Español: Dominio Nativo
+* Inglés: Dominio Profesional Completo.
+* Español: Nativo.
