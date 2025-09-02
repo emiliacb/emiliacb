@@ -24,7 +24,7 @@ tags:
 categories: ["AI/ML Development", "Web Technology", "Case Study"]
 ---
 
-# Voice AI Without the Bloat: Building a Lean Voice Agent
+# Building a simple turn-based Voice Agent
 
 %table-of-contents%
 
