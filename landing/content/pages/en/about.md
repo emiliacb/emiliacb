@@ -16,21 +16,19 @@ I bring a holistic approach to every project. My background as a former libraria
 
 **May 2025 - Present** | Remote, Uruguay
 
-- Working on agentic pipelines for a high-impact international fintech project
-- Implementing solutions using **Python**, Streamlit, Langchain, and **Next.js**
+- Automated 80 manual hours by transitioning an LLM Agent project from a non-functional POC to a production-ready MVP. Stack: Gemini, LangChain, LangGraph, Playwright, FastAPI, and AWS.
+- 50% reduction in front-end workload by automating development for backoffice applications through an AI-driven workflow. Stack: v0, Typescript, Python, Streamlit, FastAPI, AWS, React, Shadcn and Vite.
+
 
 ### Senior Software Engineer - AI Team @ BuildWithin
 
 **Feb 2024 - May 2025** | Remote, USA
 
-- Led development of AI features, resulting in **80% reduction in** **generation costs**
-- Implemented full-stack solutions using **Next.js**, **Langchain**, Langsmith, and **PostgreSQL**
-- Conducted user interviews and significantly contributed to **UI and product design**
-- Delivered **technical talks on Generative AI**
-- Developed **POC and MVP** of a generative learning feature within **tight deadlines**
-- Improved team workflows, including implementing **coding guidelines** and **enhancing communications**
-- Contributed to company strategy through **business modeling** and **MVP scoping**
-- Enhanced advanced **accessibility** features for improved inclusivity
+- Led ten engineers in full-scale platform refactoring, meeting a one-month deadline. Stack: TypeScript, Next.js, tRPC, PostgreSQL, SST, and AWS.
+- Led a team of three engineers in developing an AI-powered job-candidate matching system, building a testing dataset and ETL pipelines for ingestion and evaluation. Stack: Python, FastAPI, HuggingFace, AWS, S3, and Qdrant.
+- Reduced token usage by 80% by engineering an LLM Long-Term Memory solution with scalable multi-tenant architecture and versioning. Stack: TypeScript, Next.js, tRPC, Langchain, and ElasticSearch.
+- Led product refactoring, conducting user interviews and Business Model Canvas sessions with 20 stakeholders to identify core business and usability issues, and proposing a strategy. 
+
 
 ### Founding Software Engineer [Part-Time] @ Fair Share Group
 
@@ -45,16 +43,13 @@ I bring a holistic approach to every project. My background as a former libraria
 
 **Mar 2021 - Feb 2024** | Remote, Argentina
 
-- Developed scalable user interfaces using **React** with server-side rendering
-- Developed **POC, MVP and V1** of a Customer Service **LLM-based feature**, achieving a **90% success rate** in responses.
-- Became **go-to person for LLM-based solutions** across multiple teams
-- Built tracking dashboards using **DataDog**, Kibana, and NewRelic
-- Contributed to **internal UI libraries** and created onboarding documentation
-- Delivered technical talks on **accessibility** and frontend development
+- Championed and developed LLM RAG chatbot for AI-Powered Help Center, reducing CS team load by 45%. Pioneered one of the first LLM features in the company, becoming the go-to person for GenAI in the vertical. Stack: OpenAI, TypeScript, React, Express, Python, Langchain, ChromaDB, DynamoDB, DataDog.
+- GenAI and Accessibility reference inside the vertical, leading workshops and training for 100+ designers and product team members.
+
 
 ### Full Stack Engineer [Part-Time] @ Freelance
 
-**Sep 2020 - Feb 2024** | Remote
+**Jul 2020 - Feb 2024** | Remote
 
 - Developed web applications using **Typescript**, React, Vue, Gatsby, Node, Express, Hono and **Strapi** (CMS)
 - Designed user interfaces and interactive **prototypes with Figma**

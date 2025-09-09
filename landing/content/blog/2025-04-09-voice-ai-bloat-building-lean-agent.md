@@ -1,5 +1,5 @@
 ---
-title: "Voice AI Without the Bloat: Building a Lean Voice Agent"
+title: "Building a simple turn-based Voice Agent"
 slug: 2025-04-09-voice-ai-bloat-building-lean-agent
 description: "A voice agent built with accessible web tech and direct API calls, proving that you don't need a labyrinthine setup or bloated libraries like LangChain to build something functional and engaging."
 date: 2025-04-09T21:27:04.484Z
@@ -24,7 +24,7 @@ tags:
 categories: ["AI/ML Development", "Web Technology", "Case Study"]
 ---
 
-# Voice AI Without the Bloat: Building a Lean Voice Agent
+# Building a simple turn-based Voice Agent
 
 %table-of-contents%
 
