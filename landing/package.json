@@ -2,7 +2,7 @@
   "name": "landing",
   "version": "1.0.4",
   "scripts": {
-    "dev": "npm run bundle-client && tsx watch src/index.ts & npx tailwindcss -i ./src/styles.css -o ./public/_output.css --watch",
+    "dev": "tsx watch scripts/bundle-client.ts & tsx watch src/index.ts & npx tailwindcss -i ./src/styles.css -o ./public/_output.css --watch",
     "start": "node dist/src/index.js",
     "bundle-client": "tsx ./scripts/bundle-client.ts",
     "build": "rm -rf dist && tsc && cp -R content dist/ && npm run bundle-client && npx tailwindcss -i ./src/styles.css -o ./public/_output.css --minify",
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@dotlottie/player-component": "^2.7.12",
+    "@floating-ui/dom": "^1.7.4",
     "@hono/node-server": "1.12.0",
     "@lottiefiles/dotlottie-web": "^0.34.0",
     "caniuse-lite": "latest",
@@ -19,7 +20,8 @@
     "hono": "^4.7.5",
     "lucide-static": "^0.445.0",
     "marked": "^14.0.0",
-    "rate-limiter-flexible": "^7.1.1"
+    "rate-limiter-flexible": "^7.1.1",
+    "throttle-debounce": "^5.0.2"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.15",

@@ -61,4 +61,9 @@ async function bundleClientFile({ entry, outfile, label }: {
     outfile: "_posthog-bundle.js",
     label: "Posthog JS",
   });
+  await bundleClientFile({
+    entry: "src/client/phone-drag.js",
+    outfile: "_phone-drag-bundle.js",
+    label: "Phone drag",
+  });
 })();
