@@ -51,4 +51,14 @@ async function bundleClientFile({ entry, outfile, label }: {
     outfile: "_dropdown-bundle.js",
     label: "Dropdown",
   });
+  await bundleClientFile({
+    entry: "src/client/layout.js",
+    outfile: "_layout-bundle.js",
+    label: "Layout JS",
+  });
+  await bundleClientFile({
+    entry: "src/client/posthog.js",
+    outfile: "_posthog-bundle.js",
+    label: "Posthog JS",
+  });
 })();

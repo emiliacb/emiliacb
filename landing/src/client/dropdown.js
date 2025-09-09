@@ -1,5 +1,3 @@
-// TODO: Move this to src/components/dropdown and create a entrypoint to generate this file with esbuild.
-
 class DropdownTrigger extends HTMLElement {
   constructor() {
     super();

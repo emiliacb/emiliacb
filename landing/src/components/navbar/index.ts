@@ -3,8 +3,20 @@ import { html } from "hono/html";
 export default function navbar({ lang }: { lang: string }) {
   // TODO: Implement i18n library
   const wordings: Record<string, string[]> = {
-    en: ["Skip to content", "Who I Am", "What I Do", "Journal", "About"],
-    es: ["Saltar al contenido", "Quién Soy", "Qué Hago", "Diario", "Sobre mí"],
+    en: [
+      "Skip to content",
+      "Who I Am",
+      "What I Do",
+      "Journal",
+      "About",
+    ],
+    es: [
+      "Saltar al contenido",
+      "Quién Soy",
+      "Qué Hago",
+      "Diario",
+      "Sobre mí",
+    ],
   };
 
   return html`
