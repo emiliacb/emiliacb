@@ -79,7 +79,7 @@ function main() {
   const lang = document?.documentElement?.lang || 'en';
   const iframe = document.createElement("iframe");
   iframe.setAttribute("allow", "microphone;");
-  iframe.src = `https://voice-agent-front.onrender.com/?lang=${lang}`;
+  iframe.src = `https://voice-agent-front.onrender.com?lang=${lang}`;
   iframe.title = "Phone Content";
   iframe.style.transform = "scale(0.5)";
 
