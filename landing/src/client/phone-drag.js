@@ -76,9 +76,10 @@ function main() {
   const phoneScreen = document.createElement("div");
   phoneScreen.className = "phone-screen";
 
+  const lang = document?.documentElement?.lang || 'en';
   const iframe = document.createElement("iframe");
   iframe.setAttribute("allow", "microphone;");
-  iframe.src = "https://voice-agent-front.onrender.com/";
+  iframe.src = `https://voice-agent-front.onrender.com/?lang=${lang}`;
   iframe.title = "Phone Content";
   iframe.style.transform = "scale(0.5)";
 
