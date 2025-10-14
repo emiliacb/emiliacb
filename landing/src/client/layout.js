@@ -15,21 +15,54 @@ if (
   const overlayContent = document.getElementById("overlay-content");
   if (overlayContent) {
     let timeout;
-    window.addEventListener("scroll", () => {
+    let ticking = false;
+
+    function checkIfOverlayScrolled() {
       const overlayContentHeight = overlayContent.offsetHeight;
-      const scrolled =
+      const isScrolled =
         window.scrollY >
         overlayContentHeight - window.innerHeight + 1;
-      overlayContent.classList.toggle("scrolled", scrolled);
+      return isScrolled;
+    }
+
+    function tick() {
+      const isScrolled = checkIfOverlayScrolled();
+      overlayContent.classList.toggle("scrolled", isScrolled);
+
+      return !isScrolled;
+    }
+
+    function forcedTick() {
+      //Cancel any requested animation
+      const animationFrameId = requestAnimationFrame(tick);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+
+      // Now, force the tick and reset the ticking flag
+      tick();
+      ticking = false;
+    }
+
+    window.addEventListener("scroll", () => {
+      const isScrolled = checkIfOverlayScrolled();
+
+      // Wait for requestAnimationFrame if not scrolled
+      if (!ticking && !isScrolled) {
+        ticking = requestAnimationFrame(tick);
+      }
+
+      // Don't wait for requestAnimationFrame if scrolled, to avoid waiting for the animation to finish
+      if (isScrolled && !overlayContent.classList.contains("scrolled")) {
+        forcedTick();
+      }
+
+      // Modern browsers: scrollend event
+      window.addEventListener("scrollend", forcedTick);
 
       // Debounce scroll handler to handle inertial scrolling animations
       clearTimeout(timeout);
-      timeout = setTimeout(() => {
-        const scrolledPast =
-          window.scrollY >
-          overlayContentHeight - window.innerHeight + 1;
-        overlayContent.classList.toggle("scrolled", scrolledPast);
-      }, 1000);
+      timeout = setTimeout(forcedTick, 200);
     });
   }
 }
