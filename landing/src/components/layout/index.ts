@@ -75,9 +75,6 @@ export default function layout({
         <!-- Dropdown -->
         <script src="/public/${CACHE_VERSION}/_dropdown-bundle.js"></script>
 
-        <!-- Phone Drag -->
-        <script src="/public/${CACHE_VERSION}/_phone-drag-bundle.js" defer></script>
-
         <!-- Google Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
