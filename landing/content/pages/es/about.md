@@ -12,9 +12,13 @@ Aporto un enfoque holístico a cada proyecto. Mi experiencia como ex bibliotecar
 
 ## Trayectoria Profesional
 
+### Senior Software Engineer - AI Engineer @ Stealth Startup
+
+**Oct 2025 - Presente** | Remoto, Área de la Bahía de San Francisco
+
 ### Senior AI Engineer @ Marvik
 
-**Mayo 2025 - Presente** | Remoto, Uruguay
+**Mayo 2025 - Oct 2025** | Remoto, Uruguay
 
 * Automaticé 80 horas manuales al transformar un proyecto de Agente LLM de un POC no funcional a un MVP listo para producción. Stack: Gemini, LangChain, LangGraph, Playwright, FastAPI y AWS.
 * Reduje en un 50% la carga de trabajo de front-end mediante la automatización del desarrollo para aplicaciones de backoffice a través de un flujo de trabajo impulsado por IA. Stack: v0, Typescript, Python, Streamlit, FastAPI, AWS, React, Shadcn y Vite.
