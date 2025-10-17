@@ -14,7 +14,7 @@ Aporto un enfoque holístico a cada proyecto. Mi experiencia como ex bibliotecar
 
 ### Senior Software Engineer - AI Engineer @ Stealth Startup
 
-**Oct 2025 - Presente** | Remoto, Área de la Bahía de San Francisco
+**Oct 2025 - Presente** | Remoto, San Francisco
 
 ### Senior AI Engineer @ Marvik
 
