@@ -3,7 +3,7 @@ import { RateLimiterMemory } from "rate-limiter-flexible";
 const BLOCK_SECONDS: number = 120;
 const ipLimiter = new RateLimiterMemory({
   points: 120,
-  duration: 60,
+  duration: 30,
 });
 
 export const rateLimiterMiddleware = async (c: any, next: any) => {
