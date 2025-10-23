@@ -163,7 +163,12 @@ export default function layout({
           class="relative overflow-hidden shadow-lg flex flex-col min-h-static-screen bg-stone-100 z-10 dark:bg-stone-800 prose-h1:text-3xl"
         >
           <div
-            class="absolute -z-10 top-[25vh] left-0 w-full h-[150vh] radial-green-gradient dark:radial-maroon-gradient"
+            id="gradient-bg"
+            class="absolute -z-10 top-[25vh] h-[150vh] ${
+              withIlustration
+                ? "radial-green-gradient dark:radial-maroon-gradient left-0 w-[130vw]"
+                : "radial-green-gradient-right dark:radial-maroon-gradient-right right-0 w-[50vw]"
+            }"
           ></div>
           ${withIlustration
             ? html`

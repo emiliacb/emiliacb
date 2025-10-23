@@ -38,6 +38,23 @@
   }
 }
 
+@keyframes pulse {
+  0% {
+    opacity: 0.92;
+    transform: scale(0.995);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.005);
+  }
+
+  100% {
+    opacity: 0.98;
+    transform: scale(1);
+  }
+}
+
 html {
   @apply bg-stone-100 dark:bg-stone-800;
 }
@@ -147,7 +164,7 @@ html {
     filter: blur(1px) drop-shadow(0 0 5px rgba(200, 200, 200, 0.2));
 
     @media (prefers-reduced-motion: no-preference) {
-      animation: gradientAppear 1.2s ease-out forwards;
+      animation: gradientAppear 2s ease-out forwards;
       transform-origin: bottom left;
       will-change: transform, opacity;
     }
@@ -161,11 +178,11 @@ html {
       rgba(118, 51, 75, 0.1) 11%,
       rgba(0, 68, 165, 0.3) 20%,
       rgba(0, 68, 165, 0.1) 21%,
-      transparent 40%
+      transparent 30%
     );
 
     @media (prefers-reduced-motion: no-preference) {
-      animation: gradientAppear 1s ease-in forwards;
+      animation: gradientAppear 2s ease-in forwards;
       transform-origin: bottom left;
       will-change: transform, opacity;
     }
@@ -179,12 +196,48 @@ html {
       rgba(252, 190, 80, 0.1) 11%,
       rgba(135, 207, 183, 0.3) 20%,
       rgba(135, 207, 183, 0.1) 21%,
-      transparent 50%
+      transparent 30%
     );
 
     @media (prefers-reduced-motion: no-preference) {
-      animation: gradientAppear 1s ease-in forwards;
+      animation: gradientAppear 2s ease-in forwards;
       transform-origin: bottom left;
+      will-change: transform, opacity;
+    }
+  }
+
+  .radial-maroon-gradient-right {
+    user-select: none;
+    background-image: radial-gradient(
+      circle at center right,
+      rgba(118, 51, 75, 0.3) 10%,
+      rgba(118, 51, 75, 0.1) 11%,
+      rgba(0, 68, 165, 0.3) 20%,
+      rgba(0, 68, 165, 0.1) 21%,
+      transparent 30%
+    );
+
+    @media (prefers-reduced-motion: no-preference) {
+      animation: pulse 2s ease-in-out infinite alternate;
+      transform-origin: bottom right;
+      will-change: transform, opacity;
+    }
+  }
+
+  .radial-green-gradient-right {
+    user-select: none;
+    background-image: radial-gradient(
+      circle at center right,
+      rgba(252, 190, 80, 0.3) 10%,
+      rgba(252, 190, 80, 0.1) 11%,
+      rgba(135, 207, 183, 0.3) 20%,
+      rgba(135, 207, 183, 0.1) 21%,
+      transparent 30%
+    );
+
+    @media (prefers-reduced-motion: no-preference) {
+      animation: pulse 2s ease-in-out infinite alternate;
+      transform-origin: bottom right;
       will-change: transform, opacity;
     }
   }
