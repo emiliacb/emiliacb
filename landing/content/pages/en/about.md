@@ -12,9 +12,11 @@ I bring a holistic approach to every project. My background as a former libraria
 
 ## Professional Journey
 
-### Senior Software Engineer - AI Engineer @ Stealth Startup
+### Founding Engineer - Senior AI Engineer @ Stealth Startup
 
 **Oct 2025 - Present** | Remote, San Francisco
+
+Shipping AI Agents, Product, Full-stack, and Architecture impact.
 
 
 ### Senior AI Engineer @ Marvik
