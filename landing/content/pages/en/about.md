@@ -1,6 +1,8 @@
 # Who I Am
 
-**Senior Engineer with a Product mindset**. **Five years of experience** shipping production features with clear ROI. **Building with LLMs since GPT-3**.
+**Senior Engineer with a Product mindset.**
+Five years of experience shipping production features with clear ROI.
+Building with LLMs since GPT-3.
 
 %table-of-contents%
 
