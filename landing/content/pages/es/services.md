@@ -10,7 +10,7 @@ Servicios pensados para impulsar tu negocio desde una **perspectiva interdiscipl
 
 Ejemplos:
 
-- Landings o aplicaciones web altamente personalizadas
+- Landing pages o aplicaciones web altamente personalizadas
 - Plataformas de **comercio electrónico** con catálogos de productos dinámicos
 - Aplicaciones con **actualizaciones en tiempo real**
 - Sistemas de gestión de contenidos con **paneles de administración personalizados**
@@ -43,7 +43,7 @@ Ejemplos:
 
 Ejemplos:
 
-- Orientación en la construcción de un proyecto de portafolio
+- Orientación en la construcción de un proyecto de portafolios
 - Mentoría sobre cómo escalar una aplicación web
 
 ## Formación Corporativa y Talleres
