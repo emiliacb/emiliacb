@@ -1,6 +1,8 @@
 # Who I Am
 
-**Senior Software Engineer with a product mindset**. Specializing in web full-stack development and **GenAI integration**, with nearly **five years of experience** from iͪ̔d̴eḁͯti͕on to deployment.
+**Senior Engineer with a Product mindset.**
+Five years of experience shipping production features with clear ROI.
+Building with LLMs since GPT-3.
 
 %table-of-contents%
 
@@ -34,7 +36,7 @@ Shipping AI Agents, Product, Full-stack, and Architecture impact.
 - Led ten engineers in full-scale platform refactoring, meeting a one-month deadline. Stack: TypeScript, Next.js, tRPC, PostgreSQL, SST, and AWS.
 - Led a team of three engineers in developing an AI-powered job-candidate matching system, building a testing dataset and ETL pipelines for ingestion and evaluation. Stack: Python, FastAPI, HuggingFace, AWS, S3, and Qdrant.
 - Reduced token usage by 80% by engineering an LLM Long-Term Memory solution with scalable multi-tenant architecture and versioning. Stack: TypeScript, Next.js, tRPC, Langchain, and ElasticSearch.
-- Led product refactoring, conducting user interviews and Business Model Canvas sessions with 20 stakeholders to identify core business and usability issues, and proposing a strategy. 
+- Led product refactoring, conducting user interviews and Business Model Canvas sessions with 20 stakeholders to identify core business and usability issues, and proposing a strategy.
 
 
 ### Founding Software Engineer [Part-Time] @ Fair Share Group
