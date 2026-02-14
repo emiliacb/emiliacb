@@ -32,7 +32,7 @@ categories: ["AI/ML Development", "Web Technology", "Case Study"]
 
 The AI landscape often feels like an arms race towards complexity. But does it _have_ to be this way? This project is a deliberately lean voice agent, built with accessible web tech and direct API calls, proving that you don't need a labyrinthine setup to build something functional and engaging.
 
-![Voice Agent - Hold to Talk](/agent.jpg)
+![Voice Agent - Hold to Talk](/public/agent.jpg)
 
 👉 **Try it now!** Click below to experience the voice agent in action:
 
