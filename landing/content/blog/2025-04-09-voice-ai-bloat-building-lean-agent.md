@@ -1,5 +1,5 @@
 ---
-title: "Building a simple turn-based Voice Agent"
+title: "Voice agent without the bloat"
 slug: 2025-04-09-voice-ai-bloat-building-lean-agent
 description: "A voice agent built with accessible web tech and direct API calls, proving that you don't need a labyrinthine setup or bloated libraries like LangChain to build something functional and engaging."
 date: 2025-04-09T21:27:04.484Z
@@ -24,13 +24,15 @@ tags:
 categories: ["AI/ML Development", "Web Technology", "Case Study"]
 ---
 
-# Building a simple turn-based Voice Agent
+# Voice agent without the bloat
 
 %table-of-contents%
 
 ## Introduction
 
 The AI landscape often feels like an arms race towards complexity. But does it _have_ to be this way? This project is a deliberately lean voice agent, built with accessible web tech and direct API calls, proving that you don't need a labyrinthine setup to build something functional and engaging.
+
+![Voice Agent - Hold to Talk](/public/agent.jpg)
 
 👉 **Try it now!** Click below to experience the voice agent in action:
 
