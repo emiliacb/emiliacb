@@ -64,6 +64,12 @@ export default function layout({
         <!-- Posthog -->
         <script src="/public/${CACHE_VERSION}/_posthog-bundle.js" defer></script>
 
+        <!-- Apollo -->
+        <script>function initApollo(){var n=Math.random().toString(36).substring(7),o=document.createElement("script");
+o.src="https://assets.apollo.io/micro/website-tracker/tracker.iife.js?nocache="+n,o.async=!0,o.defer=!0,
+o.onload=function(){window.trackingFunctions.onLoad({appId:"698f6151f5837c0011c7b4b3"})},
+document.head.appendChild(o)}initApollo();</script>
+
         <!-- Lottie -->
         <link
           rel="preload"
