@@ -3,7 +3,7 @@ title: "Voice agent without the bloat"
 slug: 2025-04-09-voice-ai-bloat-building-lean-agent
 description: "A voice agent built with accessible web tech and direct API calls, proving that you don't need a labyrinthine setup or bloated libraries like LangChain to build something functional and engaging."
 date: 2025-04-09T21:27:04.484Z
-preview: "lean-voice-agent.png"
+preview: "agent.jpg"
 draft: false
 tags: ["Voice AI", "Web Development", "JavaScript", "Node.js", "Hono", "OpenAI", "CSS", "Performance", "Lean Development", "STT", "TTS", "LLM", "Docker"]
 categories: ["AI/ML Development", "Web Technology", "Case Study"]

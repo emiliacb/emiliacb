@@ -73,13 +73,18 @@ export default async function handler(c: Context, next: Next) {
           <a class="group max-w-3xl bg-yellow-300 dark:bg-blue-900 hover:bg-black hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-900" href="/${lang}/blog/${
                 post.slug
               }">
-          <article class="flex flex-col space-y-2 justify-center p-2 pl-4 min-h-12">
+          <article class="flex flex-row min-h-12">
+          <div class="w-20 h-20 shrink-0 ${post.preview ? '' : 'bg-stone-300 dark:bg-stone-700'}">
+          ${post.preview ? `<img src="/public/${post.preview}" alt="${post.title}" class="w-full h-full object-cover" />` : ''}
+          </div>
+          <div class="flex flex-col space-y-2 justify-center p-2 pl-4">
           <h2 class="font-bold">${post.title} </h2>
           ${
             post.description &&
             `<span class="text-sm text-stone-800 dark:text-stone-300 group-hover:text-stone-100 dark:group-hover:text-stone-900 line-clamp-3">${post.description}</span>`
           }
-          <span class="text-xs font-light">${new Date(post.date).toLocaleDateString()}</span>  
+          <span class="text-xs font-light">${new Date(post.date).toLocaleDateString()}</span>
+          </div>
           </article>
           </a>`
             )
