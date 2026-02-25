@@ -1,17 +1,13 @@
 // Conditional scroll restoration:
-// - data-reset-scroll="true" pages always scroll to top
 // - URLs with query params or hash skip restoration (fresh navigation)
 // - Saved position < 100px: stay at top
 // - Saved position >= 100px: restore position
 (function () {
-  var resetScroll =
-    document.body &&
-    document.body.getAttribute("data-reset-scroll") === "true";
   var hasQueryParams = window.location.search.length > 0;
   var hasHash = window.location.hash.length > 0;
   var savedPos = parseInt(sessionStorage.getItem("__scrollPos") || "0", 10);
 
-  if (resetScroll || hasQueryParams || hasHash || savedPos < 100) {
+  if (hasQueryParams || hasHash || savedPos < 100) {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   } else {
     window.scrollTo({ top: savedPos, left: 0, behavior: "auto" });

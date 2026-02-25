@@ -17,7 +17,7 @@ type LayoutProps = {
   };
   withFooter?: boolean;
   withIlustration?: boolean;
-  resetScroll?: boolean;
+
   children?: HtmlEscapedString | Promise<HtmlEscapedString>;
 };
 
@@ -25,7 +25,7 @@ export default function layout({
   siteData,
   withFooter = true,
   withIlustration = false,
-  resetScroll = false,
+
   children,
 }: LayoutProps) {
   return html`
@@ -159,7 +159,7 @@ document.head.appendChild(o)}initApollo();</script>
 
       <body
         class="text-stone-800 dark:text-stone-100 overscroll-none md:overscroll-auto"
-        ${resetScroll ? 'data-reset-scroll="true"' : ''}
+
       >
         <div
           id="overlay-content"
