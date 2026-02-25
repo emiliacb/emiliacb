@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@property --grad-stop {
+  syntax: "<percentage>";
+  initial-value: 0%;
+  inherits: false;
+}
+
 :root {
   --tree-invert: 0;
 }
@@ -243,18 +249,24 @@ html {
   }
 
   .blog-card-thumb {
+    --grad-stop: 0%;
     background-image: linear-gradient(
       to bottom right,
-      rgb(252, 190, 80),
+      rgb(252, 190, 80) var(--grad-stop),
       rgb(135, 207, 183)
     );
+    transition: --grad-stop 0.3s ease;
+  }
+
+  .group:hover .blog-card-thumb {
+    --grad-stop: 70%;
   }
 
   @media (prefers-color-scheme: dark) {
     .blog-card-thumb {
       background-image: linear-gradient(
         to bottom right,
-        rgb(118, 51, 75),
+        rgb(118, 51, 75) var(--grad-stop),
         rgb(0, 68, 165)
       );
     }
