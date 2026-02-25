@@ -1,1 +1,29 @@
-{"taxonomy":{"tags":[],"categories":[]}}
+{
+  "taxonomy": {
+    "tags": [
+      "LLM",
+      "Multilingual",
+      "Prompt Engineering",
+      "Small Models",
+      "Evaluation",
+      "Voice AI",
+      "Web Development",
+      "JavaScript",
+      "Node.js",
+      "Hono",
+      "OpenAI",
+      "CSS",
+      "Performance",
+      "Lean Development",
+      "STT",
+      "TTS",
+      "Docker"
+    ],
+    "categories": [
+      "AI/ML Research",
+      "AI/ML Development",
+      "Web Technology",
+      "Case Study"
+    ]
+  }
+}

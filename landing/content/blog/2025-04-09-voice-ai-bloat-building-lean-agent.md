@@ -5,22 +5,7 @@ description: "A voice agent built with accessible web tech and direct API calls,
 date: 2025-04-09T21:27:04.484Z
 preview: "lean-voice-agent.png"
 draft: false
-tags:
-  [
-    "Voice AI",
-    "Web Development",
-    "JavaScript",
-    "Node.js",
-    "Hono",
-    "OpenAI",
-    "CSS",
-    "Performance",
-    "Lean Development",
-    "STT",
-    "TTS",
-    "LLM",
-    "Docker",
-  ]
+tags: ["Voice AI", "Web Development", "JavaScript", "Node.js", "Hono", "OpenAI", "CSS", "Performance", "Lean Development", "STT", "TTS", "LLM", "Docker"]
 categories: ["AI/ML Development", "Web Technology", "Case Study"]
 ---
 
