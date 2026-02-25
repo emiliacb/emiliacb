@@ -74,7 +74,7 @@ export default async function handler(c: Context, next: Next) {
                 post.slug
               }">
           <article class="grid grid-cols-[auto_1fr] min-h-12">
-          <div class="aspect-square bg-cover bg-center ${post.preview ? '' : 'bg-gradient-to-br from-[rgb(252,190,80)] to-[rgb(135,207,183)] dark:from-[rgb(118,51,75)] dark:to-[rgb(0,68,165)]'}" ${post.preview ? `style="background-image: url('/public/${post.preview}')"` : ''}>
+          <div class="aspect-square [contain:size] bg-cover bg-center blog-card-thumb" ${post.preview ? `style="background-image: url('/public/${post.preview}')"` : ''}>
           </div>
           <div class="flex flex-col space-y-2 justify-center p-2 pl-4">
           <h2 class="font-bold">${post.title} </h2>
