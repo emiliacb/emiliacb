@@ -70,7 +70,7 @@ export default async function handler(c: Context, next: Next) {
           posts
             .map(
               (post) => `
-          <a class="group max-w-3xl bg-yellow-300 dark:bg-blue-900 hover:bg-black hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-900" href="/${lang}/blog/${
+          <a class="group bg-yellow-300 dark:bg-blue-900 hover:bg-black hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-900" href="/${lang}/blog/${
                 post.slug
               }">
           <article class="grid grid-cols-[3rem_1fr] min-h-12">
