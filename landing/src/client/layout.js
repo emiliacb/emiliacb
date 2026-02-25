@@ -1,12 +1,24 @@
-// Scroll restoration (condicional)
-if (
-  document.body &&
-  document.body.getAttribute("data-reset-scroll") === "true" &&
-  "scrollRestoration" in history
-) {
-  history.scrollRestoration = "manual";
-  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-}
+// Conditional scroll restoration:
+// - URLs with query params or hash skip restoration (fresh navigation)
+// - Saved position < 100px: stay at top
+// - Saved position >= 100px: restore position
+(function () {
+  var hasQueryParams = window.location.search.length > 0;
+  var hasHash = window.location.hash.length > 0;
+  var savedPos = parseInt(sessionStorage.getItem("__scrollPos") || "0", 10);
+
+  if (hasQueryParams || hasHash || savedPos < 100) {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  } else {
+    window.scrollTo({ top: savedPos, left: 0, behavior: "auto" });
+  }
+
+  sessionStorage.removeItem("__scrollPos");
+
+  window.addEventListener("beforeunload", function () {
+    sessionStorage.setItem("__scrollPos", String(window.scrollY));
+  });
+})();
 
 // Overlay-content scroll effect (siempre)
 if (

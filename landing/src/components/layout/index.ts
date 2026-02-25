@@ -17,7 +17,7 @@ type LayoutProps = {
   };
   withFooter?: boolean;
   withIlustration?: boolean;
-  resetScroll?: boolean;
+
   children?: HtmlEscapedString | Promise<HtmlEscapedString>;
 };
 
@@ -25,7 +25,7 @@ export default function layout({
   siteData,
   withFooter = true,
   withIlustration = false,
-  resetScroll = false,
+
   children,
 }: LayoutProps) {
   return html`
@@ -150,19 +150,16 @@ document.head.appendChild(o)}initApollo();</script>
             }
           }
         </style>
-        ${resetScroll
-          ? html`<script>
-              if ("scrollRestoration" in history) {
-                history.scrollRestoration = "manual";
-                window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-              }
-            </script> `
-          : ""}
+        <script>
+          if ("scrollRestoration" in history) {
+            history.scrollRestoration = "manual";
+          }
+        </script>
       </head>
 
       <body
         class="text-stone-800 dark:text-stone-100 overscroll-none md:overscroll-auto"
-        ${resetScroll ? 'data-reset-scroll="true"' : ''}
+
       >
         <div
           id="overlay-content"
