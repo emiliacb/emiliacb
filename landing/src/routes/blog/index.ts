@@ -74,8 +74,7 @@ export default async function handler(c: Context, next: Next) {
                 post.slug
               }">
           <article class="flex flex-row min-h-12">
-          <div class="h-full aspect-square shrink-0 ${post.preview ? '' : 'bg-gradient-to-br from-yellow-300 to-green-300 dark:from-blue-900 dark:to-blue-700'}">
-          ${post.preview ? `<img src="/public/${post.preview}" alt="${post.title}" class="h-full aspect-square object-cover" />` : ''}
+          <div class="aspect-square self-stretch shrink-0 bg-cover bg-center ${post.preview ? '' : 'bg-gradient-to-br from-yellow-300 to-green-300 dark:from-blue-900 dark:to-blue-700'}" ${post.preview ? `style="background-image: url('/public/${post.preview}')"` : ''}>
           </div>
           <div class="flex flex-col space-y-2 justify-center p-2 pl-4">
           <h2 class="font-bold">${post.title} </h2>
