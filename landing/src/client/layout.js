@@ -1,14 +1,16 @@
 // Scroll restoration condicional:
 // - Si la página tiene data-reset-scroll="true", siempre va al top
+// - Si hay query params en la URL, no restaurar (es una navegación nueva)
 // - Si el scroll guardado es menor a 100px, no restaurar (quedarse arriba)
 // - Si el scroll guardado es >= 100px, restaurar la posición
 (function () {
   var resetScroll =
     document.body &&
     document.body.getAttribute("data-reset-scroll") === "true";
+  var hasQueryParams = window.location.search.length > 0;
   var savedPos = parseInt(sessionStorage.getItem("__scrollPos") || "0", 10);
 
-  if (resetScroll || savedPos < 100) {
+  if (resetScroll || hasQueryParams || savedPos < 100) {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   } else {
     window.scrollTo({ top: savedPos, left: 0, behavior: "auto" });
