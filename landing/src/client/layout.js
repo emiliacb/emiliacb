@@ -1,8 +1,8 @@
-// Scroll restoration condicional:
-// - Si la página tiene data-reset-scroll="true", siempre va al top
-// - Si hay query params o hash en la URL, no restaurar (es una navegación nueva)
-// - Si el scroll guardado es menor a 100px, no restaurar (quedarse arriba)
-// - Si el scroll guardado es >= 100px, restaurar la posición
+// Conditional scroll restoration:
+// - data-reset-scroll="true" pages always scroll to top
+// - URLs with query params or hash skip restoration (fresh navigation)
+// - Saved position < 100px: stay at top
+// - Saved position >= 100px: restore position
 (function () {
   var resetScroll =
     document.body &&
