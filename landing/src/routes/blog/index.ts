@@ -70,16 +70,22 @@ export default async function handler(c: Context, next: Next) {
           posts
             .map(
               (post) => `
-          <a class="group max-w-3xl bg-yellow-300 dark:bg-blue-900 hover:bg-black hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-900" href="/${lang}/blog/${
+          <a class="group bg-yellow-300 dark:bg-blue-900 hover:bg-black hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-900" href="/${lang}/blog/${
                 post.slug
               }">
-          <article class="flex flex-col space-y-2 justify-center p-2 pl-4 min-h-12">
-          <h2 class="font-bold">${post.title} </h2>
+          <article class="grid grid-cols-[auto_1fr] h-28">
+          <div class="aspect-square relative overflow-hidden">
+          <div class="absolute inset-0 blog-card-thumb"></div>
+          ${post.preview ? `<div class="absolute inset-0 bg-cover bg-center hue-rotate-30 dark:[filter:hue-rotate(180deg)_brightness(0.8)] group-hover:[filter:none]" style="background-image: url('/public/${post.preview}')"></div>` : ''}
+          </div>
+          <div class="flex flex-col justify-center p-2 pl-4 overflow-hidden gap-1">
+          <h2 class="font-bold truncate">${post.title} </h2>
           ${
             post.description &&
-            `<span class="text-sm text-stone-800 dark:text-stone-300 group-hover:text-stone-100 dark:group-hover:text-stone-900 line-clamp-3">${post.description}</span>`
+            `<span class="text-sm text-stone-800 dark:text-stone-300 group-hover:text-stone-100 dark:group-hover:text-stone-900 line-clamp-2">${post.description}</span>`
           }
-          <span class="text-xs font-light">${new Date(post.date).toLocaleDateString()}</span>  
+          <span class="text-xs font-light">${new Date(post.date).toLocaleDateString()}</span>
+          </div>
           </article>
           </a>`
             )

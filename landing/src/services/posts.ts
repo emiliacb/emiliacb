@@ -11,6 +11,7 @@ export type Post = {
   slug: string;
   title: string;
   description: string;
+  preview: string;
 };
 
 export async function getAllPosts() {

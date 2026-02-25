@@ -241,6 +241,40 @@ html {
       will-change: transform, opacity;
     }
   }
+
+  .blog-card-thumb {
+    background-image: linear-gradient(
+      to bottom right,
+      rgb(252, 190, 80),
+      rgb(135, 207, 183)
+    );
+  }
+
+  .group:hover .blog-card-thumb {
+    background-image: linear-gradient(
+      to bottom left,
+      rgb(135, 207, 183),
+      rgb(252, 190, 80)
+    );
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .blog-card-thumb {
+      background-image: linear-gradient(
+        to bottom right,
+        rgb(118, 51, 75),
+        rgb(0, 68, 165)
+      );
+    }
+
+    .group:hover .blog-card-thumb {
+      background-image: linear-gradient(
+        to bottom left,
+        rgb(0, 68, 165),
+        rgb(118, 51, 75)
+      );
+    }
+  }
 }
 
 dropdown-trigger:not(:defined) * {
