@@ -36,7 +36,7 @@ function footerContent({ lang }: FooterProps) {
           <p class="text-sm pr-6 lg:pr-24 text-pretty">
             Senior Software Engineer with a product mindset.
           </p>
-          <div class="flex mt-2 relative w-fit z-10 hover:bg-white hover:text-black pl-1 -ml-1 shadow-none border-none py-[0.2rem]">
+          <div class="flex mt-2 relative w-fit z-10 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black pl-1 -ml-1 shadow-none border-none py-[0.2rem]">
             <div class="scale-[0.7] -ml-1 mr-1 mt-[2px]">${raw(Languages)}</div>
             <dropdown-trigger variant="small" label="${languagesCaption[lang][0]}">
               <div class="flex flex-col m-auto p-[0.2rem] bg-black dark:bg-white shadow-lg w-fit">
