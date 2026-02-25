@@ -1,6 +1,6 @@
 {
   "name": "landing",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "scripts": {
     "dev": "tsx watch scripts/bundle-client.ts & tsx watch src/index.ts & npx tailwindcss -i ./src/styles.css -o ./public/_output.css --watch",
     "start": "node dist/src/index.js",
