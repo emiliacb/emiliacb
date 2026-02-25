@@ -74,7 +74,7 @@ export default async function handler(c: Context, next: Next) {
                 post.slug
               }">
           <article class="grid grid-cols-[auto_1fr] h-28">
-          <div class="aspect-square bg-cover bg-center blog-card-thumb" ${post.preview ? `style="background-image: url('/public/${post.preview}')"` : ''}>
+          <div class="aspect-square bg-cover bg-center blog-card-thumb hue-rotate-90 dark:hue-rotate-180 group-hover:hue-rotate-0 transition-[filter] duration-300" ${post.preview ? `style="background-image: url('/public/${post.preview}')"` : ''}>
           </div>
           <div class="flex flex-col justify-center p-2 pl-4 overflow-hidden gap-1">
           <h2 class="font-bold truncate">${post.title} </h2>
