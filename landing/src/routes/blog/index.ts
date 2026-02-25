@@ -74,7 +74,7 @@ export default async function handler(c: Context, next: Next) {
                 post.slug
               }">
           <article class="flex flex-row min-h-12">
-          <div class="w-20 h-20 shrink-0 ${post.preview ? '' : 'bg-stone-300 dark:bg-stone-700'}">
+          <div class="w-20 self-stretch shrink-0 ${post.preview ? '' : 'bg-stone-300 dark:bg-stone-700'}">
           ${post.preview ? `<img src="/public/${post.preview}" alt="${post.title}" class="w-full h-full object-cover" />` : ''}
           </div>
           <div class="flex flex-col space-y-2 justify-center p-2 pl-4">
