@@ -1,4 +1,3 @@
-// Service Worker for emiliacabral.com
 // Version passed via query param: sw.js?v=VERSION
 var VERSION = new URL(self.location).searchParams.get('v') || '0';
 var PREFETCH_CACHE = 'prefetch-' + VERSION;
