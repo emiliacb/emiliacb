@@ -47,6 +47,11 @@ router
     })
   )
   .use('/robots.txt', serveStatic({ path: './public/robots.txt' }))
+  .use(
+    '/sw.js',
+    (c: any, next: any) => { c.header('Cache-Control', 'no-cache'); return next(); },
+    serveStatic({ path: './public/sw.js' })
+  )
   .get("/health", (c) => {
     return c.json({ status: "ok" });
   })

@@ -66,4 +66,9 @@ async function bundleClientFile({ entry, outfile, label }: {
     outfile: "_phone-drag-bundle.js",
     label: "Phone drag",
   });
+  await bundleClientFile({
+    entry: "src/client/navigation.js",
+    outfile: "_navigation-bundle.js",
+    label: "Navigation",
+  });
 })();

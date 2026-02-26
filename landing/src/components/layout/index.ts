@@ -43,6 +43,7 @@ export default function layout({
         <title>${siteData.title}</title>
         <meta name="title" content="${siteData.title}" />
         <meta name="description" content="${siteData.description}" />
+        <meta name="cache-version" content="${CACHE_VERSION}" />
 
         <!-- Open Graph / Facebook -->
         <meta property="og:type" content="website" />
@@ -121,6 +122,33 @@ document.head.appendChild(o)}initApollo();</script>
             }
           }
 
+          #loading-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            width: 0;
+            background: #86efac;
+            z-index: 9999;
+            pointer-events: none;
+          }
+
+          @media (prefers-color-scheme: dark) {
+            #loading-bar { background: #1d4ed8; }
+          }
+
+          #loading-bar.loading {
+            animation: load-progress 2s ease-out forwards;
+          }
+
+          @keyframes load-progress {
+            0% { width: 0; }
+            20% { width: 40%; }
+            50% { width: 70%; }
+            80% { width: 85%; }
+            100% { width: 95%; }
+          }
+
           @view-transition {
             navigation: auto;
           }
@@ -161,6 +189,7 @@ document.head.appendChild(o)}initApollo();</script>
         class="text-stone-800 dark:text-stone-100 overscroll-none md:overscroll-auto"
 
       >
+        <div id="loading-bar"></div>
         <div
           id="overlay-content"
           class="relative overflow-hidden shadow-lg flex flex-col min-h-static-screen bg-stone-100 z-10 dark:bg-stone-800 prose-h1:text-3xl"
@@ -194,6 +223,7 @@ document.head.appendChild(o)}initApollo();</script>
         </div>
         ${withFooter ? footer({ lang: siteData.lang }) : null}
         <script src="/public/${CACHE_VERSION}/_layout-bundle.js" defer></script>
+        <script src="/public/${CACHE_VERSION}/_navigation-bundle.js" defer></script>
       </body>
     </html>
   `;
