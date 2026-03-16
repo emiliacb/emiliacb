@@ -69,14 +69,14 @@ export default async function handler(c: Context, next: Next) {
         ${raw(
           posts
             .map(
-              (post) => `
-          <a class="group bg-yellow-300 dark:bg-blue-900 hover:bg-black hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-900" href="/${lang}/blog/${
+              (post, i) => `
+          <a class="stagger-item interactive group bg-yellow-300 dark:bg-blue-900 hover:bg-black hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-900" href="/${lang}/blog/${
                 post.slug
-              }">
+              }" style="animation-delay: ${i * 60}ms">
           <article class="grid grid-cols-[auto_1fr] h-28">
           <div class="aspect-square relative overflow-hidden">
           <div class="absolute inset-0 blog-card-thumb"></div>
-          ${post.preview ? `<div class="absolute inset-0 bg-cover bg-center hue-rotate-30 dark:[filter:hue-rotate(180deg)_brightness(0.8)] group-hover:[filter:none]" style="background-image: url('/public/${post.preview}')"></div>` : ''}
+          ${post.preview ? `<div class="absolute inset-0 bg-cover bg-center img-outline hue-rotate-30 dark:[filter:hue-rotate(180deg)_brightness(0.8)] group-hover:[filter:none]" style="background-image: url('/public/${post.preview}')"></div>` : ''}
           </div>
           <div class="flex flex-col justify-center p-2 pl-4 overflow-hidden gap-1">
           <h2 class="font-bold truncate">${post.title} </h2>

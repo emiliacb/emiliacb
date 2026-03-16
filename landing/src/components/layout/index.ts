@@ -94,31 +94,30 @@ document.head.appendChild(o)}initApollo();</script>
         <link rel="stylesheet" href="/public/${CACHE_VERSION}/_output.css" />
         <style>
           @keyframes move-out {
-            0% {
-              opacity: 100%;
-              filter: blur(0px);
+            from {
+              opacity: 1;
+              transform: translateY(0);
+              filter: blur(0);
             }
 
-            80% {
-              opacity: 0%;
-              filter: blur(10px);
-            }
-
-            100% {
-              opacity: 0%;
-              filter: blur(10px);
+            to {
+              opacity: 0;
+              transform: translateY(-12px);
+              filter: blur(4px);
             }
           }
 
           @keyframes move-in {
             from {
-              transform: translateX(100%);
-              opacity: 0%;
+              opacity: 0;
+              transform: translateY(12px);
+              filter: blur(4px);
             }
 
             to {
-              transform: translateX(0%);
-              opacity: 100%;
+              opacity: 1;
+              transform: translateY(0);
+              filter: blur(0);
             }
           }
 
@@ -168,13 +167,12 @@ document.head.appendChild(o)}initApollo();</script>
             }
 
             ::view-transition-old(content) {
-              animation: 100ms cubic-bezier(0.17, 0.67, 0.81, 0.35) both
-                move-out;
+              animation: 80ms cubic-bezier(0.55, 0, 1, 0.45) both move-out;
             }
 
             ::view-transition-new(content) {
-              animation: 300ms cubic-bezier(0.42, 0.28, 0.42, 0.89) both move-in;
-              animation-delay: 100ms;
+              animation: 200ms cubic-bezier(0.23, 1, 0.32, 1) both move-in;
+              animation-delay: 80ms;
             }
           }
         </style>

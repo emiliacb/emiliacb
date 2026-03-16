@@ -10,15 +10,21 @@ class DropdownTrigger extends HTMLElement {
         }
 
         .dropdown-content {
-          display: none;
           position: absolute;
           margin-top: 0.5rem;
-          transform: translateX(-50%);
+          transform: translateX(-50%) scale(0.96);
+          transform-origin: top center;
           left: 50%;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 200ms cubic-bezier(0.23, 1, 0.32, 1),
+                      transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
         }
 
         .dropdown-content.show {
-          display: block;
+          opacity: 1;
+          transform: translateX(-50%) scale(1);
+          pointer-events: auto;
         }
 
         button {
@@ -33,13 +39,12 @@ class DropdownTrigger extends HTMLElement {
           width: 1rem;
           height: 1rem;
           transform: rotate(0deg);
-          transition: transform 0.2s ease-in-out;
+          transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
           mix-blend-mode: difference;
         }
 
         .icon.open {
           transform: rotate(180deg);
-          transition: transform 0.2s ease-in-out;
         }
 
         .variant-small {

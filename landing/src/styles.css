@@ -15,12 +15,14 @@
 @keyframes gradientAppear {
   from {
     opacity: 0;
-    transform: scale(0.5);
+    transform: scale(0.9);
+    filter: blur(4px);
   }
 
   to {
     opacity: 1;
     transform: scale(1);
+    filter: blur(0);
   }
 }
 
@@ -57,6 +59,8 @@
 
 html {
   @apply bg-stone-100 dark:bg-stone-800;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #overlay-content {
@@ -64,12 +68,14 @@ html {
 }
 
 #overlay-content.scrolled {
-  @apply rounded-b-[2rem] transition-all duration-[400] ease-out;
+  @apply rounded-b-[2rem];
+  transition: border-radius 400ms ease-out;
 }
 
 @media (min-width: 768px) {
   #overlay-content.scrolled {
-    @apply rounded-b-[6rem] transition-all duration-[400] ease-out;
+    @apply rounded-b-[6rem];
+    transition: border-radius 400ms ease-out;
   }
 }
 
@@ -80,8 +86,8 @@ html {
 .markdown-content {
   @apply prose prose-stone dark:prose-invert;
   @apply text-pretty;
-  @apply prose-h1:pt-20 prose-h1:-mt-4 prose-h1:mb-10 prose-h1:font-light;
-  @apply prose-h2:font-normal prose-h2:pt-[5rem] prose-h2:-mt-12 prose-h2:mb-2;
+  @apply prose-h1:pt-20 prose-h1:-mt-4 prose-h1:mb-10 prose-h1:font-light prose-h1:text-balance;
+  @apply prose-h2:font-normal prose-h2:pt-[5rem] prose-h2:-mt-12 prose-h2:mb-2 prose-h2:text-balance;
   @apply prose-a:ml-[2px] prose-a:outline prose-a:outline-yellow-300 prose-a:outline-offset-0 prose-a:outline-2;
   @apply prose-a:bg-yellow-300 prose-a:no-underline prose-a:font-light;
   @apply dark:prose-a:outline-blue-900 dark:prose-a:bg-blue-900;
@@ -100,7 +106,7 @@ html {
   @media (prefers-reduced-motion: no-preference) {
     animation: treeAppear 1s ease-in forwards;
     transform-origin: bottom left;
-    will-change: opacity, saturate;
+    will-change: filter, opacity;
   }
 }
 
@@ -182,7 +188,7 @@ html {
     );
 
     @media (prefers-reduced-motion: no-preference) {
-      animation: gradientAppear 2s ease-in forwards;
+      animation: gradientAppear 1.2s ease-out forwards;
       transform-origin: bottom left;
       will-change: transform, opacity;
     }
@@ -200,7 +206,7 @@ html {
     );
 
     @media (prefers-reduced-motion: no-preference) {
-      animation: gradientAppear 2s ease-in forwards;
+      animation: gradientAppear 1.2s ease-out forwards;
       transform-origin: bottom left;
       will-change: transform, opacity;
     }
@@ -275,6 +281,39 @@ html {
       );
     }
   }
+
+  /* Stagger enter animation for lists */
+  .stagger-item {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(4px);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .stagger-item {
+      animation: fadeInUp 350ms ease-out forwards;
+    }
+  }
+
+  @keyframes fadeInUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+  }
+
+  /* Image outline for consistent depth */
+  .img-outline {
+    outline: 1px solid rgba(0, 0, 0, 0.1);
+    outline-offset: -1px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .img-outline {
+      outline-color: rgba(255, 255, 255, 0.1);
+    }
+  }
 }
 
 dropdown-trigger:not(:defined) * {
@@ -287,4 +326,42 @@ dropdown-trigger::part(trigger) {
 
 dropdown-trigger::part(icon) {
   @apply dark:stroke-white;
+}
+
+/* Interactive element polish */
+.interactive {
+  transition-property: background-color, color, transform;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .interactive:active {
+    transform: scale(0.97);
+  }
+}
+
+/* Shadow as border for depth elements */
+.shadow-border {
+  box-shadow:
+    0px 0px 0px 1px rgba(0, 0, 0, 0.06),
+    0px 1px 2px -1px rgba(0, 0, 0, 0.06),
+    0px 2px 4px 0px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 150ms ease-out;
+}
+
+.shadow-border:hover {
+  box-shadow:
+    0px 0px 0px 1px rgba(0, 0, 0, 0.08),
+    0px 1px 2px -1px rgba(0, 0, 0, 0.08),
+    0px 2px 4px 0px rgba(0, 0, 0, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  .shadow-border {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+  .shadow-border:hover {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.13);
+  }
 }
