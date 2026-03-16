@@ -17,6 +17,7 @@ const defaultLanguage = "en";
 const outputDir = "export";
 const publicDir = "public";
 const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+const cacheVersion = process.env.CACHE_VERSION;
 const scriptDir = __dirname;
 const projectRoot = path.resolve(scriptDir, "..");
 const outputDirPath = path.join(projectRoot, outputDir);
@@ -190,6 +191,13 @@ async function main() {
     }
 
     await copyRecursive(publicDirPath, path.join(outputDirPath, "public"));
+
+    // Create versioned directory so static hosting can serve /public/{version}/* directly
+    if (cacheVersion) {
+      const versionedDir = path.join(outputDirPath, "public", cacheVersion);
+      await copyRecursive(publicDirPath, versionedDir);
+      console.log(`Copied public assets to versioned path: public/${cacheVersion}/`);
+    }
 
     console.log(`Static site generation complete. Output in ./${outputDir}/`);
   } catch (error) {
