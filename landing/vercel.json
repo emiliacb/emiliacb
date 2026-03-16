@@ -1,0 +1,14 @@
+{
+  "buildCommand": "npm run export",
+  "outputDirectory": "export",
+  "rewrites": [
+    {
+      "source": "/public/:version/_output.css",
+      "destination": "/public/_output.css"
+    },
+    {
+      "source": "/public/:version/:file*",
+      "destination": "/public/:file*"
+    }
+  ]
+}
