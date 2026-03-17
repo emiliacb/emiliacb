@@ -96,10 +96,12 @@ document.head.appendChild(o)}initApollo();</script>
           @keyframes move-out {
             from {
               opacity: 1;
+              filter: blur(0);
             }
 
             to {
               opacity: 0;
+              filter: blur(12px);
             }
           }
 
