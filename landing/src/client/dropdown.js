@@ -67,8 +67,8 @@ class DropdownTrigger extends HTMLElement {
 
         ::slotted(*) {
           opacity: 0;
-          transform: translateY(-4px);
-          transition: opacity 150ms ease, transform 150ms ease;
+          transform: translateY(-8px);
+          transition: opacity 200ms ease-out, transform 250ms cubic-bezier(0.23, 1, 0.32, 1);
         }
 
         :host([open]) ::slotted(*) {
@@ -76,10 +76,10 @@ class DropdownTrigger extends HTMLElement {
           transform: translateY(0);
         }
 
-        :host([open]) ::slotted(*:nth-child(1)) { transition-delay: 0ms; }
-        :host([open]) ::slotted(*:nth-child(2)) { transition-delay: 40ms; }
-        :host([open]) ::slotted(*:nth-child(3)) { transition-delay: 80ms; }
-        :host([open]) ::slotted(*:nth-child(4)) { transition-delay: 120ms; }
+        :host([open]) ::slotted(*:nth-child(1)) { transition-delay: 30ms; }
+        :host([open]) ::slotted(*:nth-child(2)) { transition-delay: 100ms; }
+        :host([open]) ::slotted(*:nth-child(3)) { transition-delay: 170ms; }
+        :host([open]) ::slotted(*:nth-child(4)) { transition-delay: 240ms; }
       </style>
 
       <div>
