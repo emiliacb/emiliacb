@@ -34,6 +34,11 @@ class DropdownTrigger extends HTMLElement {
           align-items: center;
         }
 
+        button:focus-visible {
+          outline: 2px solid currentColor;
+          outline-offset: 2px;
+        }
+
         .icon {
           margin-left: 0.2rem;
           width: 1rem;
@@ -52,6 +57,29 @@ class DropdownTrigger extends HTMLElement {
           padding: 0.2rem !important;
           margin-left: -0.2rem;
         }
+
+        @media (prefers-reduced-motion: reduce) {
+          .dropdown-content {
+            transition: opacity 100ms linear;
+            transform: translateX(-50%) scale(1) !important;
+          }
+        }
+
+        ::slotted(*) {
+          opacity: 0;
+          transform: translateY(-4px);
+          transition: opacity 150ms ease, transform 150ms ease;
+        }
+
+        :host([open]) ::slotted(*) {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        :host([open]) ::slotted(*:nth-child(1)) { transition-delay: 0ms; }
+        :host([open]) ::slotted(*:nth-child(2)) { transition-delay: 40ms; }
+        :host([open]) ::slotted(*:nth-child(3)) { transition-delay: 80ms; }
+        :host([open]) ::slotted(*:nth-child(4)) { transition-delay: 120ms; }
       </style>
 
       <div>
@@ -77,22 +105,45 @@ class DropdownTrigger extends HTMLElement {
     this.label.textContent = this.getAttribute("label") || "";
 
     // Close dropdown when clicking outside
-    document.addEventListener("click", (e) => {
+    this._onDocumentClick = (e) => {
       if (!this.contains(e.target) && !this.shadowRoot.contains(e.target)) {
-        this.content.classList.remove("show");
-        this.trigger.setAttribute("aria-expanded", "false");
-        this.icon.classList.remove("open");
+        this.close();
       }
-    });
+    };
+    document.addEventListener("click", this._onDocumentClick);
+
+    // Close dropdown on Escape key and return focus to trigger
+    this._onKeyDown = (e) => {
+      if (e.key === "Escape" && this.content.classList.contains("show")) {
+        this.close();
+        this.trigger.focus();
+      }
+    };
+    document.addEventListener("keydown", this._onKeyDown);
+  }
+
+  disconnectedCallback() {
+    document.removeEventListener("click", this._onDocumentClick);
+    document.removeEventListener("keydown", this._onKeyDown);
   }
 
   toggle() {
     this.content.classList.toggle("show");
-    this.trigger.setAttribute(
-      "aria-expanded",
-      this.content.classList.contains("show")
-    );
+    const isOpen = this.content.classList.contains("show");
+    this.trigger.setAttribute("aria-expanded", isOpen);
     this.icon.classList.toggle("open");
+    if (isOpen) {
+      this.setAttribute("open", "");
+    } else {
+      this.removeAttribute("open");
+    }
+  }
+
+  close() {
+    this.content.classList.remove("show");
+    this.trigger.setAttribute("aria-expanded", "false");
+    this.icon.classList.remove("open");
+    this.removeAttribute("open");
   }
 
   static get observedAttributes() {

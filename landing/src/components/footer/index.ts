@@ -9,17 +9,40 @@ type FooterProps = {
   lang: string;
 };
 
-const routes = [
-  { name: "Home", path: "" },
-  { name: "About", path: "/about" },
-  { name: "Blog", path: "/blog" },
-  { name: "Services", path: "/services" },
-];
+const routes: Record<string, { name: string; path: string }[]> = {
+  en: [
+    { name: "Home", path: "" },
+    { name: "Who I Am", path: "/about" },
+    { name: "Journal", path: "/blog" },
+    { name: "What I Do", path: "/services" },
+  ],
+  es: [
+    { name: "Inicio", path: "" },
+    { name: "Sobre mí", path: "/about" },
+    { name: "Diario", path: "/blog" },
+    { name: "Servicios", path: "/services" },
+  ],
+};
 
 // TODO: Implement i18n library
 const languagesCaption: Record<string, string[]> = {
   en: ["Language"],
   es: ["Idioma"],
+};
+
+const navigationCaption: Record<string, string> = {
+  en: "Navigation",
+  es: "Navegación",
+};
+
+const contactCaption: Record<string, string> = {
+  en: "Contact",
+  es: "Contacto",
+};
+
+const tagline: Record<string, string> = {
+  en: "Senior Software Engineer with a product mindset.",
+  es: "Ingeniera de Software Senior con mentalidad de producto.",
 };
 
 function footerContent({ lang }: FooterProps) {
@@ -32,9 +55,9 @@ function footerContent({ lang }: FooterProps) {
       >
         <!-- Column 1: Logo and tagline -->
         <div class="flex flex-col lg:mx-auto">
-          <h4 class="text-xl font-bold mb-4">ємιℓιαċв</h3>
+          <h4 class="text-xl font-bold mb-4">ємιℓιαċв</h4>
           <p class="text-sm pr-6 lg:pr-24 text-pretty">
-            Senior Software Engineer with a product mindset.
+            ${tagline[lang]}
           </p>
           <div class="flex mt-2 relative w-fit z-10 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black pl-1 -ml-1 shadow-none border-none py-[0.2rem]">
             <div class="scale-[0.7] -ml-1 mr-1 mt-[2px]">${raw(Languages)}</div>
@@ -55,10 +78,10 @@ function footerContent({ lang }: FooterProps) {
 
         <!-- Column 2: Navigation links -->
         <div class="flex flex-col lg:mx-auto">
-          <h4 class="text-md italic mb-1 md:mb-2">Navigation</h4>
-          <nav>
+          <h4 class="text-md italic mb-1 md:mb-2">${navigationCaption[lang]}</h4>
+          <nav aria-label="${lang === 'es' ? 'Navegación del pie de página' : 'Footer navigation'}">
             <ul class="flex flex-col">
-              ${routes.map(
+              ${routes[lang].map(
                 (route) => html`<li>
                   <a
                     href="${baseLangPath}${route.path}"
@@ -73,7 +96,7 @@ function footerContent({ lang }: FooterProps) {
 
         <!-- Column 3: Contact information -->
         <div class="flex flex-col lg:mx-auto">
-          <h4 class="text-md italic mb-1 md:mb-2">Contact</h4>
+          <h4 class="text-md italic mb-1 md:mb-2">${contactCaption[lang]}</h4>
           <div class="text-sm">${contact({ lang, columnMode: true })}</div>
         </div>
       </div>
@@ -98,6 +121,6 @@ function footerFixed({ lang }: FooterProps) {
 }
 
 export default function footer({ lang }: FooterProps) {
-  return html`<div class="opacity-0 py-8">${footerContent({ lang })}</div>
+  return html`<div class="opacity-0 py-8" aria-hidden="true">${footerContent({ lang })}</div>
     <div>${footerFixed({ lang })}</div>`;
 }

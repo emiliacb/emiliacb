@@ -13,10 +13,15 @@ export default async function handler(c: Context) {
   );
   const htmlContent = await getContent(filePath, lang);
 
+  const description =
+    lang === "es"
+      ? "Servicios de ingeniería de software: integración de IA, desarrollo full-stack y consultoría técnica."
+      : "Software engineering services: AI integration, full-stack development, and technical consulting.";
+
   const view = layout({
     siteData: {
       title: "What I Offer | ємιℓιαċв",
-      description: "Senior Software Engineer with a product mindset",
+      description,
       lang,
     },
     withFooter: true,

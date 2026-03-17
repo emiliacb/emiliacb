@@ -9,14 +9,22 @@ export default function tree() {
   return html`
     <script type="module" src="/public/${CACHE_VERSION}/_dotlottie-bundle.js" crossorigin="anonymous"></script>
 
-    <dotlottie-player
-      src="/public/${CACHE_VERSION}/tree.lottie"
-      background="transparent"
-      class="cover-tree"
-      speed="0.5"
-      loop
-      autoplay
-    >
-    </dotlottie-player>
+    <style>
+      @media (prefers-reduced-motion: reduce) {
+        .tree-container dotlottie-player { display: none; }
+      }
+    </style>
+
+    <div class="tree-container">
+      <dotlottie-player
+        src="/public/${CACHE_VERSION}/tree.lottie"
+        background="transparent"
+        class="cover-tree"
+        speed="0.5"
+        loop
+        autoplay
+      >
+      </dotlottie-player>
+    </div>
   `;
 }

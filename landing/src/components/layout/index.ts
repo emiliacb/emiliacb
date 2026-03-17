@@ -53,7 +53,7 @@ export default function layout({
         <meta property="og:image" content="/public/preview.png" />
 
         <!-- Twitter -->
-        <meta property="twitter:card" content="/public/preview.png" />
+        <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://emiliacabral.com/" />
         <meta property="twitter:title" content="${siteData.title}" />
         <meta
@@ -80,7 +80,7 @@ document.head.appendChild(o)}initApollo();</script>
         />
 
         <!-- Dropdown -->
-        <script src="/public/${CACHE_VERSION}/_dropdown-bundle.js"></script>
+        <script src="/public/${CACHE_VERSION}/_dropdown-bundle.js" defer></script>
 
         <!-- Google Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com" />
