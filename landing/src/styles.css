@@ -90,7 +90,7 @@ html {
   @apply text-pretty;
   @apply prose-h1:pt-20 prose-h1:-mt-4 prose-h1:mb-10 prose-h1:font-light prose-h1:text-balance;
   @apply prose-h2:font-normal prose-h2:pt-[5rem] prose-h2:-mt-12 prose-h2:mb-2 prose-h2:text-balance;
-  @apply prose-a:ml-[2px] prose-a:outline prose-a:outline-yellow-300 prose-a:outline-offset-0 prose-a:outline-2;
+  @apply prose-a:ml-[2px] prose-a:outline prose-a:outline-yellow-300 prose-a:outline-offset-0 prose-a:outline-2 prose-a:transition-[background-color,color,transform] prose-a:duration-150 prose-a:ease-out active:prose-a:scale-[0.97];
   @apply prose-a:bg-yellow-300 prose-a:no-underline prose-a:font-light;
   @apply dark:prose-a:outline-blue-900 dark:prose-a:bg-blue-900;
   @apply focus-visible:prose-a:outline-red-500;
