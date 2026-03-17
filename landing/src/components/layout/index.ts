@@ -96,13 +96,11 @@ document.head.appendChild(o)}initApollo();</script>
           @keyframes move-out {
             from {
               opacity: 1;
-              transform: translateY(0);
               filter: blur(0);
             }
 
             to {
               opacity: 0;
-              transform: translateY(-12px);
               filter: blur(4px);
             }
           }
@@ -110,14 +108,12 @@ document.head.appendChild(o)}initApollo();</script>
           @keyframes move-in {
             from {
               opacity: 0;
-              transform: translateY(12px);
-              filter: blur(4px);
+              transform: translateX(20%);
             }
 
             to {
               opacity: 1;
-              transform: translateY(0);
-              filter: blur(0);
+              transform: translateX(0);
             }
           }
 

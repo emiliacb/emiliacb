@@ -46,7 +46,7 @@ export function contact({ lang, columnMode = false }: ContactProps) {
     >
       <li>
         <a
-          class="interactive shadow-border flex gap-2 w-fit px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black"
+          class="interactive flex gap-2 w-fit border border-black dark:border-white px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black"
           href="https://calendly.com/emilia-cb"
           target="_blank"
           norel="noreferrer"

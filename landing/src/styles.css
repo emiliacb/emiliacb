@@ -64,18 +64,20 @@ html {
 }
 
 #overlay-content {
-  transition: border-radius 2s ease-out;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  transition: border-bottom-left-radius 400ms ease-out, border-bottom-right-radius 400ms ease-out;
 }
 
 #overlay-content.scrolled {
-  @apply rounded-b-[2rem];
-  transition: border-radius 400ms ease-out;
+  border-bottom-left-radius: 2rem;
+  border-bottom-right-radius: 2rem;
 }
 
 @media (min-width: 768px) {
   #overlay-content.scrolled {
-    @apply rounded-b-[6rem];
-    transition: border-radius 400ms ease-out;
+    border-bottom-left-radius: 6rem;
+    border-bottom-right-radius: 6rem;
   }
 }
 
