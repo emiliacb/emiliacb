@@ -163,11 +163,12 @@ document.head.appendChild(o)}initApollo();</script>
             }
 
             ::view-transition-old(content) {
-              animation: 120ms cubic-bezier(0.55, 0, 1, 0.45) both move-out;
+              animation: 200ms cubic-bezier(0.55, 0, 1, 0.45) both move-out;
             }
 
             ::view-transition-new(content) {
-              animation: 200ms cubic-bezier(0.23, 1, 0.32, 1) both move-in;
+              animation: 350ms cubic-bezier(0.23, 1, 0.32, 1) both move-in;
+              animation-delay: 150ms;
             }
           }
         </style>
