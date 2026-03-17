@@ -72,7 +72,7 @@ export default async function handler(c: Context, next: Next) {
               (post, i) => `
           <a class="stagger-item interactive group bg-yellow-300 dark:bg-blue-900 hover:bg-black hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-900" href="/${lang}/blog/${
                 post.slug
-              }" style="animation-delay: ${i * 60}ms">
+              }" style="animation-delay: ${i * 100}ms">
           <article class="grid grid-cols-[auto_1fr] h-28">
           <div class="aspect-square relative overflow-hidden">
           <div class="absolute inset-0 blog-card-thumb"></div>

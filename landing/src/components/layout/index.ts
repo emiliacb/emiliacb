@@ -101,7 +101,7 @@ document.head.appendChild(o)}initApollo();</script>
 
             to {
               opacity: 0;
-              filter: blur(8px);
+              filter: blur(12px);
             }
           }
 
