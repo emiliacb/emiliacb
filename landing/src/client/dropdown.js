@@ -4,8 +4,8 @@ class DropdownTrigger extends HTMLElement {
     this.attachShadow({ mode: "open" });
     this.shadowRoot.innerHTML = `
       <style>
-        /* Hide the slot content until the component is defined */
-        :host(:not(:defined)) slot {
+        /* Hide the dropdown content until the component is defined */
+        :host(:not(:defined)) slot:not([name="icon"]) {
           display: none;
         }
 
@@ -70,21 +70,6 @@ class DropdownTrigger extends HTMLElement {
           }
         }
 
-        ::slotted(*) {
-          opacity: 0;
-          transform: translateY(-8px);
-          transition: opacity 200ms ease-out, transform 250ms cubic-bezier(0.23, 1, 0.32, 1);
-        }
-
-        :host([open]) ::slotted(*) {
-          opacity: 1;
-          transform: translateY(0);
-        }
-
-        :host([open]) ::slotted(*:nth-child(1)) { transition-delay: 30ms; }
-        :host([open]) ::slotted(*:nth-child(2)) { transition-delay: 100ms; }
-        :host([open]) ::slotted(*:nth-child(3)) { transition-delay: 170ms; }
-        :host([open]) ::slotted(*:nth-child(4)) { transition-delay: 240ms; }
       </style>
 
       <div>
@@ -133,6 +118,44 @@ class DropdownTrigger extends HTMLElement {
     document.removeEventListener("keydown", this._onKeyDown);
   }
 
+  _getStaggerItems() {
+    const slot = this.content.querySelector("slot:not([name])");
+    if (!slot) return [];
+    const slotted = slot.assignedElements();
+    // If content is wrapped in a container, stagger its children
+    if (slotted.length === 1 && slotted[0].children.length > 0) {
+      return Array.from(slotted[0].children);
+    }
+    return slotted;
+  }
+
+  _staggerIn() {
+    const items = this._getStaggerItems();
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    items.forEach((el, i) => {
+      el.style.opacity = "0";
+      el.style.transform = "translateY(-8px)";
+      el.style.transition = "none";
+      // Force reflow so the initial state applies before animating
+      el.offsetHeight;
+      el.style.transition = prefersReduced
+        ? "opacity 100ms linear"
+        : "opacity 200ms ease-out, transform 250ms cubic-bezier(0.23, 1, 0.32, 1)";
+      el.style.transitionDelay = prefersReduced ? "0ms" : `${30 + i * 70}ms`;
+      el.style.opacity = "1";
+      el.style.transform = "translateY(0)";
+    });
+  }
+
+  _staggerOut() {
+    const items = this._getStaggerItems();
+    items.forEach((el) => {
+      el.style.opacity = "0";
+      el.style.transform = "translateY(-8px)";
+      el.style.transitionDelay = "0ms";
+    });
+  }
+
   toggle() {
     this.content.classList.toggle("show");
     const isOpen = this.content.classList.contains("show");
@@ -140,8 +163,10 @@ class DropdownTrigger extends HTMLElement {
     this.icon.classList.toggle("open");
     if (isOpen) {
       this.setAttribute("open", "");
+      this._staggerIn();
     } else {
       this.removeAttribute("open");
+      this._staggerOut();
     }
   }
 
@@ -150,6 +175,7 @@ class DropdownTrigger extends HTMLElement {
     this.trigger.setAttribute("aria-expanded", "false");
     this.icon.classList.remove("open");
     this.removeAttribute("open");
+    this._staggerOut();
   }
 
   static get observedAttributes() {
