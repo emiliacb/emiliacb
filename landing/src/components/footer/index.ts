@@ -62,7 +62,7 @@ function footerContent({ lang }: FooterProps) {
                 (route) => html`<li>
                   <a
                     href="${baseLangPath}${route.path}"
-                    class="text-sm hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 py-0.5 -ml-1"
+                    class="interactive text-sm hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 py-0.5 -ml-1"
                     >${route.name}</a
                   >
                 </li>`

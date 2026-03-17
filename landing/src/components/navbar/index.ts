@@ -32,7 +32,7 @@ export default function navbar({ lang }: { lang: string }) {
         >${wordings[lang][0]}</a
       >
       <a
-        class="px-2 py-1 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit font-[500] text-xl"
+        class="interactive px-2 py-1 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit font-[500] text-xl"
         href="/${lang}"
         aria-label="Emilia"
         ><span aria-hidden>ємιℓιαċв</span></a
@@ -57,17 +57,17 @@ export default function navbar({ lang }: { lang: string }) {
           </dropdown-trigger>
         </div>
         <a
-          class="hidden md:block px-1 md:px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit"
+          class="interactive hidden md:block px-1 md:px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit"
           href="/${lang}/about"
           >${wordings[lang][1]}</a
         >
         <a
-          class="hidden md:block px-1 md:px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit"
+          class="interactive hidden md:block px-1 md:px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit"
           href="/${lang}/services"
           >${wordings[lang][2]}</a
         >
         <a
-          class="px-1 md:px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit"
+          class="interactive px-1 md:px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white h-fit"
           href="/${lang}/blog"
           >${wordings[lang][3]}</a
         >
