@@ -34,6 +34,11 @@ class DropdownTrigger extends HTMLElement {
           align-items: center;
         }
 
+        ::slotted([slot="icon"]) {
+          display: inline-flex;
+          margin-right: 0.25rem;
+        }
+
         button:focus-visible {
           outline: 2px solid currentColor;
           outline-offset: 2px;
@@ -84,6 +89,7 @@ class DropdownTrigger extends HTMLElement {
 
       <div>
         <button class="button" part="trigger" aria-expanded="false" aria-haspopup="true">
+          <slot name="icon"></slot>
           <span part="label"></span>
           <svg part="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="m6 9 6 6 6-6"/></svg>
         </button>
