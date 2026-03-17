@@ -35,7 +35,10 @@ export default async function handler(c: Context, next: Next) {
       },
       withFooter: true,
       children: html`<div class="markdown-content">
-        ${raw(post.htmlContent)}
+        ${raw(post.htmlContent.replace(
+          /(<h1\s)/,
+          `<h1 style="view-transition-name: post-title-${slug}" `
+        ))}
       </div>`,
     });
 
@@ -79,7 +82,7 @@ export default async function handler(c: Context, next: Next) {
           ${post.preview ? `<div class="absolute inset-0 bg-cover bg-center img-outline hue-rotate-30 dark:[filter:hue-rotate(180deg)_brightness(0.8)] group-hover:[filter:none]" style="background-image: url('/public/${post.preview}')"></div>` : ''}
           </div>
           <div class="flex flex-col justify-center p-2 pl-4 overflow-hidden gap-1">
-          <h2 class="font-bold truncate">${post.title} </h2>
+          <h2 class="font-bold truncate" style="view-transition-name: post-title-${post.slug}">${post.title} </h2>
           ${
             post.description &&
             `<span class="text-sm text-stone-800 dark:text-stone-300 group-hover:text-stone-100 dark:group-hover:text-stone-900 line-clamp-2">${post.description}</span>`
