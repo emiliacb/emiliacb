@@ -287,13 +287,13 @@ html {
   /* Stagger enter animation for lists */
   .stagger-item {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(24px);
     filter: blur(4px);
   }
 
   @media (prefers-reduced-motion: no-preference) {
     .stagger-item {
-      animation: fadeInUp 500ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+      animation: fadeInUp 600ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
     }
   }
 
