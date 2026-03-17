@@ -12,14 +12,18 @@ export default async function handler(c: Context) {
     `../../../content/pages/${lang}/about.md`
   );
 
-  console.log(filePath);
 
   const htmlContent = await getContent(filePath, lang);
+
+  const description =
+    lang === "es"
+      ? "Conocé el recorrido, habilidades y enfoque de Emilia CB en ingeniería de software y desarrollo de productos."
+      : "Learn about Emilia CB's background, skills, and approach to software engineering and product development.";
 
   const view = layout({
     siteData: {
       title: "Who I Am | ємιℓιαċв",
-      description: "Senior Software Engineer with a product mindset",
+      description,
       lang,
     },
     withFooter: true,

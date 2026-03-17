@@ -49,7 +49,7 @@ export function contact({ lang, columnMode = false }: ContactProps) {
           class="interactive flex gap-2 w-fit border border-black dark:border-white px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black"
           href="https://calendly.com/emilia-cb"
           target="_blank"
-          norel="noreferrer"
+          rel="noopener noreferrer"
           aria-label="${scheduleCaption[lang][2]}"
           >${raw(Calendar)}
           <span class="text-xs md:text-sm">${scheduleCaption[lang][0]}</span
@@ -63,7 +63,7 @@ export function contact({ lang, columnMode = false }: ContactProps) {
           class="interactive flex w-fit border border-transparent px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black"
           href="mailto:emiliacabralb@gmail.com"
           target="_blank"
-          norel="noreferrer"
+          rel="noopener noreferrer"
           aria-label="emiliacabralb@gmail.com"
           >${raw(Mail)}</a
         >
@@ -73,7 +73,7 @@ export function contact({ lang, columnMode = false }: ContactProps) {
           class="interactive flex w-fit border border-transparent px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black"
           href="https://www.linkedin.com/in/emiliacb"
           target="_blank"
-          norel="noreferrer"
+          rel="noopener noreferrer"
           aria-label="LinkedIn"
           >${raw(Linkedin)}</a
         >
@@ -83,7 +83,7 @@ export function contact({ lang, columnMode = false }: ContactProps) {
           class="interactive flex w-fit border border-transparent px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black"
           href="https://github.com/emiliacb"
           target="_blank"
-          norel="noreferrer"
+          rel="noopener noreferrer"
           aria-label="GitHub"
           >${raw(Github)}</a
         >

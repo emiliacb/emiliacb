@@ -28,12 +28,16 @@ if (
   if (overlayContent) {
     let timeout;
     let ticking = false;
+    let cachedOverlayHeight = overlayContent.offsetHeight;
+
+    window.addEventListener("resize", () => {
+      cachedOverlayHeight = overlayContent.offsetHeight;
+    });
 
     function checkIfOverlayScrolled() {
-      const overlayContentHeight = overlayContent.offsetHeight;
       const isScrolled =
         window.scrollY >
-        overlayContentHeight - window.innerHeight + 1;
+        cachedOverlayHeight - window.innerHeight + 1;
       return isScrolled;
     }
 
@@ -56,6 +60,9 @@ if (
       ticking = false;
     }
 
+    // Modern browsers: scrollend event (registered once, outside scroll handler)
+    window.addEventListener("scrollend", forcedTick);
+
     window.addEventListener("scroll", () => {
       const isScrolled = checkIfOverlayScrolled();
 
@@ -68,9 +75,6 @@ if (
       if (isScrolled && !overlayContent.classList.contains("scrolled")) {
         forcedTick();
       }
-
-      // Modern browsers: scrollend event
-      window.addEventListener("scrollend", forcedTick);
 
       // Debounce scroll handler to handle inertial scrolling animations
       clearTimeout(timeout);

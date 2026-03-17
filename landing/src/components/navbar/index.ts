@@ -22,12 +22,13 @@ export default function navbar({ lang }: { lang: string }) {
   return html`
     <nav
       class="sticky px-4 sm:pl-6 sm:pr-8 top-0 pt-2 md:pt-4 pb-2 mb-4 md:mb-0 flex flex-wrap mt-4 md:mt-12 justify-between w-full max-w-[60rem] m-auto bg-stone-100/70 dark:bg-stone-800/80 backdrop-blur-sm z-50 "
+      aria-label="${lang === 'es' ? 'Navegación principal' : 'Main navigation'}"
     >
       <div
         class="pointer-events-none border-b border-stone-400 light-gradient-projection !absolute bottom-0 left-0 h-12 w-full before:border-b-[2px] before:-bottom-[1px] before:border-green-300 dark:before:border-blue-700 before:!rotate-0 before:blur-0 [clip-path:polygon(0_0,100%_0,100%_100%,0_100%)]"
       ></div>
       <a
-        class="sr-only focus:not-sr-only focus:absolute top-1 left-1 focus:p-3 text-white bg-black"
+        class="sr-only focus:not-sr-only focus:absolute focus:top-1 focus:left-1 focus:p-3 text-white bg-black"
         href="#content"
         >${wordings[lang][0]}</a
       >

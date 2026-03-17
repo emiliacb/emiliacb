@@ -27,10 +27,15 @@ export default async function handler(c: Context) {
 
   const htmlContent = await getContent(filePath, lang);
 
+  const description =
+    lang === "es"
+      ? "Emilia CB — Ingeniera de Software Senior construyendo productos con IA, desarrollo full-stack y enfoque en el usuario."
+      : "Emilia CB — Senior Software Engineer building products with AI, full-stack development, and a user-first mindset.";
+
   const view = layout({
     siteData: {
       title: "ємιℓιαċв",
-      description: "Senior Software Engineer with a product mindset",
+      description,
       lang,
     },
     withIlustration: true,

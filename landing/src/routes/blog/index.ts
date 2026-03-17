@@ -4,16 +4,23 @@ import { html, raw } from "hono/html";
 import layout from "../../components/layout";
 import { getAllPosts, getPost } from "../../services/posts";
 
-const wordings: Record<string, { title: string; description: string }> = {
+const wordings: Record<
+  string,
+  { title: string; description: string; metaDescription: string }
+> = {
   en: {
     title: "Journal",
     description:
       "This journal aims to be a collection of my thoughts and projects.",
+    metaDescription:
+      "Articles on software engineering, AI, and building great products.",
   },
   es: {
     title: "Diario",
     description:
       "Este diario intenta ser una colección de pensamientos y proyectos.",
+    metaDescription:
+      "Artículos sobre ingeniería de software, IA y desarrollo de productos.",
   },
 } as const;
 
@@ -49,7 +56,7 @@ export default async function handler(c: Context, next: Next) {
   const view = layout({
     siteData: {
       title: `${wordings[lang].title} | ємιℓιαċв`,
-      description: `${wordings[lang].description} | ємιℓιαċв`,
+      description: wordings[lang].metaDescription,
       lang: lang,
     },
     withFooter: true,
