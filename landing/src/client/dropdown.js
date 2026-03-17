@@ -63,6 +63,18 @@ class DropdownTrigger extends HTMLElement {
           margin-left: -0.2rem;
         }
 
+        .variant-small:hover {
+          background: black;
+          color: white;
+        }
+
+        @media (prefers-color-scheme: dark) {
+          .variant-small:hover {
+            background: white;
+            color: black;
+          }
+        }
+
         @media (prefers-reduced-motion: reduce) {
           .dropdown-content {
             transition: opacity 100ms linear;
