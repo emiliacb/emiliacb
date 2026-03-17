@@ -59,7 +59,7 @@ function footerContent({ lang }: FooterProps) {
           <p class="text-sm pr-6 lg:pr-24 text-pretty">
             ${tagline[lang]}
           </p>
-          <dropdown-trigger class="mt-2 relative w-fit z-10" variant="small" label="${languagesCaption[lang][0]}">
+          <dropdown-trigger class="mt-2 relative w-fit z-10 py-[0.2rem]" variant="small" label="${languagesCaption[lang][0]}">
               <span slot="icon" class="scale-[0.7] -ml-1 mr-1 mt-[2px]">${raw(Languages)}</span>
               <div class="flex flex-col m-auto p-[0.2rem] bg-black dark:bg-white shadow-lg w-fit">
                 <a
