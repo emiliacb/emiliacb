@@ -148,6 +148,10 @@ document.head.appendChild(o)}initApollo();</script>
             navigation: auto;
           }
 
+          ::view-transition {
+            pointer-events: none;
+          }
+
           #content {
             view-transition-name: content;
             contain: paint;
