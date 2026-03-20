@@ -183,8 +183,24 @@ html {
     }
   }
 
-  .radial-maroon-gradient {
+  .radial-maroon-gradient,
+  .radial-green-gradient,
+  .radial-maroon-gradient-right,
+  .radial-green-gradient-right {
     user-select: none;
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeBlend in='SourceGraphic' mode='overlay'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.04;
+      pointer-events: none;
+      z-index: 1;
+    }
+  }
+
+  .radial-maroon-gradient {
     background-image: radial-gradient(
       circle at center left,
       rgba(118, 51, 75, 0.3) 10%,
@@ -202,7 +218,6 @@ html {
   }
 
   .radial-green-gradient {
-    user-select: none;
     background-image: radial-gradient(
       circle at center left,
       rgba(252, 190, 80, 0.3) 10%,
@@ -220,7 +235,6 @@ html {
   }
 
   .radial-maroon-gradient-right {
-    user-select: none;
     background-image: radial-gradient(
       circle at center right,
       rgba(118, 51, 75, 0.3) 10%,
@@ -238,7 +252,6 @@ html {
   }
 
   .radial-green-gradient-right {
-    user-select: none;
     background-image: radial-gradient(
       circle at center right,
       rgba(252, 190, 80, 0.3) 10%,
