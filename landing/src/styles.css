@@ -188,7 +188,6 @@ html {
   .radial-maroon-gradient-right,
   .radial-green-gradient-right {
     user-select: none;
-    position: relative;
 
     &::after {
       content: "";
