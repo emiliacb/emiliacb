@@ -40,9 +40,11 @@ function handleNavigation(request) {
   return caches.open(PREFETCH_CACHE).then(function (prefetchCache) {
     return prefetchCache.match(request).then(function (prefetched) {
       if (prefetched) {
+        // Clone synchronously before body is consumed
+        var prefetchedClone = prefetched.clone();
         // Move to pages cache for offline support, remove from prefetch
         caches.open(PAGES_CACHE).then(function (pagesCache) {
-          pagesCache.put(request, prefetched.clone());
+          pagesCache.put(request, prefetchedClone);
         });
         prefetchCache.delete(request);
         return prefetched;
@@ -52,8 +54,10 @@ function handleNavigation(request) {
       return fetch(request)
         .then(function (response) {
           if (response.ok) {
+            // Clone synchronously before body is consumed
+            var responseClone = response.clone();
             caches.open(PAGES_CACHE).then(function (pagesCache) {
-              pagesCache.put(request, response.clone());
+              pagesCache.put(request, responseClone);
             });
           }
           return response;
