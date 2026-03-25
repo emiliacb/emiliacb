@@ -200,6 +200,7 @@ html {
 
       @media (prefers-color-scheme: dark) {
         opacity: 0.12;
+        mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
       }
     }
   }
