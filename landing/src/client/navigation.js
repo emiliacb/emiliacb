@@ -7,6 +7,14 @@ if ('serviceWorker' in navigator) {
 
 // Prefetch pages on hover via Service Worker
 (function () {
+  if (
+    window.HTMLScriptElement &&
+    typeof window.HTMLScriptElement.supports === 'function' &&
+    window.HTMLScriptElement.supports('speculationrules')
+  ) {
+    return;
+  }
+
   var prefetched = {};
 
   function getHref(el) {
