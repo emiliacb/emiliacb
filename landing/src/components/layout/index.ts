@@ -44,6 +44,25 @@ export default function layout({
         <meta name="title" content="${siteData.title}" />
         <meta name="description" content="${siteData.description}" />
         <meta name="cache-version" content="${CACHE_VERSION}" />
+        <script type="speculationrules">
+          {
+            "prerender": [
+              {
+                "where": {
+                  "and": [
+                    { "href_matches": "/*" },
+                    { "not": { "href_matches": "/public/*" } },
+                    { "not": { "selector_matches": "[href^='#']" } },
+                    { "not": { "selector_matches": "[target='_blank']" } },
+                    { "not": { "selector_matches": "[rel~='nofollow']" } },
+                    { "not": { "selector_matches": "[data-no-prerender]" } }
+                  ]
+                },
+                "eagerness": "moderate"
+              }
+            ]
+          }
+        </script>
 
         <!-- Open Graph / Facebook -->
         <meta property="og:type" content="website" />
