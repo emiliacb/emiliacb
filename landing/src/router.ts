@@ -9,6 +9,7 @@ import homeHandler from "./routes/home";
 import blogHandler from "./routes/blog";
 import servicesHandler from "./routes/services";
 import labsDistortionHandler from "./routes/labs/distortion";
+import labsDistortionBgHandler from "./routes/labs/distortion-bg";
 import aboutHandler from "./routes/about";
 import notFoundHandler from "./routes/not-found";
 import { langMiddleware } from "./middlewares/lang";
@@ -75,6 +76,7 @@ router
   .get("/:lang/blog/*", blogHandler)
   .get("/:lang/services", servicesHandler)
   .get("/:lang/labs/distortion", labsDistortionHandler)
+  .get("/:lang/labs/distortion-bg", labsDistortionBgHandler)
   .get("*", notFoundHandler);
 
 export default router;
