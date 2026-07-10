@@ -223,6 +223,7 @@ document.head.appendChild(o)}initApollo();</script>
           ${withIlustration
             ? html`
                 <div
+                  id="tree-illustration"
                   class="absolute bottom-0 w-[50vw] right-0 h-static-screen overflow-hidden"
                 >
                   ${tree()}
