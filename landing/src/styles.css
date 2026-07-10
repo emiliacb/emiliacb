@@ -68,6 +68,10 @@ html {
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
   transition: border-bottom-left-radius 400ms ease-out, border-bottom-right-radius 400ms ease-out;
+  /* Keep the overlay on its own compositor layer so the animated
+     border-radius clip doesn't cause layer-promotion churn (flicker)
+     while scrolling. */
+  transform: translateZ(0);
 }
 
 #overlay-content.scrolled {
