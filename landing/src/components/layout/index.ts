@@ -102,11 +102,12 @@ document.head.appendChild(o)}initApollo();</script>
         <script src="/public/${CACHE_VERSION}/_dropdown-bundle.js" defer></script>
 
         <!-- Google Fonts -->
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
           href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
           rel="stylesheet"
+          crossorigin="anonymous"
         />
 
         <!-- CSS -->

@@ -18,9 +18,11 @@
     "esbuild": "^0.25.1",
     "gray-matter": "^4.0.3",
     "hono": "^4.7.5",
+    "html-to-image": "^1.11.13",
     "lucide-static": "^0.445.0",
     "marked": "^14.0.0",
     "rate-limiter-flexible": "^7.1.1",
+    "three": "^0.185.1",
     "throttle-debounce": "^5.0.2"
   },
   "devDependencies": {

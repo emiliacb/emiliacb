@@ -8,6 +8,7 @@ import { config } from 'dotenv';
 import homeHandler from "./routes/home";
 import blogHandler from "./routes/blog";
 import servicesHandler from "./routes/services";
+import labsDistortionHandler from "./routes/labs/distortion";
 import aboutHandler from "./routes/about";
 import notFoundHandler from "./routes/not-found";
 import { langMiddleware } from "./middlewares/lang";
@@ -73,6 +74,7 @@ router
   .get("/:lang/about", aboutHandler)
   .get("/:lang/blog/*", blogHandler)
   .get("/:lang/services", servicesHandler)
+  .get("/:lang/labs/distortion", labsDistortionHandler)
   .get("*", notFoundHandler);
 
 export default router;
