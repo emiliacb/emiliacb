@@ -229,7 +229,7 @@ document.head.appendChild(o)}initApollo();</script>
                 </div>
               `
             : null}
-          <div class="flex flex-col h-fit">
+          <div id="page-shell" class="flex flex-col h-fit">
             ${navbar({ lang: siteData.lang })}
             <main
               id="content"

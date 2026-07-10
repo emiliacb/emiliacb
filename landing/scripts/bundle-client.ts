@@ -76,4 +76,9 @@ async function bundleClientFile({ entry, outfile, label }: {
     outfile: "_distortion-bundle.js",
     label: "Liquid page distortion (labs POC)",
   });
+  await bundleClientFile({
+    entry: "src/client/gradient-distortion.js",
+    outfile: "_gradient-distortion-bundle.js",
+    label: "Liquid background distortion (labs POC)",
+  });
 })();
