@@ -198,6 +198,51 @@ function supportsHtmlInCanvas(gl) {
   return !!gl && typeof gl.texElementImage2D === "function";
 }
 
+// On-screen feature-detection readout for testing the WICG HTML-in-Canvas
+// flag on devices without accessible devtools (e.g. mobile). Visit this page
+// with ?debug in the URL to see it; long-press to copy the text.
+function renderDebugPanel(gl) {
+  if (!location.search.includes("debug")) return;
+
+  const probeCanvas = document.createElement("canvas");
+  const info = {
+    webglVersion: probeCanvas.getContext("webgl2")
+      ? "webgl2"
+      : gl
+      ? "webgl1"
+      : "none",
+    "gl.texElementImage2D": gl ? typeof gl.texElementImage2D : "n/a",
+    "canvas.layoutsubtree": "layoutsubtree" in probeCanvas,
+    "canvas.onpaint": "onpaint" in probeCanvas,
+    "ctx2d.drawElementImage": typeof probeCanvas.getContext("2d")?.drawElementImage,
+    "canvas.captureElementImage": typeof probeCanvas.captureElementImage,
+    userAgent: navigator.userAgent,
+  };
+
+  const panel = document.createElement("pre");
+  Object.assign(panel.style, {
+    position: "fixed",
+    bottom: "0",
+    left: "0",
+    right: "0",
+    zIndex: "999999",
+    margin: "0",
+    padding: "8px",
+    fontSize: "11px",
+    lineHeight: "1.4",
+    background: "rgba(0,0,0,0.85)",
+    color: "#0f0",
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-all",
+    userSelect: "text",
+    WebkitUserSelect: "text",
+  });
+  panel.textContent = Object.entries(info)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join("\n");
+  document.body.appendChild(panel);
+}
+
 function setupNativeLayer(renderer, gl, targetEl) {
   const material = makeMaterial();
   // Force Three.js to allocate a real WebGL texture object we can then feed
@@ -370,6 +415,7 @@ async function init() {
 
   const gl = renderer.getContext();
   const native = supportsHtmlInCanvas(gl);
+  renderDebugPanel(gl);
 
   const scene = new THREE.Scene();
   const layers = [];
