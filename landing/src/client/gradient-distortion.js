@@ -3,10 +3,26 @@
  * gradient blob + tree illustration inside #overlay-content), leaving the
  * navbar and page content crisp and undistorted on top.
  *
- * Unlike the whole-page POC (src/client/distortion.js), this element has no
- * links or text to keep clickable, so there's no need for the "invisible
- * interactive DOM + pointer-events:none canvas on top" trick: the canvas
- * simply replaces the decorative layer in place, behind the real content.
+ * Two capture strategies, feature-detected at runtime:
+ *
+ *  - NATIVE (speculative): the WICG "HTML in Canvas" proposal
+ *    (https://github.com/WICG/html-in-canvas), which lets WebGL read a live
+ *    HTML element's rendered pixels directly via `gl.texElementImage2D()`.
+ *    No browser ships this today (Chromium has it behind
+ *    chrome://flags/#canvas-draw-element, still experimental/unshipped), so
+ *    this path is untested and only runs if that API exists. Each
+ *    decorative element gets its own texture/quad, updated every frame
+ *    straight from the live DOM — no snapshot, no serialization, real
+ *    animation preserved.
+ *
+ *  - FALLBACK (what every real browser uses today): `html-to-image`
+ *    rasterizes the decorative layer once into a canvas texture, same
+ *    technique as the whole-page POC (src/client/distortion.js).
+ *
+ * Either way, the original DOM elements are hidden (opacity: 0) only after
+ * the replacement canvas has successfully rendered, so a failure never
+ * leaves both the original and the effect visible at once, and never
+ * leaves the page blank either.
  */
 import * as THREE from "three";
 import { toCanvas, getFontEmbedCSS } from "html-to-image";
@@ -73,14 +89,179 @@ const fragmentShader = /* glsl */ `
     uv = p / am;
     uv = clamp(uv, vec2(0.002), vec2(0.998));
 
-    gl_FragColor = texture2D(uTexture, uv);
+    vec4 color = texture2D(uTexture, uv);
+    if (uv.x <= 0.002 || uv.x >= 0.998 || uv.y <= 0.002 || uv.y >= 0.998) {
+      color.a *= 0.0; // don't smear edge pixels into the surrounding box
+    }
+    gl_FragColor = color;
   }
 `;
 
-function captureBackground(overlayEl, maxTextureSize) {
+function makeMaterial() {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uTexture: { value: null },
+      uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+      uVelocity: { value: new THREE.Vector2(0, 0) },
+      uIntensity: { value: 0 },
+      uTime: { value: 0 },
+      uAspect: { value: 1 },
+      uHover: { value: false },
+    },
+    vertexShader,
+    fragmentShader,
+    transparent: true,
+  });
+}
+
+// A single element's local interaction state: mouse position/velocity in its
+// own 0..1 box space, independent of the other decorative element.
+function makeLocalPointer(targetEl, uniforms) {
+  const target = new THREE.Vector2(0.5, 0.5);
+  const scratch = new THREE.Vector2();
+  let rect = targetEl.getBoundingClientRect();
+
+  const updateRect = () => {
+    rect = targetEl.getBoundingClientRect();
+  };
+  window.addEventListener("scroll", updateRect, { passive: true });
+  window.addEventListener("resize", updateRect, { passive: true });
+
+  window.addEventListener(
+    "pointermove",
+    (event) => {
+      const x = (event.clientX - rect.left) / rect.width;
+      const y = 1 - (event.clientY - rect.top) / rect.height;
+      uniforms.uHover.value = x >= 0 && x <= 1 && y >= 0 && y <= 1;
+      target.set(Math.min(Math.max(x, -0.2), 1.2), Math.min(Math.max(y, -0.2), 1.2));
+    },
+    { passive: true }
+  );
+
+  return {
+    updateRect,
+    tick() {
+      scratch.copy(target).sub(uniforms.uMouse.value);
+      uniforms.uVelocity.value.lerp(scratch, 0.1);
+      if (uniforms.uVelocity.value.length() > 0.12) uniforms.uVelocity.value.setLength(0.12);
+      uniforms.uMouse.value.add(scratch.multiplyScalar(0.09));
+    },
+  };
+}
+
+function createCanvasTexture(sourceCanvas) {
+  const texture = new THREE.CanvasTexture(sourceCanvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  return texture;
+}
+
+function hideOriginal(el) {
+  if (!el) return;
+  // gradient-bg's CSS class runs a one-shot "gradientAppear ... forwards"
+  // animation that holds opacity:1 indefinitely once finished — that beats
+  // a plain inline opacity, so the animation has to be cancelled first.
+  el.style.animation = "none";
+  el.style.transition = "opacity 200ms ease";
+  el.style.opacity = "0";
+}
+
+// Each decorative element only covers part of #overlay-content's box, so its
+// quad must be sized/positioned to match that element's own rect within the
+// shared canvas — not stretched to fill the whole thing.
+function positionMesh(mesh, el, overlayRect) {
+  const r = el.getBoundingClientRect();
+  const leftF = (r.left - overlayRect.left) / overlayRect.width;
+  const rightF = (r.right - overlayRect.left) / overlayRect.width;
+  const topF = (r.top - overlayRect.top) / overlayRect.height;
+  const bottomF = (r.bottom - overlayRect.top) / overlayRect.height;
+
+  const ndcLeft = -1 + 2 * leftF;
+  const ndcRight = -1 + 2 * rightF;
+  const ndcTop = 1 - 2 * topF;
+  const ndcBottom = 1 - 2 * bottomF;
+
+  mesh.position.set((ndcLeft + ndcRight) / 2, (ndcTop + ndcBottom) / 2, 0);
+  mesh.scale.set((ndcRight - ndcLeft) / 2, (ndcTop - ndcBottom) / 2, 1);
+}
+
+// ---------------------------------------------------------------------------
+// NATIVE path: WICG "HTML in Canvas" (https://github.com/WICG/html-in-canvas)
+// Speculative — no shipping browser implements this today. Feature-detected
+// below; this code simply never runs until/unless a browser adds it.
+// ---------------------------------------------------------------------------
+function supportsHtmlInCanvas(gl) {
+  return !!gl && typeof gl.texElementImage2D === "function";
+}
+
+function setupNativeLayer(renderer, gl, targetEl) {
+  const material = makeMaterial();
+  // Force Three.js to allocate a real WebGL texture object we can then feed
+  // directly via texElementImage2D, bypassing Three's normal image upload.
+  const placeholder = document.createElement("canvas");
+  placeholder.width = placeholder.height = 1;
+  const texture = createCanvasTexture(placeholder);
+  material.uniforms.uTexture.value = texture;
+
+  const rect = targetEl.getBoundingClientRect();
+  material.uniforms.uAspect.value = rect.width / Math.max(rect.height, 1);
+
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+  const pointer = makeLocalPointer(targetEl, material.uniforms);
+
+  let glTexture = null;
+  const ensureUploaded = () => {
+    // First render call makes Three.js create+bind the underlying texture.
+    if (glTexture) return;
+    glTexture = renderer.properties.get(texture).__webglTexture || null;
+  };
+
+  return {
+    mesh,
+    pointer,
+    targetEl,
+    reposition(overlayRect) {
+      positionMesh(mesh, targetEl, overlayRect);
+      const r = targetEl.getBoundingClientRect();
+      material.uniforms.uAspect.value = r.width / Math.max(r.height, 1);
+    },
+    uploadFrame() {
+      ensureUploaded();
+      if (!glTexture) return false;
+      try {
+        gl.bindTexture(gl.TEXTURE_2D, glTexture);
+        // Speculative API shape per the WICG explainer. Signature/behavior
+        // may change before (if) this ships.
+        gl.texElementImage2D(gl.TEXTURE_2D, gl.RGBA, targetEl, {});
+        return true;
+      } catch (error) {
+        console.warn("[fx-bg:native] texElementImage2D failed", error);
+        return false;
+      }
+    },
+    material,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// FALLBACK path: html-to-image snapshot (what every real browser uses today)
+//
+// Captured from #overlay-content as a whole (excluding #page-shell), not
+// per-element: the tree illustration renders through a Shadow DOM (the
+// dotlottie-player web component), and html-to-image only manages to flatten
+// that shadow content when the capture root is high enough in the tree —
+// capturing #tree-illustration in isolation comes back essentially blank.
+// One combined texture also sidesteps needing separate positioning math;
+// it simply covers the same box #overlay-content already occupies.
+// ---------------------------------------------------------------------------
+function captureDecoration(overlayEl, maxTextureSize) {
   const rect = overlayEl.getBoundingClientRect();
-  const width = Math.round(rect.width);
-  const height = Math.round(rect.height);
+  const width = Math.max(Math.round(rect.width), 1);
+  const height = Math.max(Math.round(rect.height), 1);
 
   let pixelRatio = CAPTURE_PIXEL_RATIO;
   const largestSide = Math.max(width, height);
@@ -95,35 +276,49 @@ function captureBackground(overlayEl, maxTextureSize) {
         width,
         height,
         pixelRatio,
-        // Keep only the decorative layer: drop navbar + main content
-        // (#page-shell) from the clone, so the capture is just the gradient
-        // and illustration sitting behind it.
-        filter: (node) =>
-          node.id !== "page-shell" &&
-          node.id !== CANVAS_ID &&
-          node.tagName !== "SCRIPT",
+        backgroundColor: "transparent",
+        filter: (node) => node.id !== "page-shell" && node.tagName !== "SCRIPT",
         ...(fontEmbedCSS ? { fontEmbedCSS } : { skipFonts: true }),
       })
     )
     .then((canvas) => ({ canvas, width, height }));
 }
 
-function createTexture(sourceCanvas) {
-  const texture = new THREE.CanvasTexture(sourceCanvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.generateMipmaps = false;
-  texture.wrapS = THREE.ClampToEdgeWrapping;
-  texture.wrapT = THREE.ClampToEdgeWrapping;
-  return texture;
+async function setupFallbackLayer(renderer, overlayEl) {
+  const material = makeMaterial();
+  const captured = await captureDecoration(overlayEl, renderer.capabilities.maxTextureSize);
+  const texture = createCanvasTexture(captured.canvas);
+  material.uniforms.uTexture.value = texture;
+  material.uniforms.uAspect.value = captured.width / captured.height;
+
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+  const pointer = makeLocalPointer(overlayEl, material.uniforms);
+
+  return {
+    mesh,
+    pointer,
+    material,
+    reposition() {
+      mesh.position.set(0, 0, 0);
+      mesh.scale.set(1, 1, 1); // always fills the canvas — same box as #overlay-content
+    },
+    async recapture() {
+      const next = await captureDecoration(overlayEl, renderer.capabilities.maxTextureSize);
+      material.uniforms.uTexture.value.dispose();
+      const nextTexture = createCanvasTexture(next.canvas);
+      material.uniforms.uTexture.value = nextTexture;
+      material.uniforms.uAspect.value = next.width / next.height;
+    },
+  };
 }
 
 async function init() {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
   const overlayEl = document.getElementById("overlay-content");
-  if (!overlayEl) return;
+  const gradientEl = document.getElementById("gradient-bg");
+  const treeEl = document.getElementById("tree-illustration");
+  if (!overlayEl || !gradientEl) return;
 
   await document.fonts.ready;
 
@@ -144,101 +339,80 @@ async function init() {
   const renderer = new THREE.WebGLRenderer({
     canvas: canvasEl,
     antialias: false,
-    alpha: false,
+    alpha: true, // let #overlay-content's own background show through
     powerPreference: "high-performance",
   });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
-  const captured = await captureBackground(
-    overlayEl,
-    renderer.capabilities.maxTextureSize
-  );
-  let texture = createTexture(captured.canvas);
-  renderer.setSize(captured.width, captured.height, false);
+  const overlayRect = overlayEl.getBoundingClientRect();
+  renderer.setSize(overlayRect.width, overlayRect.height, false);
 
-  const uniforms = {
-    uTexture: { value: texture },
-    uMouse: { value: new THREE.Vector2(0.5, 0.5) },
-    uVelocity: { value: new THREE.Vector2(0, 0) },
-    uIntensity: { value: 0 },
-    uTime: { value: 0 },
-    uAspect: { value: captured.width / captured.height },
-    uHover: { value: false },
-  };
+  const gl = renderer.getContext();
+  const native = supportsHtmlInCanvas(gl);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-  const material = new THREE.ShaderMaterial({ uniforms, vertexShader, fragmentShader });
-  scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material));
+  const layers = [];
 
-  // First frame before touching the DOM — if this throws (tainted canvas,
-  // no WebGL), the original gradient/illustration stay exactly as they were.
+  if (native) {
+    console.info("[fx-bg] HTML-in-Canvas supported — using live element textures");
+    layers.push(setupNativeLayer(renderer, gl, gradientEl));
+    if (treeEl) layers.push(setupNativeLayer(renderer, gl, treeEl));
+  } else {
+    layers.push(await setupFallbackLayer(renderer, overlayEl));
+  }
+  layers.forEach((layer) => {
+    layer.reposition(overlayRect);
+    scene.add(layer.mesh);
+  });
+
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+  // First frame(s) before touching the DOM — if this throws (tainted
+  // canvas, no WebGL), the original gradient/illustration stay untouched.
+  if (native) layers.forEach((layer) => layer.uploadFrame());
   renderer.render(scene, camera);
 
   overlayEl.insertBefore(canvasEl, overlayEl.firstChild);
   requestAnimationFrame(() => {
     canvasEl.style.opacity = "1";
+    setTimeout(() => {
+      hideOriginal(gradientEl);
+      hideOriginal(treeEl);
+    }, 250);
   });
-
-  // --- Interaction: mouse position local to the overlay box --------------
-  const targetMouse = new THREE.Vector2(0.5, 0.5);
-  const mouse = uniforms.uMouse.value;
-  const velocity = uniforms.uVelocity.value;
-  const scratch = new THREE.Vector2();
-  let rect = overlayEl.getBoundingClientRect();
-
-  const updateRect = () => {
-    rect = overlayEl.getBoundingClientRect();
-  };
-  window.addEventListener("scroll", updateRect, { passive: true });
-
-  window.addEventListener(
-    "pointermove",
-    (event) => {
-      const x = (event.clientX - rect.left) / rect.width;
-      const y = 1 - (event.clientY - rect.top) / rect.height;
-      const inside = x >= 0 && x <= 1 && y >= 0 && y <= 1;
-      uniforms.uHover.value = inside;
-      targetMouse.set(
-        Math.min(Math.max(x, -0.2), 1.2),
-        Math.min(Math.max(y, -0.2), 1.2)
-      );
-    },
-    { passive: true }
-  );
 
   let recaptureTimer;
   window.addEventListener("resize", () => {
     clearTimeout(recaptureTimer);
     recaptureTimer = setTimeout(async () => {
-      updateRect();
-      try {
-        const next = await captureBackground(
-          overlayEl,
-          renderer.capabilities.maxTextureSize
-        );
-        texture.dispose();
-        texture = createTexture(next.canvas);
-        uniforms.uTexture.value = texture;
-        uniforms.uAspect.value = next.width / next.height;
-        renderer.setSize(next.width, next.height, false);
-      } catch (error) {
-        console.warn("[fx-bg] recapture failed, disabling effect", error);
-        canvasEl.remove();
+      const r = overlayEl.getBoundingClientRect();
+      renderer.setSize(r.width, r.height, false);
+      if (native) {
+        layers.forEach((layer) => layer.reposition(r));
+      } else {
+        try {
+          await Promise.all(layers.map((layer) => layer.recapture()));
+          layers.forEach((layer) => layer.reposition(r));
+        } catch (error) {
+          console.warn("[fx-bg] recapture failed, disabling effect", error);
+          canvasEl.remove();
+          if (gradientEl) gradientEl.style.opacity = "";
+          if (treeEl) treeEl.style.opacity = "";
+        }
       }
     }, 300);
   });
 
   const clock = new THREE.Clock();
   renderer.setAnimationLoop(() => {
-    uniforms.uTime.value = clock.getElapsedTime();
-    uniforms.uIntensity.value += (1 - uniforms.uIntensity.value) * 0.04;
-
-    scratch.copy(targetMouse).sub(mouse);
-    velocity.lerp(scratch, 0.1);
-    if (velocity.length() > 0.12) velocity.setLength(0.12);
-    mouse.add(scratch.multiplyScalar(0.09));
-
+    const time = clock.getElapsedTime();
+    layers.forEach((layer) => {
+      layer.material.uniforms.uTime.value = time;
+      layer.material.uniforms.uIntensity.value +=
+        (1 - layer.material.uniforms.uIntensity.value) * 0.04;
+      layer.pointer.tick();
+      if (native) layer.uploadFrame(); // re-read the live element every frame
+    });
     renderer.render(scene, camera);
   });
 }
@@ -247,6 +421,8 @@ function start() {
   init().catch((error) => {
     console.warn("[fx-bg] background distortion disabled:", error);
     document.getElementById(CANVAS_ID)?.remove();
+    document.getElementById("gradient-bg")?.style.removeProperty("opacity");
+    document.getElementById("tree-illustration")?.style.removeProperty("opacity");
   });
 }
 
