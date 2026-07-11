@@ -5,19 +5,24 @@
  *
  * Two capture strategies, feature-detected at runtime:
  *
- *  - NATIVE (speculative): the WICG "HTML in Canvas" proposal
- *    (https://github.com/WICG/html-in-canvas), which lets WebGL read a live
- *    HTML element's rendered pixels directly via `gl.texElementImage2D()`.
- *    No browser ships this today (Chromium has it behind
- *    chrome://flags/#canvas-draw-element, still experimental/unshipped), so
- *    this path is untested and only runs if that API exists. Each
- *    decorative element gets its own texture/quad, updated every frame
- *    straight from the live DOM — no snapshot, no serialization, real
- *    animation preserved.
+ *  - NATIVE: the WICG "HTML in Canvas" proposal
+ *    (https://github.com/WICG/html-in-canvas). Origin-trialing on Chrome
+ *    DESKTOP milestones 148–151 (extended to 154) as of mid-2026; testable
+ *    without a trial token via Chrome Canary desktop with
+ *    chrome://flags/#canvas-draw-element. Not available on Android Chrome in
+ *    this rollout, and not on any other browser. Per the spec, participating
+ *    elements must be direct children of the <canvas> (with
+ *    `canvas.layoutsubtree = true` opting them into layout), so this path
+ *    reparents gradient-bg/tree-illustration into the WebGL canvas — their
+ *    absolute positioning still resolves correctly since the canvas already
+ *    occupies the exact same box #overlay-content does. Each element then
+ *    gets its live pixels read every frame via `gl.texElementImage2D()`, no
+ *    snapshot, real animation preserved.
  *
- *  - FALLBACK (what every real browser uses today): `html-to-image`
- *    rasterizes the decorative layer once into a canvas texture, same
- *    technique as the whole-page POC (src/client/distortion.js).
+ *  - FALLBACK (what every real browser/device uses today, including this
+ *    site's actual visitors): `html-to-image` rasterizes the decorative
+ *    layer once into a canvas texture, same technique as the whole-page POC
+ *    (src/client/distortion.js).
  *
  * Either way, the original DOM elements are hidden (opacity: 0) only after
  * the replacement canvas has successfully rendered, so a failure never
@@ -49,6 +54,7 @@ const fragmentShader = /* glsl */ `
   uniform float uTime;
   uniform float uAspect;
   uniform bool uHover;
+  uniform float uOpacity;
 
   varying vec2 vUv;
 
@@ -69,16 +75,17 @@ const fragmentShader = /* glsl */ `
 
     // Tight falloff radius + low ambient boost: only distort close to the
     // cursor, and keep it calm unless the pointer is actually over the box.
+    // Interactivity cut another 80% (× 0.2) on top of that on request.
     float dist = distance(p, m);
     float falloff = exp(-dist * dist * 10.0);
-    float hoverBoost = uHover ? 1.0 : 0.08;
-    float swirl = -1.0 * falloff * uIntensity * hoverBoost *
+    float hoverBoost = uHover ? 0.2 : 0.016;
+    float swirl = -0.2 * falloff * uIntensity * hoverBoost *
       (0.1 + min(speed * 10.0, 1.0));
     p = rotateAround(p, m, swirl);
 
-    p -= uVelocity * am * falloff * 1.0 * uIntensity * hoverBoost;
+    p -= uVelocity * am * falloff * 0.2 * uIntensity * hoverBoost;
 
-    float ripple = sin(dist * 26.0 - uTime * 4.0) * 0.004 * falloff *
+    float ripple = sin(dist * 26.0 - uTime * 4.0) * 0.0008 * falloff *
       min(speed * 14.0, 1.0) * uIntensity * hoverBoost;
     p += normalize(p - m + 1e-5) * ripple;
 
@@ -93,6 +100,7 @@ const fragmentShader = /* glsl */ `
     if (uv.x <= 0.002 || uv.x >= 0.998 || uv.y <= 0.002 || uv.y >= 0.998) {
       color.a *= 0.0; // don't smear edge pixels into the surrounding box
     }
+    color.a *= uOpacity;
     gl_FragColor = color;
   }
 `;
@@ -107,6 +115,7 @@ function makeMaterial() {
       uTime: { value: 0 },
       uAspect: { value: 1 },
       uHover: { value: false },
+      uOpacity: { value: 0.6 },
     },
     vertexShader,
     fragmentShader,
@@ -191,11 +200,32 @@ function positionMesh(mesh, el, overlayRect) {
 
 // ---------------------------------------------------------------------------
 // NATIVE path: WICG "HTML in Canvas" (https://github.com/WICG/html-in-canvas)
-// Speculative — no shipping browser implements this today. Feature-detected
-// below; this code simply never runs until/unless a browser adds it.
+// Origin-trialing on Chrome desktop (M148–151/154) as of mid-2026; testable
+// without a trial token via Chrome Canary desktop +
+// chrome://flags/#canvas-draw-element. Feature-detected below — this code
+// only runs when that API actually exists.
 // ---------------------------------------------------------------------------
 function supportsHtmlInCanvas(gl) {
   return !!gl && typeof gl.texElementImage2D === "function";
+}
+
+// Per the spec, elements only participate in canvas.texElementImage2D() /
+// drawElementImage() while they're direct children of a canvas that has
+// opted into `layoutsubtree` — and per the explainer, such children render
+// invisibly on the page by default until explicitly drawn into the canvas's
+// bitmap, so there's no separate "hide the original" step needed here (unlike
+// the fallback path). Their absolute positioning still resolves correctly
+// after the move since canvasEl occupies the exact same box #overlay-content
+// does (see init()). Returns a function that undoes the move.
+function adoptIntoCanvas(canvasEl, el) {
+  if (!el) return null;
+  const placeholder = document.createComment(`fx-bg-native-slot:${el.id}`);
+  el.parentNode.insertBefore(placeholder, el);
+  canvasEl.appendChild(el);
+  return () => {
+    placeholder.parentNode?.insertBefore(el, placeholder);
+    placeholder.remove();
+  };
 }
 
 // On-screen feature-detection readout for testing the WICG HTML-in-Canvas
@@ -418,34 +448,71 @@ async function init() {
   renderDebugPanel(gl);
 
   const scene = new THREE.Scene();
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const layers = [];
 
   if (native) {
     console.info("[fx-bg] HTML-in-Canvas supported — using live element textures");
-    layers.push(setupNativeLayer(renderer, gl, gradientEl));
-    if (treeEl) layers.push(setupNativeLayer(renderer, gl, treeEl));
+
+    // Attach the (still invisible, opacity:0) canvas now and reparent the
+    // decorative elements into it — the real API only works on elements
+    // that are direct children of a layoutsubtree canvas.
+    overlayEl.insertBefore(canvasEl, overlayEl.firstChild);
+    canvasEl.layoutsubtree = true;
+    const restoreGradient = adoptIntoCanvas(canvasEl, gradientEl);
+    const restoreTree = adoptIntoCanvas(canvasEl, treeEl);
+
+    try {
+      layers.push(setupNativeLayer(renderer, gl, gradientEl));
+      if (treeEl) layers.push(setupNativeLayer(renderer, gl, treeEl));
+      layers.forEach((layer) => {
+        layer.reposition(overlayRect);
+        scene.add(layer.mesh);
+      });
+      layers.forEach((layer) => layer.uploadFrame());
+      renderer.render(scene, camera); // may throw — caught below
+    } catch (error) {
+      restoreGradient?.();
+      restoreTree?.();
+      canvasEl.layoutsubtree = false;
+      canvasEl.remove();
+      throw error; // let start()'s catch do its normal cleanup
+    }
   } else {
     layers.push(await setupFallbackLayer(renderer, overlayEl));
+    layers.forEach((layer) => {
+      layer.reposition(overlayRect);
+      scene.add(layer.mesh);
+    });
+
+    // First frame before touching the DOM — if this throws (tainted
+    // canvas, no WebGL), the original gradient/illustration stay untouched.
+    renderer.render(scene, camera);
+    overlayEl.insertBefore(canvasEl, overlayEl.firstChild);
   }
-  layers.forEach((layer) => {
-    layer.reposition(overlayRect);
-    scene.add(layer.mesh);
-  });
 
-  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-
-  // First frame(s) before touching the DOM — if this throws (tainted
-  // canvas, no WebGL), the original gradient/illustration stay untouched.
-  if (native) layers.forEach((layer) => layer.uploadFrame());
-  renderer.render(scene, camera);
-
-  overlayEl.insertBefore(canvasEl, overlayEl.firstChild);
+  // The mouse-driven effect only starts ramping in once the canvas has
+  // fully faded in AND (fallback path) the original has fully faded out —
+  // otherwise the distortion would be visible mid-crossfade, while both
+  // layers are still blending into each other.
+  let effectReady = false;
   requestAnimationFrame(() => {
     canvasEl.style.opacity = "1";
-    setTimeout(() => {
-      hideOriginal(gradientEl);
-      hideOriginal(treeEl);
-    }, 250);
+    // Native-mode children are already invisible-until-drawn per spec —
+    // hiding them ourselves would also hide them from texElementImage2D.
+    if (!native) {
+      setTimeout(() => {
+        hideOriginal(gradientEl);
+        hideOriginal(treeEl);
+        setTimeout(() => {
+          effectReady = true;
+        }, 220); // let the 200ms hide transition actually finish
+      }, 250);
+    } else {
+      setTimeout(() => {
+        effectReady = true;
+      }, 420); // let the canvas's own 400ms fade-in finish
+    }
   });
 
   let recaptureTimer;
