@@ -67,24 +67,24 @@ const fragmentShader = /* glsl */ `
     vec2 p = uv * am;
     vec2 m = uMouse * am;
 
-    // No legibility constraint here (pure decoration), so the swirl can be
-    // stronger and wider than on the whole-page variant.
+    // Tight falloff radius + low ambient boost: only distort close to the
+    // cursor, and keep it calm unless the pointer is actually over the box.
     float dist = distance(p, m);
-    float falloff = exp(-dist * dist * 5.0);
-    float hoverBoost = uHover ? 1.0 : 0.35;
-    float swirl = -2.6 * falloff * uIntensity * hoverBoost *
-      (0.15 + min(speed * 16.0, 1.0));
+    float falloff = exp(-dist * dist * 10.0);
+    float hoverBoost = uHover ? 1.0 : 0.08;
+    float swirl = -1.0 * falloff * uIntensity * hoverBoost *
+      (0.1 + min(speed * 10.0, 1.0));
     p = rotateAround(p, m, swirl);
 
-    p -= uVelocity * am * falloff * 3.0 * uIntensity;
+    p -= uVelocity * am * falloff * 1.0 * uIntensity * hoverBoost;
 
-    float ripple = sin(dist * 26.0 - uTime * 4.0) * 0.01 * falloff *
-      min(speed * 20.0, 1.0) * uIntensity;
+    float ripple = sin(dist * 26.0 - uTime * 4.0) * 0.004 * falloff *
+      min(speed * 14.0, 1.0) * uIntensity * hoverBoost;
     p += normalize(p - m + 1e-5) * ripple;
 
     // Gentle constant drift so the background never looks fully static.
-    p.x += sin(uTime * 0.15 + uv.y * 4.0) * 0.006 * uIntensity;
-    p.y += cos(uTime * 0.12 + uv.x * 4.0) * 0.006 * uIntensity;
+    p.x += sin(uTime * 0.15 + uv.y * 4.0) * 0.003 * uIntensity;
+    p.y += cos(uTime * 0.12 + uv.x * 4.0) * 0.003 * uIntensity;
 
     uv = p / am;
     uv = clamp(uv, vec2(0.002), vec2(0.998));
@@ -196,6 +196,51 @@ function positionMesh(mesh, el, overlayRect) {
 // ---------------------------------------------------------------------------
 function supportsHtmlInCanvas(gl) {
   return !!gl && typeof gl.texElementImage2D === "function";
+}
+
+// On-screen feature-detection readout for testing the WICG HTML-in-Canvas
+// flag on devices without accessible devtools (e.g. mobile). Visit this page
+// with ?debug in the URL to see it; long-press to copy the text.
+function renderDebugPanel(gl) {
+  if (!location.search.includes("debug")) return;
+
+  const probeCanvas = document.createElement("canvas");
+  const info = {
+    webglVersion: probeCanvas.getContext("webgl2")
+      ? "webgl2"
+      : gl
+      ? "webgl1"
+      : "none",
+    "gl.texElementImage2D": gl ? typeof gl.texElementImage2D : "n/a",
+    "canvas.layoutsubtree": "layoutsubtree" in probeCanvas,
+    "canvas.onpaint": "onpaint" in probeCanvas,
+    "ctx2d.drawElementImage": typeof probeCanvas.getContext("2d")?.drawElementImage,
+    "canvas.captureElementImage": typeof probeCanvas.captureElementImage,
+    userAgent: navigator.userAgent,
+  };
+
+  const panel = document.createElement("pre");
+  Object.assign(panel.style, {
+    position: "fixed",
+    bottom: "0",
+    left: "0",
+    right: "0",
+    zIndex: "999999",
+    margin: "0",
+    padding: "8px",
+    fontSize: "11px",
+    lineHeight: "1.4",
+    background: "rgba(0,0,0,0.85)",
+    color: "#0f0",
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-all",
+    userSelect: "text",
+    WebkitUserSelect: "text",
+  });
+  panel.textContent = Object.entries(info)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join("\n");
+  document.body.appendChild(panel);
 }
 
 function setupNativeLayer(renderer, gl, targetEl) {
@@ -312,6 +357,23 @@ async function setupFallbackLayer(renderer, overlayEl) {
   };
 }
 
+// gradient-bg runs a one-shot CSS entrance animation (gradientAppear:
+// opacity/scale/blur settling in over ~1.2s). Capturing before it finishes
+// freezes that in-between look into the texture — dimmer/blurrier than the
+// original ever rests at — and hiding the original at a fixed delay races
+// its own animation, causing a visible mismatched crossfade. Wait for any
+// running entrance animations to actually finish before doing anything else.
+async function waitForEntranceAnimations(el) {
+  if (!el || !el.getAnimations) return;
+  try {
+    await Promise.all(
+      el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => {}))
+    );
+  } catch {
+    // getAnimations unsupported or animation cancelled — proceed anyway.
+  }
+}
+
 async function init() {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
@@ -320,7 +382,11 @@ async function init() {
   const treeEl = document.getElementById("tree-illustration");
   if (!overlayEl || !gradientEl) return;
 
-  await document.fonts.ready;
+  await Promise.all([
+    document.fonts.ready,
+    waitForEntranceAnimations(gradientEl),
+    waitForEntranceAnimations(treeEl),
+  ]);
 
   const canvasEl = document.createElement("canvas");
   canvasEl.id = CANVAS_ID;
@@ -349,6 +415,7 @@ async function init() {
 
   const gl = renderer.getContext();
   const native = supportsHtmlInCanvas(gl);
+  renderDebugPanel(gl);
 
   const scene = new THREE.Scene();
   const layers = [];
