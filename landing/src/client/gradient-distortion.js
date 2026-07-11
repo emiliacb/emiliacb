@@ -54,6 +54,7 @@ const fragmentShader = /* glsl */ `
   uniform float uTime;
   uniform float uAspect;
   uniform bool uHover;
+  uniform float uOpacity;
 
   varying vec2 vUv;
 
@@ -74,16 +75,17 @@ const fragmentShader = /* glsl */ `
 
     // Tight falloff radius + low ambient boost: only distort close to the
     // cursor, and keep it calm unless the pointer is actually over the box.
+    // Interactivity cut another 80% (× 0.2) on top of that on request.
     float dist = distance(p, m);
     float falloff = exp(-dist * dist * 10.0);
-    float hoverBoost = uHover ? 1.0 : 0.08;
-    float swirl = -1.0 * falloff * uIntensity * hoverBoost *
+    float hoverBoost = uHover ? 0.2 : 0.016;
+    float swirl = -0.2 * falloff * uIntensity * hoverBoost *
       (0.1 + min(speed * 10.0, 1.0));
     p = rotateAround(p, m, swirl);
 
-    p -= uVelocity * am * falloff * 1.0 * uIntensity * hoverBoost;
+    p -= uVelocity * am * falloff * 0.2 * uIntensity * hoverBoost;
 
-    float ripple = sin(dist * 26.0 - uTime * 4.0) * 0.004 * falloff *
+    float ripple = sin(dist * 26.0 - uTime * 4.0) * 0.0008 * falloff *
       min(speed * 14.0, 1.0) * uIntensity * hoverBoost;
     p += normalize(p - m + 1e-5) * ripple;
 
@@ -98,6 +100,7 @@ const fragmentShader = /* glsl */ `
     if (uv.x <= 0.002 || uv.x >= 0.998 || uv.y <= 0.002 || uv.y >= 0.998) {
       color.a *= 0.0; // don't smear edge pixels into the surrounding box
     }
+    color.a *= uOpacity;
     gl_FragColor = color;
   }
 `;
@@ -112,6 +115,7 @@ function makeMaterial() {
       uTime: { value: 0 },
       uAspect: { value: 1 },
       uHover: { value: false },
+      uOpacity: { value: 0.6 },
     },
     vertexShader,
     fragmentShader,
@@ -487,6 +491,11 @@ async function init() {
     overlayEl.insertBefore(canvasEl, overlayEl.firstChild);
   }
 
+  // The mouse-driven effect only starts ramping in once the canvas has
+  // fully faded in AND (fallback path) the original has fully faded out —
+  // otherwise the distortion would be visible mid-crossfade, while both
+  // layers are still blending into each other.
+  let effectReady = false;
   requestAnimationFrame(() => {
     canvasEl.style.opacity = "1";
     // Native-mode children are already invisible-until-drawn per spec —
@@ -495,7 +504,14 @@ async function init() {
       setTimeout(() => {
         hideOriginal(gradientEl);
         hideOriginal(treeEl);
+        setTimeout(() => {
+          effectReady = true;
+        }, 220); // let the 200ms hide transition actually finish
       }, 250);
+    } else {
+      setTimeout(() => {
+        effectReady = true;
+      }, 420); // let the canvas's own 400ms fade-in finish
     }
   });
 
