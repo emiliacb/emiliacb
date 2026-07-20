@@ -1,7 +1,7 @@
 # AI Engineer
 
 **Senior Engineer con mentalidad de producto.**
-Cinco años de experiencia lanzando funcionalidades a producción con ROI claro.
+Seis años de experiencia lanzando funcionalidades a producción con ROI claro.
 Construyendo con LLMs desde GPT-3.
 
 <br />
