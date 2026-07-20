@@ -1,7 +1,7 @@
 # AI Engineer
 
 **Senior Engineer with a Product mindset.**
-Five years of experience shipping production features with clear ROI.
+Six years of experience shipping production features with clear ROI.
 Building with LLMs since GPT-3.
 
 <br />
