@@ -24,6 +24,16 @@ Examples:
 - **Web accessibility**
 - Training sessions on implementing **GenAI solutions** for business applications
 
+## Generative AI Solutions
+
+Implementation and optimization of GenAI technologies tailored to your business needs, reducing costs and enhancing performance.
+
+Examples:
+
+- Automated customer support **chatbots**
+- Personalized marketing **content generators**
+- Image and video generation platforms
+
 ## Full-Stack Web Development
 
 **Custom development** of scalable web applications using technologies like React, Next.js, Node and AWS.
@@ -34,25 +44,3 @@ Examples:
 - **E-commerce** platforms with dynamic product catalogs
 - Applications with **real-time updates**
 - Content management systems with **custom admin panels**
-
-## No-code Solutions
-
-Design and development using platforms like Framer, Zapier, or Retool for **faster delivery** and **lower costs**, with some limitations in customization.
-
-Examples:
-
-- **Minimum viable products**
-- Blog sites with ready-to-use themes
-- Small business websites with pre-built templates
-- **Proof of concepts**
-- Landing pages with standard design features
-
-## Generative AI Solutions
-
-Implementation and optimization of GenAI technologies tailored to your business needs, reducing costs and enhancing performance.
-
-Examples:
-
-- Automated customer support **chatbots**
-- Personalized marketing **content generators**
-- Image and video generation platforms
