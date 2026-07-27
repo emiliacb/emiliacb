@@ -58,7 +58,7 @@ That last one is where the earlier **allow-list** does double duty: the list of 
 
 Notice that every one of these is **internal**: back-office automation and tooling for you and your team, not something pointed at customers. That's the honest ceiling today. At its best, this is an internal experiment that matures into a genuinely useful internal tool, not a product you put in front of end users.
 
-## Cost 1: everything is separate plumbing you assemble yourself
+### Cost 1: everything is separate plumbing you assemble yourself
 
 There is no "assistant account" you sign up for. To make Hermes useful you provision, and wire together, a pile of independent services by hand:
 
@@ -72,7 +72,7 @@ Each one is a separate signup, a separate credential, a separate thing that can 
 
 **Why it matters:** the "assistant" is really a systems-integration project wearing a chat interface. Budget for that, not for a five-minute install.
 
-## Cost 2: you're now running a server (and backing it up)
+### Cost 2: you're now running a server (and backing it up)
 
 Hermes' persistence, the memory, the self-authored skills, the relationship notes, lives on a VPS. That's a real machine you rent (~$5–10/month) and, more importantly, **operate**.
 
@@ -82,7 +82,7 @@ Hermes' persistence, the memory, the self-authored skills, the relationship note
 
 Nous does offer a managed **Hermes Cloud** to skip this, but the moment you self-host for control or cost, you've signed up to be a sysadmin. An autonomous assistant that forgets everything when a disk dies isn't autonomous, it's fragile.
 
-## Cost 3: you need Fastmail, because a VPS looks like an attacker
+### Cost 3: you need Fastmail, because a VPS looks like an attacker
 
 Here's a non-obvious one. You'd think you'd just give the agent a Gmail and let it send mail. Don't.
 
@@ -92,7 +92,7 @@ So the practical move is to route email through a provider built for programmati
 
 **Why it matters:** the "obvious" free path (Gmail SMTP) is the one most likely to get your agent's identity nuked. You pay for Fastmail to buy deliverability and account stability.
 
-## Cost 4: Google Cloud setup (less than you'd fear)
+### Cost 4: Google Cloud setup (less than you'd fear)
 
 The agent reaches Drive and Calendar through the new [Google Workspace CLI](https://github.com/googleworkspace/cli) (`gws`). If you've set up Google Cloud projects before, you're bracing for the usual console slog: create a project, enable each API, configure the OAuth consent screen, generate credentials.
 
@@ -105,7 +105,7 @@ Two caveats:
 
 **Why it matters:** this is the one step that's _easier_ than expected. Credit where due, and don't burn an afternoon doing by hand what the tool already does.
 
-## Cost 5: it's terminal-first
+### Cost 5: it's terminal-first
 
 Configuration lives in the terminal and in YAML config files over SSH. That's fine if you live there, but it's a real barrier, and it means the person who sets the agent up is also the person on the hook when something in the config breaks at 2am. There's a desktop app now, but the self-hosted control surface is still fundamentally a shell.
 
