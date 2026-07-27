@@ -15,7 +15,7 @@ categories: ["AI/ML Development", "Security", "Opinion"]
 
 ## Introduction
 
-Self-hosted autonomous agents are having a moment, and so is the wider category around them: [OpenHands](https://github.com/All-Hands-AI/OpenHands) and [Goose](https://github.com/block/goose) are open-source cousins, [Devin](https://devin.ai/) is the proprietary poster child, and much of what follows applies to all of them. I'll focus on [Nous Research's Hermes agent](https://hermes-agent.nousresearch.com/), the clearest example of the breed: MIT-licensed, runs on your own VPS instead of your laptop, keeps persistent memory across sessions, writes and improves its own skills, and can be reached through a couple dozen messaging gateways.
+Self-hosted autonomous agents are having a moment, and so is the wider category around them: OpenHands and Goose are open-source cousins, Devin is the proprietary poster child, and much of what follows applies to all of them. I'll focus on Nous Research's Hermes agent, the clearest example of the breed: MIT-licensed, runs on your own VPS instead of your laptop, keeps persistent memory across sessions, writes and improves its own skills, and can be reached through a couple dozen messaging gateways.
 
 The pitch is intoxicating: an always-on assistant with its own identity that just _does things_ for you.
 
@@ -25,7 +25,7 @@ But let me be blunt up front: **this is not a finished product.** It's an MVP-gr
 
 It's worth being clear about why this is even tempting, because the upside is real.
 
-- **The models are finally there.** You can point Hermes at a frontier open model like **Kimi K3**, a 2.8T-parameter MoE with a 1M-token context window and native vision, whose weights Moonshot [published openly in July 2026](https://techcrunch.com/2026/07/16/moonshots-upcoming-kimi-3-is-expected-to-close-the-gap-with-anthropics-opus-4-8/). A year ago the open models weren't good enough to build these experiments on at all. Now they are, which is exactly why an MVP like this is worth taking seriously.
+- **The models are finally there.** You can point Hermes at a frontier open model like **Kimi K3**, a 2.8T-parameter MoE with a 1M-token context window and native vision, whose weights Moonshot published openly in July 2026. A year ago the open models weren't good enough to build these experiments on at all. Now they are, which is exactly why an MVP like this is worth taking seriously.
 - **It's yours.** Self-hosted, open source, persistent memory on disk you control. No vendor holding your assistant's brain hostage.
 - **It self-improves.** Hermes can author new skills over time, so it genuinely gets more capable at your specific workflows.
 - **It speaks everything.** 24+ gateways (Telegram, Discord, Slack, WhatsApp, Signal, email, plain CLI) and multiple execution backends.
@@ -94,7 +94,7 @@ So the practical move is to route email through a provider built for programmati
 
 ### Cost 4: Google Cloud setup (less than you'd fear)
 
-The agent reaches Drive and Calendar through the new [Google Workspace CLI](https://github.com/googleworkspace/cli) (`gws`). If you've set up Google Cloud projects before, you're bracing for the usual console slog: create a project, enable each API, configure the OAuth consent screen, generate credentials.
+The agent reaches Drive and Calendar through the new Google Workspace CLI (`gws`). If you've set up Google Cloud projects before, you're bracing for the usual console slog: create a project, enable each API, configure the OAuth consent screen, generate credentials.
 
 Good news: **`gws auth setup` does almost all of it for you.** Per the CLI's own docs, the command _"creates a Cloud project, enables APIs, logs you in."_ You don't hand-configure the project or click through API enablement, the CLI provisions it behind the scenes. This isn't spelled out loudly anywhere, but it's real, watch any setup walkthrough and you'll see it just happen.
 
