@@ -32,7 +32,7 @@ It's worth being clear about why this is even tempting, because the upside is re
 
 None of what follows is a reason not to do it. It's a reason to go in with your eyes open.
 
-## So what's it actually for? (and where it overlaps with Claude)
+## So what's it actually for?
 
 Here's the uncomfortable part: the day-to-day use cases are **narrow, and they overlap heavily with what Claude and Claude Code already do.** If you live in Claude Code and use Claude's connectors and projects, a lot of a self-hosted Hermes setup is redundant, you'd be rebuilding, at real operational cost, things you already have.
 
