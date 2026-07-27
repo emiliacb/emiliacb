@@ -3,7 +3,7 @@ title: "The hidden cost of an autonomous assistant"
 slug: 2026-07-27-limits-of-autonomous-assistants
 description: "Self-hosting a Hermes agent on the open cloud is genuinely exciting, the models are finally good enough. But making one actually useful means a pile of separate infrastructure and some real risks: VPS ops, account bans, IP blocks, and skills that run code you never audited. An honest look at what you sign up for."
 date: 2026-07-27T18:00:00.000Z
-preview: ""
+preview: "hermes-warning.png"
 draft: false
 tags: ["AI Agents", "Hermes", "Nous Research", "Autonomous Agents", "Self-Hosting", "VPS", "Security", "Kimi", "Google Workspace", "WhatsApp", "Ops", "Limitations"]
 categories: ["AI/ML Development", "Security", "Opinion"]
@@ -15,17 +15,17 @@ categories: ["AI/ML Development", "Security", "Opinion"]
 
 ## Introduction
 
-Self-hosted autonomous agents finally crossed the line from demo to genuinely useful. [Nous Research's Hermes agent](https://hermes-agent.nousresearch.com/) is the clearest example: MIT-licensed, runs on your own VPS instead of your laptop, keeps persistent memory across sessions, writes and improves its own skills, and can be reached through a couple dozen messaging gateways.
+Self-hosted autonomous agents are having a moment. [Nous Research's Hermes agent](https://hermes-agent.nousresearch.com/) is the clearest example: MIT-licensed, runs on your own VPS instead of your laptop, keeps persistent memory across sessions, writes and improves its own skills, and can be reached through a couple dozen messaging gateways.
 
 The pitch is intoxicating: an always-on assistant with its own identity that just _does things_ for you.
 
-But there's a gap between "I deployed it" and "it's actually useful and safe," and that gap is full of infrastructure and risk that nobody puts on the landing page. I ran into all of it. This post is the honest version: the good, and the real cost.
+But let me be blunt up front: **this is not a finished product.** It's an MVP-grade experiment. I don't see anyone realistically running one of these in front of customers or end users yet, they're tests, internal tooling, back-office automation. That's a real and valid use, but it isn't a production feature you hand to your users. And between "I deployed it" and even "it's a dependable internal tool" sits a pile of infrastructure and risk that nobody puts on the landing page. I ran into all of it. This post is the honest version: the good, the real cost, and where it actually fits today.
 
 ## First, the good part
 
 It's worth being clear about why this is even tempting, because the upside is real.
 
-- **The models are finally there.** You can point Hermes at a frontier open model like **Kimi K3**, a 2.8T-parameter MoE with a 1M-token context window and native vision, whose weights Moonshot [published openly in July 2026](https://techcrunch.com/2026/07/16/moonshots-upcoming-kimi-3-is-expected-to-close-the-gap-with-anthropics-opus-4-8/). A year ago the open models weren't good enough to trust with autonomous action. Now they are.
+- **The models are finally there.** You can point Hermes at a frontier open model like **Kimi K3**, a 2.8T-parameter MoE with a 1M-token context window and native vision, whose weights Moonshot [published openly in July 2026](https://techcrunch.com/2026/07/16/moonshots-upcoming-kimi-3-is-expected-to-close-the-gap-with-anthropics-opus-4-8/). A year ago the open models weren't good enough to build these experiments on at all. Now they are, which is exactly why an MVP like this is worth taking seriously.
 - **It's yours.** Self-hosted, open source, persistent memory on disk you control. No vendor holding your assistant's brain hostage.
 - **It self-improves.** Hermes can author new skills over time, so it genuinely gets more capable at your specific workflows.
 - **It speaks everything.** 24+ gateways (Telegram, Discord, Slack, WhatsApp, Signal, email, plain CLI) and multiple execution backends.
@@ -55,6 +55,8 @@ With that lens, here are use cases where the flexibility earns its keep:
 - **Talk to your whole team with a unified identity.** Because you can shape the code, the agent can resolve the _same person_ across platforms: if an employee messages it on Slack, then later on GitHub or Telegram, it maps all of those to one identity and carries the same context across every channel, so nobody has to re-explain themselves.
 
 That last one is where the earlier **allow-list** does double duty: the list of known, trusted identities that keeps strangers out is exactly what lets the agent cross-reference your employees' accounts across Slack, GitHub, and Telegram into a single, contextual relationship. Safety and capability turn out to be the same feature.
+
+Notice that every one of these is **internal**: back-office automation and tooling for you and your team, not something pointed at customers. That's the honest ceiling today. At its best, this is an internal experiment that matures into a genuinely useful internal tool, not a product you put in front of end users.
 
 ## Cost 1: everything is separate plumbing you assemble yourself
 
@@ -167,4 +169,4 @@ But "useful autonomous assistant" today means signing up to:
 - **Audit every skill**, including the ones the agent writes itself.
 - **Keep it behind an allow-list**, because it isn't ready to face strangers.
 
-Do all of that and you get something remarkable: a private, always-on assistant that's genuinely yours. Skip any of it and you get a fragile, bannable, and occasionally dangerous liability. The technology arrived; the guardrails are still catching up. Deploy accordingly, eyes open, leash short.
+Do all of that and you get something genuinely useful: a private, always-on internal tool that's yours. But treat it as what it is, an MVP-stage back-office experiment, not a production feature for end users. Skip any of the work above and you get a fragile, bannable, and occasionally dangerous liability. The models arrived; the agents around them are still catching up. Deploy accordingly, eyes open, leash short.
