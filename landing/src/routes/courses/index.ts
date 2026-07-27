@@ -5,7 +5,8 @@ import layout from "../../components/layout";
 
 type Course = {
   title: Record<string, string>;
-  thumbnail?: string;
+  description: Record<string, string>;
+  thumbnail: string;
 };
 
 const courses: Course[] = [
@@ -14,6 +15,10 @@ const courses: Course[] = [
       en: "Claude Code for Non-Programmers",
       es: "Claude Code para no programadores",
     },
+    description: {
+      en: "Use Claude Code to build and ship real projects without writing a line of code yourself.",
+      es: "Usá Claude Code para crear y lanzar proyectos reales sin escribir una línea de código vos mismo.",
+    },
     thumbnail: "claude-code-course.jpg",
   },
   {
@@ -21,12 +26,22 @@ const courses: Course[] = [
       en: "Hermes for Companies",
       es: "Hermes para Empresas",
     },
+    description: {
+      en: "How to deploy a self-hosted Hermes agent for internal automation at your company: real use cases, the configurability that justifies it, and the risks and costs nobody puts on the landing page.",
+      es: "Cómo desplegar un agente Hermes auto-hospedado para automatización interna en tu empresa: casos de uso reales, la configurabilidad que lo justifica, y los riesgos y costos que nadie pone en la portada.",
+    },
+    thumbnail: "hermes-warning.png",
   },
   {
     title: {
       en: "Introduction to AI for Non-Programmers",
       es: "Introducción a la IA para no programadores",
     },
+    description: {
+      en: "The fundamentals of how generative AI works and how to use it day-to-day, no technical background required.",
+      es: "Los fundamentos de cómo funciona la IA generativa y cómo usarla en tu día a día, sin necesitar experiencia técnica.",
+    },
+    thumbnail: "ai-intro-course.png",
   },
 ];
 
@@ -36,13 +51,13 @@ const wordings: Record<
 > = {
   en: {
     title: "Courses",
-    description: "Courses I'm building. Enrollment opens soon.",
+    description: "Practical generative AI courses, no fluff: for non-programmers and for teams that want to move faster.",
     metaDescription: "A look at the courses Emilia CB is currently building.",
     comingSoon: "Coming Soon",
   },
   es: {
     title: "Cursos",
-    description: "Cursos que estoy construyendo. Muy pronto vas a poder anotarte.",
+    description: "Cursos prácticos de IA generativa, sin vueltas: para no programadores y para equipos que quieren moverse más rápido.",
     metaDescription: "Un vistazo a los cursos que Emilia CB está construyendo.",
     comingSoon: "Próximamente",
   },
@@ -66,22 +81,20 @@ export default async function handler(c: Context) {
         </p>
       </div>
 
-      <div class="flex flex-col space-y-3 text-pretty">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         ${raw(
           courses
             .map(
               (course) => `
-          <div class="bg-yellow-300 dark:bg-blue-900">
-          <article class="grid grid-cols-[auto_1fr] h-28">
-          <div class="aspect-square relative overflow-hidden">
-          <div class="absolute inset-0 blog-card-thumb"></div>
-          ${course.thumbnail ? `<div class="absolute inset-0 bg-cover bg-center img-outline" style="background-image: url('/public/${course.thumbnail}')"></div>` : ''}
+          <div class="flex flex-col bg-yellow-300 dark:bg-blue-900 overflow-hidden">
+          <div class="aspect-video relative overflow-hidden">
+          <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('/public/${course.thumbnail}')"></div>
+          <span class="absolute top-2 left-2 text-[0.6rem] font-bold uppercase tracking-wide px-2 py-1 bg-black text-white dark:bg-white dark:text-black">${wordings[lang].comingSoon}</span>
           </div>
-          <div class="flex flex-col justify-center p-2 pl-4 overflow-hidden gap-2">
-          <h2 class="font-bold truncate">${course.title[lang]}</h2>
-          <span class="w-fit text-[0.65rem] font-bold uppercase tracking-wide px-2 py-0.5 bg-black text-white dark:bg-white dark:text-black">${wordings[lang].comingSoon}</span>
+          <div class="flex flex-col p-3 gap-1.5">
+          <h2 class="font-bold leading-tight">${course.title[lang]}</h2>
+          <p class="text-xs text-stone-800 dark:text-stone-200">${course.description[lang]}</p>
           </div>
-          </article>
           </div>`
             )
             .join("")
