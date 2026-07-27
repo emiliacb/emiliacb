@@ -1,7 +1,7 @@
 ---
 title: "The hidden cost of an autonomous assistant"
 slug: 2026-07-27-limits-of-autonomous-assistants
-description: "Self-hosting a Hermes agent on the open cloud is genuinely exciting, the models are finally good enough. But making one actually useful means a pile of separate infrastructure and some real risks: VPS ops, account bans, IP blocks, and skills that run code you never audited. A closer look at what you sign up for."
+description: "A closer look at self-hosting a Hermes agent: the infrastructure, costs and risks (VPS ops, account bans, IP blocks, unaudited skills) behind the hype."
 date: 2026-07-27T18:00:00.000Z
 preview: "hermes-warning.png"
 draft: false
@@ -32,7 +32,7 @@ It's worth being clear about why this is even tempting, because the upside is re
 
 None of what follows is a reason not to do it. It's a reason to go in with your eyes open.
 
-## So what's it actually for? (and where it overlaps with Claude)
+## So what's it actually for?
 
 Here's the uncomfortable part: the day-to-day use cases are **narrow, and they overlap heavily with what Claude and Claude Code already do.** If you live in Claude Code and use Claude's connectors and projects, a lot of a self-hosted Hermes setup is redundant, you'd be rebuilding, at real operational cost, things you already have.
 

@@ -53,7 +53,16 @@ export async function parseContent(file: string, lang: string) {
     </ul>
   `;
 
-  const parsedContent = contentHtml.replace(/%table-of-contents%/, tocHtml);
+  // marked wraps the standalone %table-of-contents% token in a <p>. Replacing
+  // only the token would nest the block-level <ul> inside that <p>, which is
+  // invalid HTML: browsers auto-close the paragraph and inject stray empty
+  // paragraphs, producing blank bullets and dropped/merged items (worse on
+  // some mobile browsers). Swap the whole wrapping paragraph instead, falling
+  // back to the bare token if marked didn't wrap it.
+  const parsedContent = contentHtml.replace(
+    /(?:<p>\s*)?%table-of-contents%(?:\s*<\/p>)?/,
+    tocHtml
+  );
 
   return parsedContent;
 }
