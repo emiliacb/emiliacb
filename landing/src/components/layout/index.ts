@@ -14,6 +14,8 @@ type LayoutProps = {
     title: string;
     description: string;
     lang: string;
+    image?: string;
+    url?: string;
   };
   withFooter?: boolean;
   withIlustration?: boolean;
@@ -28,6 +30,15 @@ export default function layout({
 
   children,
 }: LayoutProps) {
+  const SITE_URL = "https://emiliacabral.com";
+  const SITE_NAME = "Emilia Cabral";
+  const canonicalUrl = siteData.url ?? `${SITE_URL}/`;
+  const rawImage = siteData.image ?? `${SITE_URL}/public/preview.png`;
+  // Social scrapers require an absolute https URL; normalize relative paths.
+  const ogImage = rawImage.startsWith("http")
+    ? rawImage
+    : `${SITE_URL}${rawImage.startsWith("/") ? "" : "/"}${rawImage}`;
+
   return html`
     <!DOCTYPE html>
     <html lang="${siteData.lang}">
@@ -66,20 +77,21 @@ export default function layout({
 
         <!-- Open Graph / Facebook -->
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://emiliacabral.com/" />
+        <meta property="og:site_name" content="${SITE_NAME}" />
+        <meta property="og:url" content="${canonicalUrl}" />
         <meta property="og:title" content="${siteData.title}" />
         <meta property="og:description" content="${siteData.description}" />
-        <meta property="og:image" content="/public/preview.png" />
+        <meta property="og:image" content="${ogImage}" />
 
         <!-- Twitter -->
         <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content="https://emiliacabral.com/" />
+        <meta property="twitter:url" content="${canonicalUrl}" />
         <meta property="twitter:title" content="${siteData.title}" />
         <meta
           property="twitter:description"
           content="${siteData.description}"
         />
-        <meta property="twitter:image" content="/public/preview.png" />
+        <meta property="twitter:image" content="${ogImage}" />
 
         <!-- Posthog -->
         <script src="/public/${CACHE_VERSION}/_posthog-bundle.js" defer></script>
