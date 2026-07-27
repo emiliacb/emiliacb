@@ -12,6 +12,8 @@ Examples:
 - Mentorship on scaling a web application
 - Career guidance to break into or grow within the tech industry
 
+[Book a mentorship session](https://calendly.com/emilia-cb)
+
 ## Corporate Training & Workshops
 
 Custom **training sessions for teams** on web development and AI, leveraging the latest industry practices. I've delivered **5 internal talks at Mercado Libre to 200+ people** and **classes to companies**.
@@ -22,15 +24,7 @@ Examples:
 - **Web accessibility**
 - Training sessions on implementing **GenAI solutions** for business applications
 
-## Generative AI Solutions
-
-Implementation and optimization of GenAI technologies tailored to your business needs, reducing costs and enhancing performance.
-
-Examples:
-
-- Automated customer support **chatbots**
-- Personalized marketing **content generators**
-- Image and video generation platforms
+[Check out my courses](/en/courses)
 
 ## Engineering Consulting
 
@@ -42,3 +36,4 @@ Examples:
 - Web applications and **e-commerce** platforms with dynamic catalogs
 - **Mobile apps** for iOS and Android
 - Applications with **real-time updates** and custom admin panels
+- Implementation and optimization of **Generative AI solutions** (automated customer support chatbots, personalized marketing content generators, image and video generation platforms) tailored to your business needs

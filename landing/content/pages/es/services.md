@@ -12,6 +12,8 @@ Ejemplos:
 - Mentoría sobre cómo escalar una aplicación web
 - Orientación de carrera para entrar o crecer en la industria tech
 
+[Agendá una mentoría](https://calendly.com/emilia-cb)
+
 ## Formación Corporativa y Talleres
 
 **Sesiones de formación personalizadas para equipos** sobre desarrollo web e IA, aprovechando las últimas prácticas de la industria. Di **5 charlas internas en Mercado Libre a más de 200 personas** y **clases a empresas**.
@@ -22,15 +24,7 @@ Ejemplos:
 - **Accesibilidad web**
 - Sesiones de formación sobre implementación de **soluciones GenAI** para aplicaciones empresariales
 
-## Soluciones de IA Generativa
-
-Implementación y optimización de tecnologías de GenAI adaptadas a las necesidades de tu negocio, reduciendo costos y mejorando el rendimiento.
-
-Ejemplos:
-
-- **Chatbots** de atención al cliente automatizados
-- Generadores de **contenido** de marketing personalizado
-- Plataformas de generación de imágenes y videos
+[Mirá mis cursos](/es/courses)
 
 ## Consultoría en Ingeniería
 
@@ -42,3 +36,4 @@ Ejemplos:
 - Aplicaciones web y plataformas de **comercio electrónico** con catálogos dinámicos
 - **Apps mobile** para iOS y Android
 - Aplicaciones con **actualizaciones en tiempo real** y paneles de administración personalizados
+- Implementación y optimización de **soluciones de IA Generativa** (chatbots de atención al cliente, generadores de contenido de marketing, plataformas de generación de imágenes y videos) adaptadas a las necesidades de tu negocio
