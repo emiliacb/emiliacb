@@ -156,9 +156,7 @@ The honest read: the _capability_ is finally here, but the _operational and safe
 
 ## Conclusion
 
-I don't want this to read as discouragement. Kimi K3 and open agents like Hermes are a real leap, a year ago the brain wasn't good enough; now it is, and it runs on hardware you control. That's genuinely exciting.
-
-And the honest positioning is this: for everyday tasks, most of what it does overlaps with Claude and Claude Code. The reason to pay the cost is **control**, over the model, the storage, and the code itself. If you need that, this is the only thing that gives it to you.
+The honest positioning is this: for everyday tasks, most of what a self-hosted agent like this does overlaps with Claude and Claude Code. The reason to pay the cost is **control**, over the model, the storage, and the code itself. If you need that, this is the only thing that gives it to you.
 
 But "useful autonomous assistant" today means signing up to:
 
@@ -169,4 +167,4 @@ But "useful autonomous assistant" today means signing up to:
 - **Audit every skill**, including the ones the agent writes itself.
 - **Keep it behind an allow-list**, because it isn't ready to face strangers.
 
-Do all of that and you get something genuinely useful: a private, always-on internal tool that's yours. But treat it as what it is, an MVP-stage back-office experiment, not a production feature for end users. Skip any of the work above and you get a fragile, bannable, and occasionally dangerous liability. The models arrived; the agents around them are still catching up. Deploy accordingly, eyes open, leash short.
+Put plainly: these systems are **not ready to be relied on** as a finished, fully trustworthy and secure product, not without a deep engineering effort built around them, and that effort is not small. Realistically it's months of work from an engineering team to get one of these safe enough to communicate with end users. What they _are_ ready for is delivering real benefits **internally**: back-office automation, internal tooling, and experiments for you and your team. That's the honest line today, and everything above it still has to be built.
