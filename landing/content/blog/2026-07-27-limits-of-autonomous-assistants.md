@@ -1,7 +1,7 @@
 ---
 title: "The hidden cost of an autonomous assistant"
 slug: 2026-07-27-limits-of-autonomous-assistants
-description: "Self-hosting a Hermes agent on the open cloud is genuinely exciting, the models are finally good enough. But making one actually useful means a pile of separate infrastructure and some real risks: VPS ops, account bans, IP blocks, and skills that run code you never audited. An honest look at what you sign up for."
+description: "Self-hosting a Hermes agent on the open cloud is genuinely exciting, the models are finally good enough. But making one actually useful means a pile of separate infrastructure and some real risks: VPS ops, account bans, IP blocks, and skills that run code you never audited. A closer look at what you sign up for."
 date: 2026-07-27T18:00:00.000Z
 preview: "hermes-warning.png"
 draft: false
@@ -19,7 +19,7 @@ Self-hosted autonomous agents are having a moment, and so is the wider category 
 
 The pitch is intoxicating: an always-on assistant with its own identity that just _does things_ for you.
 
-But let me be blunt up front: **this is not a finished product.** It's an MVP-grade experiment. I don't see anyone realistically running one of these in front of customers or end users yet, they're tests, internal tooling, back-office automation. That's a real and valid use, but it isn't a production feature you hand to your users. And between "I deployed it" and even "it's a dependable internal tool" sits a pile of infrastructure and risk that nobody puts on the landing page. I ran into all of it. This post is the honest version: the good, the real cost, and where it actually fits today.
+But let me be blunt up front: **this is not a finished product.** It's an MVP-grade experiment. I don't see anyone realistically running one of these in front of customers or end users yet, they're tests, internal tooling, back-office automation. That's a real and valid use, but it isn't a production feature you hand to your users. And between "I deployed it" and even "it's a dependable internal tool" sits a pile of infrastructure and risk that nobody puts on the landing page. I ran into all of it. This post covers the good, the real cost, and where it actually fits today.
 
 ## First, the good part
 
@@ -56,7 +56,7 @@ With that lens, here are use cases where the flexibility earns its keep:
 
 That last one is where the earlier **allow-list** does double duty: the list of known, trusted identities that keeps strangers out is exactly what lets the agent cross-reference your employees' accounts across Slack, GitHub, and Telegram into a single, contextual relationship. Safety and capability turn out to be the same feature.
 
-Notice that every one of these is **internal**: back-office automation and tooling for you and your team, not something pointed at customers. That's the honest ceiling today. At its best, this is an internal experiment that matures into a genuinely useful internal tool, not a product you put in front of end users.
+Notice that every one of these is **internal**: back-office automation and tooling for you and your team, not something pointed at customers. That's the ceiling today. At its best, this is an internal experiment that matures into a genuinely useful internal tool, not a product you put in front of end users.
 
 ### Cost 1: everything is separate plumbing you assemble yourself
 
@@ -152,11 +152,11 @@ Right now these are, realistically, **personal assistants for a party of one**: 
 - **What you gain:** ownership, persistence, self-improvement, frontier open models like Kimi K3, and an identity of its own.
 - **What you pay:** VPS ops and backups, per-service provisioning, the constant risk of account and IP bans, exposure to unaudited skill code, and a hard ceiling on who the agent can safely talk to.
 
-The honest read: the _capability_ is finally here, but the _operational and safety envelope_ is small. This is a power tool for someone who's comfortable being its sysadmin and its security team, aimed at their own private workflows, not a drop-in employee you point at the public.
+The bottom line: the _capability_ is finally here, but the _operational and safety envelope_ is small. This is a power tool for someone who's comfortable being its sysadmin and its security team, aimed at their own private workflows, not a drop-in employee you point at the public.
 
 ## Conclusion
 
-The honest positioning is this: for everyday tasks, most of what a self-hosted agent like this does overlaps with Claude and Claude Code. The reason to pay the cost is **control**, over the model, the storage, and the code itself. If you need that, this is the only thing that gives it to you.
+The positioning is simple: for everyday tasks, most of what a self-hosted agent like this does overlaps with Claude and Claude Code. The reason to pay the cost is **control**, over the model, the storage, and the code itself. If you need that, this is the only thing that gives it to you.
 
 But "useful autonomous assistant" today means signing up to:
 
@@ -167,4 +167,4 @@ But "useful autonomous assistant" today means signing up to:
 - **Audit every skill**, including the ones the agent writes itself.
 - **Keep it behind an allow-list**, because it isn't ready to face strangers.
 
-Put plainly: these systems are **not ready to be relied on** as a finished, fully trustworthy and secure product, not without a deep engineering effort built around them, and that effort is not small. Realistically it's months of work from an engineering team to get one of these safe enough to communicate with end users. What they _are_ ready for is delivering real benefits **internally**: back-office automation, internal tooling, and experiments for you and your team. That's the honest line today, and everything above it still has to be built.
+Put plainly: these systems are **not ready to be relied on** as a finished, fully trustworthy and secure product, not without a deep engineering effort built around them, and that effort is not small. Realistically it's months of work from an engineering team to get one of these safe enough to communicate with end users. What they _are_ ready for is delivering real benefits **internally**: back-office automation, internal tooling, and experiments for you and your team. That's the line today, and everything above it still has to be built.
