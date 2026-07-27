@@ -13,7 +13,7 @@ Personalized **1:1 mentorship** focusing on full-stack development or AI technol
 - You're building a portfolio project and aren't sure if you're on the right track
 - You want to break into tech from another field and don't know where to start
 
-[Book a mentorship session](https://calendly.com/emilia-cb)
+[Book a free mentorship session](https://calendly.com/emilia-cb)
 
 ## Corporate Training & Workshops
 

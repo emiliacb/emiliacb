@@ -13,7 +13,7 @@
 - Estás armando un proyecto de portfolio y no sabés si vas por buen camino
 - Querés entrar a la industria tech desde otra área y no sabés por dónde arrancar
 
-[Agendá una mentoría](https://calendly.com/emilia-cb)
+[Agendá una mentoría sin costo](https://calendly.com/emilia-cb)
 
 ## Formación Corporativa y Talleres
 
