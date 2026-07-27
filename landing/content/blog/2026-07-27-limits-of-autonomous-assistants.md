@@ -58,6 +58,8 @@ That last one is where the earlier **allow-list** does double duty: the list of 
 
 Notice that every one of these is **internal**: back-office automation and tooling for you and your team, not something pointed at customers. That's the ceiling today. At its best, this is an internal experiment that matures into a genuinely useful internal tool, not a product you put in front of end users.
 
+## Costs
+
 ### Cost 1: everything is separate plumbing you assemble yourself
 
 There is no "assistant account" you sign up for. To make Hermes useful you provision, and wire together, a pile of independent services by hand:
