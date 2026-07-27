@@ -38,3 +38,5 @@ End-to-end guidance and hands-on development across **architecture, web, and mob
 - You have a product in production and need to rethink the **architecture** so it can support more users or features
 - You want to **automate business processes** (system integrations, workflows, manual tasks) instead of continuing to do them by hand
 - You need something specific like **real-time updates**, a custom admin panel, or a dynamic catalog for your e-commerce
+
+[Email me](mailto:emiliacabralb@gmail.com)

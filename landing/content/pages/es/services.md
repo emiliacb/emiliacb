@@ -38,3 +38,5 @@ Acompañamiento integral y desarrollo hands-on en **arquitectura, web y mobile**
 - Tenés un producto en producción y necesitás repensar la **arquitectura** para que soporte más usuarios o funcionalidades
 - Querés **automatizar procesos** de tu negocio (integraciones entre sistemas, flujos de trabajo, tareas manuales) en vez de seguir haciéndolos a mano
 - Necesitás algo puntual como **actualizaciones en tiempo real**, un panel de administración a medida, o un catálogo dinámico para tu e-commerce
+
+[Escribime a mi email](mailto:emiliacabralb@gmail.com)
