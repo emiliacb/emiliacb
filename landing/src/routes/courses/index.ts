@@ -41,7 +41,7 @@ const courses: Course[] = [
       en: "How to deploy a self-hosted Hermes agent for internal automation at your company: real use cases.",
       es: "Cómo desplegar un agente Hermes auto-hospedado para automatización interna en tu empresa: casos de uso reales.",
     },
-    thumbnail: "hermes-warning.png",
+    thumbnail: "hermes-logo.png",
   },
 ];
 
