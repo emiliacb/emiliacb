@@ -1,16 +1,6 @@
 # Quién Soy
 
-**Senior Engineer con mentalidad de producto.**
-Seis años de experiencia lanzando funcionalidades a producción con ROI claro.
-Construyendo con LLMs desde GPT-3.
-
 %table-of-contents%
-
-## ¿Por Qué Trabajar Conmigo?
-
-**Estoy lista para sumergirme en tu proyecto y tomar ownership completo, ya sea trabajando de forma autónoma o en equipo.**
-
-Aporto un enfoque holístico a cada proyecto. Mi experiencia como ex bibliotecaria me brinda una perspectiva única sobre **arquitectura de la información** y **gestión del conocimiento**, que incorporo en mi trabajo de ingeniería y diseño. Constantemente impulso la colaboración multifuncional y el **pensamiento interdisciplinario**.
 
 ## Trayectoria Profesional
 

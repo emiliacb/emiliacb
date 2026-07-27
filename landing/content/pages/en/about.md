@@ -1,16 +1,6 @@
 # Who I Am
 
-**Senior Engineer with a Product mindset.**
-Six years of experience shipping production features with clear ROI.
-Building with LLMs since GPT-3.
-
 %table-of-contents%
-
-## Why Work With Me?
-
-**I'm ready to jump into your project** **and take full** **ownership,** **whether** **working autonomously or** **collaboratively in teams.**
-
-I bring a holistic approach to every project. My background as a former librarian gives me a unique perspective on **information architecture** and **knowledge management**, which I incorporate into my engineering and design work. I constantly push for cross-functional collaboration and **interdisciplinary thinking**.
 
 ## Professional Journey
 

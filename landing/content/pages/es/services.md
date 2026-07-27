@@ -1,7 +1,5 @@
 # Qué Hago
 
-Servicios pensados para impulsar tu negocio desde una **perspectiva interdisciplinaria**. Mi objetivo es ayudarte a transformar tus ideas en **productos reales** que tus usuarios amen.
-
 %table-of-contents%
 
 ## Mentoría
