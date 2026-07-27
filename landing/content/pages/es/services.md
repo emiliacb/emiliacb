@@ -16,7 +16,7 @@ Ejemplos:
 
 ## Formación Corporativa y Talleres
 
-**Sesiones de formación personalizadas para equipos** sobre desarrollo web e IA, aprovechando las últimas prácticas de la industria. Di **charlas internas en Mercado Libre** y **clases a empresas**.
+**Sesiones de formación personalizadas para equipos** sobre desarrollo web e IA, aprovechando las últimas prácticas de la industria. Di **5 charlas internas en Mercado Libre a más de 200 personas** y **clases a empresas**.
 
 Ejemplos:
 

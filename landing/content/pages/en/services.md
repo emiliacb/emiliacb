@@ -16,7 +16,7 @@ Examples:
 
 ## Corporate Training & Workshops
 
-Custom **training sessions for teams** on web development and AI, leveraging the latest industry practices. I've delivered **internal talks at Mercado Libre** and **classes to companies**.
+Custom **training sessions for teams** on web development and AI, leveraging the latest industry practices. I've delivered **5 internal talks at Mercado Libre to 200+ people** and **classes to companies**.
 
 Examples:
 
