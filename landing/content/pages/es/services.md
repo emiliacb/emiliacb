@@ -34,13 +34,13 @@ Ejemplos:
 - Generadores de **contenido** de marketing personalizado
 - Plataformas de generación de imágenes y videos
 
-## Desarrollo Web Full-Stack
+## Consultoría en Ingeniería
 
-**Desarrollo personalizado** de aplicaciones web escalables utilizando tecnologías como React, Next.js, Node y AWS.
+Acompañamiento integral y desarrollo hands-on en **arquitectura, web y mobile**, utilizando tecnologías como React, React Native, Next.js, Node y AWS.
 
 Ejemplos:
 
-- Landing pages o aplicaciones web altamente personalizadas
-- Plataformas de **comercio electrónico** con catálogos de productos dinámicos
-- Aplicaciones con **actualizaciones en tiempo real**
-- Sistemas de gestión de contenidos con **paneles de administración personalizados**
+- **Arquitectura de sistemas** y toma de decisiones técnicas para productos escalables
+- Aplicaciones web y plataformas de **comercio electrónico** con catálogos dinámicos
+- **Apps mobile** para iOS y Android
+- Aplicaciones con **actualizaciones en tiempo real** y paneles de administración personalizados
