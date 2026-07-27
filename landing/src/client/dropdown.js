@@ -88,7 +88,11 @@ class DropdownTrigger extends HTMLElement {
         }
 
         .variant-icon-only ::slotted([slot="icon"]) {
-          margin-right: 0.15rem;
+          margin-right: 0;
+        }
+
+        .variant-icon-only .icon {
+          display: none;
         }
 
         @media (prefers-reduced-motion: reduce) {

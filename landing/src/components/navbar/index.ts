@@ -81,7 +81,7 @@ export default function navbar({ lang }: { lang: string }) {
             variant="icon-only"
             label="${wordings[lang][5]}"
           >
-            <span slot="icon" class="[&>svg]:w-5 [&>svg]:h-5">${raw(Languages)}</span>
+            <span slot="icon" class="[&>svg]:w-4 [&>svg]:h-4">${raw(Languages)}</span>
             <div class="flex flex-col p-2 bg-black dark:bg-white shadow-lg">
               <a
                 class="block px-4 py-2 text-white dark:text-black bg-black dark:bg-white hover:bg-white hover:text-black dark:hover:bg-black dark:hover:text-white whitespace-nowrap"
