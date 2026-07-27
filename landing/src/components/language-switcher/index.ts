@@ -10,9 +10,9 @@ const wordings: Record<string, string> = {
 export default function languageSwitcher({ lang }: { lang: string }) {
   return html`
     <div
-      class="hidden lg:block fixed bottom-4 right-4 z-50 text-stone-800 dark:text-stone-100"
+      class="hidden lg:block fixed bottom-4 left-4 z-50 text-stone-800 dark:text-stone-100"
     >
-      <dropdown-trigger variant="icon-only" hide-on-scroll open-up label="${wordings[lang]}">
+      <dropdown-trigger variant="icon-only" hide-on-scroll open-up align-start label="${wordings[lang]}">
         <span slot="icon" class="[&>svg]:w-4 [&>svg]:h-4">${raw(Languages)}</span>
         <div class="flex flex-col m-auto p-[0.2rem] bg-black dark:bg-white shadow-lg w-fit">
           <a

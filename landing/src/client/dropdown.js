@@ -45,6 +45,20 @@ class DropdownTrigger extends HTMLElement {
           transform-origin: bottom center;
         }
 
+        :host([align-start]) .dropdown-content {
+          left: 0;
+          transform: scale(0.96);
+          transform-origin: top left;
+        }
+
+        :host([align-start]) .dropdown-content.show {
+          transform: scale(1);
+        }
+
+        :host([align-start][open-up]) .dropdown-content {
+          transform-origin: bottom left;
+        }
+
         button {
           all: unset;
           cursor: pointer;
@@ -163,13 +177,18 @@ class DropdownTrigger extends HTMLElement {
     document.addEventListener("keydown", this._onKeyDown);
 
     if (this.hasAttribute("hide-on-scroll")) {
+      this._lastScrollY = window.scrollY;
       this._onScroll = () => {
-        if (this.content.classList.contains("show")) this.close();
-        this.classList.add("is-scrolling");
-        clearTimeout(this._scrollTimeout);
-        this._scrollTimeout = setTimeout(() => {
+        const scrollY = window.scrollY;
+        const scrollingDown = scrollY > this._lastScrollY;
+        this._lastScrollY = scrollY;
+
+        if (scrollingDown) {
+          if (this.content.classList.contains("show")) this.close();
+          this.classList.add("is-scrolling");
+        } else {
           this.classList.remove("is-scrolling");
-        }, 400);
+        }
       };
       window.addEventListener("scroll", this._onScroll, { passive: true });
     }
@@ -180,7 +199,6 @@ class DropdownTrigger extends HTMLElement {
     document.removeEventListener("keydown", this._onKeyDown);
     if (this._onScroll) {
       window.removeEventListener("scroll", this._onScroll);
-      clearTimeout(this._scrollTimeout);
     }
   }
 
