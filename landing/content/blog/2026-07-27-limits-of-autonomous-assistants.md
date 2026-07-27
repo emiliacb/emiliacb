@@ -32,6 +32,30 @@ It's worth being clear about why this is even tempting, because the upside is re
 
 None of what follows is a reason not to do it. It's a reason to go in with your eyes open.
 
+## So what's it actually for? (and where it overlaps with Claude)
+
+Here's the uncomfortable part: the day-to-day use cases are **narrow, and they overlap heavily with what Claude and Claude Code already do.** If you live in Claude Code and use Claude's connectors and projects, a lot of a self-hosted Hermes setup is redundant, you'd be rebuilding, at real operational cost, things you already have.
+
+So why reach for it at all? One reason, and it's the important one: **configurability.**
+
+- **Any model, any provider.** You're not locked to one lab. Swap in a frontier open model like Kimi K3, a hosted API, or something you run yourself.
+- **Your data, your way.** You decide _where_ the agent's memory lives, _how_ it's stored, and _what_ it retains, on your VPS, in your database, in plain files you can read.
+- **Your interaction model.** Which channels, which triggers, what the agent is even allowed to do.
+- **You can edit the execution code itself.** It's open source, so you can change what it does, add plugins, and reshape the agent around your workflow. With Claude, that same level of surgery is harder or outright impossible.
+
+That's the real trade: you give up the polish and safety of a managed assistant to gain total control over the model, the memory, and the code. If you don't need that control, you probably don't need this. If you do, nothing else gets you there.
+
+With that lens, here are use cases where the flexibility earns its keep:
+
+- **Email correspondence.** It has its own inbox and handles email threads for you, from its own identity.
+- **Webmaster-style edits.** It can act like a webmaster that edits your website, tweaking copy, content, or code on a project that's already set up, but it won't deploy it. Think "edits the site, doesn't ship it."
+- **A living company memory / CRM.** Feed it information and let it research on a schedule, keeping a persistent, always-current record of your business, client details and history, in storage you chose. A CRM you own the shape of.
+- **Wire it into your existing CRM** instead of reinventing one.
+- **Wire it into your company chat** (Slack, Discord, whatever your team already uses).
+- **Talk to your whole team with a unified identity.** Because you can shape the code, the agent can resolve the _same person_ across platforms: if an employee messages it on Slack, then later on GitHub or Telegram, it maps all of those to one identity and carries the same context across every channel, so nobody has to re-explain themselves.
+
+That last one is where the earlier **allow-list** does double duty: the list of known, trusted identities that keeps strangers out is exactly what lets the agent cross-reference your employees' accounts across Slack, GitHub, and Telegram into a single, contextual relationship. Safety and capability turn out to be the same feature.
+
 ## Cost 1: everything is separate plumbing you assemble yourself
 
 There is no "assistant account" you sign up for. To make Hermes useful you provision, and wire together, a pile of independent services by hand:
@@ -131,6 +155,8 @@ The honest read: the _capability_ is finally here, but the _operational and safe
 ## Conclusion
 
 I don't want this to read as discouragement. Kimi K3 and open agents like Hermes are a real leap, a year ago the brain wasn't good enough; now it is, and it runs on hardware you control. That's genuinely exciting.
+
+And the honest positioning is this: for everyday tasks, most of what it does overlaps with Claude and Claude Code. The reason to pay the cost is **control**, over the model, the storage, and the code itself. If you need that, this is the only thing that gives it to you.
 
 But "useful autonomous assistant" today means signing up to:
 
