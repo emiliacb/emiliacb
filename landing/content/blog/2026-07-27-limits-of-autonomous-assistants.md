@@ -111,6 +111,8 @@ Two caveats:
 
 Configuration lives in the terminal and in YAML config files over SSH. That's fine if you live there, but it's a real barrier, and it means the person who sets the agent up is also the person on the hook when something in the config breaks at 2am. There's a desktop app now, but the self-hosted control surface is still fundamentally a shell.
 
+If you're going in anyway, [alejandro-ao's `hermes-vps-setup` skill](https://github.com/alejandro-ao/skills/blob/main/skills/hermes-vps-setup/SKILL.md) at least turns that terminal work into a guided walkthrough, SSH hardening, firewall, systemd services, hourly Git backups, instead of improvising commands from a blank prompt.
+
 ## The risks: bans, blocks, and untrusted code
 
 The costs above are annoying. These next ones can actually take you down, and they're the reason I'd keep an agent like this on a short leash today.
