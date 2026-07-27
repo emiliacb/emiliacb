@@ -14,11 +14,15 @@ Aporto un enfoque holístico a cada proyecto. Mi experiencia como ex bibliotecar
 
 ## Trayectoria Profesional
 
-### Founding Engineer - Senior AI Engineer @ Stealth Startup
+### Founding Engineer - Senior AI Engineer @ Sonora
 
 **Oct 2025 - Presente** | Remoto, San Francisco
 
-Desarrollando Agentes de IA, Producto, Full-stack y Arquitectura.
+* Owner de la plataforma de AI enrichment: columnas de LLM-agent que investigan a los clientes cruzando data interna (tickets, meetings, product usage) y la web, con un processor de tool-calling, web search en paralelo, validación de structured-output, ejecuciones agendadas y versionado completo de la config que preserva los resultados históricos. Stack: TypeScript, React Router, PostgreSQL, Vertex AI, Langfuse, BullMQ.
+* Construí Canvas, un agente que arma dashboards completos a partir de lenguaje natural, resueltos contra data multi-tenant en vivo. Stack: TypeScript, React 19, Langfuse, BullMQ.
+* Construí de punta a punta la capa de automatización de customer-success (rules engine, triggers, versionado, delivery por email y Slack), que convierte los criterios propios de cada equipo en acciones priorizadas y pre-redactadas. Stack: TypeScript, PostgreSQL, BullMQ, Google Workspace y Slack APIs.
+* Lancé la composición de emails con IA en la voz de escritura de cada usuario: un background job extrae un style profile a partir del correo enviado por el usuario, que luego condiciona cada cue email compuesto por IA. Stack: TypeScript, Vertex AI, structured outputs, Gmail API.
+* Como founding engineer, el segundo hire de la empresa y una de cinco ingenieros core, fui la autora principal de cuatro de los sistemas user-facing del producto.
 
 
 ### Senior AI Engineer @ Marvik
@@ -35,7 +39,7 @@ Desarrollando Agentes de IA, Producto, Full-stack y Arquitectura.
 * Lideré a diez ingenieros en la refactorización a gran escala de la plataforma, cumpliendo con un plazo de un mes. Stack: TypeScript, Next.js, tRPC, PostgreSQL, SST y AWS.
 * Lideré un equipo de tres ingenieros en el desarrollo de un sistema de matching de candidatos laborales impulsado por IA, construyendo un conjunto de datos de prueba y pipelines ETL para la ingesta y evaluación. Stack: Python, FastAPI, HuggingFace, AWS, S3 y Qdrant.
 * Reduje el uso de tokens en un 80% al diseñar una solución de Memoria a Largo Plazo para LLM con arquitectura multi-tenant escalable y versionado. Stack: TypeScript, Next.js, tRPC, Langchain y ElasticSearch.
-* Lideré la refactorización del producto, realizando entrevistas con usuarios y sesiones de Business Model Canvas con 20 stakeholders para identificar los problemas clave del negocio y de usabilidad, y proponer una estrategia.
+* Conduje la refactorización del producto, con entrevistas a usuarios y sesiones de Business Model Canvas junto a 20 stakeholders para identificar los problemas clave del negocio y de usabilidad, y proponer una estrategia.
 
 ### Ingeniera de Software Fundadora [Part-Time] @ Fair Share Group
 

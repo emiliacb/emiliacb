@@ -14,11 +14,15 @@ I bring a holistic approach to every project. My background as a former libraria
 
 ## Professional Journey
 
-### Founding Engineer - Senior AI Engineer @ Stealth Startup
+### Founding Engineer - Senior AI Engineer @ Sonora
 
 **Oct 2025 - Present** | Remote, San Francisco
 
-Shipping AI Agents, Product, Full-stack, and Architecture impact.
+- Owned the AI enrichment platform: LLM-agent columns that research customers across internal data (tickets, meetings, product usage) and the web, with a tool-calling processor, parallel web search, structured-output validation, scheduled runs, and full config versioning that preserves historical results. Stack: TypeScript, React Router, PostgreSQL, Vertex AI, Langfuse, BullMQ.
+- Built Canvas, an agent that builds entire dashboards from natural language, resolved against live multi-tenant data. Stack: TypeScript, React 19, Langfuse, BullMQ.
+- Built the customer-success automation layer end to end (rules engine, triggers, versioning, email and Slack delivery), turning each team's own criteria into prioritized, pre-drafted actions. Stack: TypeScript, PostgreSQL, BullMQ, Google Workspace and Slack APIs.
+- Shipped AI email composition in each user's own writing voice: a background job extracts a style profile from the user's sent mail, which then conditions every AI-composed cue email. Stack: TypeScript, Vertex AI, structured outputs, Gmail API.
+- Primary author of four of the product's user-facing systems, as a founding engineer, the company's second hire and one of five core engineers.
 
 
 ### Senior AI Engineer @ Marvik

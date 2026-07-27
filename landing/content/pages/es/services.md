@@ -4,28 +4,25 @@ Servicios pensados para impulsar tu negocio desde una **perspectiva interdiscipl
 
 %table-of-contents%
 
-## Desarrollo Web Full-Stack
+## Mentoría
 
-**Desarrollo personalizado** de aplicaciones web escalables utilizando tecnologías como React, Next.js, Node y AWS.
-
-Ejemplos:
-
-- Landing pages o aplicaciones web altamente personalizadas
-- Plataformas de **comercio electrónico** con catálogos de productos dinámicos
-- Aplicaciones con **actualizaciones en tiempo real**
-- Sistemas de gestión de contenidos con **paneles de administración personalizados**
-
-## Soluciones No-code
-
-Diseño y desarrollo utilizando plataformas como Framer, Zapier o Retool para una **entrega más rápida** y **costos más bajos**, con algunas limitaciones en la personalización.
+**Mentoría personalizada 1:1** enfocada en desarrollo full-stack o tecnologías de IA. Ayudé a **más de 30 personas** a aprender a programar, conseguir trabajo o mejorar en sus carreras dentro de la tecnología.
 
 Ejemplos:
 
-- **Productos mínimos viables** (MVP)
-- Sitios de blog con temas listos para usar
-- Sitios web para pequeñas empresas con plantillas prediseñadas
-- **Pruebas de concepto**
-- Páginas de aterrizaje con características de diseño estándar
+- Orientación en la construcción de un proyecto de portafolios
+- Mentoría sobre cómo escalar una aplicación web
+- Orientación de carrera para entrar o crecer en la industria tech
+
+## Formación Corporativa y Talleres
+
+**Sesiones de formación personalizadas para equipos** sobre desarrollo web e IA, aprovechando las últimas prácticas de la industria. Di **5 charlas internas en Mercado Libre a más de 200 personas** y **clases a empresas**.
+
+Ejemplos:
+
+- Talleres sobre frameworks modernos de JavaScript para desarrolladores
+- **Accesibilidad web**
+- Sesiones de formación sobre implementación de **soluciones GenAI** para aplicaciones empresariales
 
 ## Soluciones de IA Generativa
 
@@ -37,21 +34,13 @@ Ejemplos:
 - Generadores de **contenido** de marketing personalizado
 - Plataformas de generación de imágenes y videos
 
-## Mentoría
+## Consultoría en Ingeniería
 
-**Mentoría personalizada 1:1** enfocada en desarrollo full-stack o tecnologías de IA.
-
-Ejemplos:
-
-- Orientación en la construcción de un proyecto de portafolios
-- Mentoría sobre cómo escalar una aplicación web
-
-## Formación Corporativa y Talleres
-
-**Sesiones de formación personalizadas para equipos** sobre desarrollo web e IA, aprovechando las últimas prácticas de la industria.
+Acompañamiento integral y desarrollo hands-on en **arquitectura, web y mobile**, utilizando tecnologías como React, React Native, Next.js, Node y AWS.
 
 Ejemplos:
 
-- Talleres sobre frameworks modernos de JavaScript para desarrolladores
-- **Accesibilidad web**
-- Sesiones de formación sobre implementación de **soluciones GenAI** para aplicaciones empresariales
+- **Arquitectura de sistemas** y toma de decisiones técnicas para productos escalables
+- Aplicaciones web y plataformas de **comercio electrónico** con catálogos dinámicos
+- **Apps mobile** para iOS y Android
+- Aplicaciones con **actualizaciones en tiempo real** y paneles de administración personalizados
