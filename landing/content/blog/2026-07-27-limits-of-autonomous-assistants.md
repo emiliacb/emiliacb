@@ -15,7 +15,7 @@ categories: ["AI/ML Development", "Security", "Opinion"]
 
 ## Introduction
 
-Self-hosted autonomous agents are having a moment. [Nous Research's Hermes agent](https://hermes-agent.nousresearch.com/) is the clearest example: MIT-licensed, runs on your own VPS instead of your laptop, keeps persistent memory across sessions, writes and improves its own skills, and can be reached through a couple dozen messaging gateways.
+Self-hosted autonomous agents are having a moment, and so is the wider category around them: [OpenHands](https://github.com/All-Hands-AI/OpenHands) and [Goose](https://github.com/block/goose) are open-source cousins, [Devin](https://devin.ai/) is the proprietary poster child, and much of what follows applies to all of them. I'll focus on [Nous Research's Hermes agent](https://hermes-agent.nousresearch.com/), the clearest example of the breed: MIT-licensed, runs on your own VPS instead of your laptop, keeps persistent memory across sessions, writes and improves its own skills, and can be reached through a couple dozen messaging gateways.
 
 The pitch is intoxicating: an always-on assistant with its own identity that just _does things_ for you.
 
