@@ -22,7 +22,7 @@ I bring a holistic approach to every project. My background as a former libraria
 - Built Canvas, an agent that builds entire dashboards from natural language, resolved against live multi-tenant data. Stack: TypeScript, React 19, Langfuse, BullMQ.
 - Built the customer-success automation layer end to end (rules engine, triggers, versioning, email and Slack delivery), turning each team's own criteria into prioritized, pre-drafted actions. Stack: TypeScript, PostgreSQL, BullMQ, Google Workspace and Slack APIs.
 - Shipped AI email composition in each user's own writing voice: a background job extracts a style profile from the user's sent mail, which then conditions every AI-composed cue email. Stack: TypeScript, Vertex AI, structured outputs, Gmail API.
-- As a founding engineer, the company's second hire and one of five core engineers, I was the primary author of four of the product's user-facing systems.
+- Primary author of four of the product's user-facing systems, as a founding engineer, the company's second hire and one of five core engineers.
 
 
 ### Senior AI Engineer @ Marvik
