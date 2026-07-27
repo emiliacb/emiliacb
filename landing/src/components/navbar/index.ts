@@ -1,4 +1,6 @@
 import { html } from "hono/html";
+import { raw } from "hono/html";
+import { Languages } from "lucide-static";
 
 export default function navbar({ lang }: { lang: string }) {
   // TODO: Implement i18n library
@@ -9,6 +11,7 @@ export default function navbar({ lang }: { lang: string }) {
       "What I Do",
       "Journal",
       "About",
+      "Language",
     ],
     es: [
       "Saltar al contenido",
@@ -16,6 +19,7 @@ export default function navbar({ lang }: { lang: string }) {
       "Qué Hago",
       "Diario",
       "Sobre mí",
+      "Idioma",
     ],
   };
 
@@ -72,6 +76,26 @@ export default function navbar({ lang }: { lang: string }) {
           href="/${lang}/blog"
           >${wordings[lang][3]}</a
         >
+        <div class="relative hidden md:block text-stone-800 dark:text-stone-100">
+          <dropdown-trigger
+            variant="icon-only"
+            label="${wordings[lang][5]}"
+          >
+            <span slot="icon" class="[&>svg]:w-5 [&>svg]:h-5">${raw(Languages)}</span>
+            <div class="flex flex-col p-2 bg-black dark:bg-white shadow-lg">
+              <a
+                class="block px-4 py-2 text-white dark:text-black bg-black dark:bg-white hover:bg-white hover:text-black dark:hover:bg-black dark:hover:text-white whitespace-nowrap"
+                href="/en"
+                >English<span aria-label="Flag emoji" class="ml-2">🇺🇸</span></a
+              >
+              <a
+                class="block px-4 py-2 text-white dark:text-black bg-black dark:bg-white hover:bg-white hover:text-black dark:hover:bg-black dark:hover:text-white whitespace-nowrap"
+                href="/es"
+                >Español<span aria-label="Flag emoji" class="ml-2">🇪🇸</span></a
+              >
+            </div>
+          </dropdown-trigger>
+        </div>
       </div>
     </nav>
   `;

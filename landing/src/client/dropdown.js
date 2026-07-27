@@ -75,6 +75,22 @@ class DropdownTrigger extends HTMLElement {
           }
         }
 
+        .variant-icon-only .label {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border: 0;
+        }
+
+        .variant-icon-only ::slotted([slot="icon"]) {
+          margin-right: 0.15rem;
+        }
+
         @media (prefers-reduced-motion: reduce) {
           .dropdown-content {
             transition: opacity 100ms linear;
@@ -87,7 +103,7 @@ class DropdownTrigger extends HTMLElement {
       <div>
         <button class="button" part="trigger" aria-expanded="false" aria-haspopup="true">
           <slot name="icon"></slot>
-          <span part="label"></span>
+          <span part="label" class="label"></span>
           <svg part="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="m6 9 6 6 6-6"/></svg>
         </button>
         <div part="content" class="dropdown-content"><slot></slot></div>
