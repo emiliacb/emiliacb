@@ -9,6 +9,16 @@ class DropdownTrigger extends HTMLElement {
           display: none;
         }
 
+        :host {
+          transition: opacity 200ms ease-out;
+        }
+
+        :host(.is-scrolling) {
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 150ms ease-in;
+        }
+
         .dropdown-content {
           position: absolute;
           margin-top: 0.5rem;
@@ -25,6 +35,14 @@ class DropdownTrigger extends HTMLElement {
           opacity: 1;
           transform: translateX(-50%) scale(1);
           pointer-events: auto;
+        }
+
+        :host([open-up]) .dropdown-content {
+          top: auto;
+          bottom: 100%;
+          margin-top: 0;
+          margin-bottom: 0.5rem;
+          transform-origin: bottom center;
         }
 
         button {
@@ -143,11 +161,27 @@ class DropdownTrigger extends HTMLElement {
       }
     };
     document.addEventListener("keydown", this._onKeyDown);
+
+    if (this.hasAttribute("hide-on-scroll")) {
+      this._onScroll = () => {
+        if (this.content.classList.contains("show")) this.close();
+        this.classList.add("is-scrolling");
+        clearTimeout(this._scrollTimeout);
+        this._scrollTimeout = setTimeout(() => {
+          this.classList.remove("is-scrolling");
+        }, 400);
+      };
+      window.addEventListener("scroll", this._onScroll, { passive: true });
+    }
   }
 
   disconnectedCallback() {
     document.removeEventListener("click", this._onDocumentClick);
     document.removeEventListener("keydown", this._onKeyDown);
+    if (this._onScroll) {
+      window.removeEventListener("scroll", this._onScroll);
+      clearTimeout(this._scrollTimeout);
+    }
   }
 
   _getStaggerItems() {

@@ -4,6 +4,7 @@ import { config } from "dotenv";
 import navbar from "../navbar";
 import tree from "../tree";
 import footer from "../footer";
+import languageSwitcher from "../language-switcher";
 
 config();
 
@@ -241,6 +242,7 @@ document.head.appendChild(o)}initApollo();</script>
           </div>
         </div>
         ${withFooter ? footer({ lang: siteData.lang }) : null}
+        ${languageSwitcher({ lang: siteData.lang })}
         <script src="/public/${CACHE_VERSION}/_layout-bundle.js" defer></script>
         <script src="/public/${CACHE_VERSION}/_navigation-bundle.js" defer></script>
       </body>
