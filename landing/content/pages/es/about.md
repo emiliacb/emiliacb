@@ -39,7 +39,7 @@ Aporto un enfoque holístico a cada proyecto. Mi experiencia como ex bibliotecar
 * Lideré a diez ingenieros en la refactorización a gran escala de la plataforma, cumpliendo con un plazo de un mes. Stack: TypeScript, Next.js, tRPC, PostgreSQL, SST y AWS.
 * Lideré un equipo de tres ingenieros en el desarrollo de un sistema de matching de candidatos laborales impulsado por IA, construyendo un conjunto de datos de prueba y pipelines ETL para la ingesta y evaluación. Stack: Python, FastAPI, HuggingFace, AWS, S3 y Qdrant.
 * Reduje el uso de tokens en un 80% al diseñar una solución de Memoria a Largo Plazo para LLM con arquitectura multi-tenant escalable y versionado. Stack: TypeScript, Next.js, tRPC, Langchain y ElasticSearch.
-* Lideré la refactorización del producto, realizando entrevistas con usuarios y sesiones de Business Model Canvas con 20 stakeholders para identificar los problemas clave del negocio y de usabilidad, y proponer una estrategia.
+* Conduje la refactorización del producto, con entrevistas a usuarios y sesiones de Business Model Canvas junto a 20 stakeholders para identificar los problemas clave del negocio y de usabilidad, y proponer una estrategia.
 
 ### Ingeniera de Software Fundadora [Part-Time] @ Fair Share Group
 
