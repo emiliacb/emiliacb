@@ -12,8 +12,19 @@ type Course = {
 const courses: Course[] = [
   {
     title: {
-      en: "Claude Code for Non-Programmers",
-      es: "Claude Code para no programadores",
+      en: "First Steps with AI",
+      es: "Primeros pasos con IA",
+    },
+    description: {
+      en: "The fundamentals of how generative AI works and how to use it day-to-day, no technical background required.",
+      es: "Los fundamentos de cómo funciona la IA generativa y cómo usarla en tu día a día, sin necesitar experiencia técnica.",
+    },
+    thumbnail: "ai-intro-course.png",
+  },
+  {
+    title: {
+      en: "Build Your First App with Claude Code",
+      es: "Construí tu primera app con Claude Code",
     },
     description: {
       en: "Use Claude Code to build and ship real projects without writing a line of code yourself.",
@@ -23,25 +34,14 @@ const courses: Course[] = [
   },
   {
     title: {
-      en: "Hermes for Companies",
-      es: "Hermes para Empresas",
+      en: "Internal Automation with Hermes",
+      es: "Automatización interna con Hermes",
     },
     description: {
       en: "How to deploy a self-hosted Hermes agent for internal automation at your company: real use cases, the configurability that justifies it, and the risks and costs nobody puts on the landing page.",
       es: "Cómo desplegar un agente Hermes auto-hospedado para automatización interna en tu empresa: casos de uso reales, la configurabilidad que lo justifica, y los riesgos y costos que nadie pone en la portada.",
     },
     thumbnail: "hermes-warning.png",
-  },
-  {
-    title: {
-      en: "Introduction to AI for Non-Programmers",
-      es: "Introducción a la IA para no programadores",
-    },
-    description: {
-      en: "The fundamentals of how generative AI works and how to use it day-to-day, no technical background required.",
-      es: "Los fundamentos de cómo funciona la IA generativa y cómo usarla en tu día a día, sin necesitar experiencia técnica.",
-    },
-    thumbnail: "ai-intro-course.png",
   },
 ];
 
