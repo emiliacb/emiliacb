@@ -38,8 +38,8 @@ const courses: Course[] = [
       es: "Automatización interna con Hermes",
     },
     description: {
-      en: "How to deploy a self-hosted Hermes agent for internal automation at your company: real use cases, the configurability that justifies it, and the risks and costs nobody puts on the landing page.",
-      es: "Cómo desplegar un agente Hermes auto-hospedado para automatización interna en tu empresa: casos de uso reales, la configurabilidad que lo justifica, y los riesgos y costos que nadie pone en la portada.",
+      en: "How to deploy a self-hosted Hermes agent for internal automation at your company: real use cases.",
+      es: "Cómo desplegar un agente Hermes auto-hospedado para automatización interna en tu empresa: casos de uso reales.",
     },
     thumbnail: "hermes-warning.png",
   },
