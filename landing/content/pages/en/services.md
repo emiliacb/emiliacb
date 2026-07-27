@@ -4,6 +4,26 @@ Designed to boost your business from an **interdisciplinary** **perspective**. I
 
 %table-of-contents%
 
+## Mentorship
+
+Personalized **1:1 mentorship** focusing on full-stack development or AI technologies. I've helped **30+ people** learn to code, land jobs, or level up their careers in tech.
+
+Examples:
+
+- Guidance on building a portfolio project
+- Mentorship on scaling a web application
+- Career guidance to break into or grow within the tech industry
+
+## Corporate Training & Workshops
+
+Custom **training sessions for teams** on web development and AI, leveraging the latest industry practices. I've delivered **internal talks at Mercado Libre** and **classes to companies**.
+
+Examples:
+
+- Workshops on modern JavaScript frameworks for developers
+- **Web accessibility**
+- Training sessions on implementing **GenAI solutions** for business applications
+
 ## Full-Stack Web Development
 
 **Custom development** of scalable web applications using technologies like React, Next.js, Node and AWS.
@@ -36,22 +56,3 @@ Examples:
 - Automated customer support **chatbots**
 - Personalized marketing **content generators**
 - Image and video generation platforms
-
-## Mentorship
-
-Personalized **1:1 mentorship** focusing on full-stack development or AI technologies.
-
-Examples:
-
-- Guidance on building a portfolio project
-- Mentorship on scaling a web application
-
-## Corporate Training & Workshops
-
-Custom **training sessions for teams** on web development and AI, leveraging the latest industry practices.
-
-Examples:
-
-- Workshops on modern JavaScript frameworks for developers
-- **Web accessibility**
-- Training sessions on implementing **GenAI solutions** for business applications
