@@ -1,22 +1,27 @@
 // Conditional scroll restoration:
 // - URLs with query params or hash skip restoration (fresh navigation)
+// - Landing on a different path than the one scrolled from: stay at top
 // - Saved position < 100px: stay at top
-// - Saved position >= 100px: restore position
+// - Saved position >= 100px on the same path (e.g. back navigation): restore position
 (function () {
   var hasQueryParams = window.location.search.length > 0;
   var hasHash = window.location.hash.length > 0;
+  var savedPath = sessionStorage.getItem("__scrollPath");
   var savedPos = parseInt(sessionStorage.getItem("__scrollPos") || "0", 10);
+  var isSamePath = savedPath === window.location.pathname;
 
-  if (hasQueryParams || hasHash || savedPos < 100) {
+  if (hasQueryParams || hasHash || !isSamePath || savedPos < 100) {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   } else {
     window.scrollTo({ top: savedPos, left: 0, behavior: "auto" });
   }
 
   sessionStorage.removeItem("__scrollPos");
+  sessionStorage.removeItem("__scrollPath");
 
   window.addEventListener("beforeunload", function () {
     sessionStorage.setItem("__scrollPos", String(window.scrollY));
+    sessionStorage.setItem("__scrollPath", window.location.pathname);
   });
 })();
 
