@@ -3,7 +3,7 @@ title: Handling mixed languages in small models
 slug: handling-mixed-languages-in-small-models
 description: Exploring how to handle multilingual cases and testing various prompt engineering approaches for small LLMs.
 date: 2025-03-25T19:56:27.278Z
-preview: ""
+preview: "mixed-lang.jpg"
 draft: false
 tags: ["LLM", "Multilingual", "Prompt Engineering", "Small Models", "Evaluation"]
 categories: ["AI/ML Research"]
