@@ -1,7 +1,7 @@
 ---
 title: "The hidden cost of an autonomous assistant"
 slug: 2026-07-27-limits-of-autonomous-assistants
-description: "Self-hosting a Hermes agent on the open cloud is genuinely exciting, the models are finally good enough. But making one actually useful means a pile of separate infrastructure and some real risks: VPS ops, account bans, IP blocks, and skills that run code you never audited. A closer look at what you sign up for."
+description: "A closer look at self-hosting a Hermes agent: the infrastructure, costs and risks (VPS ops, account bans, IP blocks, unaudited skills) behind the hype."
 date: 2026-07-27T18:00:00.000Z
 preview: "hermes-warning.png"
 draft: false

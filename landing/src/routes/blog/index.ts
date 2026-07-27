@@ -39,6 +39,10 @@ export default async function handler(c: Context, next: Next) {
         title: `${post.data.title} | ємιℓιαċв`,
         description: post.data.description,
         lang: lang,
+        url: `https://emiliacabral.com/${lang}/blog/${slug}`,
+        image: post.data.preview
+          ? `https://emiliacabral.com/public/${post.data.preview}`
+          : undefined,
       },
       withFooter: true,
       children: html`<div class="markdown-content">
