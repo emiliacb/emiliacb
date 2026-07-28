@@ -62,6 +62,10 @@ const BANDS = [
 /** Vertical sway is a fraction of the horizontal, or it reads like a wobble. */
 const SWAY_Y = 0.3;
 
+/** Pause before the first tree, then the random gap between each one, in ms. */
+const FIRST_SPROUT = 260;
+const SEQUENCE_GAP = [70, 260];
+
 const nodes = { far: bandFar, mid: bandMid, near: bandNear, front };
 const planes = Object.entries(nodes).filter(([, node]) => node);
 
@@ -108,16 +112,19 @@ function readScroll() {
 }
 
 /**
- * Plants one band. The trees carry no roots, so each is cut off at its base and
- * the haze below reads as ground rather than as a row of specimens.
+ * Lays out the empty slots of one band and returns them, unplanted.
+ *
+ * Every slot exists before anything grows, so the sequencing below only decides
+ * *when* a tree appears — sizes and positions never shift under it.
  *
  * Placement is a jittered slot rather than an even row: real stands clump, and
  * evenly spaced trunks read as a fence however varied their sizes are.
  */
-function plant(band, { plane, count, minWidth, maxWidth, order }) {
-  if (!band) return;
+function layout(band, { count, minWidth, maxWidth }) {
+  if (!band) return [];
   band.replaceChildren();
 
+  const slots = [];
   for (let i = 0; i < count; i++) {
     const width = minWidth + Math.random() * (maxWidth - minWidth);
     const slot = document.createElement("div");
@@ -127,30 +134,58 @@ function plant(band, { plane, count, minWidth, maxWidth, order }) {
     // Break the flat baseline: some trees stand a little further back.
     slot.style.bottom = `${Math.round(Math.random() * width * 0.14)}px`;
     band.append(slot);
-
-    animateTree(slot, {
-      seed: Math.floor(Math.random() * 1e9).toString(36),
-      width: 300,
-      height: 620,
-      padding: 10,
-      roots: false,
-      duration: 1900 + Math.random() * 1300,
-      // Cascade rather than growing everything at once: it looks better and it
-      // keeps the number of trees rebuilding their paths per frame in check.
-      delay: 250 + order * 320 + i * 150,
-      reducedMotion: reduced,
-    });
+    slots.push(slot);
   }
+  return slots;
+}
+
+/** Starts one tree growing in a slot that is already laid out. */
+function sprout(slot) {
+  animateTree(slot, {
+    seed: Math.floor(Math.random() * 1e9).toString(36),
+    width: 300,
+    height: 620,
+    padding: 10,
+    roots: false,
+    duration: 1900 + Math.random() * 1300,
+    reducedMotion: reduced,
+  });
+}
+
+/** Fisher-Yates, so the stand fills in scattered instead of sweeping across. */
+function shuffle(list) {
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  return list;
 }
 
 const narrow = window.matchMedia("(max-width: 768px)").matches;
-BANDS.forEach((band, order) =>
-  plant(nodes[band.plane], {
-    ...band,
-    count: narrow ? Math.ceil(band.count * 0.5) : band.count,
-    order,
-  })
+const queue = shuffle(
+  BANDS.flatMap((band) =>
+    layout(nodes[band.plane], {
+      ...band,
+      count: narrow ? Math.ceil(band.count * 0.5) : band.count,
+    })
+  )
 );
+
+// One tree at a time, with an irregular gap between them. A single shuffled
+// queue rather than a per-band cascade: the bands used to start within a few
+// hundred milliseconds of each other, so most of the forest came up at once.
+// Sequencing also caps how many trees rebuild their paths in the same frame.
+if (reduced) {
+  queue.forEach(sprout);
+} else {
+  let next = 0;
+  const step = () => {
+    if (next >= queue.length) return;
+    sprout(queue[next++]);
+    window.setTimeout(step, SEQUENCE_GAP[0] + Math.random() * (SEQUENCE_GAP[1] - SEQUENCE_GAP[0]));
+  };
+  window.setTimeout(step, FIRST_SPROUT);
+}
 
 if (planes.length) {
   window.addEventListener("scroll", readScroll, { passive: true });
