@@ -4,6 +4,18 @@ class DropdownTrigger extends HTMLElement {
     this.attachShadow({ mode: "open" });
     this.shadowRoot.innerHTML = `
       <style>
+        /* Tailwind's preflight reset (box-sizing, and border-style so that
+           border-width utilities actually render instead of computing to 0)
+           lives in the light DOM and can't cross the shadow boundary.
+           Without this, the trigger button falls back to browser defaults
+           and renders a different size than sibling elements using the
+           exact same utility classes. */
+        * {
+          box-sizing: border-box;
+          border-width: 0;
+          border-style: solid;
+        }
+
         /* Hide the dropdown content until the component is defined */
         :host(:not(:defined)) slot:not([name="icon"]) {
           display: none;
