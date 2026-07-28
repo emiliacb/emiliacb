@@ -1,9 +1,18 @@
 import { html, raw } from "hono/html";
-import { Copy, Mail } from "lucide-static";
+import { Copy, Check, Mail } from "lucide-static";
 
 // Gmail's brand mark (from simple-icons), kept in its real brand red instead
 // of following the menu item's currentColor so it reads as the actual logo.
 const Gmail = `<svg class="lucide" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#EA4335"><path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/></svg>`;
+
+// Superhuman's own brand assets (superhuman.com/media-resources), mirrored
+// into public/ instead of hotlinked so the site doesn't depend on their
+// server staying up. The menu item's bg is inverted (black in light mode,
+// white in dark mode - see menuItemClass), so the lighter "wisteria" mark is
+// shown against the black box and the darker "red" mark against the white box.
+const SUPERHUMAN_LOGO_LIGHT = "/public/superhuman-logo-wisteria.png";
+const SUPERHUMAN_LOGO_DARK = "/public/superhuman-logo-red.png";
+const superhumanLogoClass = "!size-4 !shrink-0 !m-0 !inline-block !max-w-none !align-middle";
 
 type EmailLinkProps = {
   email: string;
@@ -69,13 +78,25 @@ export default function emailLink({
           data-copy-value="${email}"
           data-copied-label="${t.copied}"
         >
-          ${raw(Copy)}${t.copy}
+          <span class="copy-icon !inline-flex" aria-hidden="true">${raw(Copy)}</span>
+          <span class="check-icon !hidden" aria-hidden="true">${raw(Check)}</span>
+          <span class="copy-label">${t.copy}</span>
         </button>
         <a class="${menuItemClass}" href="${gmailUrl}" target="_blank" rel="noopener noreferrer">
           ${raw(Gmail)}${t.gmail}
         </a>
         <a class="${menuItemClass}" href="${superhumanUrl}">
-          <span class="!size-4 !shrink-0" aria-hidden="true"></span>${t.superhuman}
+          <img
+            src="${SUPERHUMAN_LOGO_LIGHT}"
+            alt=""
+            class="${superhumanLogoClass} dark:!hidden"
+          />
+          <img
+            src="${SUPERHUMAN_LOGO_DARK}"
+            alt=""
+            class="${superhumanLogoClass} !hidden dark:!inline-block"
+          />
+          ${t.superhuman}
         </a>
       </span>
     </dropdown-trigger>
