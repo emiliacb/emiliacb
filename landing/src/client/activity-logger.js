@@ -1,8 +1,9 @@
 // Activity logger: captures clicks, text selection and reading (dwell time
 // normalized by word count, not raw scroll velocity), and persists it in
-// localStorage under a stable visitorId, to feed the AI agent. Never
-// captures input values or selected text itself, only metadata (which
-// block, how long, how many words).
+// localStorage under a stable visitorId, to feed the AI agent. Events carry
+// the actual text involved (truncated and sanitized) since the point of the
+// log is to be handed to an LLM — structural metadata alone isn't enough
+// for the agent to react to *what* the visitor read or selected.
 (function () {
   "use strict";
 
@@ -13,11 +14,22 @@
     window.DEBUG_LOG = false;
   }
 
-  var STORAGE_KEY = "activity_log_v1";
+  // Reuse the same cache-busting version the rest of the site already uses
+  // (rendered server-side into <meta name="cache-version">) instead of a
+  // separate ad hoc "_v1" suffix, so the log schema versions in lockstep
+  // with everything else.
+  function getSiteVersion() {
+    var meta = document.querySelector('meta[name="cache-version"]');
+    return (meta && meta.getAttribute("content")) || "unversioned";
+  }
+
+  var STORAGE_KEY = "activity_log_" + getSiteVersion();
   var VISITOR_KEY = "activity_visitor_id";
   var MAX_EVENTS = 500;
   var FLUSH_DEBOUNCE_MS = 2000;
   var FLUSH_MAX_BUFFER = 50;
+  var SNIPPET_MAX_CHARS = 240;
+  var SELECTION_MAX_CHARS = 400;
 
   var CONTENT_SELECTOR =
     ".markdown-content p, .markdown-content li, .markdown-content h1, " +
@@ -25,16 +37,92 @@
     ".markdown-content blockquote, main p, main li";
 
   var READ_BAND = [0.15, 0.75]; // viewport band where people actually read, not the whole viewport
-  var WPM = 240; // reference reading speed
-  var STATIONARY_PX_S = 20; // below this, scroll is considered "stationary"
+  var WPM = 240; // reference reading speed, drives the per-block reading-pace threshold below
+  var FALLBACK_MAX_READING_PX_S = 20; // used only if a block's line-height can't be read
   var IDLE_MS = 45000; // no interaction for this long = AFK, stop accruing dwell
   var MIN_DWELL_MS_TO_REPORT = 300;
   var RAGE_CLICK_WINDOW_MS = 1000;
   var RAGE_CLICK_COUNT = 3;
   var SELECTION_DEBOUNCE_MS = 400;
-  var REREAD_WINDOW_MS = 10000;
-  var REREAD_BACKTRACK_THRESHOLD = 0.15;
   var REPORT_INTERVAL_MS = 5000;
+
+  // Collapses whitespace, strips control characters and hard-truncates —
+  // this text eventually lands in an LLM prompt, so it's kept short and
+  // clean at the source rather than trusted as-is downstream.
+  function sanitizeText(text, maxChars) {
+    var clean = (text || "").replace(/\s+/g, " ").trim();
+    clean = clean.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+    if (clean.length > maxChars) {
+      clean = clean.slice(0, maxChars).trim() + "…";
+    }
+    return clean;
+  }
+
+  // "Where" for every event. document.title is NOT reliable here: the layout
+  // appends a stylized-unicode brand mark to it, and on the homepage that
+  // mark is the entire title — meaningless to an LLM. The rendered <h1> is
+  // legible on every route, so it wins; title is only a fallback.
+  var HEADING_SELECTOR = "h1, h2, h3, h4";
+
+  function contentRoot() {
+    return document.getElementById("content") || document.body;
+  }
+
+  // The markdown renderer injects a permalink link+icon inside h2-h4, so
+  // textContent would carry that noise — strip it off a clone first.
+  function headingText(h) {
+    var clone = h.cloneNode(true);
+    var anchors = clone.querySelectorAll("a");
+    for (var i = 0; i < anchors.length; i++) {
+      anchors[i].parentNode.removeChild(anchors[i]);
+    }
+    return sanitizeText(clone.textContent, 80);
+  }
+
+  function pageTitle() {
+    var h1 = contentRoot().querySelector("h1");
+    var fromH1 = h1 ? headingText(h1) : "";
+    if (fromH1) return fromH1;
+    var fromTitle = sanitizeText((document.title || "").split("|")[0], 80);
+    return /[a-z0-9]/i.test(fromTitle) ? fromTitle : location.pathname;
+  }
+
+  // Section breadcrumb: which heading a block sits under, e.g. "Professional
+  // Journey › Senior AI Engineer @ Marvik". Built once per content scan by
+  // walking the document in order and keeping a stack of open headings —
+  // marked renders headings as flat siblings of paragraphs, no <section>
+  // wrappers, so a single pass is enough.
+  var sectionIndex = new WeakMap();
+
+  function buildSectionIndex() {
+    var nodes = contentRoot().querySelectorAll(HEADING_SELECTOR + ", " + CONTENT_SELECTOR);
+    var stack = [];
+    nodes.forEach(function (el) {
+      var match = /^h([1-4])$/.exec(el.tagName.toLowerCase());
+      if (match) {
+        var level = Number(match[1]);
+        while (stack.length && stack[stack.length - 1].level >= level) stack.pop();
+        if (level > 1) stack.push({ level: level, text: headingText(el) }); // h1 == pageTitle, don't repeat it
+      }
+      sectionIndex.set(
+        el,
+        stack
+          .map(function (s) {
+            return s.text;
+          })
+          .join(" › ")
+      );
+    });
+  }
+
+  // "from <page title>" or "from <page title> › <section>" when the block
+  // sits under a heading. Self-contained on purpose — every event carries
+  // its own full location, nothing needs to be cross-referenced.
+  function pageContext(el) {
+    var section = el ? sectionIndex.get(el) : "";
+    var title = pageTitle();
+    return section ? title + " › " + section : title;
+  }
 
   function debugLog(type, evt) {
     if (window.DEBUG_LOG) {
@@ -82,8 +170,7 @@
     if (!buffer.length || !visitorId) return;
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
-      var stored = raw ? JSON.parse(raw) : { visitorId: visitorId, events: [] };
-      stored.visitorId = visitorId;
+      var stored = raw ? JSON.parse(raw) : { events: [] };
       stored.events = stored.events.concat(buffer);
       if (stored.events.length > MAX_EVENTS) {
         stored.events = stored.events.slice(stored.events.length - MAX_EVENTS);
@@ -97,13 +184,16 @@
     }
   }
 
-  function log(type, data) {
+  // Every event is one self-explanatory plain-language sentence — what the
+  // visitor did, to what, from where — meant to be read directly by the LLM
+  // without decoding a schema. `type` stays only for internal bookkeeping
+  // (buffering, future pattern detection), it never needs to leave the log.
+  function log(type, text) {
     var evt = {
       id: Math.random().toString(36).slice(2),
       type: type,
       ts: Date.now(),
-      path: location.pathname,
-      data: data || {},
+      text: text,
     };
     buffer.push(evt);
     debugLog(type, evt);
@@ -115,42 +205,51 @@
   });
   window.addEventListener("pagehide", flush);
 
-  // ---- Clicks + rage click ----
+  // ---- Clicks + rage click. Only interactive elements are logged, and only
+  // by their semantic label (link/button text) — no tag names, ids, classes
+  // or pixel coordinates, none of that means anything to an LLM ----
   var clickHistory = [];
 
   document.addEventListener(
     "click",
     function (e) {
-      var target = e.target.closest
-        ? e.target.closest("[data-track-id], a, button")
-        : null;
-      var trackId = target
-        ? target.getAttribute("data-track-id") || target.tagName.toLowerCase()
-        : "unknown";
+      var target = e.target.closest ? e.target.closest("a, button, [role='button']") : null;
+      if (!target) return;
+
+      var label = sanitizeText(
+        target.getAttribute("aria-label") || target.getAttribute("title") || target.textContent,
+        80
+      );
+      if (!label) return;
+
       var now = Date.now();
 
-      clickHistory.push({ id: trackId, ts: now });
+      clickHistory.push({ id: label, ts: now });
       clickHistory = clickHistory.filter(function (c) {
         return now - c.ts < RAGE_CLICK_WINDOW_MS;
       });
 
       var sameTargetClicks = clickHistory.filter(function (c) {
-        return c.id === trackId;
+        return c.id === label;
       });
 
       if (sameTargetClicks.length >= RAGE_CLICK_COUNT) {
-        log("rage_click", { target: trackId, count: sameTargetClicks.length });
+        log(
+          "rage_click",
+          'clicked repeatedly (' + sameTargetClicks.length + 'x) on: "' + label + '" from ' + pageContext()
+        );
         clickHistory = [];
         return;
       }
 
-      log("click", { target: trackId, x: e.clientX, y: e.clientY });
+      log("click", 'click on: "' + label + '" from ' + pageContext());
     },
     { passive: true }
   );
 
-  // ---- Text selection: only over content, never over inputs, and the
-  // selected text itself is never stored, only the block and its length ----
+  // ---- Text selection: only over content, never over inputs. The selected
+  // text is stored (sanitized + truncated) since it's the whole point of the
+  // signal for the LLM — which words the visitor deliberately picked out ----
   var selectionTimer = null;
 
   document.addEventListener("selectionchange", function () {
@@ -169,10 +268,10 @@
       var block = container ? container.closest(CONTENT_SELECTOR) : null;
       if (!block) return;
 
-      log("select", {
-        target: block.getAttribute("data-track-id") || block.tagName.toLowerCase(),
-        length: text.length,
-      });
+      log(
+        "select",
+        'selected: "' + sanitizeText(text, SELECTION_MAX_CHARS) + '" from ' + pageContext(block)
+      );
     }, SELECTION_DEBOUNCE_MS);
   });
 
@@ -183,7 +282,10 @@
   var velocitySamples = [];
   var lastInteraction = Date.now();
 
-  ["scroll", "keydown", "pointerdown", "wheel"].forEach(function (evtName) {
+  // Cursor movement counts as "still here" too — if both the mouse and the
+  // scroll go quiet for IDLE_MS, that's the signal the visitor stepped away,
+  // not just that they're reading closely.
+  ["scroll", "keydown", "pointerdown", "wheel", "mousemove"].forEach(function (evtName) {
     window.addEventListener(
       evtName,
       function () {
@@ -192,6 +294,21 @@
       { passive: true }
     );
   });
+
+  // Separate, much shorter-lived timestamp: was the cursor moving just now?
+  // Used to tell "tracking the text while reading" apart from "parked the
+  // mouse on a paragraph and looked away" — a still cursor over a block
+  // shouldn't count as more attention than the block's viewport position
+  // already implies.
+  var CURSOR_MOVING_WINDOW_MS = 400;
+  var lastMouseMoveTs = 0;
+  window.addEventListener(
+    "mousemove",
+    function () {
+      lastMouseMoveTs = Date.now();
+    },
+    { passive: true }
+  );
 
   function sampleScroll(now) {
     var dt = Math.max(1, now - lastT);
@@ -212,31 +329,29 @@
     lastY = y;
   }
 
-  // ---- Backtrack / re-reading over a sliding window ----
-  var scrollWindow = [];
+  // ---- Hover over content text: a stronger, more direct reading signal
+  // than viewport position alone. Delegated on mouseover/mouseout (they
+  // bubble, mouseenter/mouseleave don't) with a relatedTarget check so
+  // moving between child nodes of the same block doesn't flicker it off ----
+  var hoveredBlock = null;
 
-  window.addEventListener(
-    "scroll",
-    function () {
-      var now = Date.now();
-      var delta = window.scrollY - lastY;
-      scrollWindow.push({ t: now, delta: delta });
-      scrollWindow = scrollWindow.filter(function (s) {
-        return now - s.t < REREAD_WINDOW_MS;
-      });
+  document.addEventListener(
+    "mouseover",
+    function (e) {
+      hoveredBlock = e.target.closest ? e.target.closest(CONTENT_SELECTOR) : null;
     },
     { passive: true }
   );
 
-  function backtrackRatio() {
-    var neg = 0;
-    var total = 0;
-    scrollWindow.forEach(function (s) {
-      total += Math.abs(s.delta);
-      if (s.delta < 0) neg += Math.abs(s.delta);
-    });
-    return total > 0 ? neg / total : 0;
-  }
+  document.addEventListener(
+    "mouseout",
+    function (e) {
+      if (!hoveredBlock) return;
+      var to = e.relatedTarget;
+      if (!to || !hoveredBlock.contains(to)) hoveredBlock = null;
+    },
+    { passive: true }
+  );
 
   // ---- Per-block reading classification: dwell weighted by presence in the
   // read band, normalized against the block's expected reading time
@@ -259,7 +374,21 @@
     return text ? text.split(/\s+/).length : 0;
   }
 
+  // How fast this specific block could scroll past while still being
+  // readable at WPM pace — depends on its actual line height and word
+  // density, not a flat guess. A block with bigger text tolerates a faster
+  // scroll and still counts as "read"; dense small text doesn't.
+  function maxReadingPxPerSec(el, words) {
+    var cs = window.getComputedStyle(el);
+    var lineHeight = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.5 || 24;
+    var lines = Math.max(1, el.getBoundingClientRect().height / lineHeight);
+    var wordsPerLine = words / lines;
+    if (!wordsPerLine || !isFinite(wordsPerLine)) return FALLBACK_MAX_READING_PX_S;
+    return (WPM / 60 / wordsPerLine) * lineHeight;
+  }
+
   function registerBlocks() {
+    buildSectionIndex();
     var els = document.querySelectorAll(CONTENT_SELECTOR);
     els.forEach(function (el) {
       if (blocks.has(el)) return;
@@ -272,6 +401,7 @@
         visible: false,
         rect: null,
         reported: false,
+        maxReadingPxPerSec: maxReadingPxPerSec(el, words),
       });
       observer.observe(el);
     });
@@ -290,17 +420,33 @@
     sampleScroll(now);
 
     var idle = Date.now() - lastInteraction > IDLE_MS;
-    var moving = Math.abs(vSmooth) > STATIONARY_PX_S;
     var focused = document.visibilityState === "visible" && document.hasFocus();
 
-    if (focused && !idle && !moving) {
+    if (focused && !idle) {
       var vh = window.innerHeight;
       var bandTop = vh * READ_BAND[0];
       var bandBottom = vh * READ_BAND[1];
       var dt = 16; // one frame, good enough for this signal
+      // Date.now(), not the rAF timestamp — lastMouseMoveTs is wall-clock time.
+      var cursorMoving = Date.now() - lastMouseMoveTs < CURSOR_MOVING_WINDOW_MS;
 
       blocks.forEach(function (b) {
         if (!b.visible || !b.rect) return;
+
+        // Hovering the text WHILE the cursor is moving is a stronger signal
+        // than mere position in the viewport band — tracking text with the
+        // mouse means it's actually being read, regardless of scroll speed.
+        if (b.el === hoveredBlock && cursorMoving) {
+          b.qualifiedDwell += dt;
+          return;
+        }
+
+        // Scrolling faster than this block's text could plausibly be read at
+        // WPM pace means the visitor scrolled past it, not read it — a slow
+        // scroll over dense small text can fail this just as a fast scroll
+        // over big headings can pass it.
+        if (Math.abs(vSmooth) > b.maxReadingPxPerSec) return;
+
         var overlap = Math.min(b.rect.bottom, bandBottom) - Math.max(b.rect.top, bandTop);
         if (overlap <= 0) return;
         var weight = overlap / Math.min(b.rect.height, bandBottom - bandTop);
@@ -317,19 +463,10 @@
       var cls = classify(b);
       if (cls === "read" || cls === "parked") {
         b.reported = true;
-        log("read_block", {
-          target: b.el.getAttribute("data-track-id") || b.el.tagName.toLowerCase(),
-          classification: cls,
-          dwellMs: Math.round(b.qualifiedDwell),
-          words: b.words,
-        });
+        var snippet = sanitizeText(b.el.textContent, SNIPPET_MAX_CHARS);
+        log("read_block", 'read: "' + snippet + '" from ' + pageContext(b.el));
       }
     });
-
-    var bt = backtrackRatio();
-    if (bt > REREAD_BACKTRACK_THRESHOLD) {
-      log("reread", { backtrackRatio: Number(bt.toFixed(2)) });
-    }
   }
 
   setInterval(reportBlocks, REPORT_INTERVAL_MS);
