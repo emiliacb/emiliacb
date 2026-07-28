@@ -96,4 +96,9 @@ async function bundleClientFile({ entry, outfile, label }: {
     outfile: "_activity-logger-bundle.js",
     label: "Activity logger",
   });
+  await bundleClientFile({
+    entry: "src/client/mascot-bot.js",
+    outfile: "_mascot-bot-bundle.js",
+    label: "Mascot bot",
+  });
 })();

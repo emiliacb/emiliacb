@@ -245,6 +245,24 @@
     }
   }
 
+  // Seeds the running event count from whatever's already in localStorage
+  // for this schema version, so a page reload mid-session doesn't reset the
+  // count the mascot button's 5-event threshold is watching.
+  function readStoredEventCount() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      var stored = raw ? JSON.parse(raw) : null;
+      if (stored && stored.version === getSiteVersion() && stored.events) {
+        return stored.events.length;
+      }
+    } catch (e) {
+      // ignore, fall through to 0
+    }
+    return 0;
+  }
+
+  var totalEventCount = readStoredEventCount();
+
   // Every event is { event, on, from }: `event` names the action (read /
   // click / selected / clicked_repeatedly), `on` is its subject, and `from`
   // is always a parent-chain node (see locationOf) or, at the end of the
@@ -257,6 +275,8 @@
     buffer.push(evt);
     debugLog(evt);
     scheduleFlush();
+    totalEventCount++;
+    window.dispatchEvent(new CustomEvent("activity:event", { detail: { count: totalEventCount } }));
   }
 
   document.addEventListener("visibilitychange", function () {
@@ -672,5 +692,12 @@
 
   // Exposed for debugging from devtools regardless of DEBUG_LOG, since
   // toggling the flag live is only useful if there's something to inspect.
-  window.__activityLogger = { flush: flush, blocks: blocks, sessionId: sessionId };
+  window.__activityLogger = {
+    flush: flush,
+    blocks: blocks,
+    sessionId: sessionId,
+    getEventCount: function () {
+      return totalEventCount;
+    },
+  };
 })();

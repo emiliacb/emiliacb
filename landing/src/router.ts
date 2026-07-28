@@ -13,6 +13,7 @@ import labsDistortionHandler from "./routes/labs/distortion";
 import labsDistortionBgHandler from "./routes/labs/distortion-bg";
 import aboutHandler from "./routes/about";
 import notFoundHandler from "./routes/not-found";
+import mascotHandler from "./routes/api/mascot";
 import { langMiddleware } from "./middlewares/lang";
 import { generalCacheMiddleware, cacheVersionMiddleware, versionedStaticCacheMiddleware, CACHE_VERSION } from "./middlewares/cache";
 import { rateLimiterMiddleware } from "./middlewares/rateLimiter";
@@ -71,6 +72,7 @@ router
 
     return c.body(webStream);
   })
+  .post("/api/mascot-comment", mascotHandler)
   .use("*", langMiddleware)
   .get("/:lang?", homeHandler)
   .get("/:lang/about", aboutHandler)
