@@ -81,4 +81,9 @@ async function bundleClientFile({ entry, outfile, label }: {
     outfile: "_gradient-distortion-bundle.js",
     label: "Liquid background distortion (labs POC)",
   });
+  await bundleClientFile({
+    entry: "src/client/activity-logger.js",
+    outfile: "_activity-logger-bundle.js",
+    label: "Activity logger",
+  });
 })();

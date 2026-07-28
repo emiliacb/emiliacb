@@ -257,6 +257,7 @@ document.head.appendChild(o)}initApollo();</script>
         ${languageSwitcher({ lang: siteData.lang })}
         <script src="/public/${CACHE_VERSION}/_layout-bundle.js" defer></script>
         <script src="/public/${CACHE_VERSION}/_navigation-bundle.js" defer></script>
+        <script src="/public/${CACHE_VERSION}/_activity-logger-bundle.js" defer></script>
       </body>
     </html>
   `;
