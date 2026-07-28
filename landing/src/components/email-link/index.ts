@@ -58,10 +58,11 @@ export default function emailLink({
 }: EmailLinkProps) {
   const t = wordings[lang] ?? wordings.en;
   const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}`;
-  // Superhuman has no documented compose URL scheme of its own: it works by
-  // registering as the OS/browser's default handler for plain mailto: links,
-  // so this only opens Superhuman if the user has set it as that default.
-  const superhumanUrl = `mailto:${email}`;
+  // Superhuman doesn't publish this as an official API, but it's the scheme
+  // real integrations (e.g. Drafts' "Send to Superhuman" action) use, and
+  // it's been confirmed working directly. Falls back to opening nothing if
+  // Superhuman isn't installed, same as any other custom URL scheme.
+  const superhumanUrl = `superhuman://compose?to=${encodeURIComponent(email)}`;
 
   return html`
     <dropdown-trigger
