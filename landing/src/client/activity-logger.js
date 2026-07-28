@@ -25,6 +25,7 @@
 
   var STORAGE_KEY = "activity_logs";
   var SESSION_KEY = "activity_session_id";
+  var PREVIOUS_PAGE_KEY = "activity_previous_page";
   var MAX_EVENTS = 500;
   var FLUSH_DEBOUNCE_MS = 2000;
   var FLUSH_MAX_BUFFER = 50;
@@ -171,6 +172,27 @@
 
   var sessionId = getSessionId();
 
+  // The site navigates via full page reloads, so "where did they come from"
+  // has to be handed off between page loads through sessionStorage — read
+  // it before overwriting it with the current page, so the NEXT page load
+  // sees this one as its predecessor.
+  function previousPage() {
+    try {
+      return sessionStorage.getItem(PREVIOUS_PAGE_KEY) || document.referrer || null;
+    } catch (e) {
+      return document.referrer || null;
+    }
+  }
+
+  var cameFrom = previousPage();
+
+  try {
+    sessionStorage.setItem(PREVIOUS_PAGE_KEY, location.href);
+  } catch (e) {
+    // sessionStorage unavailable: cameFrom still works for this page, just
+    // won't chain to the next one.
+  }
+
   // ---- In-memory buffer + flush to localStorage ----
   var buffer = [];
   var flushTimer = null;
@@ -240,7 +262,28 @@
   document.addEventListener("visibilitychange", function () {
     if (document.visibilityState === "hidden") flush();
   });
-  window.addEventListener("pagehide", flush);
+
+  // One "left" event per page visit, fired on the way out with however many
+  // seconds the visitor was actually engaged here (see activeMs) — that's
+  // the difference between "read this page" and "had it open while doing
+  // something else". pagehide, not visibilitychange: this should fire once,
+  // on actually leaving, not on every tab switch.
+  var navigationLogged = false;
+
+  function logNavigationLeft() {
+    if (navigationLogged) return;
+    navigationLogged = true;
+    reportBlocks(true);
+    log({
+      event: "navigate",
+      on: pageTitle(),
+      activeSeconds: Math.round(activeMs / 1000),
+      from: cameFrom,
+    });
+    flush();
+  }
+
+  window.addEventListener("pagehide", logNavigationLeft);
 
   // ---- Clicks + rage click. Only interactive elements are logged, and only
   // by their semantic label (link/button text) — no tag names, ids, classes
@@ -437,9 +480,13 @@
         el: el,
         words: words,
         qualifiedDwell: 0,
+        hoverDwell: 0, // portion of qualifiedDwell that came from hover, not band position
+        bandExposureMs: 0, // raw ms spent passing the speed gate with band overlap > 0
+        speedMarginSum: 0, // Σ dt * (1 - |scroll speed| / this block's readable pace)
+        lastDwellTs: 0, // last frame that added dwell — used to tell "closed" from "still open"
+        reportedDwell: 0, // qualifiedDwell at the last time this block was logged
         visible: false,
         rect: null,
-        reported: false,
         maxReadingPxPerSec: maxReadingPxPerSec(el, words),
       });
       observer.observe(el);
@@ -455,6 +502,77 @@
     return "parked";
   }
 
+  // How close to the expected reading time the block's dwell landed. The
+  // plateau between ratio 1.0-2.5 barely penalizes on purpose: WPM=240 is a
+  // brisk reference for technical prose, and 1.3-1.6x isn't an anomaly, it's
+  // attentive reading — punishing it would punish exactly the case that
+  // matters most.
+  function paceFit(ratio) {
+    if (ratio < 1) return 0.5 + (ratio - 0.5);
+    if (ratio <= 2.5) return 1 - (0.1 * (ratio - 1)) / 1.5;
+    return Math.max(0.3, (0.9 * 2.5) / ratio);
+  }
+
+  // Confidence composes its factors multiplicatively, not as a weighted
+  // average: two weak signals together are much more suspicious than either
+  // alone (e.g. dwell that both grazed the read band AND only barely beat
+  // the speed gate), and a weighted average would let one strong factor mask
+  // a fatal one. Floors on each factor keep any single weak signal from
+  // collapsing the score to zero — none of these signals is reliable enough
+  // on its own to have veto power. Hover is additive-only and never
+  // punishes: most visitors don't track text with the cursor at all
+  // (trackpad/keyboard/touch), so its absence isn't evidence of anything,
+  // but its presence is real evidence of reading.
+  function scoreBlock(b) {
+    var expectedMs = (b.words / WPM) * 60000;
+    var ratio = b.qualifiedDwell / expectedMs;
+    var hoverShare = b.qualifiedDwell > 0 ? b.hoverDwell / b.qualifiedDwell : 0;
+
+    var centrality, speed;
+    if (b.bandExposureMs > 0) {
+      var bandCentrality = (b.qualifiedDwell - b.hoverDwell) / b.bandExposureMs;
+      var speedMargin = b.speedMarginSum / b.bandExposureMs;
+      centrality = 0.65 + 0.35 * Math.max(0, Math.min(1, bandCentrality));
+      speed = 0.75 + 0.25 * Math.max(0, Math.min(1, speedMargin));
+    } else {
+      // Dwell came entirely from hover, with zero band samples to judge
+      // position or scroll speed against — neutral factors, and the
+      // confidence gets capped below since this is the system's biggest
+      // false-positive channel (a still, trembling cursor resting on a
+      // paragraph at the edge of the viewport, past both other filters).
+      centrality = 0.85;
+      speed = 0.85;
+    }
+
+    var length = 0.7 + 0.3 * Math.min(1, b.words / 30);
+    var hoverBonus = 0.15 * Math.min(1, hoverShare / 0.3);
+
+    var confidence = paceFit(ratio) * centrality * speed * length + hoverBonus;
+    if (b.bandExposureMs === 0) confidence = Math.min(confidence, 0.6);
+    confidence = Math.max(0.15, Math.min(1, confidence));
+
+    var manner;
+    if (ratio > 2.5) {
+      manner = "lingered"; // stayed far past the expected time — deep focus or stepped away, ambiguous on purpose
+    } else if (hoverShare >= 0.3) {
+      manner = "tracked"; // followed the text with the cursor
+    } else if (
+      b.bandExposureMs > 0 &&
+      ((b.qualifiedDwell - b.hoverDwell) / b.bandExposureMs < 0.5 || b.speedMarginSum / b.bandExposureMs < 0.25)
+    ) {
+      manner = "grazed"; // dwell came mostly from grazing the band edge or scrolling near the speed limit
+    } else {
+      manner = "steady";
+    }
+
+    return { confidence: Math.round(confidence * 100) / 100, manner: manner };
+  }
+
+  // Same "engaged" condition already used to gate dwell, reused as a running
+  // total for the whole page visit — how long the visitor was actually here,
+  // not just how long the tab was open, logged on the way out.
+  var activeMs = 0;
+
   function tick(now) {
     sampleScroll(now);
 
@@ -462,6 +580,7 @@
     var focused = document.visibilityState === "visible" && document.hasFocus();
 
     if (focused && !idle) {
+      activeMs += 16;
       var vh = window.innerHeight;
       var bandTop = vh * READ_BAND[0];
       var bandBottom = vh * READ_BAND[1];
@@ -477,6 +596,8 @@
         // mouse means it's actually being read, regardless of scroll speed.
         if (b.el === hoveredBlock && cursorMoving) {
           b.qualifiedDwell += dt;
+          b.hoverDwell += dt;
+          b.lastDwellTs = Date.now();
           return;
         }
 
@@ -488,32 +609,60 @@
 
         var overlap = Math.min(b.rect.bottom, bandBottom) - Math.max(b.rect.top, bandTop);
         if (overlap <= 0) return;
-        var weight = overlap / Math.min(b.rect.height, bandBottom - bandTop);
-        b.qualifiedDwell += dt * Math.max(0, Math.min(1, weight));
+        var weight = Math.max(0, Math.min(1, overlap / Math.min(b.rect.height, bandBottom - bandTop)));
+        b.qualifiedDwell += dt * weight;
+        b.bandExposureMs += dt;
+        b.speedMarginSum += dt * (1 - Math.abs(vSmooth) / b.maxReadingPxPerSec);
+        b.lastDwellTs = Date.now();
       });
     }
 
     requestAnimationFrame(tick);
   }
 
-  function reportBlocks() {
+  // Reports on CLOSE, not on crossing the threshold — reportBlocks() used to
+  // latch the first moment a block passed MIN_DWELL_MS_TO_REPORT and never
+  // look again, which meant the ratio it logged was always ~0.5 regardless
+  // of how much longer the visitor actually stayed. "parked" was nearly
+  // unreachable and any score built on the ratio would've been flat for
+  // everyone. Now a block only reports once its dwell has stopped growing
+  // for CLOSE_GAP_MS (it scrolled off, or the visitor moved on) — force
+  // (used from pagehide) skips that wait since the page is closing anyway.
+  var CLOSE_GAP_MS = 2000;
+
+  function reportBlocks(force) {
+    var now = Date.now();
     blocks.forEach(function (b) {
-      if (b.reported || b.qualifiedDwell < MIN_DWELL_MS_TO_REPORT) return;
+      var grown = b.qualifiedDwell - b.reportedDwell;
+      if (grown < MIN_DWELL_MS_TO_REPORT) return;
+      if (!force && now - b.lastDwellTs < CLOSE_GAP_MS) return; // still actively accumulating
+
       var cls = classify(b);
-      if (cls === "read" || cls === "parked") {
-        b.reported = true;
-        var snippet = sanitizeText(b.el.textContent, SNIPPET_MAX_CHARS);
-        log({ event: "read", on: snippet, from: locationOf(b.el) });
-      }
+      if (cls !== "read" && cls !== "parked") return;
+
+      var wasReportedBefore = b.reportedDwell > 0;
+      var scored = scoreBlock(b);
+      var snippet = sanitizeText(b.el.textContent, SNIPPET_MAX_CHARS);
+      log({
+        event: "read",
+        on: snippet,
+        confidence: scored.confidence,
+        // Coming back to something already reported is one of the strongest
+        // interest signals there is — worth its own label instead of
+        // logging the same block as a fresh "read" a second time.
+        manner: wasReportedBefore ? "revisited" : scored.manner,
+        from: locationOf(b.el),
+      });
+      b.reportedDwell = b.qualifiedDwell;
     });
   }
 
   setInterval(reportBlocks, REPORT_INTERVAL_MS);
-  window.addEventListener("pagehide", reportBlocks);
 
   // ---- Init ----
   registerBlocks();
   requestAnimationFrame(tick);
+  log({ event: "visited", on: pageTitle(), from: cameFrom });
 
   // Pick up new blocks if content changes without a full page reload
   var mutationObserver = new MutationObserver(function () {
