@@ -112,25 +112,50 @@ function readScroll() {
 }
 
 /**
+ * How much of its own share a trunk may wander, as a fraction of that share.
+ *
+ * This is the whole uniformity knob. Jitter and minimum spacing are the same
+ * number seen from two sides: neighbours can close to `1 - SPREAD` of the gap
+ * between their shares, so at 1 they may coincide and at 0 it is a fence.
+ */
+const SPREAD = 0.4;
+
+/**
  * Lays out the empty slots of one band and returns them, unplanted.
  *
  * Every slot exists before anything grows, so the sequencing below only decides
  * *when* a tree appears — sizes and positions never shift under it.
  *
- * Placement is a jittered slot rather than an even row: real stands clump, and
- * evenly spaced trunks read as a fence however varied their sizes are.
+ * Each tree gets a share of the band proportional to its own width rather than
+ * an equal stripe: with widths spanning 2.5:1, equal stripes give a wide tree
+ * and a narrow one the same room, so the wide ones swallow their neighbours.
+ * Shares keep the *gaps* even, which is what actually reads as even spacing.
+ *
+ * Placement is still jittered inside each share — a stand is not a fence — but
+ * only across the middle of it, which puts a floor under how close two trunks
+ * can get. Wandering the full share is what let trees land on top of each other.
  */
 function layout(band, { count, minWidth, maxWidth }) {
   if (!band) return [];
   band.replaceChildren();
 
+  const widths = Array.from(
+    { length: count },
+    () => minWidth + Math.random() * (maxWidth - minWidth)
+  );
+  const total = widths.reduce((sum, width) => sum + width, 0);
+
   const slots = [];
-  for (let i = 0; i < count; i++) {
-    const width = minWidth + Math.random() * (maxWidth - minWidth);
+  let cursor = 0;
+  for (const width of widths) {
+    const share = width / total;
+    const centre = cursor + share * (0.5 + (Math.random() - 0.5) * SPREAD);
+    cursor += share;
+
     const slot = document.createElement("div");
     slot.className = "forest-tree";
     slot.style.width = `${width}px`;
-    slot.style.left = `${((i + 0.1 + Math.random() * 0.8) / count) * 100}%`;
+    slot.style.left = `${centre * 100}%`;
     // Break the flat baseline: some trees stand a little further back.
     slot.style.bottom = `${Math.round(Math.random() * width * 0.14)}px`;
     band.append(slot);
