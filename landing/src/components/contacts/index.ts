@@ -43,7 +43,7 @@ export function contact({ lang, columnMode = false }: ContactProps) {
 
   return html`
     <ul
-      class="flex md:flex-row-reverse py-8 md:-ml-2 justify-between md:gap-6 w-full md:w-fit"
+      class="flex items-center md:flex-row-reverse py-8 md:-ml-2 justify-between md:gap-6 w-full md:w-fit"
     >
       <li>
         <a
