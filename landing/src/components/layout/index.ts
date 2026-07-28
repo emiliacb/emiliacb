@@ -114,6 +114,9 @@ document.head.appendChild(o)}initApollo();</script>
         <!-- Dropdown -->
         <script src="/public/${CACHE_VERSION}/_dropdown-bundle.js" defer></script>
 
+        <!-- Email link -->
+        <script src="/public/${CACHE_VERSION}/_email-link-bundle.js" defer></script>
+
         <!-- Google Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

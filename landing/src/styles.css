@@ -322,6 +322,20 @@ dropdown-trigger::part(icon) {
   @apply dark:stroke-white;
 }
 
+/* Email link: a dropdown-trigger dressed up as a plain inline link */
+dropdown-trigger[variant="link"]::part(trigger) {
+  @apply interactive hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 py-0.5 -ml-1 h-fit;
+}
+
+/* Ghost link: plain accent-colored text, no button chrome */
+.link-ghost {
+  @apply text-green-700 dark:text-blue-400 hover:underline underline-offset-4 transition-colors duration-150;
+}
+
+.link-ghost:focus-visible {
+  @apply outline outline-2 outline-red-500 outline-offset-2;
+}
+
 /* Interactive element polish */
 .interactive {
   transition-property: background-color, color, scale;

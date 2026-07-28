@@ -72,6 +72,11 @@ async function bundleClientFile({ entry, outfile, label }: {
     label: "Navigation",
   });
   await bundleClientFile({
+    entry: "src/client/email-link.js",
+    outfile: "_email-link-bundle.js",
+    label: "Email link",
+  });
+  await bundleClientFile({
     entry: "src/client/distortion.js",
     outfile: "_distortion-bundle.js",
     label: "Liquid page distortion (labs POC)",

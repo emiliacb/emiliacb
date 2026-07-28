@@ -107,6 +107,11 @@ class DropdownTrigger extends HTMLElement {
           }
         }
 
+        /* variant-link: looks like a plain inline link, no visible caret */
+        .variant-link .icon {
+          display: none;
+        }
+
         .variant-icon-only .label {
           position: absolute;
           width: 1px;
