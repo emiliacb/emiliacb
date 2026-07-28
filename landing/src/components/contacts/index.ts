@@ -27,7 +27,7 @@ export function contactColumn({ lang }: ContactProps) {
         <a class="interactive hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 py-0.5 -ml-1" href="https://github.com/emiliacb" target="_blank">GitHub</a>
       </li>
       <li class="underline underline-offset-4 mt-1">
-        <a class="hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 pt-1 pb-2 -ml-1" href="https://calendly.com/emilia-cb" target="_blank">
+        <a class="hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 pt-1 pb-2 -ml-1" href="https://cal.com/emiliacb/general" target="_blank">
           ${scheduleCaption[lang][2]}
         </a>
       </li>
@@ -47,7 +47,7 @@ export function contact({ lang, columnMode = false }: ContactProps) {
       <li>
         <a
           class="interactive flex gap-2 w-fit border border-black dark:border-white px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black"
-          href="https://calendly.com/emilia-cb"
+          href="https://cal.com/emiliacb/general"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="${scheduleCaption[lang][2]}"
