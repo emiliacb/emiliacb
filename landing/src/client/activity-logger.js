@@ -1,6 +1,6 @@
 // Activity logger: captures clicks, text selection and reading (dwell time
 // normalized by word count, not raw scroll velocity), and persists it in
-// localStorage under a stable visitorId, to feed the AI agent. Events carry
+// localStorage under a per-tab session id, to feed the AI agent. Events carry
 // the actual text involved (truncated and sanitized) since the point of the
 // log is to be handed to an LLM — structural metadata alone isn't enough
 // for the agent to react to *what* the visitor read or selected.
@@ -24,7 +24,6 @@
   }
 
   var STORAGE_KEY = "activity_logs";
-  var VISITOR_KEY = "activity_visitor_id";
   var SESSION_KEY = "activity_session_id";
   var MAX_EVENTS = 500;
   var FLUSH_DEBOUNCE_MS = 2000;
@@ -149,29 +148,11 @@
     }
   }
 
-  // ---- Visitor id, persisted across visits ----
-  function getVisitorId() {
-    try {
-      var id = localStorage.getItem(VISITOR_KEY);
-      if (!id) {
-        id =
-          window.crypto && window.crypto.randomUUID
-            ? window.crypto.randomUUID()
-            : String(Date.now()) + "-" + Math.random().toString(36).slice(2);
-        localStorage.setItem(VISITOR_KEY, id);
-      }
-      return id;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  var visitorId = getVisitorId();
-
   // Session id: one per tab per browsing session, not per page load — the
   // site navigates via full page reloads, so sessionStorage (survives those,
-  // resets when the tab closes) is exactly the right lifetime. Different
-  // from visitorId, which persists across separate visits entirely.
+  // resets when the tab closes) is exactly the right lifetime. Replaces an
+  // earlier localStorage-based visitorId that persisted across separate
+  // visits — session_id is the only identifier now.
   function getSessionId() {
     try {
       var id = sessionStorage.getItem(SESSION_KEY);
@@ -219,7 +200,7 @@
       clearTimeout(flushTimer);
       flushTimer = null;
     }
-    if (!buffer.length || !visitorId) return;
+    if (!buffer.length) return;
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       var stored = raw ? JSON.parse(raw) : null;
@@ -542,5 +523,5 @@
 
   // Exposed for debugging from devtools regardless of DEBUG_LOG, since
   // toggling the flag live is only useful if there's something to inspect.
-  window.__activityLogger = { flush: flush, blocks: blocks, visitorId: visitorId };
+  window.__activityLogger = { flush: flush, blocks: blocks, sessionId: sessionId };
 })();
