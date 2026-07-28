@@ -64,7 +64,7 @@ const SWAY_Y = 0.3;
 
 /** Pause before the first tree, then the random gap between each one, in ms. */
 const FIRST_SPROUT = 260;
-const SEQUENCE_GAP = [70, 260];
+const SEQUENCE_GAP = [0, 10000];
 
 const nodes = { far: bandFar, mid: bandMid, near: bandNear, front };
 const planes = Object.entries(nodes).filter(([, node]) => node);
