@@ -87,46 +87,61 @@
     return /[a-z0-9]/i.test(fromTitle) ? fromTitle : location.pathname;
   }
 
-  // Section breadcrumb: which heading a block sits under, e.g. "Professional
-  // Journey › Senior AI Engineer @ Marvik". Built once per content scan by
-  // walking the document in order and keeping a stack of open headings —
-  // marked renders headings as flat siblings of paragraphs, no <section>
-  // wrappers, so a single pass is enough.
+  // Location is a graph, not a string: each node is { read, from }, where
+  // `from` is that node's own parent (or null at the page root). A block's
+  // location is its nearest enclosing heading; that heading's own location
+  // is *its* parent heading; and so on up to the page title. Built once per
+  // content scan, walking the document in order with a stack of open
+  // headings — marked renders headings as flat siblings of paragraphs, no
+  // <section> wrappers, so a single pass is enough.
   var sectionIndex = new WeakMap();
+
+  function pageRootNode() {
+    return { read: pageTitle(), from: null };
+  }
 
   function buildSectionIndex() {
     var nodes = contentRoot().querySelectorAll(HEADING_SELECTOR + ", " + CONTENT_SELECTOR);
-    var stack = [];
+    var stack = []; // { level, node }
+    var root = pageRootNode();
+
     nodes.forEach(function (el) {
       var match = /^h([1-4])$/.exec(el.tagName.toLowerCase());
+      var parent = stack.length ? stack[stack.length - 1].node : root;
+
       if (match) {
         var level = Number(match[1]);
         while (stack.length && stack[stack.length - 1].level >= level) stack.pop();
-        if (level > 1) stack.push({ level: level, text: headingText(el) }); // h1 == pageTitle, don't repeat it
+        parent = stack.length ? stack[stack.length - 1].node : root;
+
+        if (level === 1) {
+          // h1 IS the page title (root already covers it) — no parent of its own.
+          sectionIndex.set(el, null);
+          return;
+        }
+
+        // This heading's own location is its parent's chain — never itself,
+        // that's what was producing the same text twice in one event.
+        sectionIndex.set(el, parent);
+        stack.push({ level: level, node: { read: headingText(el), from: parent } });
+        return;
       }
-      sectionIndex.set(
-        el,
-        stack
-          .map(function (s) {
-            return s.text;
-          })
-          .join(" › ")
-      );
+
+      sectionIndex.set(el, parent);
     });
   }
 
-  // "from <page title>" or "from <page title> › <section>" when the block
-  // sits under a heading. Self-contained on purpose — every event carries
-  // its own full location, nothing needs to be cross-referenced.
-  function pageContext(el) {
-    var section = el ? sectionIndex.get(el) : "";
-    var title = pageTitle();
-    return section ? title + " › " + section : title;
+  // The parent-chain node for a given element, or the page root if the
+  // element isn't under any heading (or isn't content at all, e.g. a nav
+  // link) — every event still gets at least the page as its `from`.
+  function locationOf(el) {
+    var loc = el ? sectionIndex.get(el) : undefined;
+    return loc !== undefined ? loc : pageRootNode();
   }
 
-  function debugLog(type, evt) {
+  function debugLog(evt) {
     if (window.DEBUG_LOG) {
-      console.log("[activity]", type, evt);
+      console.log("[activity]", evt);
     }
   }
 
@@ -184,19 +199,17 @@
     }
   }
 
-  // Every event is one self-explanatory plain-language sentence — what the
-  // visitor did, to what, from where — meant to be read directly by the LLM
-  // without decoding a schema. `type` stays only for internal bookkeeping
-  // (buffering, future pattern detection), it never needs to leave the log.
-  function log(type, text) {
-    var evt = {
-      id: Math.random().toString(36).slice(2),
-      type: type,
-      ts: Date.now(),
-      text: text,
-    };
+  // Every event is a small object whose key names the action itself (read /
+  // click / selected / clicked_repeatedly) — no separate `type` field, the
+  // key already says what happened, so there's nothing to duplicate. `from`
+  // is always a parent-chain node (see locationOf), never a flattened string.
+  function log(fields) {
+    var evt = { id: Math.random().toString(36).slice(2), ts: Date.now() };
+    for (var key in fields) {
+      if (Object.prototype.hasOwnProperty.call(fields, key)) evt[key] = fields[key];
+    }
     buffer.push(evt);
-    debugLog(type, evt);
+    debugLog(evt);
     scheduleFlush();
   }
 
@@ -234,15 +247,16 @@
       });
 
       if (sameTargetClicks.length >= RAGE_CLICK_COUNT) {
-        log(
-          "rage_click",
-          'clicked repeatedly (' + sameTargetClicks.length + 'x) on: "' + label + '" from ' + pageContext()
-        );
+        log({
+          clicked_repeatedly: label,
+          count: sameTargetClicks.length,
+          from: locationOf(target),
+        });
         clickHistory = [];
         return;
       }
 
-      log("click", 'click on: "' + label + '" from ' + pageContext());
+      log({ click: label, from: locationOf(target) });
     },
     { passive: true }
   );
@@ -268,10 +282,7 @@
       var block = container ? container.closest(CONTENT_SELECTOR) : null;
       if (!block) return;
 
-      log(
-        "select",
-        'selected: "' + sanitizeText(text, SELECTION_MAX_CHARS) + '" from ' + pageContext(block)
-      );
+      log({ selected: sanitizeText(text, SELECTION_MAX_CHARS), from: locationOf(block) });
     }, SELECTION_DEBOUNCE_MS);
   });
 
@@ -463,7 +474,7 @@
       if (cls === "read" || cls === "parked") {
         b.reported = true;
         var snippet = sanitizeText(b.el.textContent, SNIPPET_MAX_CHARS);
-        log("read_block", 'read: "' + snippet + '" from ' + pageContext(b.el));
+        log({ read: snippet, from: locationOf(b.el) });
       }
     });
   }
