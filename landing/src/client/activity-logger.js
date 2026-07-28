@@ -282,10 +282,7 @@
   var velocitySamples = [];
   var lastInteraction = Date.now();
 
-  // Cursor movement counts as "still here" too — if both the mouse and the
-  // scroll go quiet for IDLE_MS, that's the signal the visitor stepped away,
-  // not just that they're reading closely.
-  ["scroll", "keydown", "pointerdown", "wheel", "mousemove"].forEach(function (evtName) {
+  ["scroll", "keydown", "pointerdown", "wheel"].forEach(function (evtName) {
     window.addEventListener(
       evtName,
       function () {
@@ -295,17 +292,19 @@
     );
   });
 
-  // Separate, much shorter-lived timestamp: was the cursor moving just now?
-  // Used to tell "tracking the text while reading" apart from "parked the
-  // mouse on a paragraph and looked away" — a still cursor over a block
-  // shouldn't count as more attention than the block's viewport position
-  // already implies.
+  // mousemove feeds both timestamps from one listener: lastInteraction (long
+  // window, IDLE_MS) says the visitor is still here at all; lastMouseMoveTs
+  // (short window, CURSOR_MOVING_WINDOW_MS) says the cursor is moving right
+  // now, to tell "tracking the text while reading" apart from "parked the
+  // mouse on a paragraph and looked away".
   var CURSOR_MOVING_WINDOW_MS = 400;
   var lastMouseMoveTs = 0;
   window.addEventListener(
     "mousemove",
     function () {
-      lastMouseMoveTs = Date.now();
+      var now = Date.now();
+      lastInteraction = now;
+      lastMouseMoveTs = now;
     },
     { passive: true }
   );
