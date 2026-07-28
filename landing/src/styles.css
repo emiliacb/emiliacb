@@ -131,13 +131,13 @@ html {
 /* Atmospheric perspective: distance eats contrast before it eats colour, so
    the far band loses opacity and saturation rather than changing hue. */
 .forest-band--far {
-  bottom: 46vh;
+  bottom: 38vh;
   opacity: 0.07;
   filter: blur(2.6px) saturate(0.3) invert(var(--tree-invert, 0));
 }
 
 .forest-band--mid {
-  bottom: 16vh;
+  bottom: 4vh;
   opacity: 0.15;
   filter: blur(1.1px) saturate(0.55) invert(var(--tree-invert, 0));
 }
@@ -145,7 +145,7 @@ html {
 /* Anchored below the frame: the band drifts up as the page scrolls, and
    starting it under the edge means the rise never exposes a gap beneath. */
 .forest-band--near {
-  bottom: -14vh;
+  bottom: -30vh;
   opacity: 0.3;
   filter: blur(0.25px) saturate(0.85) invert(var(--tree-invert, 0));
 }
@@ -155,8 +155,8 @@ html {
   position: absolute;
   bottom: 0;
   transform: translateX(-50%);
-  -webkit-mask-image: linear-gradient(to bottom, #000 74%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 74%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 96%);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent 96%);
 }
 
 .forest-tree svg {

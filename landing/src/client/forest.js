@@ -54,9 +54,9 @@ const HORIZONTAL_ONLY = new Set(["front"]);
  * keeps the near band from walling off the copy.
  */
 const BANDS = [
-  { plane: "far", count: 26, minWidth: 38, maxWidth: 96 },
-  { plane: "mid", count: 13, minWidth: 88, maxWidth: 170 },
-  { plane: "near", count: 4, minWidth: 175, maxWidth: 310 },
+  { plane: "far", count: 26, minWidth: 52, maxWidth: 130 },
+  { plane: "mid", count: 13, minWidth: 119, maxWidth: 230 },
+  { plane: "near", count: 4, minWidth: 236, maxWidth: 418 },
 ];
 
 /** Vertical sway is a fraction of the horizontal, or it reads like a wobble. */
@@ -146,7 +146,10 @@ function sprout(slot) {
     width: 300,
     height: 620,
     padding: 10,
-    roots: false,
+    // Roots on: each tree is faded out at its base by a mask, so it no longer
+    // has to be cut off flat there. The root system takes about a third of the
+    // box, which is why the slots are wider than the canopy alone would need.
+    roots: true,
     duration: 1900 + Math.random() * 1300,
     reducedMotion: reduced,
   });
