@@ -113,7 +113,7 @@ Configuration lives in the terminal and in YAML config files over SSH. That's fi
 
 If you're going in anyway, [alejandro-ao's `hermes-vps-setup` skill](https://github.com/alejandro-ao/skills/blob/main/skills/hermes-vps-setup/SKILL.md) at least turns that terminal work into a guided walkthrough, SSH hardening, firewall, systemd services, hourly Git backups, instead of improvising commands from a blank prompt.
 
-## The risks: bans, blocks, and untrusted code
+## The risks
 
 The costs above are annoying. These next ones can actually take you down, and they're the reason I'd keep an agent like this on a short leash today.
 
