@@ -129,12 +129,42 @@ const BOW_HOMEWARD = 0.7;
 /** The trunk carries far less bow than its limbs, or it reads as a snake. */
 const TRUNK_BOW = 0.45;
 const ELBOW = [0.22, 0.62] as const; // how hard the skeleton kinks at a joint
-const UPRIGHT = 0.8; // odds an elbow turns back towards the home angle
 const RECOVERY = 0.9; // how much of its lean a branch sheds at every elbow
 const CLEARANCE = 5; // extra gap enforced between branches, in model units
 const PLACEMENT_TRIES = 12;
 /** Cone a branch may wander in around its home angle, by depth. */
 const CONE = [0.34, 1.0, 1.25] as const;
+
+/* --- proportion ------------------------------------------------------------
+ *
+ * Two things come out of the golden ratio here, and neither is decoration.
+ *
+ * The first is the divergence angle. Successive leaves and limbs on a real
+ * stem are separated by turns of 137.5 degrees, and the reason is that phi is
+ * the hardest number to approximate with a fraction: any rational turn would
+ * bring organs back into line every few steps and stack them into rows. Turning
+ * by the golden angle never repeats, so nothing ever lines up with anything.
+ * Seen side on, as this tree is, that turn reads as which way an elbow kinks
+ * and which side a limb leaves from - alternating, but never in a pattern.
+ *
+ * The second is the ratio itself, for the proportions between a part and its
+ * parent: a limb is 1/phi of the length still available to it, and 1/phi of its
+ * parent's width. A constant ratio is what makes a branching figure look like
+ * one thing at every scale instead of a big shape with small shapes stuck on.
+ *
+ * Neither makes the tree symmetric. They make it un-repetitive, which is the
+ * thing that actually reads as harmony.
+ */
+const PHI = (1 + Math.sqrt(5)) / 2;
+const INV_PHI = 1 / PHI; // 0.618
+const GOLDEN_ANGLE = Math.PI * 2 * (1 - INV_PHI); // 137.5 degrees, in radians
+
+/** Runs shorten by a golden step every three of them. */
+const RUN_STEP = Math.pow(INV_PHI, 1 / 3);
+/** How much the divergence is allowed to swing a run's length. */
+const RUN_SWING = 0.42;
+/** Drift, as a fraction of the cone, past which coming back beats diverging. */
+const OFF_COURSE = 0.55;
 /** How far past the cone a run may bow before it is reeled back in. */
 const BOW_SLACK = 1.35;
 /** Joints thinner than this fraction of the trunk cannot carry a child. */
@@ -221,6 +251,13 @@ interface Joint {
   bornAt: number;
   /** Length still available to whatever grows here. */
   budget: number;
+  /**
+   * Where this elbow sits in the divergence sequence, projected to the side
+   * view: -1 and +1 point across the picture, 0 points at the viewer. It sets
+   * which way the elbow kinks, which side a limb leaves from, and how wide it
+   * opens - a limb pointing at the viewer is foreshortened to nothing.
+   */
+  swing: number;
   /** What has already been planted here, so later passes don't double up. */
   hasBranch: boolean;
   hasPetal: boolean;
@@ -294,11 +331,18 @@ function traceBranch(
   const rng = cfg.rng;
   const jointCount = Math.max(1, randInt(rng, cfg.joints[0], cfg.joints[1]) - depth);
 
-  // Runs get shorter towards the tip, so elbows crowd near the top the way
-  // they do in the original.
+  // Where this branch starts in the divergence sequence. Every branch gets its
+  // own phase, or every branch would kink the same way at the same place.
+  const phase = rng() * Math.PI * 2;
+  const swingAt = (n: number) => Math.sin(phase + n * GOLDEN_ANGLE);
+
+  // Runs get shorter towards the tip, so elbows crowd near the top the way they
+  // do in the original. Their lengths come off the divergence rather than off
+  // the rng: an irrational turn never comes back to where it started, so no two
+  // runs match and the sequence has no beat to hear.
   const weights: number[] = [];
   for (let i = 0; i < jointCount + 1; i++) {
-    weights.push(rand(rng, 0.6, 1.4) * (1 - i * 0.12));
+    weights.push((1 + RUN_SWING * swingAt(i)) * Math.pow(RUN_STEP, i));
   }
   const total = weights.reduce((a, b) => a + b, 0);
 
@@ -336,12 +380,19 @@ function traceBranch(
 
     if (s === weights.length - 1) break;
 
-    // The elbow: a decisive kink, biased back towards the branch's home angle
-    // and clamped to a cone, so it zigzags on course instead of wandering off.
+    // The elbow: a decisive kink, clamped to a cone so it zigzags on course
+    // instead of wandering off.
+    //
+    // Which way it kinks is the divergence, not a coin flip - that is what
+    // makes the zigzag irregular without ever settling into left-right-left.
+    // Drifting too far off the home angle overrules it, because a branch that
+    // keeps diverging away from its cone just piles up against the clamp.
     const dirBefore = a;
-    const mag = rand(rng, ELBOW[0], ELBOW[1]);
+    const swing = swingAt(s + 1);
+    const mag = ELBOW[0] + (ELBOW[1] - ELBOW[0]) * Math.abs(swing);
     const towardsHome = a > aim.home ? -1 : 1;
-    const sign = rng() < UPRIGHT ? towardsHome : -towardsHome;
+    const drift = Math.abs(a - aim.home) / aim.cone;
+    const sign = drift > OFF_COURSE ? towardsHome : swing < 0 ? -1 : 1;
     a = clamp(
       aim.home + (a - aim.home) * RECOVERY + mag * sign,
       aim.home - aim.cone,
@@ -359,6 +410,7 @@ function traceBranch(
       isRoot,
       bornAt: startAt + (travelled / length) * duration,
       budget: length - travelled,
+      swing,
       hasBranch: false,
       hasPetal: false,
     });
@@ -370,6 +422,7 @@ function traceBranch(
     pos: spine[tipIdx],
     dirIn: a,
     dirOut: a,
+    swing: swingAt(weights.length),
     width: 0,
     depth,
     isRoot,
@@ -497,17 +550,25 @@ function populate(
     const joint = joints[i];
     const isTip = i === joints.length - 1;
 
+    const across = Math.abs(joint.swing);
+
     // Sub-branches are rarer than trunk branches, which is what keeps the
-    // silhouette a sapling instead of a shrub.
-    const wants = rng() < cfg.branchChance * (depth === 0 ? 1 : 0.45);
+    // silhouette a sapling instead of a shrub. Among the elbows of one branch,
+    // the ones the divergence points across the picture are the ones that get
+    // a limb: a limb aimed at the viewer is foreshortened to a stub. The
+    // weighting averages to one, so this shifts which elbows sprout without
+    // changing how many do.
+    const sideways = 0.25 + 1.18 * across;
+    const wants = rng() < cfg.branchChance * (depth === 0 ? 1 : 0.45) * sideways;
     joint.hasBranch = !isTip && !isRoot && wants && trySprout(world, joint, length, depth);
 
     if (!aim.petals) continue;
 
-    // Tips are terminal — nothing sprouts from them — so they always get a
-    // petal. Interior elbows are the ones that roll for it.
+    // Petals lean the other way for the same reason: a leaf turned towards the
+    // viewer shows its face, and a leaf turned edge on shows a line.
+    const facing = 0.62 + 1.05 * (1 - across);
     const crown = isTip && depth === 0 && cfg.crown;
-    const chance = isTip ? 1 : cfg.petalChance * (joint.hasBranch ? 0.3 : 1);
+    const chance = isTip ? 1 : cfg.petalChance * facing * (joint.hasBranch ? 0.3 : 1);
     if (rng() < chance) joint.hasPetal = tryPetal(world, joint, crown, isTip);
   }
 }
@@ -524,22 +585,30 @@ function trySprout(world: World, joint: Joint, length: number, depth: number): b
   if (depth >= cfg.maxDepth) return false;
   if (joint.width <= TRUNK_WIDTH * MIN_SPROUT_WIDTH) return false;
 
-  const childLength = Math.max(length * 0.28, joint.budget * rand(rng, 0.6, 1.0));
+  // A limb takes the golden share of the length still ahead of its parent, and
+  // the golden share of its parent's width. Holding one ratio at every fork is
+  // what makes the whole figure read as one thing at every scale; the jitter is
+  // there so it is a proportion rather than a formula.
+  const childLength = Math.max(length * 0.28, joint.budget * INV_PHI * rand(rng, 0.9, 1.12));
   // A branch thin enough to read as a wire is worse than no branch, so width
   // has a floor tied to how far the branch travels.
   const childWidth = Math.min(
     joint.width * 0.85,
-    Math.max(joint.width * rand(rng, 0.55, 0.78), childLength * MIN_ASPECT)
+    Math.max(joint.width * INV_PHI * rand(rng, 0.92, 1.1), childLength * MIN_ASPECT)
   );
   const exempt = joint.width * 2.2 + CLEARANCE * 2;
 
-  // Prefer the side the parent is not turning into: that is where there is
-  // room, and it keeps limbs from folding back over the trunk.
+  // The divergence picks the side. A hard elbow overrules it: the inside of a
+  // kink is where a limb would fold back over its own parent, and there is no
+  // room there whatever the sequence says.
   const bend = joint.dirOut - joint.dirIn;
-  let side = bend > 0 ? -1 : 1;
+  const outside = bend > 0 ? -1 : 1;
+  let side = Math.abs(bend) > 0.4 ? outside : joint.swing < 0 ? -1 : 1;
 
   for (let attempt = 0; attempt < PLACEMENT_TRIES; attempt++) {
-    const spread = rand(rng, 0.42, 1.0) + attempt * 0.06;
+    // How wide it opens is the same projection: a limb turned across the
+    // picture opens fully, one turned towards the viewer is seen end on.
+    const spread = 0.42 + 0.58 * Math.abs(joint.swing) + attempt * 0.06;
     const len = childLength * (1 - attempt * 0.04);
     const dir = joint.dirOut + side * spread;
     const aim: Aim = {
@@ -593,7 +662,7 @@ function tryPetal(world: World, joint: Joint, crown: boolean, insist = false): b
     at: { ...joint.pos },
     // Angles here are measured from up; SVG angles from +x, hence the turn.
     angle: outwardAngle(joint) - Math.PI / 2 + rand(rng, -0.35, 0.35),
-    length: TRUNK_LENGTH * (crown ? rand(rng, 0.18, 0.24) : rand(rng, 0.09, 0.16)),
+    length: TRUNK_LENGTH * rand(rng, 0.09, 0.16) * (crown ? PHI : 1),
     ctrl: [
       [rand(rng, 0.18, 0.4), mirror * rand(rng, -0.3, 0.1)],
       [rand(rng, 0.58, 0.75), mirror * -fat * rand(rng, 0.85, 1.1)],
