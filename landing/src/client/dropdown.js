@@ -107,8 +107,9 @@ class DropdownTrigger extends HTMLElement {
           }
         }
 
-        /* variant-link: looks like a plain inline link, no visible caret */
-        .variant-link .icon {
+        /* variant-link / variant-prose: look like plain links, no visible caret */
+        .variant-link .icon,
+        .variant-prose .icon {
           display: none;
         }
 

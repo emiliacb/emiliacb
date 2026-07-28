@@ -1,5 +1,6 @@
 import { Link2 } from "lucide-static";
 import { marked, Tokens } from "marked";
+import emailLink from "../components/email-link";
 
 type HeadingRecord = {
   text: string;
@@ -35,6 +36,20 @@ export async function parseContent(file: string, lang: string) {
     headingsList.push({ text, slug, depth });
 
     return `<h${depth} id="${slug}">${text}<a class="inline-flex justify-center w-5 !p-0 translate-y-[0.2rem] before:hidden text-lg font-bold text-center align-baseline no-underline opacity-50 focus:opacity-100 hover:opacity-100 !bg-transparent !outline-none hover:!bg-black dark:hover:!bg-white hover:!text-white dark:hover:!text-black !border-2 border-transparent focus-visible:!border-red-500" href="#${slug}" aria-label="${text}">${Link2}</a></h${depth}>`;
+  };
+
+  // Render mailto: links as the email-link dropdown (copy / Gmail / Superhuman)
+  // instead of a plain anchor, styled to match the surrounding prose link.
+  renderer.link = ({ href, title, text }: Tokens.Link) => {
+    if (href.startsWith("mailto:")) {
+      const email = href.slice("mailto:".length);
+      return String(
+        emailLink({ email, lang, label: text, variant: "prose" })
+      );
+    }
+
+    const titleAttr = title ? ` title="${title}"` : "";
+    return `<a href="${href}"${titleAttr}>${text}</a>`;
   };
 
   marked.setOptions({ renderer });
