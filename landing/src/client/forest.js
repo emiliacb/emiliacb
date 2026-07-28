@@ -51,9 +51,17 @@ const ROW_RATIO = 1.457; // each row is this much further forward than the last
 const COLUMN_GAP = 0.55; // lateral spacing between columns, in floor units
 const REACH = 0.62; // how much of the viewport width the floor is ruled across
 
-/** Which rows may hold a tree, as depths in viewport heights. */
-const PLANT_NEAREST = 1.15;
-const PLANT_FURTHEST = 0.11;
+/**
+ * Which rows may hold a tree, as depths in viewport heights.
+ *
+ * Nothing is planted nearer than where the ground runs out of the bottom of the
+ * frame, because that is where the drawn tree stands: it has no roots, its
+ * trunk is cut off flat by the frame edge, so it reads as being at the very
+ * front of the scene. A generated tree planted nearer would be taller than it
+ * and would crowd in front of the one thing the picture is actually about.
+ */
+const PLANT_NEAREST = 1 - HORIZON;
+const PLANT_FURTHEST = 0.075;
 /** Fraction of a row's *eligible* intersections that get one. */
 const PLANT_SHARE = 0.55;
 
@@ -188,18 +196,32 @@ function fineDepths() {
 const columnSpan = (s) => Math.floor((REACH * W) / s / COLUMN_GAP);
 
 /**
- * Fades the plane out at the horizon, as a gradient on the stroke rather than
- * an alpha per line. Lines that run into the screen span the whole fade, so one
- * alpha for the whole polyline has to pick a depth to be right at — and picking
- * the far end, where every column starts, makes the columns vanish entirely.
+ * The ruling's ink: present only in the middle distance, gone at both ends.
+ *
+ * This is a gradient on the stroke rather than an alpha per line. Lines that
+ * run into the screen span the whole depth of the plane, so one alpha for the
+ * whole polyline has to pick a depth to be right at — and picking the far end,
+ * where every column starts, makes the columns vanish entirely.
+ *
+ * It fades at the horizon because the rows crowd together there and would
+ * otherwise pack into a solid bar exactly where the eye expects the most air.
+ * It fades again coming forward because the near rows are enormous and the
+ * columns are racing apart, so at full strength the foreground is a handful of
+ * hard lines cutting across the page rather than ground.
  */
-function mistGradient(color) {
+const INK_STOPS = [
+  [0, 0], // horizon
+  [0.34, 1],
+  [0.68, 0.5],
+  [1, 0], // bottom of the frame
+];
+
+function inkGradient(color) {
   const hex = color.replace("#", "");
   const n = parseInt(hex.length === 3 ? hex.replace(/./g, "$&$&") : hex, 16);
   const rgb = `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
-  const g = ctx.createLinearGradient(0, yh, 0, yh + H * 0.2);
-  g.addColorStop(0, `rgba(${rgb}, 0)`);
-  g.addColorStop(1, `rgba(${rgb}, 1)`);
+  const g = ctx.createLinearGradient(0, yh, 0, H);
+  for (const [at, alpha] of INK_STOPS) g.addColorStop(at, `rgba(${rgb}, ${alpha})`);
   return g;
 }
 
@@ -376,11 +398,33 @@ function stroke(points, alpha) {
 const darkMedia = window.matchMedia("(prefers-color-scheme: dark)");
 const contrast = () => (darkMedia.matches ? 1 : 1.32);
 
-function draw() {
+const clamp01 = (t) => (t < 0 ? 0 : t > 1 ? 1 : t);
+const easeOut = (t) => 1 - Math.pow(1 - clamp01(t), 2);
+
+/**
+ * How many rows' worth of depth a row takes to finish ruling itself once the
+ * edge has passed it. Above 1 the rows overlap, so the plane arrives as a band
+ * rather than one line at a time.
+ */
+const ROW_LAG = 1.4;
+
+/**
+ * Draws the ruling at a point in its own arrival, `t` from 0 to 1.
+ *
+ * The plane is ruled from the horizon forward: an edge travels out of the
+ * distance towards the viewer, columns lengthen to reach it, and each row rules
+ * itself outward from the centre as the edge passes over it. Nothing fades in.
+ * The animation is the same drawing at different extents — which is how the
+ * trees grow too, and why the two read as one thing rather than as a picture
+ * with a transition bolted on.
+ *
+ * At t = 1 every line is at full extent, so this is also the ordinary draw.
+ */
+function draw(t = 1) {
   ctx.clearRect(0, 0, W, H);
 
   const ink = getComputedStyle(field).getPropertyValue("--field-line").trim();
-  ctx.strokeStyle = mistGradient(ink || "#57534e");
+  ctx.strokeStyle = inkGradient(ink || "#57534e");
   ctx.lineWidth = LINE_WIDTH;
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
@@ -388,11 +432,28 @@ function draw() {
   const weight = contrast();
   const rows = floorRows();
 
+  // The edge, in depth. Geometric rather than linear: rows are spaced
+  // geometrically, so a linear sweep would crawl through the crowded distance
+  // and then tear across the foreground.
+  //
+  // It stops at the depth where the ground leaves the bottom of the frame, not
+  // at the last row. The ink is already zero down there, so sweeping past it
+  // spends most of the animation moving an edge nobody can see — the ruling
+  // looked finished a third of the way in.
+  const first = FIRST_ROW * H;
+  const last = H * (1 - HORIZON);
+  const edge = t >= 1 ? Infinity : first * Math.pow(last / first, easeOut(t));
+
   for (const row of rows) {
-    const span = columnSpan(row.s) + 1;
+    if (row.s > edge) continue;
+    // How far past this row the edge has travelled, counted in rows.
+    const passed = edge === Infinity ? 1 : Math.log(edge / row.s) / Math.log(ROW_RATIO);
+    const reach = (columnSpan(row.s) + 1) * easeOut(passed / ROW_LAG);
+    if (reach < 0.2) continue;
+
     const pts = [];
-    for (let t = -span; t <= span; t += 0.2) {
-      const [x, y] = place(t * COLUMN_GAP, row.z);
+    for (let u = -reach; u <= reach; u += 0.2) {
+      const [x, y] = place(u * COLUMN_GAP, row.z);
       pts.push(x, y);
     }
     stroke(pts, 0.5 * weight);
@@ -404,6 +465,7 @@ function draw() {
     const u = j * COLUMN_GAP;
     const pts = [];
     for (const z of depths) {
+      if (H / z > edge) break;
       const [x, y] = place(u, z);
       // Columns fan apart as they come forward, so one comfortably in frame at
       // the back leaves the side of the screen long before the front row.
@@ -418,6 +480,24 @@ function draw() {
   }
 
   ctx.globalAlpha = 1;
+}
+
+/** Duration of that arrival, in ms. */
+const RULE_MS = 1600;
+
+function rule() {
+  if (reduced) {
+    draw();
+    return;
+  }
+  let start = 0;
+  const frame = (now) => {
+    if (!start) start = now;
+    const t = (now - start) / RULE_MS;
+    draw(Math.min(1, t));
+    if (t < 1) requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
 }
 
 /* ==========================================================================
@@ -497,9 +577,12 @@ function readScroll() {
    Run
    ========================================================================== */
 
-/** Pause before the first tree, then the random gap between each one, in ms. */
-const FIRST_SPROUT = 260;
-const SEQUENCE_GAP = [0, 10000];
+/**
+ * Pause before the first tree, then the random gap between each one, in ms.
+ * The first waits for the ruling: the ground is laid, then things grow on it.
+ */
+const FIRST_SPROUT = RULE_MS + 240;
+const SEQUENCE_GAP = [0, 40];
 
 /** One tree at a time, with an irregular gap between them. */
 function sprout(queue) {
@@ -518,13 +601,18 @@ function sprout(queue) {
 
 if (field && ctx) {
   measure();
-  draw();
-  sprout(shuffle(plant()));
+  // Plant before ruling. The trees raise the mounds the ruling rides over, so
+  // ruling an empty floor first would make the ground jump when they arrive —
+  // they are held at nothing until their turn, so none of them shows yet.
+  const queue = shuffle(plant());
+  rule();
+  sprout(queue);
 
   // The canvas is not styled by CSS, so a theme change does not touch it — it
   // has to be redrawn by hand. Miss this and switching to light leaves white
-  // lines on a white ground, which is to say no ground at all.
-  darkMedia.addEventListener("change", draw);
+  // lines on a white ground, which is to say no ground at all. Wrapped, or the
+  // event object arrives as the extent to draw at.
+  darkMedia.addEventListener("change", () => draw());
 }
 
 if (planes.length) {
@@ -572,8 +660,9 @@ window.addEventListener(
     clearTimeout(resizing);
     resizing = window.setTimeout(() => {
       measure();
+      const grown = plant();
       draw();
-      for (const anim of plant()) anim.replay();
+      for (const anim of grown) anim.replay();
     }, 200);
   },
   { passive: true }
