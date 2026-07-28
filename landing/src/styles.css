@@ -329,12 +329,17 @@ dropdown-trigger[variant="link"]::part(trigger) {
 
 /* Email link: a dropdown-trigger dressed up as a markdown-content prose link */
 dropdown-trigger[variant="prose"]::part(trigger) {
-  @apply ml-[2px] outline outline-yellow-300 outline-offset-0 outline-2 transition-[background-color,color,scale] duration-150 ease-out active:scale-[0.96];
-  @apply bg-yellow-300 font-light h-fit;
-  @apply dark:outline-blue-900 dark:bg-blue-900;
+  @apply relative ml-[2px] my-0 px-2 py-0.5 outline outline-yellow-300 outline-offset-0 outline-2 transition-[background-color,color,scale] duration-150 ease-out active:scale-[0.96];
+  @apply bg-yellow-300 text-stone-900 no-underline font-light h-fit;
+  @apply dark:outline-blue-900 dark:bg-blue-900 dark:text-white;
   @apply focus-visible:outline-red-500;
   @apply hover:bg-black hover:text-white hover:outline-black;
   @apply dark:hover:bg-white dark:hover:text-black dark:hover:outline-white;
+}
+
+/* Email link: a dropdown-trigger dressed up as an icon-only contact button */
+dropdown-trigger[variant="icon"]::part(trigger) {
+  @apply interactive flex w-fit border border-transparent px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black h-fit;
 }
 
 /* Ghost link: plain accent-colored text, no button chrome */

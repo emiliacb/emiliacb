@@ -1,5 +1,5 @@
 import { html, raw } from "hono/html";
-import { Mail, Linkedin, Github, Calendar } from "lucide-static";
+import { Linkedin, Github, Calendar } from "lucide-static";
 import emailLink from "../email-link";
 
 type ContactProps = {
@@ -60,14 +60,7 @@ export function contact({ lang, columnMode = false }: ContactProps) {
         </a>
       </li>
       <li>
-        <a
-          class="interactive flex w-fit border border-transparent px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black"
-          href="mailto:emiliacabralb@gmail.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="emiliacabralb@gmail.com"
-          >${raw(Mail)}</a
-        >
+        ${emailLink({ email: "emiliacabralb@gmail.com", lang, label: "Email", variant: "icon" })}
       </li>
       <li>
         <a

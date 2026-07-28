@@ -113,7 +113,8 @@ class DropdownTrigger extends HTMLElement {
           display: none;
         }
 
-        .variant-icon-only .label {
+        .variant-icon-only .label,
+        .variant-icon .label {
           position: absolute;
           width: 1px;
           height: 1px;
@@ -125,11 +126,13 @@ class DropdownTrigger extends HTMLElement {
           border: 0;
         }
 
-        .variant-icon-only ::slotted([slot="icon"]) {
+        .variant-icon-only ::slotted([slot="icon"]),
+        .variant-icon ::slotted([slot="icon"]) {
           margin-right: 0;
         }
 
-        .variant-icon-only .icon {
+        .variant-icon-only .icon,
+        .variant-icon .icon {
           display: none;
         }
 

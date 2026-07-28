@@ -1,14 +1,16 @@
 import { html, raw } from "hono/html";
-import { Copy, Send } from "lucide-static";
+import { Copy, Mail } from "lucide-static";
 
-const Gmail = `<svg class="lucide" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/></svg>`;
+// Gmail's brand mark (from simple-icons), kept in its real brand red instead
+// of following the menu item's currentColor so it reads as the actual logo.
+const Gmail = `<svg class="lucide" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#EA4335"><path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/></svg>`;
 
 type EmailLinkProps = {
   email: string;
   lang: string;
   label?: string;
   className?: string;
-  variant?: "link" | "prose";
+  variant?: "link" | "prose" | "icon";
 };
 
 const wordings: Record<
@@ -29,8 +31,14 @@ const wordings: Record<
   },
 };
 
+// The Gmail/Superhuman items are <a> tags that can end up nested inside
+// .markdown-content (when this component is used for a mailto: link in
+// markdown content), where Tailwind Typography's prose-a rules match any
+// anchor by DOM ancestry regardless of where it visually renders. The `!`
+// (important) modifiers force this styling to win over that ambient cascade
+// instead of leaking an unwanted outline/background/margin onto the item.
 const menuItemClass =
-  "flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-white dark:text-black bg-black dark:bg-white hover:bg-white hover:text-black dark:hover:bg-black dark:hover:text-white whitespace-nowrap [&_.lucide]:size-4 [&_.lucide]:shrink-0";
+  "!flex !items-center !gap-2 !w-full !ml-0 !text-left !px-3 !py-1.5 !text-sm !font-normal !no-underline !outline-none focus-visible:!outline focus-visible:!outline-2 focus-visible:!outline-red-500 focus-visible:!outline-offset-2 !text-white dark:!text-black !bg-black dark:!bg-white hover:!bg-white hover:!text-black dark:hover:!bg-black dark:hover:!text-white !whitespace-nowrap [&_.lucide]:size-4 [&_.lucide]:shrink-0";
 
 export default function emailLink({
   email,
@@ -53,6 +61,7 @@ export default function emailLink({
       align-start
       label="${label}"
     >
+      ${variant === "icon" ? html`<span slot="icon">${raw(Mail)}</span>` : ""}
       <span class="flex flex-col p-2 bg-black dark:bg-white shadow-lg">
         <button
           type="button"
@@ -66,7 +75,7 @@ export default function emailLink({
           ${raw(Gmail)}${t.gmail}
         </a>
         <a class="${menuItemClass}" href="${superhumanUrl}">
-          ${raw(Send)}${t.superhuman}
+          <span class="!size-4 !shrink-0" aria-hidden="true"></span>${t.superhuman}
         </a>
       </span>
     </dropdown-trigger>
