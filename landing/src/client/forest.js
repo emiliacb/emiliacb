@@ -432,22 +432,26 @@ function draw(t = 1) {
   const weight = contrast();
   const rows = floorRows();
 
-  // The edge, in depth. Geometric rather than linear: rows are spaced
-  // geometrically, so a linear sweep would crawl through the crowded distance
-  // and then tear across the foreground.
+  // The edge, in depth. It starts underfoot and retreats towards the horizon,
+  // so the plane unrolls away from the viewer: columns grow backwards into the
+  // distance and each row rules itself outward as the edge clears it.
   //
-  // It stops at the depth where the ground leaves the bottom of the frame, not
-  // at the last row. The ink is already zero down there, so sweeping past it
-  // spends most of the animation moving an edge nobody can see — the ruling
-  // looked finished a third of the way in.
+  // Geometric rather than linear, because the rows are spaced geometrically — a
+  // linear sweep would tear across the foreground and then crawl through the
+  // crowded distance.
+  //
+  // It starts at the depth where the ground leaves the bottom of the frame
+  // rather than past the last row: the ink is already zero down there, so
+  // beginning further out spends the first part of the animation moving an edge
+  // nobody can see.
   const first = FIRST_ROW * H;
   const last = H * (1 - HORIZON);
-  const edge = t >= 1 ? Infinity : first * Math.pow(last / first, easeOut(t));
+  const edge = t >= 1 ? 0 : last * Math.pow(first / last, easeOut(t));
 
   for (const row of rows) {
-    if (row.s > edge) continue;
+    if (row.s < edge) continue;
     // How far past this row the edge has travelled, counted in rows.
-    const passed = edge === Infinity ? 1 : Math.log(edge / row.s) / Math.log(ROW_RATIO);
+    const passed = edge <= 0 ? 1 : Math.log(row.s / edge) / Math.log(ROW_RATIO);
     const reach = (columnSpan(row.s) + 1) * easeOut(passed / ROW_LAG);
     if (reach < 0.2) continue;
 
@@ -459,21 +463,24 @@ function draw(t = 1) {
     stroke(pts, 0.5 * weight);
   }
 
-  const depths = fineDepths();
+  // Near to far, the way the edge travels, so a column is a prefix of itself at
+  // every moment and can simply stop where the edge is.
+  const depths = fineDepths().reverse();
   const widest = columnSpan(rows[0].s);
   for (let j = -widest; j <= widest; j++) {
     const u = j * COLUMN_GAP;
     const pts = [];
     for (const z of depths) {
-      if (H / z > edge) break;
+      if (H / z < edge) break;
       const [x, y] = place(u, z);
-      // Columns fan apart as they come forward, so one comfortably in frame at
-      // the back leaves the side of the screen long before the front row.
-      if (x < -W * 0.2 || x > W * 1.2) {
+      // Columns fan apart as they come forward, so the near end of one starts
+      // well outside the frame and only enters as it heads for the horizon.
+      // Skip while it is still outside; once it has entered, leaving again ends
+      // the line rather than punching a hole in it.
+      if (x < -W * 0.2 || x > W * 1.2 || y > H * 1.3) {
         if (pts.length) break;
         continue;
       }
-      if (y > H * 1.3) break;
       pts.push(x, y);
     }
     stroke(pts, 0.38 * weight);

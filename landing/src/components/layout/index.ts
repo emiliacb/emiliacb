@@ -229,11 +229,21 @@ document.head.appendChild(o)}initApollo();</script>
           id="overlay-content"
           class="relative overflow-hidden shadow-lg flex flex-col min-h-static-screen bg-stone-100 z-10 dark:bg-stone-800 prose-h1:text-3xl"
         >
+          <!--
+            The gradient wash is off on the illustration page for now: it and
+            the ruled ground plane were competing for the same corner.
+
+            The element itself stays. src/client/gradient-distortion.js bails
+            out entirely if it cannot find #gradient-bg, and it is the same
+            pass that distorts the drawn tree — removing the div would quietly
+            take that with it. Without the paint classes this is an empty box
+            that textures to nothing, and putting them back is the whole undo.
+          -->
           <div
             id="gradient-bg"
             class="absolute -z-10 top-[25vh] h-[150vh] ${
               withIlustration
-                ? "radial-green-gradient dark:radial-maroon-gradient left-0 w-[130vw]"
+                ? "left-0 w-[130vw]"
                 : "radial-green-gradient-right dark:radial-maroon-gradient-right right-0 w-[50vw]"
             }"
           ></div>
