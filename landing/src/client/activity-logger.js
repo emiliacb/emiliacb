@@ -23,8 +23,9 @@
     return (meta && meta.getAttribute("content")) || "unversioned";
   }
 
-  var STORAGE_KEY = "activity_log_" + getSiteVersion();
+  var STORAGE_KEY = "activity_logs";
   var VISITOR_KEY = "activity_visitor_id";
+  var SESSION_KEY = "activity_session_id";
   var MAX_EVENTS = 500;
   var FLUSH_DEBOUNCE_MS = 2000;
   var FLUSH_MAX_BUFFER = 50;
@@ -96,8 +97,10 @@
   // <section> wrappers, so a single pass is enough.
   var sectionIndex = new WeakMap();
 
+  // The chain always terminates in the page URL instead of null — a dead
+  // end that's still useful context beats an opaque null.
   function pageRootNode() {
-    return { read: pageTitle(), from: null };
+    return { on: pageTitle(), from: location.href };
   }
 
   function buildSectionIndex() {
@@ -115,15 +118,16 @@
         parent = stack.length ? stack[stack.length - 1].node : root;
 
         if (level === 1) {
-          // h1 IS the page title (root already covers it) — no parent of its own.
-          sectionIndex.set(el, null);
+          // h1 IS the page title itself — its own location is just the URL,
+          // not another {on: pageTitle} node (that would repeat its own text).
+          sectionIndex.set(el, location.href);
           return;
         }
 
         // This heading's own location is its parent's chain — never itself,
         // that's what was producing the same text twice in one event.
         sectionIndex.set(el, parent);
-        stack.push({ level: level, node: { read: headingText(el), from: parent } });
+        stack.push({ level: level, node: { on: headingText(el), from: parent } });
         return;
       }
 
@@ -164,6 +168,28 @@
 
   var visitorId = getVisitorId();
 
+  // Session id: one per tab per browsing session, not per page load — the
+  // site navigates via full page reloads, so sessionStorage (survives those,
+  // resets when the tab closes) is exactly the right lifetime. Different
+  // from visitorId, which persists across separate visits entirely.
+  function getSessionId() {
+    try {
+      var id = sessionStorage.getItem(SESSION_KEY);
+      if (!id) {
+        id =
+          window.crypto && window.crypto.randomUUID
+            ? window.crypto.randomUUID()
+            : String(Date.now()) + "-" + Math.random().toString(36).slice(2);
+        sessionStorage.setItem(SESSION_KEY, id);
+      }
+      return id;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  var sessionId = getSessionId();
+
   // ---- In-memory buffer + flush to localStorage ----
   var buffer = [];
   var flushTimer = null;
@@ -177,6 +203,17 @@
     flushTimer = setTimeout(flush, FLUSH_DEBOUNCE_MS);
   }
 
+  function emptyStore() {
+    // origin is the referrer that first brought this visitor in — captured
+    // once, not overwritten by internal navigation on later page loads.
+    return {
+      origin: document.referrer || null,
+      session_id: sessionId,
+      version: getSiteVersion(),
+      events: [],
+    };
+  }
+
   function flush() {
     if (flushTimer) {
       clearTimeout(flushTimer);
@@ -185,7 +222,13 @@
     if (!buffer.length || !visitorId) return;
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
-      var stored = raw ? JSON.parse(raw) : { events: [] };
+      var stored = raw ? JSON.parse(raw) : null;
+      // A schema/version mismatch means old events may not match the
+      // current shape — start fresh rather than mixing shapes.
+      if (!stored || stored.version !== getSiteVersion()) {
+        stored = emptyStore();
+      }
+      stored.session_id = sessionId;
       stored.events = stored.events.concat(buffer);
       if (stored.events.length > MAX_EVENTS) {
         stored.events = stored.events.slice(stored.events.length - MAX_EVENTS);
@@ -199,10 +242,10 @@
     }
   }
 
-  // Every event is a small object whose key names the action itself (read /
-  // click / selected / clicked_repeatedly) — no separate `type` field, the
-  // key already says what happened, so there's nothing to duplicate. `from`
-  // is always a parent-chain node (see locationOf), never a flattened string.
+  // Every event is { event, on, from }: `event` names the action (read /
+  // click / selected / clicked_repeatedly), `on` is its subject, and `from`
+  // is always a parent-chain node (see locationOf) or, at the end of the
+  // chain, the page URL — never a flattened string.
   function log(fields) {
     var evt = { id: Math.random().toString(36).slice(2), ts: Date.now() };
     for (var key in fields) {
@@ -248,7 +291,8 @@
 
       if (sameTargetClicks.length >= RAGE_CLICK_COUNT) {
         log({
-          clicked_repeatedly: label,
+          event: "clicked_repeatedly",
+          on: label,
           count: sameTargetClicks.length,
           from: locationOf(target),
         });
@@ -256,7 +300,7 @@
         return;
       }
 
-      log({ click: label, from: locationOf(target) });
+      log({ event: "click", on: label, from: locationOf(target) });
     },
     { passive: true }
   );
@@ -282,7 +326,11 @@
       var block = container ? container.closest(CONTENT_SELECTOR) : null;
       if (!block) return;
 
-      log({ selected: sanitizeText(text, SELECTION_MAX_CHARS), from: locationOf(block) });
+      log({
+        event: "selected",
+        on: sanitizeText(text, SELECTION_MAX_CHARS),
+        from: locationOf(block),
+      });
     }, SELECTION_DEBOUNCE_MS);
   });
 
@@ -474,7 +522,7 @@
       if (cls === "read" || cls === "parked") {
         b.reported = true;
         var snippet = sanitizeText(b.el.textContent, SNIPPET_MAX_CHARS);
-        log({ read: snippet, from: locationOf(b.el) });
+        log({ event: "read", on: snippet, from: locationOf(b.el) });
       }
     });
   }
