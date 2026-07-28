@@ -48,11 +48,15 @@ const HORIZONTAL_ONLY = new Set(["front"]);
  * The bands, back to front. Size is what sells depth, so the ranges are wide
  * and overlap a little between neighbours: a uniform row of same-size trees
  * reads as a pattern no matter how the parallax moves it.
+ *
+ * Count falls off sharply towards the viewer for the same reason a real stand
+ * does — a crowd of small trunks far away, a handful of big ones close. It also
+ * keeps the near band from walling off the copy.
  */
 const BANDS = [
-  { plane: "far", count: 16, minWidth: 44, maxWidth: 104 },
-  { plane: "mid", count: 10, minWidth: 92, maxWidth: 178 },
-  { plane: "near", count: 7, minWidth: 165, maxWidth: 300 },
+  { plane: "far", count: 26, minWidth: 38, maxWidth: 96 },
+  { plane: "mid", count: 13, minWidth: 88, maxWidth: 170 },
+  { plane: "near", count: 4, minWidth: 175, maxWidth: 310 },
 ];
 
 /** Vertical sway is a fraction of the horizontal, or it reads like a wobble. */
