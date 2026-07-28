@@ -3,6 +3,7 @@ import { HtmlEscapedString } from "hono/utils/html";
 import { config } from "dotenv";
 import navbar from "../navbar";
 import tree from "../tree";
+import forest from "../forest";
 import footer from "../footer";
 import languageSwitcher from "../language-switcher";
 
@@ -238,6 +239,7 @@ document.head.appendChild(o)}initApollo();</script>
           ></div>
           ${withIlustration
             ? html`
+                ${forest()}
                 <div
                   id="tree-illustration"
                   class="absolute bottom-0 w-[50vw] right-0 h-static-screen overflow-hidden"

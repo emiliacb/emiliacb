@@ -87,6 +87,11 @@ async function bundleClientFile({ entry, outfile, label }: {
     label: "Liquid background distortion (labs POC)",
   });
   await bundleClientFile({
+    entry: "src/client/forest.js",
+    outfile: "_forest-bundle.js",
+    label: "Generated forest and parallax",
+  });
+  await bundleClientFile({
     entry: "src/client/activity-logger.js",
     outfile: "_activity-logger-bundle.js",
     label: "Activity logger",

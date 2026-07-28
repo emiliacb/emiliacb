@@ -105,6 +105,87 @@ html {
   @apply prose-pre:bg-pink-100 prose-pre:dark:bg-stone-900 prose-code:text-pink-900 prose-code:dark:text-orange-300;
 }
 
+/* --- generated forest ---------------------------------------------------- */
+/* Three planes of depth behind the page. The bands are fixed, so scrolling
+   moves nothing on its own; src/client/forest.js translates each one by a
+   different amount for scroll and pointer. Purely decorative: with no JS the
+   bands stay empty and nothing below them shifts. */
+
+#forest {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.forest-band {
+  position: absolute;
+  left: -6%;
+  width: 112%;
+  height: 0;
+  filter: invert(var(--tree-invert, 0));
+  will-change: transform;
+}
+
+/* Atmospheric perspective: distance eats contrast before it eats colour, so
+   the far band loses opacity and saturation rather than changing hue. */
+.forest-band--far {
+  bottom: 30vh;
+  opacity: 0.12;
+  filter: blur(1.4px) saturate(0.42) invert(var(--tree-invert, 0));
+}
+
+.forest-band--mid {
+  bottom: 12vh;
+  opacity: 0.19;
+  filter: blur(0.7px) saturate(0.62) invert(var(--tree-invert, 0));
+}
+
+/* Anchored below the frame: the band drifts up as the page scrolls, and
+   starting it under the edge means the rise never exposes a gap beneath. */
+.forest-band--near {
+  bottom: -10vh;
+  opacity: 0.3;
+  filter: blur(0.25px) saturate(0.85) invert(var(--tree-invert, 0));
+}
+
+/* Absolute so each tree can sit at its own jittered spot on the band. */
+.forest-tree {
+  position: absolute;
+  bottom: 0;
+  transform: translateX(-50%);
+}
+
+.forest-tree svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Both the drawn tree and the generated ones end in a flat cut at their base,
+   so rather than hide each one, a ground plane swallows them all. */
+.forest-haze {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 26vh;
+  background: linear-gradient(to bottom, transparent, theme(colors.stone.100) 74%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .forest-haze {
+    background: linear-gradient(to bottom, transparent, theme(colors.stone.800) 74%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forest-band {
+    transform: none !important;
+  }
+}
+
 .cover-tree {
   @apply absolute h-[80%] 2xl:h-[80vh] max-h-[1000px] opacity-60 lg:opacity-90 w-auto bottom-0 object-cover dark:invert;
   right: max(30vw, 200px);
