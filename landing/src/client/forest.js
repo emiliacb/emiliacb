@@ -589,7 +589,7 @@ function readScroll() {
  * The first waits for the ruling: the ground is laid, then things grow on it.
  */
 const FIRST_SPROUT = RULE_MS + 240;
-const SEQUENCE_GAP = [0, 40];
+const SEQUENCE_GAP = [4000, 15000];
 
 /** One tree at a time, with an irregular gap between them. */
 function sprout(queue) {
