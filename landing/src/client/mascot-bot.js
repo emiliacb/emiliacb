@@ -20,21 +20,34 @@ import { CircleHelp, LoaderCircle } from "lucide-static";
     return COPY[l] ? l : "en";
   }
 
+  // Stacked directly above the language-switcher button (fixed bottom-4
+  // left-4, rendered ~27px tall as an icon-only dropdown-trigger) with the
+  // same 1rem gap it keeps from the viewport edge.
+  var LANG_SWITCHER_HEIGHT_PX = 27;
+
   function injectStyles() {
     var style = document.createElement("style");
     style.textContent =
-      ".mascot-bot-btn{position:fixed;bottom:1rem;right:1rem;z-index:50;" +
-      "width:2.75rem;height:2.75rem;border-radius:9999px;border:none;cursor:pointer;" +
+      // Same visual language as dropdown-trigger[variant="icon-only"]:
+      // transparent, text-stone-800/dark:text-stone-100, invert on hover.
+      ".mascot-bot-btn{position:fixed;left:1rem;" +
+      "bottom:calc(1rem + " + LANG_SWITCHER_HEIGHT_PX + "px);z-index:50;" +
+      "width:2rem;height:2rem;padding:0;border:none;cursor:pointer;" +
       "display:flex;align-items:center;justify-content:center;" +
-      "background:#000;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.25);" +
+      "background:transparent;color:#292524;" +
       "opacity:0;transform:scale(.6);pointer-events:none;" +
-      "transition:opacity 200ms cubic-bezier(.23,1,.32,1),transform 200ms cubic-bezier(.23,1,.32,1);}" +
+      "transition:opacity 200ms cubic-bezier(.23,1,.32,1),transform 200ms cubic-bezier(.23,1,.32,1)," +
+      "background-color 150ms ease-out,color 150ms ease-out;}" +
       ".mascot-bot-btn.mascot-bot-visible{opacity:1;transform:scale(1);pointer-events:auto;}" +
-      ".mascot-bot-btn svg{width:1.4rem;height:1.4rem;}" +
+      ".mascot-bot-btn:hover,.mascot-bot-btn:focus-visible{background:#000;color:#fff;}" +
+      ".mascot-bot-btn svg{width:1rem;height:1rem;}" +
       ".mascot-bot-btn .mascot-bot-spin{animation:mascot-bot-spin 800ms linear infinite;}" +
       "@keyframes mascot-bot-spin{to{transform:rotate(360deg);}}" +
-      "@media (prefers-color-scheme: dark){.mascot-bot-btn{background:#fff;color:#000;}}" +
-      ".mascot-bot-bubble{position:fixed;bottom:4.25rem;right:1rem;z-index:50;max-width:16rem;" +
+      "@media (prefers-color-scheme: dark){" +
+      ".mascot-bot-btn{color:#f5f5f4;}" +
+      ".mascot-bot-btn:hover,.mascot-bot-btn:focus-visible{background:#fff;color:#000;}}" +
+      ".mascot-bot-bubble{position:fixed;left:1rem;" +
+      "bottom:calc(1rem + " + LANG_SWITCHER_HEIGHT_PX + "px + 2.5rem);z-index:50;max-width:16rem;" +
       "background:#fff;color:#1c1917;padding:.75rem 1rem;border-radius:.75rem;" +
       "box-shadow:0 4px 14px rgba(0,0,0,.2);font-size:.875rem;line-height:1.4;" +
       "opacity:0;transform:translateY(6px) scale(.96);pointer-events:none;" +
