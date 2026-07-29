@@ -696,6 +696,7 @@
     flush: flush,
     blocks: blocks,
     sessionId: sessionId,
+    log: log,
     getEventCount: function () {
       return totalEventCount;
     },

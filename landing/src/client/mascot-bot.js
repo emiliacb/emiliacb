@@ -1,7 +1,7 @@
 // Floating "mascot" button: shows up once the visitor has generated enough
 // activity-logger events, and on click asks the backend for a one-sentence,
 // playful comment about what the visitor's been looking at.
-import { CircleHelp, LoaderCircle } from "lucide-static";
+import { Sparkles, LoaderCircle, X } from "lucide-static";
 
 (function () {
   "use strict";
@@ -9,6 +9,7 @@ import { CircleHelp, LoaderCircle } from "lucide-static";
   var EVENT_THRESHOLD = 5;
   var TOAST_DURATION_MS = 4000;
   var PAGE_TEXT_MAX_CHARS = 4000;
+  var SENT_LOGS_MAX = 10;
 
   var COPY = {
     en: { error: "Couldn't come up with anything to say, try again in a bit." },
@@ -42,6 +43,10 @@ import { CircleHelp, LoaderCircle } from "lucide-static";
       "background-color 150ms ease-out,color 150ms ease-out;}" +
       "@media (min-width: 1024px){.mascot-bot-btn{display:flex;}}" +
       ".mascot-bot-btn.mascot-bot-visible{opacity:1;transform:scale(1);pointer-events:auto;}" +
+      // Same hide-on-scroll behavior as dropdown-trigger[hide-on-scroll]:
+      // fades out on scroll-down, back in on scroll-up.
+      ".mascot-bot-btn.mascot-bot-visible.mascot-bot-scrolling{opacity:0;pointer-events:none;" +
+      "transition:opacity 150ms ease-in;}" +
       ".mascot-bot-btn:hover,.mascot-bot-btn:focus-visible{background:#000;color:#fff;}" +
       ".mascot-bot-btn svg{width:1rem;height:1rem;}" +
       ".mascot-bot-btn .mascot-bot-spin{animation:mascot-bot-spin 800ms linear infinite;}" +
@@ -68,8 +73,8 @@ import { CircleHelp, LoaderCircle } from "lucide-static";
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "mascot-bot-btn";
-    btn.setAttribute("aria-label", "?");
-    btn.innerHTML = CircleHelp;
+    btn.setAttribute("aria-label", "Emilia's comment");
+    btn.innerHTML = Sparkles;
     document.body.appendChild(btn);
     return btn;
   }
@@ -101,16 +106,30 @@ import { CircleHelp, LoaderCircle } from "lucide-static";
   function readActivityLogs() {
     try {
       // The logger debounces writes to localStorage, so the most recent
-      // events may still be sitting in its in-memory buffer — flush first
+      // events may still be sitting in its in-memory buffer, flush first
       // or the LLM sees a stale, incomplete picture of what just happened.
       if (window.__activityLogger && typeof window.__activityLogger.flush === "function") {
         window.__activityLogger.flush();
       }
       var raw = localStorage.getItem("activity_logs");
       var stored = raw ? JSON.parse(raw) : null;
-      return (stored && stored.events) || [];
+      var events = (stored && stored.events) || [];
+      return events.slice(-SENT_LOGS_MAX);
     } catch (e) {
       return [];
+    }
+  }
+
+  // So the LLM can see what it already told this visitor and build on it
+  // instead of repeating itself, this session's mascot replies become part
+  // of the same activity log sent back on the next click.
+  function logMascotSaid(message) {
+    try {
+      if (window.__activityLogger && typeof window.__activityLogger.log === "function") {
+        window.__activityLogger.log({ event: "mascot_said", on: message, from: location.href });
+      }
+    } catch (e) {
+      // non-critical, skip
     }
   }
 
@@ -128,7 +147,7 @@ import { CircleHelp, LoaderCircle } from "lucide-static";
 
     function setIdle() {
       state = "idle";
-      btn.innerHTML = CircleHelp;
+      btn.innerHTML = Sparkles;
       btn.disabled = false;
     }
 
@@ -142,13 +161,16 @@ import { CircleHelp, LoaderCircle } from "lucide-static";
 
     function closeBubble() {
       bubble.classList.remove("mascot-bot-visible");
-      state = "idle";
+      setIdle();
     }
 
     function showBubble(message) {
       bubble.textContent = message;
       bubble.classList.add("mascot-bot-visible");
+      btn.innerHTML = X;
+      btn.disabled = false;
       state = "showing";
+      logMascotSaid(message);
     }
 
     function requestComment() {
@@ -203,6 +225,27 @@ import { CircleHelp, LoaderCircle } from "lucide-static";
     if (window.__activityLogger && typeof window.__activityLogger.getEventCount === "function") {
       maybeReveal(window.__activityLogger.getEventCount());
     }
+
+    // Same hide-on-scroll behavior as dropdown-trigger[hide-on-scroll]:
+    // fade out on scroll-down (closing the bubble if it's open), back in
+    // on scroll-up.
+    var lastScrollY = window.scrollY;
+    window.addEventListener(
+      "scroll",
+      function () {
+        var scrollY = window.scrollY;
+        var scrollingDown = scrollY > lastScrollY;
+        lastScrollY = scrollY;
+
+        if (scrollingDown) {
+          if (state === "showing") closeBubble();
+          btn.classList.add("mascot-bot-scrolling");
+        } else {
+          btn.classList.remove("mascot-bot-scrolling");
+        }
+      },
+      { passive: true }
+    );
   }
 
   if (document.readyState === "loading") {
