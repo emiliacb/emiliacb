@@ -8,11 +8,11 @@
 
 **Oct 2025 - Present** | Remote, San Francisco
 
-- Owned the AI enrichment platform: LLM-agent columns that research customers across internal data (tickets, meetings, product usage) and the web, with a tool-calling processor, parallel web search, structured-output validation, scheduled runs, and full config versioning that preserves historical results. Stack: TypeScript, React Router, PostgreSQL, Vertex AI, Langfuse, BullMQ.
-- Built Canvas, an agent that builds entire dashboards from natural language, resolved against live multi-tenant data. Stack: TypeScript, React 19, Langfuse, BullMQ.
-- Built the customer-success automation layer end to end (rules engine, triggers, versioning, email and Slack delivery), turning each team's own criteria into prioritized, pre-drafted actions. Stack: TypeScript, PostgreSQL, BullMQ, Google Workspace and Slack APIs.
-- Shipped AI email composition in each user's own writing voice: a background job extracts a style profile from the user's sent mail, which then conditions every AI-composed cue email. Stack: TypeScript, Vertex AI, structured outputs, Gmail API.
-- Primary author of four of the product's user-facing systems, as a founding engineer, the company's second hire and one of five core engineers.
+- Owned the AI enrichment platform: LLM-agent columns that research customers across internal data and the web, with tool-calling, parallel search, structured outputs, scheduled runs, and versioned configs. Stack: TypeScript, React Router, PostgreSQL, Vertex AI, Langfuse, BullMQ.
+- Built Canvas, an agent that generates entire dashboards from natural language against live multi-tenant data. Stack: TypeScript, React 19, Langfuse, BullMQ.
+- Built the customer-success automation layer end to end (rules engine, triggers, versioning, email and Slack delivery), turning each team's criteria into prioritized, pre-drafted actions. Stack: TypeScript, PostgreSQL, BullMQ, Google Workspace and Slack APIs.
+- Shipped AI email composition in each user's own voice: a background job extracts a style profile from their sent mail and conditions every generated email. Stack: TypeScript, Vertex AI, structured outputs, Gmail API.
+- Primary author of four user-facing systems as founding engineer, the company's second hire and one of five core engineers.
 
 
 ### Senior AI Engineer @ Marvik
