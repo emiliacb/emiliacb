@@ -30,14 +30,17 @@ import { CircleHelp, LoaderCircle } from "lucide-static";
     style.textContent =
       // Same visual language as dropdown-trigger[variant="icon-only"]:
       // transparent, text-stone-800/dark:text-stone-100, invert on hover.
-      ".mascot-bot-btn{position:fixed;left:1rem;" +
+      // Desktop-only, same as the language switcher it sits above
+      // (`hidden lg:block`, Tailwind's lg breakpoint = 1024px).
+      ".mascot-bot-btn{display:none;position:fixed;left:1rem;" +
       "bottom:calc(1rem + " + LANG_SWITCHER_HEIGHT_PX + "px);z-index:50;" +
       "width:2rem;height:2rem;padding:0;border:none;cursor:pointer;" +
-      "display:flex;align-items:center;justify-content:center;" +
+      "align-items:center;justify-content:center;" +
       "background:transparent;color:#292524;" +
       "opacity:0;transform:scale(.6);pointer-events:none;" +
       "transition:opacity 200ms cubic-bezier(.23,1,.32,1),transform 200ms cubic-bezier(.23,1,.32,1)," +
       "background-color 150ms ease-out,color 150ms ease-out;}" +
+      "@media (min-width: 1024px){.mascot-bot-btn{display:flex;}}" +
       ".mascot-bot-btn.mascot-bot-visible{opacity:1;transform:scale(1);pointer-events:auto;}" +
       ".mascot-bot-btn:hover,.mascot-bot-btn:focus-visible{background:#000;color:#fff;}" +
       ".mascot-bot-btn svg{width:1rem;height:1rem;}" +

@@ -91,12 +91,17 @@ export async function getMascotComment({ logs, pageText, lang }: MascotCommentIn
     language: LANGUAGE_NAMES[lang] || "English",
   });
 
-  const { text } = await generateText({
+  const { text, finishReason, usage } = await generateText({
     model: kimi.chatModel(modelId),
     prompt,
     maxOutputTokens: 120,
     abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
 
-  return text.trim();
+  const trimmed = text.trim();
+  if (!trimmed) {
+    console.log({ step: "getMascotComment", warning: "empty text from Kimi", modelId, finishReason, usage });
+  }
+
+  return trimmed;
 }
