@@ -1,12 +1,12 @@
-// Floating "mascot" button: shows up once the visitor has generated enough
-// activity-logger events, and on click asks the backend for a one-sentence,
-// playful comment about what the visitor's been looking at.
+// Floating "mascot" button, pinned top-left: always available on desktop (it
+// still fades out on scroll-down like the language switcher does), and on
+// click asks the backend for a one-sentence, playful comment about what the
+// visitor's been looking at.
 import { Sparkles, LoaderCircle, X } from "lucide-static";
 
 (function () {
   "use strict";
 
-  var EVENT_THRESHOLD = 5;
   var TOAST_DURATION_MS = 4000;
   var PAGE_TEXT_MAX_CHARS = 4000;
   var SENT_LOGS_MAX = 10;
@@ -21,21 +21,24 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     return COPY[l] ? l : "en";
   }
 
-  // Stacked directly above the language-switcher button (fixed bottom-4
-  // left-4, rendered ~27px tall as an icon-only dropdown-trigger) with the
-  // same 1rem gap it keeps from the viewport edge.
-  var LANG_SWITCHER_HEIGHT_PX = 27;
+  // Pinned to the top-left corner, mirroring the 1rem gap the language
+  // switcher keeps from the bottom-left one. 2rem tall, so the bubble it
+  // opens hangs below it with a .5rem gap.
+  var BTN_SIZE_REM = 2;
+  var EDGE_REM = 1;
+  var BUBBLE_GAP_REM = 0.5;
+  var BUBBLE_TOP_REM = EDGE_REM + BTN_SIZE_REM + BUBBLE_GAP_REM;
 
   function injectStyles() {
     var style = document.createElement("style");
     style.textContent =
       // Same visual language as dropdown-trigger[variant="icon-only"]:
       // transparent, text-stone-800/dark:text-stone-100, invert on hover.
-      // Desktop-only, same as the language switcher it sits above
+      // Desktop-only, same as the language switcher
       // (`hidden lg:block`, Tailwind's lg breakpoint = 1024px).
-      ".mascot-bot-btn{display:none;position:fixed;left:1rem;" +
-      "bottom:calc(1rem + " + LANG_SWITCHER_HEIGHT_PX + "px);z-index:50;" +
-      "width:2rem;height:2rem;padding:0;border:none;cursor:pointer;" +
+      ".mascot-bot-btn{display:none;position:fixed;left:" + EDGE_REM + "rem;" +
+      "top:" + EDGE_REM + "rem;z-index:50;" +
+      "width:" + BTN_SIZE_REM + "rem;height:" + BTN_SIZE_REM + "rem;padding:0;border:none;cursor:pointer;" +
       "align-items:center;justify-content:center;" +
       "background:transparent;color:#292524;" +
       "opacity:0;transform:scale(.6);pointer-events:none;" +
@@ -54,11 +57,12 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       "@media (prefers-color-scheme: dark){" +
       ".mascot-bot-btn{color:#f5f5f4;}" +
       ".mascot-bot-btn:hover,.mascot-bot-btn:focus-visible{background:#fff;color:#000;}}" +
-      ".mascot-bot-bubble{position:fixed;left:1rem;" +
-      "bottom:calc(1rem + " + LANG_SWITCHER_HEIGHT_PX + "px + 2.5rem);z-index:50;max-width:16rem;" +
+      // Hangs below the button, so it slides down into place instead of up.
+      ".mascot-bot-bubble{position:fixed;left:" + EDGE_REM + "rem;" +
+      "top:" + BUBBLE_TOP_REM + "rem;z-index:50;max-width:16rem;" +
       "background:#fff;color:#1c1917;padding:.75rem 1rem;border-radius:.75rem;" +
       "box-shadow:0 4px 14px rgba(0,0,0,.2);font-size:.875rem;line-height:1.4;" +
-      "opacity:0;transform:translateY(6px) scale(.96);pointer-events:none;" +
+      "opacity:0;transform:translateY(-6px) scale(.96);pointer-events:none;" +
       "transition:opacity 180ms cubic-bezier(.23,1,.32,1),transform 180ms cubic-bezier(.23,1,.32,1);}" +
       ".mascot-bot-bubble.mascot-bot-visible{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;}" +
       "@media (prefers-color-scheme: dark){.mascot-bot-bubble{background:#292524;color:#f5f5f4;}}" +
@@ -212,19 +216,11 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       requestComment();
     });
 
-    function maybeReveal(count) {
-      if (count >= EVENT_THRESHOLD) {
-        btn.classList.add("mascot-bot-visible");
-      }
-    }
-
-    window.addEventListener("activity:event", function (e) {
-      maybeReveal(e.detail && e.detail.count);
+    // Next frame so the scale/fade-in transition actually plays instead of
+    // the button popping in already at its final state.
+    requestAnimationFrame(function () {
+      btn.classList.add("mascot-bot-visible");
     });
-
-    if (window.__activityLogger && typeof window.__activityLogger.getEventCount === "function") {
-      maybeReveal(window.__activityLogger.getEventCount());
-    }
 
     // Same hide-on-scroll behavior as dropdown-trigger[hide-on-scroll]:
     // fade out on scroll-down (closing the bubble if it's open), back in
