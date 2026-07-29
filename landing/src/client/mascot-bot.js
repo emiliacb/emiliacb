@@ -11,8 +11,8 @@ import { CircleHelp, LoaderCircle } from "lucide-static";
   var PAGE_TEXT_MAX_CHARS = 4000;
 
   var COPY = {
-    en: { error: "Couldn't come up with anything to say — try again in a bit." },
-    es: { error: "No se me ocurrió nada que decir — probá de nuevo en un rato." },
+    en: { error: "Couldn't come up with anything to say, try again in a bit." },
+    es: { error: "No se me ocurrió nada que decir, probá de nuevo en un rato." },
   };
 
   function lang() {
@@ -147,17 +147,21 @@ import { CircleHelp, LoaderCircle } from "lucide-static";
         }),
       })
         .then(function (res) {
-          if (!res.ok) throw new Error("bad response");
-          return res.json();
+          return res.json().catch(function () {
+            return null;
+          }).then(function (data) {
+            if (!res.ok) throw new Error((data && data.error) || "Request failed (" + res.status + ")");
+            return data;
+          });
         })
         .then(function (data) {
           setIdle();
-          if (!data || !data.message) throw new Error("empty message");
+          if (!data || !data.message) throw new Error("Empty response");
           showBubble(data.message);
         })
-        .catch(function () {
+        .catch(function (err) {
           setIdle();
-          showToast(COPY[lang()].error);
+          showToast((err && err.message) || COPY[lang()].error);
         });
     }
 
