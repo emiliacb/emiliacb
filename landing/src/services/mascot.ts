@@ -60,6 +60,11 @@ const LANGUAGE_NAMES: Record<string, string> = {
 const MAX_LOGS = 30;
 const MAX_BLOG_CONTENT_CHARS = 3000;
 const REQUEST_TIMEOUT_MS = 20000;
+// Reasoning-capable Kimi models (e.g. kimi-k2.5) spend part of this budget
+// on an internal chain-of-thought before the visible answer, reported
+// separately as reasoningTokens — a cap sized for the one-sentence reply
+// alone leaves nothing for that and the response gets cut off empty.
+const MAX_OUTPUT_TOKENS = 1024;
 
 type MascotCommentInput = {
   logs: unknown[];
@@ -94,7 +99,7 @@ export async function getMascotComment({ logs, pageText, lang }: MascotCommentIn
   const { text, finishReason, usage } = await generateText({
     model: kimi.chatModel(modelId),
     prompt,
-    maxOutputTokens: 120,
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
     abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
 
