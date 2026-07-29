@@ -60,11 +60,9 @@ const LANGUAGE_NAMES: Record<string, string> = {
 const MAX_LOGS = 30;
 const MAX_BLOG_CONTENT_CHARS = 3000;
 const REQUEST_TIMEOUT_MS = 20000;
-// Reasoning-capable Kimi models (e.g. kimi-k2.5) spend part of this budget
-// on an internal chain-of-thought before the visible answer, reported
-// separately as reasoningTokens — a cap sized for the one-sentence reply
-// alone leaves nothing for that and the response gets cut off empty.
-const MAX_OUTPUT_TOKENS = 1024;
+// Thinking is disabled below, so this only needs to cover the one-sentence
+// reply itself.
+const MAX_OUTPUT_TOKENS = 300;
 
 type MascotCommentInput = {
   logs: unknown[];
@@ -85,6 +83,10 @@ export async function getMascotComment({ logs, pageText, lang }: MascotCommentIn
     name: "kimi",
     baseURL: endpoint,
     apiKey,
+    // Hybrid-thinking models (kimi-k2.5+) default to spending output
+    // tokens on an internal chain-of-thought first; a one-sentence reply
+    // doesn't need that, so switch to Kimi's "instant" (non-thinking) mode.
+    transformRequestBody: (body) => ({ ...body, thinking: { type: "disabled" } }),
   });
 
   const recentLogs = logs.slice(-MAX_LOGS);
