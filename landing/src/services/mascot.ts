@@ -1,4 +1,4 @@
-import { streamText } from "ai";
+import { smoothStream, streamText } from "ai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
 import { getSiteMap } from "./sitemap";
@@ -132,10 +132,39 @@ const REQUEST_TIMEOUT_MS = 20000;
 // the thinking dots) before it even calls fetch(), so the bubble is already
 // open and animating while we wait for the first token. Holding the response
 // back until we have one is invisible to the visitor.
+//
+// With the word-level pacing below in place, what this actually measures is the
+// time to the first complete *word*, not to the first token: a lone token with
+// no boundary after it yet is still sitting in the transform's buffer. That is
+// the more honest of the two measures, because commit() in mascot-bot.js holds a
+// partial word back for the same reason, so a first token that is not yet a
+// whole word leaves the thinking dots exactly where they were. The headroom it
+// costs is one inter-token interval, which on any model that is streaming at all
+// is tens of milliseconds, so a slow-but-working model does not start tripping a
+// deadline it used to clear.
 const FIRST_TOKEN_TIMEOUT_MS = 5000;
 // Thinking is disabled below, so this only needs to cover the one-sentence
 // reply itself.
 const MAX_OUTPUT_TOKENS = 300;
+// How long each word waits before the next one is released. Nothing guarantees
+// the upstream sends fine-grained deltas, and streaming the transport perfectly
+// is not enough on its own: measured end to end, a one-sentence reply that
+// arrives as a single delta reaches the client inside one animation frame, and
+// so does the same sentence split into 22 sub-word deltas sent back to back. In
+// both cases every word appears at the same instant, which is the "I don't see
+// the streaming" report. Re-chunking on word boundaries and pacing them here
+// makes the reveal look the same whether the model sent one delta or fifty.
+//
+// 50ms is picked against the client's own animation constants: mascot-bot.js
+// fades each word in over 300ms and transitions the bubble's width and height
+// over 300ms. Releasing a word every 50ms keeps roughly six of them mid-fade at
+// any moment, so the reveal reads as one wave rather than a row of separate
+// blinks, and it retargets the box transition long before it can settle, so the
+// bubble grows in a single motion instead of taking one visible step per word.
+// It is also comfortably faster than reading speed (~250ms/word), so the visitor
+// is watching text arrive rather than waiting on it: the reply is one sentence,
+// so a 15-word one lands in ~0.7s and a 30-word one in ~1.5s.
+const WORD_REVEAL_DELAY_MS = 50;
 
 /**
  * A generation that failed before a single byte of the reply was written, and
@@ -283,6 +312,18 @@ export async function getMascotComment({
     // retry the visitor cares about is the one they make themselves by
     // clicking again, which a failed generation no longer blocks.
     maxRetries: 0,
+    // Sits between the model and the fullStream loop below without changing what
+    // that loop sees. Verified against the installed source and by measurement:
+    // text is only ever buffered from one `text-delta` to the next, and every
+    // other part type flushes the buffer before it is forwarded, so `error`,
+    // `abort`, `text-end` and `finish` all come through, in order, and no text
+    // can land after a `finish`. The one thing it does move is *when* a failure
+    // is reported: a truncated reply now finishes typing out before the body is
+    // broken, because the finish part is behind the words it has yet to release.
+    experimental_transform: smoothStream({
+      delayInMs: WORD_REVEAL_DELAY_MS,
+      chunking: "word",
+    }),
     // A no-op on purpose: the default onError writes a bare stack to
     // console.error, and every error part is already logged through logOnce
     // below. onFinish is dropped for the same reason.

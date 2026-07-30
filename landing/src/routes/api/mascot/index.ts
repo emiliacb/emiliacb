@@ -174,7 +174,17 @@ export default async function handler(c: Context) {
         // defeats the point of streaming it. x-accel-buffering is also what
         // makes @hono/node-server stream the body out chunk by chunk instead
         // of buffering it into a single Content-Length response.
-        "Cache-Control": "no-store",
+        //
+        // no-transform is there for the compressor specifically. text/plain is
+        // one of the content types Cloudflare compresses by default, and a
+        // compressor sitting on a chunked body is somewhere the whole reply can
+        // accumulate before any of it is flushed; no-transform is the documented
+        // way to tell Cloudflare to leave the encoding alone
+        // (developers.cloudflare.com/speed/optimization/content/compression).
+        // Keeping text/plain rather than swapping in an incompressible type
+        // costs nothing on the client, which reads raw bytes with TextDecoder
+        // and does no framing.
+        "Cache-Control": "no-store, no-transform",
         "X-Accel-Buffering": "no",
       },
     });
