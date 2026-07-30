@@ -19,8 +19,16 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
   var SENT_LOGS_MAX = 10;
 
   var COPY = {
-    en: { error: "Couldn't come up with anything to say, try again in a bit." },
-    es: { error: "No se me ocurrió nada que decir, probá de nuevo en un rato." },
+    en: {
+      error: "Couldn't come up with anything to say, try again in a bit.",
+      ask: "Emilia's comment",
+      dismiss: "Dismiss Emilia's comment",
+    },
+    es: {
+      error: "No se me ocurrió nada que decir, probá de nuevo en un rato.",
+      ask: "Comentario de Emilia",
+      dismiss: "Cerrar el comentario de Emilia",
+    },
   };
 
   function lang() {
@@ -36,26 +44,27 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
   var BUBBLE_GAP_REM = 0.5;
   var BUBBLE_TOP_REM = EDGE_REM + BTN_SIZE_REM + BUBBLE_GAP_REM;
 
+  // Desktop-only, same as the language switcher (`hidden lg:block`, Tailwind's
+  // lg breakpoint). Button and bubble share the constant because they have to
+  // appear and disappear together: the button is the bubble's only dismiss
+  // control, so a viewport that hides one has to hide the other.
+  var DESKTOP_MIN_PX = 1024;
+
   // The bubble is sized as a content box, so these are the bounds of the text
   // area itself, padding excluded. MIN is what it opens at while waiting for
-  // the first token: wide enough for the three thinking dots and no wider.
+  // the first token: comfortably wider than the 22.4px row of thinking dots, so
+  // the waiting bubble reads as a bubble and not as a sliver, while still being
+  // small enough that growing into a full sentence is a visible change.
   var MAX_TEXT_REM = 20;
   var MIN_TEXT_REM = 3.25;
   var PAD_X_REM = 1;
   var PAD_Y_REM = 0.75;
-
-  function remToPx(rem) {
-    var root = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    return rem * (root || 16);
-  }
 
   function injectStyles() {
     var style = document.createElement("style");
     style.textContent =
       // Same visual language as dropdown-trigger[variant="icon-only"]:
       // transparent, text-stone-800/dark:text-stone-100, invert on hover.
-      // Desktop-only, same as the language switcher
-      // (`hidden lg:block`, Tailwind's lg breakpoint = 1024px).
       ".mascot-bot-btn{display:none;position:fixed;left:" + EDGE_REM + "rem;" +
       "top:" + EDGE_REM + "rem;z-index:50;" +
       "width:" + BTN_SIZE_REM + "rem;height:" + BTN_SIZE_REM + "rem;padding:0;border:none;cursor:pointer;" +
@@ -64,7 +73,7 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       "opacity:0;transform:scale(.6);pointer-events:none;" +
       "transition:opacity 200ms cubic-bezier(.23,1,.32,1),transform 200ms cubic-bezier(.23,1,.32,1)," +
       "background-color 150ms ease-out,color 150ms ease-out;}" +
-      "@media (min-width: 1024px){.mascot-bot-btn{display:flex;}}" +
+      "@media (min-width:" + DESKTOP_MIN_PX + "px){.mascot-bot-btn{display:flex;}}" +
       ".mascot-bot-btn.mascot-bot-visible{opacity:1;transform:scale(1);pointer-events:auto;}" +
       // Same hide-on-scroll behavior as dropdown-trigger[hide-on-scroll]:
       // fades out on scroll-down, back in on scroll-up.
@@ -86,7 +95,11 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       // text box and the padding is added on top. overflow:hidden is what lets
       // the box lead the text: words that haven't been uncovered yet are
       // clipped instead of spilling out.
-      ".mascot-bot-bubble{position:fixed;left:" + EDGE_REM + "rem;" +
+      //
+      // Gated behind the same breakpoint as the button above, and starting from
+      // display:none, so the bubble can never outlive the only control that
+      // dismisses it.
+      ".mascot-bot-bubble{display:none;position:fixed;left:" + EDGE_REM + "rem;" +
       "top:" + BUBBLE_TOP_REM + "rem;z-index:50;" +
       "box-sizing:content-box;padding:" + PAD_Y_REM + "rem " + PAD_X_REM + "rem;" +
       "max-width:" + MAX_TEXT_REM + "rem;" +
@@ -98,7 +111,13 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       "font-family:Montserrat,'Segoe UI',Helvetica,Arial,sans-serif;" +
       "font-size:.875rem;line-height:1.45;" +
       "overflow:hidden;transform-origin:top left;" +
-      "opacity:0;transform:scale(.94);filter:blur(3px);pointer-events:none;" +
+      // visibility, not just opacity: an opacity:0 bubble is still in the
+      // accessibility tree, so the last comment would keep being readable by a
+      // screen reader long after it was dismissed. Transitioning it with a
+      // delay as long as the fade means it only goes away once the exit has
+      // played, and the .mascot-bot-visible rule below zeroes the delay so
+      // opening is not held back by it.
+      "opacity:0;visibility:hidden;transform:scale(.94);filter:blur(3px);pointer-events:none;" +
       // Transitions, not keyframes, on every one of these: the bubble can be
       // dismissed mid-open and resized mid-growth, and a transition retargets
       // from wherever it currently is instead of restarting.
@@ -106,15 +125,21 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       "transform 280ms cubic-bezier(.32,.72,0,1)," +
       "filter 200ms ease-out," +
       "width 300ms cubic-bezier(.32,.72,0,1)," +
-      "height 300ms cubic-bezier(.32,.72,0,1);}" +
-      ".mascot-bot-bubble.mascot-bot-visible{opacity:1;transform:scale(1);filter:blur(0);pointer-events:auto;}" +
+      "height 300ms cubic-bezier(.32,.72,0,1)," +
+      "visibility 0s linear 150ms;}" +
+      "@media (min-width:" + DESKTOP_MIN_PX + "px){.mascot-bot-bubble{display:block;}}" +
       // Fallback for browsers pretext can't run in (no Intl.Segmenter) or when
       // its bundle failed to load: drop the measured px sizing and let CSS wrap
       // the text normally. The bubble still fades and scales, it just can't
       // animate its own growth.
       ".mascot-bot-bubble.mascot-bot-auto{width:auto;height:auto;transition:opacity 150ms ease-out," +
-      "transform 280ms cubic-bezier(.32,.72,0,1),filter 200ms ease-out;}" +
+      "transform 280ms cubic-bezier(.32,.72,0,1),filter 200ms ease-out,visibility 0s linear 150ms;}" +
       ".mascot-bot-bubble.mascot-bot-auto .mascot-bot-text{position:static;width:auto;}" +
+      // After the fallback rule on purpose: its transition-delay has to win over
+      // both transition shorthands above so that opening is immediate while
+      // closing waits out the fade.
+      ".mascot-bot-bubble.mascot-bot-visible{opacity:1;visibility:visible;transform:scale(1);" +
+      "filter:blur(0);pointer-events:auto;transition-delay:0s;}" +
       "@media (prefers-color-scheme: dark){.mascot-bot-bubble{background:#292524;color:#f5f5f4;" +
       "box-shadow:0 6px 20px -4px rgba(0,0,0,.5),0 1px 2px rgba(0,0,0,.3);}}" +
       // Taken out of flow so the box can be smaller than the text it holds
@@ -146,6 +171,12 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       ".mascot-bot-dots span:nth-child(2){animation-delay:150ms;}" +
       ".mascot-bot-dots span:nth-child(3){animation-delay:300ms;}" +
       "@keyframes mascot-bot-pulse{0%,100%{opacity:.25;}50%{opacity:.9;}}" +
+      // The announcement region: never painted, never gated behind the
+      // breakpoint. Clipped rather than display:none or visibility:hidden,
+      // because either of those takes it out of the accessibility tree and a
+      // live region that isn't in the tree announces nothing.
+      ".mascot-bot-live{position:fixed;top:0;left:0;width:1px;height:1px;overflow:hidden;" +
+      "clip-path:inset(50%);white-space:nowrap;pointer-events:none;}" +
       ".mascot-bot-toast{position:fixed;bottom:1rem;left:50%;transform:translateX(-50%) translateY(6px);" +
       "z-index:60;background:#1c1917;color:#fff;padding:.6rem 1rem;border-radius:.5rem;" +
       "font-size:.8rem;opacity:0;pointer-events:none;transition:opacity 180ms ease-out,transform 180ms ease-out;}" +
@@ -153,7 +184,8 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       // Motion is the whole point of the growing bubble, so reduced-motion
       // gets the plain version: no growth animation, no per-word reveal.
       "@media (prefers-reduced-motion: reduce){" +
-      ".mascot-bot-bubble{transition:opacity 120ms linear;transform:none;filter:none;}" +
+      ".mascot-bot-bubble{transition:opacity 120ms linear,visibility 0s linear 120ms;" +
+      "transform:none;filter:none;}" +
       ".mascot-bot-bubble.mascot-bot-visible{transform:none;}" +
       ".mascot-bot-word{opacity:1;filter:none;transition:none;}" +
       ".mascot-bot-dots span{animation:none;}}";
@@ -164,7 +196,10 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "mascot-bot-btn";
-    btn.setAttribute("aria-label", "Emilia's comment");
+    // Label and expanded state are both set per state by setButtonState; this
+    // is only the closed one it starts in.
+    btn.setAttribute("aria-label", COPY[lang()].ask);
+    btn.setAttribute("aria-expanded", "false");
     btn.innerHTML = Sparkles;
     document.body.appendChild(btn);
     return btn;
@@ -173,12 +208,6 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
   function createBubble() {
     var bubble = document.createElement("div");
     bubble.className = "mascot-bot-bubble";
-    // aria-live, not role="status" alone: the text arrives in pieces after the
-    // bubble is already in the DOM, and polite+atomic makes a screen reader
-    // announce the finished sentence instead of every token.
-    bubble.setAttribute("role", "status");
-    bubble.setAttribute("aria-live", "polite");
-    bubble.setAttribute("aria-atomic", "true");
 
     var dots = document.createElement("div");
     dots.className = "mascot-bot-dots";
@@ -188,32 +217,57 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     var text = document.createElement("div");
     text.className = "mascot-bot-text";
 
+    // The live region is a separate, off-screen node rather than the bubble
+    // itself: the bubble's text grows a word at a time, and a live region over
+    // it re-announces the whole sentence from the top on every one of those
+    // ~30 mutations. This one is written to exactly once, when the sentence is
+    // finished, and emptied again when the bubble closes.
+    var live = document.createElement("div");
+    live.className = "mascot-bot-live";
+    live.setAttribute("role", "status");
+
     bubble.appendChild(dots);
     bubble.appendChild(text);
     document.body.appendChild(bubble);
-    return { bubble: bubble, dots: dots, text: text };
+    document.body.appendChild(live);
+    return { bubble: bubble, dots: dots, text: text, live: live };
   }
 
+  // One toast at a time, reusing the node: two of them share the same fixed
+  // position (two failures in a row is easy to reach with the server's per-IP
+  // cooldown) and would stack into an illegible pile.
+  var toastEl = null;
+  var toastTimer = null;
+
   function showToast(message) {
-    var toast = document.createElement("div");
-    toast.className = "mascot-bot-toast";
-    toast.textContent = message;
-    document.body.appendChild(toast);
+    if (toastTimer) clearTimeout(toastTimer);
+    if (!toastEl) {
+      toastEl = document.createElement("div");
+      toastEl.className = "mascot-bot-toast";
+      document.body.appendChild(toastEl);
+    }
+    var el = toastEl;
+    el.textContent = message;
     requestAnimationFrame(function () {
-      toast.classList.add("mascot-bot-visible");
+      el.classList.add("mascot-bot-visible");
     });
-    setTimeout(function () {
-      toast.classList.remove("mascot-bot-visible");
-      setTimeout(function () {
-        toast.remove();
+    toastTimer = setTimeout(function () {
+      el.classList.remove("mascot-bot-visible");
+      toastTimer = setTimeout(function () {
+        toastTimer = null;
+        toastEl = null;
+        el.remove();
       }, 200);
     }, TOAST_DURATION_MS);
   }
 
   // ---- pretext, loaded on demand ----
-  // Prefetched when the pointer enters the button, so by the time the click
-  // lands the measurements are available and the bubble takes the animated
-  // path rather than the auto-sizing fallback.
+  // Calling this is what injects the script tag, so nothing on the init path
+  // may call it: the whole reason the measurement tables are a separate bundle
+  // is that most visitors never click. The pointer entering the button (or
+  // focusing it) is the first honest signal of intent, and it lands early
+  // enough that the click after it usually finds the measurements ready and
+  // takes the animated path rather than the auto-sizing fallback.
   var pretextPromise = null;
 
   function loadPretext() {
@@ -291,41 +345,91 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     var bubble = parts.bubble;
     var dots = parts.dots;
     var textEl = parts.text;
+    var liveEl = parts.live;
 
     var state = "idle"; // idle | loading | streaming | showing
     var pretext = null; // measurement API for the message currently open, or null
+    var pretextReady = null; // the API once its bundle has landed, or null
     var fullText = ""; // everything committed to the DOM so far
     var pending = ""; // trailing fragment of the stream, not a whole word yet
     var boxW = 0; // measured px size of the text box, monotonic within a message
     var boxH = 0;
+    var metrics = null; // font metrics of the message currently open, or null
+    var openSeq = 0; // bumped on every open and every close, see openBubble
     var abort = null;
+    var fontHooked = false;
 
-    loadPretext().then(function (api) {
-      // Montserrat arrives over the network with font-display:swap, so
-      // anything measured before it lands was measured against the fallback
-      // face. Nothing has been measured this early, but pretext caches by
-      // font string, so clear it rather than trust a cache built pre-swap.
-      if (api && document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(function () {
-          api.clearCache();
-        });
-      }
-    });
-
-    // The canvas font shorthand pretext measures with, read back off the
-    // element that will actually render the text so the two can't drift apart.
-    // No line-height component: canvas ignores it, and the line height comes
-    // from lineHeightPx below instead.
-    function fontString() {
-      var cs = getComputedStyle(textEl);
-      return cs.fontStyle + " " + cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
+    // Injects the bundle, so only intent (hover, focus, click) may call it.
+    // Everything that has to happen once it lands hangs off here rather than
+    // off init, which would make every page load pay for the download.
+    function warmPretext() {
+      loadPretext().then(function (api) {
+        pretextReady = api;
+        if (!api || fontHooked || !document.fonts) return;
+        fontHooked = true;
+        // Both signals on purpose. document.fonts.ready only covers the loads
+        // that were already in flight when it was read, and this can be reached
+        // before the bubble's own face has started downloading at all;
+        // loadingdone fires for every batch that lands afterwards, which is
+        // exactly when a box measured against the old face goes stale.
+        if (document.fonts.addEventListener) {
+          document.fonts.addEventListener("loadingdone", function () {
+            onFontsReady(api);
+          });
+        }
+        if (document.fonts.ready) {
+          document.fonts.ready.then(function () {
+            onFontsReady(api);
+          });
+        }
+      });
     }
 
-    function lineHeightPx() {
+    // Montserrat arrives over the network with font-display:swap, so anything
+    // measured before it lands was measured against the fallback face: pretext
+    // caches by font string, and the box a message already grew to is a box for
+    // a face that is no longer being rendered.
+    function onFontsReady(api) {
+      api.clearCache();
+      if (!pretext || state === "idle" || !measurable()) return;
+      metrics = readMetrics();
+      if (!fullText) return;
+      // The only place the monotonic maxima are thrown away: the same sentence
+      // in the real face can need a taller box than the fallback did, and with
+      // overflow:hidden a box that stayed at the old height clips the last line
+      // off without a trace. Growing is the rule, but not against a face that
+      // no longer exists.
+      boxW = 0;
+      boxH = 0;
+      resizeToText();
+    }
+
+    // Below the breakpoint the bubble is display:none, and a display:none
+    // element reports computed values the renderer never used, so anything
+    // measured off it would be fiction.
+    function measurable() {
+      return getComputedStyle(bubble).display !== "none";
+    }
+
+    // Read back off the element that will actually render the text, so the
+    // measurement and the DOM can't drift apart. Read once per message instead
+    // of once per committed word: these are forced style recalcs, and a reply
+    // commits ~30 words. The font swapping in is the only thing that can
+    // invalidate them mid-message, and onFontsReady re-reads them there.
+    function readMetrics() {
       var cs = getComputedStyle(textEl);
-      var lh = parseFloat(cs.lineHeight);
-      if (lh) return lh;
-      return (parseFloat(cs.fontSize) || 14) * 1.45;
+      var lh = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) || 14) * 1.45;
+      return {
+        // No line-height component in the shorthand: canvas ignores it, and the
+        // line height travels separately.
+        font: cs.fontStyle + " " + cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily,
+        lineHeight: lh,
+        rootPx: parseFloat(getComputedStyle(document.documentElement).fontSize) || 16,
+      };
+    }
+
+    function remToPx(rem) {
+      return rem * metrics.rootPx;
     }
 
     // The text box this string wants, measured entirely off-DOM. Width is the
@@ -336,8 +440,8 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     // disagreement between canvas measurement and DOM wrapping.
     function sizeFor(str) {
       try {
-        var font = fontString();
-        var lh = lineHeightPx();
+        var font = metrics.font;
+        var lh = metrics.lineHeight;
         var maxW = remToPx(MAX_TEXT_REM);
         var prepared = pretext.prepareWithSegments(str, font);
         var wrapW = Math.min(Math.ceil(pretext.measureNaturalWidth(prepared)) + 1, maxW);
@@ -359,7 +463,7 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     // a long word moved to the next line would read as a glitch, and the
     // measured width is the longest line so far either way.
     function resizeToText() {
-      if (!pretext) return;
+      if (!pretext || !metrics) return;
       var size = sizeFor(fullText);
       if (!size) {
         useAutoSizing();
@@ -392,29 +496,40 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
 
     function useAutoSizing() {
       pretext = null;
+      metrics = null;
       bubble.classList.add("mascot-bot-auto");
       bubble.style.width = "";
       bubble.style.height = "";
       textEl.style.width = "";
     }
 
+    // The icon carries the whole meaning of this button, so the name has to
+    // follow it: sparkles asks for a comment, the X dismisses the one on screen.
+    function setButtonState(isOpen) {
+      var copy = COPY[lang()];
+      btn.setAttribute("aria-label", isOpen ? copy.dismiss : copy.ask);
+      btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    }
+
     function setIdle() {
       state = "idle";
       btn.innerHTML = Sparkles;
-      btn.disabled = false;
+      setButtonState(false);
     }
 
     function setLoading() {
       state = "loading";
-      btn.disabled = false; // clicking again cancels, so it stays live
       btn.innerHTML = LoaderCircle;
       var svg = btn.querySelector("svg");
       if (svg) svg.classList.add("mascot-bot-spin");
+      // Already dismissable: the bubble is on screen with its thinking dots and
+      // this click cancels the request behind it.
+      setButtonState(true);
     }
 
     function setDismissable() {
       btn.innerHTML = X;
-      btn.disabled = false;
+      setButtonState(true);
     }
 
     // Opens at the minimum size with the thinking dots, before a single token
@@ -426,25 +541,38 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       pending = "";
       boxW = 0;
       boxH = 0;
+      metrics = null;
       textEl.textContent = "";
+      liveEl.textContent = "";
       dots.classList.remove("mascot-bot-dots-out");
       bubble.classList.remove("mascot-bot-auto");
 
-      if (pretext) {
+      if (pretext && measurable()) {
+        metrics = readMetrics();
         boxW = remToPx(MIN_TEXT_REM);
-        boxH = lineHeightPx();
+        boxH = metrics.lineHeight;
         setSizeInstant(boxW, boxH);
       } else {
         useAutoSizing();
       }
 
+      // Next frame, so the enter transition has an initial state to run from.
+      // Guarded by the sequence number because a scroll-down dispatches before
+      // animation-frame callbacks in the same frame: without it, "click, keep
+      // scrolling while I wait" closes the bubble and then this makes it
+      // visible anyway, leaving an empty pulsing bubble with no request behind
+      // it that no further scroll will close.
+      var seq = ++openSeq;
       requestAnimationFrame(function () {
+        if (seq !== openSeq) return;
         bubble.classList.add("mascot-bot-visible");
       });
     }
 
     function closeBubble() {
+      openSeq++;
       bubble.classList.remove("mascot-bot-visible");
+      liveEl.textContent = "";
       if (abort) {
         abort.abort();
         abort = null;
@@ -485,6 +613,10 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     // the text twitch, and would make every measurement a measurement of a
     // string that never existed.
     function commit(chunk, final) {
+      // Nothing is open, so there is nowhere for this to go: a chunk that was
+      // already in flight when the bubble was dismissed must not paint itself
+      // into it, or turn the button back into an X over a closed bubble.
+      if (state === "idle") return;
       pending += chunk || "";
       // The server streams the model's raw output, so unlike the old
       // await-then-trim version a leading newline arrives verbatim. Inside an
@@ -535,54 +667,71 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     }
 
     function requestComment() {
-      // Measurements are needed before the bubble opens, not after: switching
-      // sizing strategies halfway through a message would be a visible jump.
-      loadPretext().then(function (api) {
-        pretext = api;
-        setLoading();
-        openBubble();
+      // Synchronous, all of it, and nothing may be awaited before it: `state`
+      // leaving "idle" is the only thing that stops the next click from
+      // starting a second request, and two requests would share fullText,
+      // pending, boxW and abort. A gap here is also a gap with no feedback in
+      // it, which is exactly what makes someone click again.
+      setLoading();
+      // Which sizing strategy this message uses is decided here and never
+      // revisited: a bundle that lands mid-stream can only help the next
+      // message, because switching from CSS wrapping to measured px sizing
+      // halfway through is a visible jump. Starting the download anyway, since
+      // a click without a hover before it is the same signal of intent.
+      pretext = pretextReady;
+      openBubble();
+      warmPretext();
 
-        abort = new AbortController();
-        var signal = abort.signal;
+      abort = new AbortController();
+      var signal = abort.signal;
 
-        fetch("/api/mascot-comment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: signal,
-          body: JSON.stringify({
-            logs: readActivityLogs(),
-            pageText: pageText(),
-            lang: lang(),
-          }),
+      fetch("/api/mascot-comment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: signal,
+        body: JSON.stringify({
+          logs: readActivityLogs(),
+          pageText: pageText(),
+          lang: lang(),
+        }),
+      })
+        .then(function (res) {
+          if (!res.ok) {
+            // Errors raised before the stream starts are still JSON, so the
+            // real reason can reach the toast. Flagged, because it is the only
+            // failure whose message is fit to read: once the body has started,
+            // the server ends it abnormally rather than let a truncated
+            // half-sentence look finished, and what surfaces then is the
+            // transport's own wording ("terminated", "network error").
+            return res
+              .json()
+              .catch(function () {
+                return null;
+              })
+              .then(function (data) {
+                var err = new Error((data && data.error) || COPY[lang()].error);
+                err.fromServer = true;
+                throw err;
+              });
+          }
+          return readStream(res);
         })
-          .then(function (res) {
-            if (!res.ok) {
-              // Errors raised before the stream starts are still JSON, so the
-              // real reason can reach the toast.
-              return res
-                .json()
-                .catch(function () {
-                  return null;
-                })
-                .then(function (data) {
-                  throw new Error((data && data.error) || "Request failed (" + res.status + ")");
-                });
-            }
-            return readStream(res);
-          })
-          .then(function () {
-            if (signal.aborted) return;
-            if (!fullText.trim()) throw new Error(COPY[lang()].error);
-            state = "showing";
-            setDismissable();
-            logMascotSaid(fullText.trim());
-          })
-          .catch(function (err) {
-            if (signal.aborted || (err && err.name === "AbortError")) return;
-            closeBubble();
-            showToast((err && err.message) || COPY[lang()].error);
-          });
-      });
+        .then(function () {
+          if (signal.aborted) return;
+          if (!fullText.trim()) throw new Error(COPY[lang()].error);
+          state = "showing";
+          setDismissable();
+          // The one and only announcement for this message: the sentence is
+          // finished, so a screen reader reads it whole instead of re-reading a
+          // growing fragment after every committed word.
+          liveEl.textContent = fullText.trim();
+          logMascotSaid(fullText.trim());
+        })
+        .catch(function (err) {
+          if (signal.aborted || (err && err.name === "AbortError")) return;
+          closeBubble();
+          showToast(err && err.fromServer ? err.message : COPY[lang()].error);
+        });
     }
 
     btn.addEventListener("click", function () {
@@ -594,8 +743,16 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     });
 
     // Warms the measurement bundle on intent, well before the click needs it.
-    btn.addEventListener("pointerenter", loadPretext);
-    btn.addEventListener("focus", loadPretext);
+    btn.addEventListener("pointerenter", warmPretext);
+    btn.addEventListener("focus", warmPretext);
+
+    // The bubble isn't focusable and the button is its only dismiss control, so
+    // without this a keyboard user has no way out of an open comment.
+    document.addEventListener("keydown", function (e) {
+      if (state === "idle") return;
+      if (e.key !== "Escape" && e.key !== "Esc") return;
+      closeBubble();
+    });
 
     // Next frame so the scale/fade-in transition actually plays instead of
     // the button popping in already at its final state.
@@ -623,6 +780,21 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       },
       { passive: true }
     );
+
+    // The stylesheet already hides the bubble below the breakpoint, which is
+    // the part that holds even if this script is mid-load. This is the other
+    // half: a rotated tablet or a resized window would otherwise leave the
+    // request behind the bubble running with nothing left to cancel it, since
+    // the button that cancels it is hidden by the same query.
+    var desktop = window.matchMedia("(min-width:" + DESKTOP_MIN_PX + "px)");
+    function onBreakpointChange() {
+      if (!desktop.matches && state !== "idle") closeBubble();
+    }
+    if (desktop.addEventListener) {
+      desktop.addEventListener("change", onBreakpointChange);
+    } else if (desktop.addListener) {
+      desktop.addListener(onBreakpointChange);
+    }
   }
 
   if (document.readyState === "loading") {
