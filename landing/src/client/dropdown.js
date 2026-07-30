@@ -28,6 +28,7 @@ class DropdownTrigger extends HTMLElement {
         :host(.is-scrolling) {
           opacity: 0;
           pointer-events: none;
+          clip-path: inset(50%);
           transition: opacity 150ms ease-in;
         }
 

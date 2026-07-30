@@ -91,9 +91,12 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       "@media (min-width:" + DESKTOP_MIN_PX + "px){.mascot-bot-btn{display:flex;}}" +
       ".mascot-bot-btn.mascot-bot-visible{opacity:1;transform:scale(1);pointer-events:auto;}" +
       // Same hide-on-scroll behavior as dropdown-trigger[hide-on-scroll]:
-      // fades out on scroll-down, back in on scroll-up.
+      // fades out on scroll-down, back in on scroll-up. clip-path collapses
+      // the button's own hit-testable area to nothing on top of the opacity
+      // fade and pointer-events:none, so scrolling leaves no trace of it --
+      // not just invisible, but out of the way.
       ".mascot-bot-btn.mascot-bot-visible.mascot-bot-scrolling{opacity:0;pointer-events:none;" +
-      "transition:opacity 150ms ease-in;}" +
+      "clip-path:inset(50%);transition:opacity 150ms ease-in;}" +
       ".mascot-bot-btn:hover,.mascot-bot-btn:focus-visible{background:#000;color:#fff;}" +
       ".mascot-bot-btn svg{width:1rem;height:1rem;}" +
       ".mascot-bot-btn .mascot-bot-spin{animation:mascot-bot-spin 800ms linear infinite;}" +
@@ -981,9 +984,14 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       btn.classList.add("mascot-bot-visible");
     });
 
-    // Same hide-on-scroll behavior as dropdown-trigger[hide-on-scroll]:
-    // fade out on scroll-down (closing the bubble if it's open), back in
-    // on scroll-up.
+    // Same hide-on-scroll behavior as dropdown-trigger[hide-on-scroll]: the
+    // BUTTON fades out on scroll-down and back in on scroll-up, matching the
+    // language switcher. The bubble is deliberately left alone: it's
+    // position:fixed in the corner, so it never physically collides with the
+    // page content underneath, and reading a comment that just streamed in is
+    // itself a reason to scroll -- closing it on the first pixel of that
+    // would dismiss the exact thing the visitor asked for and clicked to
+    // read, with no way back short of asking again from scratch.
     var lastScrollY = window.scrollY;
     window.addEventListener(
       "scroll",
@@ -993,7 +1001,6 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
         lastScrollY = scrollY;
 
         if (scrollingDown) {
-          if (state !== "idle") closeBubble();
           btn.classList.add("mascot-bot-scrolling");
         } else {
           btn.classList.remove("mascot-bot-scrolling");
