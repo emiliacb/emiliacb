@@ -41,13 +41,26 @@ export default async function handler(c: Context) {
   }
 
   try {
-    const message = await getMascotComment({
+    const result = await getMascotComment({
       logs,
       pageText: typeof pageText === "string" ? pageText : "",
       lang: typeof lang === "string" ? lang : "en",
     });
 
-    return c.json({ message });
+    // Everything that can fail before this point (bad body, cooldown, Kimi
+    // not configured) answers with JSON `{ error }`, which is what the client
+    // parses to put a real message in its toast. From here on the headers are
+    // already on the wire, so a mid-stream failure can only end the body
+    // early; the client treats an empty result as a failure by itself.
+    return result.toTextStreamResponse({
+      headers: {
+        // Cloudflare fronts this server: without these it will happily cache
+        // or buffer the whole body and the reply lands in one lump, which
+        // defeats the point of streaming it.
+        "Cache-Control": "no-store",
+        "X-Accel-Buffering": "no",
+      },
+    });
   } catch (error) {
     console.log({ step: "mascotHandler", error });
     return c.json({ error: "Could not generate a comment" }, 500);
