@@ -101,4 +101,11 @@ async function bundleClientFile({ entry, outfile, label }: {
     outfile: "_mascot-bot-bundle.js",
     label: "Mascot bot",
   });
+  // Its own bundle on purpose: the mascot injects it on first hover, so the
+  // text-layout tables aren't downloaded by the visitors who never click.
+  await bundleClientFile({
+    entry: "src/client/pretext.js",
+    outfile: "_pretext-bundle.js",
+    label: "Pretext text measurement",
+  });
 })();
