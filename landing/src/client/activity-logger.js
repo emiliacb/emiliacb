@@ -4,6 +4,15 @@
 // the actual text involved (truncated and sanitized) since the point of the
 // log is to be handed to an LLM — structural metadata alone isn't enough
 // for the agent to react to *what* the visitor read or selected.
+//
+// Reading is recorded at two different resolutions, because the two signals
+// behind it know different things. Cursor dwell over a block knows *where*
+// the visitor was looking, so it can quote the passage: that's the per-block
+// `read` event. Dwell that comes from a block merely sitting on screen while
+// the page scrolls slowly enough to be readable knows only that the page went
+// by at a readable pace — it cannot point at a passage, so it rolls up into a
+// single page-level `read_page` event that reports coverage and quotes
+// nothing.
 (function () {
   "use strict";
 
@@ -37,7 +46,6 @@
     ".markdown-content h2, .markdown-content h3, .markdown-content h4, " +
     ".markdown-content blockquote, main p, main li";
 
-  var READ_BAND = [0.15, 0.75]; // viewport band where people actually read, not the whole viewport
   var WPM = 240; // reference reading speed, drives the per-block reading-pace threshold below
   var FALLBACK_MAX_READING_PX_S = 20; // used only if a block's line-height can't be read
   var IDLE_MS = 45000; // no interaction for this long = AFK, stop accruing dwell
@@ -46,6 +54,28 @@
   var RAGE_CLICK_COUNT = 3;
   var SELECTION_DEBOUNCE_MS = 400;
   var REPORT_INTERVAL_MS = 5000;
+
+  // Half the expected reading time is the bar for calling something read at
+  // all. Nobody reads a paragraph at exactly WPM pace, and a skim that still
+  // takes half of it went over most of the words — demanding the full time
+  // would only log the slowest readers. The same bar is applied twice with
+  // different dwell behind it (hover alone for a per-block `read`, hover +
+  // scroll for page coverage) because the question is the same one; what
+  // differs is how much the evidence knows about *where*.
+  var HOVER_READ_RATIO = 0.5;
+  var COVERED_RATIO = 0.5;
+  // Past this multiple of the expected time the dwell stops being evidence of
+  // pace and starts being evidence of *something*, deep focus or a walked-away
+  // tab — labelled ambiguously on purpose rather than guessed at.
+  var LINGER_RATIO = 2.5;
+  // Coverage is a slow-moving number; re-logging it every REPORT_INTERVAL_MS
+  // would bury every other event in near-duplicate rows. A fifth of the page
+  // is roughly the smallest jump worth a sentence from the mascot.
+  var PAGE_COVERAGE_STEP = 0.2;
+  // On the way out a smaller jump is still worth reporting, since there's no
+  // later interval left to accumulate into a full step — but not a jump so
+  // small that a couple of paragraphs drifting past counts as reading.
+  var PAGE_COVERAGE_EXIT_FLOOR = 0.05;
 
   // Collapses whitespace, strips control characters and hard-truncates —
   // this text eventually lands in an LLM prompt, so it's kept short and
@@ -264,9 +294,9 @@
   var totalEventCount = readStoredEventCount();
 
   // Every event is { event, on, from }: `event` names the action (read /
-  // click / selected / clicked_repeatedly), `on` is its subject, and `from`
-  // is always a parent-chain node (see locationOf) or, at the end of the
-  // chain, the page URL — never a flattened string.
+  // read_page / click / selected / clicked_repeatedly), `on` is its subject,
+  // and `from` is always a parent-chain node (see locationOf) or, at the end
+  // of the chain, the page URL — never a flattened string.
   function log(fields) {
     var evt = { id: Math.random().toString(36).slice(2), ts: Date.now() };
     for (var key in fields) {
@@ -294,6 +324,11 @@
     if (navigationLogged) return;
     navigationLogged = true;
     reportBlocks(true);
+    // Before the navigate event, not after: read_page describes what happened
+    // on *this* page, and an agent reading the tail of the log in order should
+    // see the reading and then the departure, not a departure it has to
+    // backtrack from.
+    reportPageReading(true);
     log({
       event: "navigate",
       on: pageTitle(),
@@ -431,10 +466,11 @@
     lastY = y;
   }
 
-  // ---- Hover over content text: a stronger, more direct reading signal
-  // than viewport position alone. Delegated on mouseover/mouseout (they
-  // bubble, mouseenter/mouseleave don't) with a relatedTarget check so
-  // moving between child nodes of the same block doesn't flicker it off ----
+  // ---- Hover over content text: the only reading signal that identifies
+  // *which* text, which is what makes it the only one allowed to quote a
+  // passage. Delegated on mouseover/mouseout (they bubble, mouseenter/
+  // mouseleave don't) with a relatedTarget check so moving between child
+  // nodes of the same block doesn't flicker it off ----
   var hoveredBlock = null;
 
   document.addEventListener(
@@ -455,10 +491,14 @@
     { passive: true }
   );
 
-  // ---- Per-block reading classification: dwell weighted by presence in the
-  // read band, normalized against the block's expected reading time
-  // (words / WPM), not against raw scroll velocity ----
+  // ---- Per-block dwell: accrued while the block is on screen, normalized
+  // against the block's expected reading time (words / WPM), not against raw
+  // scroll velocity ----
   var blocks = new Map();
+  // The threshold list isn't a classification, it's a refresh cadence: the
+  // observer is the only thing that keeps b.rect current, so a few crossings
+  // spread over the block's height keep the geometry roughly fresh while it
+  // travels through the viewport without a per-frame getBoundingClientRect.
   var observer = new IntersectionObserver(
     function (entries) {
       entries.forEach(function (entry) {
@@ -468,12 +508,20 @@
         b.rect = entry.boundingClientRect;
       });
     },
-    { threshold: [0, 0.15, 0.5, 0.75, 1] }
+    { threshold: [0, 0.25, 0.5, 0.75, 1] }
   );
 
   function wordCount(el) {
     var text = (el.textContent || "").trim();
     return text ? text.split(/\s+/).length : 0;
+  }
+
+  // The yardstick every dwell measurement is divided by: how long this much
+  // text takes at the reference pace. Absolute milliseconds say nothing about
+  // reading — 4s over a one-line heading and 4s over a long paragraph are
+  // opposite events.
+  function expectedReadingMs(words) {
+    return (words / WPM) * 60000;
   }
 
   // How fast this specific block could scroll past while still being
@@ -496,30 +544,29 @@
       if (blocks.has(el)) return;
       var words = wordCount(el);
       if (words < 5) return; // skip trivial blocks
+      // The two dwell accumulators are deliberately never summed into one
+      // number, because they are not the same kind of evidence and only one of
+      // them can be attributed to a passage. hoverDwell means the cursor was
+      // over *this* text while moving — the visitor was pointing at it, so
+      // quoting it back is honest. scrollDwell only means this block was on
+      // screen while the page moved slowly enough that its text *could* have
+      // been read; on a viewport showing a dozen blocks at once it accrues for
+      // all of them equally, and attributing a read to any one of them would be
+      // inventing a location the signal never had. So scrollDwell is only ever
+      // aggregated over the whole page (see reportPageReading), never quoted.
       blocks.set(el, {
         el: el,
         words: words,
-        qualifiedDwell: 0,
-        hoverDwell: 0, // portion of qualifiedDwell that came from hover, not band position
-        bandExposureMs: 0, // raw ms spent passing the speed gate with band overlap > 0
-        speedMarginSum: 0, // Σ dt * (1 - |scroll speed| / this block's readable pace)
-        lastDwellTs: 0, // last frame that added dwell — used to tell "closed" from "still open"
-        reportedDwell: 0, // qualifiedDwell at the last time this block was logged
+        hoverDwell: 0, // ms with the cursor moving over this block — knows *where*
+        scrollDwell: 0, // ms on screen under the readable-pace gate, weighted by visible fraction
+        lastHoverTs: 0, // last frame that added hover dwell — tells "closed" from "still open"
+        reportedDwell: 0, // hoverDwell at the last time this block was logged
         visible: false,
         rect: null,
         maxReadingPxPerSec: maxReadingPxPerSec(el, words),
       });
       observer.observe(el);
     });
-  }
-
-  function classify(b) {
-    var expectedMs = (b.words / WPM) * 60000;
-    var ratio = b.qualifiedDwell / expectedMs;
-    if (ratio < 0.15) return "skipped";
-    if (ratio < 0.5) return "skimmed";
-    if (ratio <= 2.5) return "read";
-    return "parked";
   }
 
   // How close to the expected reading time the block's dwell landed. The
@@ -534,58 +581,17 @@
   }
 
   // Confidence composes its factors multiplicatively, not as a weighted
-  // average: two weak signals together are much more suspicious than either
-  // alone (e.g. dwell that both grazed the read band AND only barely beat
-  // the speed gate), and a weighted average would let one strong factor mask
-  // a fatal one. Floors on each factor keep any single weak signal from
-  // collapsing the score to zero — none of these signals is reliable enough
-  // on its own to have veto power. Hover is additive-only and never
-  // punishes: most visitors don't track text with the cursor at all
-  // (trackpad/keyboard/touch), so its absence isn't evidence of anything,
-  // but its presence is real evidence of reading.
-  function scoreBlock(b) {
-    var expectedMs = (b.words / WPM) * 60000;
-    var ratio = b.qualifiedDwell / expectedMs;
-    var hoverShare = b.qualifiedDwell > 0 ? b.hoverDwell / b.qualifiedDwell : 0;
-
-    var centrality, speed;
-    if (b.bandExposureMs > 0) {
-      var bandCentrality = (b.qualifiedDwell - b.hoverDwell) / b.bandExposureMs;
-      var speedMargin = b.speedMarginSum / b.bandExposureMs;
-      centrality = 0.65 + 0.35 * Math.max(0, Math.min(1, bandCentrality));
-      speed = 0.75 + 0.25 * Math.max(0, Math.min(1, speedMargin));
-    } else {
-      // Dwell came entirely from hover, with zero band samples to judge
-      // position or scroll speed against — neutral factors, and the
-      // confidence gets capped below since this is the system's biggest
-      // false-positive channel (a still, trembling cursor resting on a
-      // paragraph at the edge of the viewport, past both other filters).
-      centrality = 0.85;
-      speed = 0.85;
-    }
-
+  // average: a weighted average would let one strong factor mask a fatal one,
+  // and here there are only two factors left, both of which matter absolutely.
+  // Length is one of them because a five-word block is cheap to hover for
+  // "long enough" by accident while a thirty-word one isn't — the ratio alone
+  // can't tell those apart, so short blocks are discounted no matter how well
+  // their pace fits. The floor keeps a weak score from collapsing to zero:
+  // hover is a real signal even at its worst, it just isn't a certainty.
+  function scoreHoverRead(b, ratio) {
     var length = 0.7 + 0.3 * Math.min(1, b.words / 30);
-    var hoverBonus = 0.15 * Math.min(1, hoverShare / 0.3);
-
-    var confidence = paceFit(ratio) * centrality * speed * length + hoverBonus;
-    if (b.bandExposureMs === 0) confidence = Math.min(confidence, 0.6);
-    confidence = Math.max(0.15, Math.min(1, confidence));
-
-    var manner;
-    if (ratio > 2.5) {
-      manner = "lingered"; // stayed far past the expected time — deep focus or stepped away, ambiguous on purpose
-    } else if (hoverShare >= 0.3) {
-      manner = "tracked"; // followed the text with the cursor
-    } else if (
-      b.bandExposureMs > 0 &&
-      ((b.qualifiedDwell - b.hoverDwell) / b.bandExposureMs < 0.5 || b.speedMarginSum / b.bandExposureMs < 0.25)
-    ) {
-      manner = "grazed"; // dwell came mostly from grazing the band edge or scrolling near the speed limit
-    } else {
-      manner = "steady";
-    }
-
-    return { confidence: Math.round(confidence * 100) / 100, manner: manner };
+    var confidence = Math.max(0.15, Math.min(1, paceFit(ratio) * length));
+    return Math.round(confidence * 100) / 100;
   }
 
   // Same "engaged" condition already used to gate dwell, reused as a running
@@ -602,8 +608,6 @@
     if (focused && !idle) {
       activeMs += 16;
       var vh = window.innerHeight;
-      var bandTop = vh * READ_BAND[0];
-      var bandBottom = vh * READ_BAND[1];
       var dt = 16; // one frame, good enough for this signal
       // Date.now(), not the rAF timestamp — lastMouseMoveTs is wall-clock time.
       var cursorMoving = Date.now() - lastMouseMoveTs < CURSOR_MOVING_WINDOW_MS;
@@ -611,13 +615,13 @@
       blocks.forEach(function (b) {
         if (!b.visible || !b.rect) return;
 
-        // Hovering the text WHILE the cursor is moving is a stronger signal
-        // than mere position in the viewport band — tracking text with the
-        // mouse means it's actually being read, regardless of scroll speed.
+        // Hovering the text WHILE the cursor is moving is the only signal here
+        // that identifies a passage: the visitor is pointing at these exact
+        // words. It's also the only one worth trusting regardless of scroll
+        // speed — someone tracking a line with the mouse is reading it.
         if (b.el === hoveredBlock && cursorMoving) {
-          b.qualifiedDwell += dt;
           b.hoverDwell += dt;
-          b.lastDwellTs = Date.now();
+          b.lastHoverTs = Date.now();
           return;
         }
 
@@ -627,13 +631,18 @@
         // over big headings can pass it.
         if (Math.abs(vSmooth) > b.maxReadingPxPerSec) return;
 
-        var overlap = Math.min(b.rect.bottom, bandBottom) - Math.max(b.rect.top, bandTop);
+        // The whole viewport is the band. Restricting this to an upper slice
+        // pretended to know where in the window the visitor's eyes were, which
+        // it never did — it just systematically credited whatever happened to
+        // be near the top of the scroll window and starved everything else.
+        // Since this dwell no longer claims to name a passage, there's nothing
+        // left for a band to buy: on-screen at a readable pace is the entire
+        // claim being made. The visible-fraction weight stays, because a block
+        // half off the edge genuinely contributed half as much page exposure.
+        var overlap = Math.min(b.rect.bottom, vh) - Math.max(b.rect.top, 0);
         if (overlap <= 0) return;
-        var weight = Math.max(0, Math.min(1, overlap / Math.min(b.rect.height, bandBottom - bandTop)));
-        b.qualifiedDwell += dt * weight;
-        b.bandExposureMs += dt;
-        b.speedMarginSum += dt * (1 - Math.abs(vSmooth) / b.maxReadingPxPerSec);
-        b.lastDwellTs = Date.now();
+        var weight = Math.max(0, Math.min(1, overlap / Math.min(b.rect.height, vh)));
+        b.scrollDwell += dt * weight;
       });
     }
 
@@ -643,52 +652,115 @@
   // Reports on CLOSE, not on crossing the threshold — reportBlocks() used to
   // latch the first moment a block passed MIN_DWELL_MS_TO_REPORT and never
   // look again, which meant the ratio it logged was always ~0.5 regardless
-  // of how much longer the visitor actually stayed. "parked" was nearly
-  // unreachable and any score built on the ratio would've been flat for
-  // everyone. Now a block only reports once its dwell has stopped growing
-  // for CLOSE_GAP_MS (it scrolled off, or the visitor moved on) — force
-  // (used from pagehide) skips that wait since the page is closing anyway.
+  // of how much longer the visitor actually stayed. Any score built on the
+  // ratio would've been flat for everyone. Now a block only reports once its
+  // hover dwell has stopped growing for CLOSE_GAP_MS (the cursor left, or the
+  // visitor moved on) — force (used from pagehide) skips that wait since the
+  // page is closing anyway.
   var CLOSE_GAP_MS = 2000;
 
+  // Per-block reads are hover-only. Anything quoting a specific passage back
+  // at the visitor has to be able to defend that quote, and only the cursor
+  // can: scroll dwell would let the mascot say "I see you reading X" about a
+  // paragraph that merely shared a viewport with wherever the visitor was
+  // actually looking. Being confidently wrong about that is far worse than
+  // staying quiet, so the threshold is hover dwell alone against the full
+  // expected reading time.
   function reportBlocks(force) {
     var now = Date.now();
     blocks.forEach(function (b) {
-      var grown = b.qualifiedDwell - b.reportedDwell;
+      var grown = b.hoverDwell - b.reportedDwell;
       if (grown < MIN_DWELL_MS_TO_REPORT) return;
-      if (!force && now - b.lastDwellTs < CLOSE_GAP_MS) return; // still actively accumulating
+      if (!force && now - b.lastHoverTs < CLOSE_GAP_MS) return; // still actively accumulating
 
-      var cls = classify(b);
-      if (cls !== "read" && cls !== "parked") return;
+      var ratio = b.hoverDwell / expectedReadingMs(b.words);
+      if (ratio < HOVER_READ_RATIO) return;
 
       var wasReportedBefore = b.reportedDwell > 0;
-      var scored = scoreBlock(b);
+      var manner = ratio > LINGER_RATIO ? "lingered" : "tracked";
       var snippet = sanitizeText(b.el.textContent, SNIPPET_MAX_CHARS);
       log({
         event: "read",
         on: snippet,
-        confidence: scored.confidence,
+        confidence: scoreHoverRead(b, ratio),
         // Coming back to something already reported is one of the strongest
         // interest signals there is — worth its own label instead of
         // logging the same block as a fresh "read" a second time.
-        manner: wasReportedBefore ? "revisited" : scored.manner,
+        manner: wasReportedBefore ? "revisited" : manner,
         from: locationOf(b.el),
       });
-      b.reportedDwell = b.qualifiedDwell;
+      b.reportedDwell = b.hoverDwell;
     });
   }
 
-  setInterval(reportBlocks, REPORT_INTERVAL_MS);
+  // ---- Page-level reading: where scroll dwell ends up ----
+  // Scroll dwell can't say which passage, but summed over every block it does
+  // answer a question worth answering: how much of this page went past at a
+  // pace that could have been read. That's reported as a fraction with no
+  // snippet at all — there is no honest text to quote for it, and handing the
+  // LLM a sample paragraph would invite exactly the false specificity the
+  // per-block path is being kept clean of. Words are the unit rather than
+  // block count so a long paragraph weighs more than a heading.
+  var reportedCoverage = 0;
+
+  function pageCoverage() {
+    var total = 0;
+    var covered = 0;
+    blocks.forEach(function (b) {
+      total += b.words;
+      // Both accumulators count here: for "how much of the page", cursor time
+      // and on-screen time are equally good evidence, since the answer isn't
+      // attributed to any one block anyway.
+      if ((b.hoverDwell + b.scrollDwell) / expectedReadingMs(b.words) >= COVERED_RATIO) {
+        covered += b.words;
+      }
+    });
+    return { coverage: total ? covered / total : 0, words: covered };
+  }
+
+  function reportPageReading(force) {
+    var current = pageCoverage();
+    // Zero coverage is not news — it's the state every page starts in.
+    if (current.coverage <= 0) return;
+    var grown = current.coverage - reportedCoverage;
+    if (grown < (force ? PAGE_COVERAGE_EXIT_FLOOR : PAGE_COVERAGE_STEP)) return;
+
+    log({
+      event: "read_page",
+      on: pageTitle(),
+      coverage: Math.round(current.coverage * 100) / 100,
+      words: current.words,
+      from: location.href,
+    });
+    reportedCoverage = current.coverage;
+  }
+
+  setInterval(function () {
+    reportBlocks();
+    reportPageReading(false);
+  }, REPORT_INTERVAL_MS);
 
   // ---- Init ----
   registerBlocks();
   requestAnimationFrame(tick);
   log({ event: "visited", on: pageTitle(), from: cameFrom });
 
-  // Pick up new blocks if content changes without a full page reload
+  // Pick up new blocks if content changes without a full page reload. Scoped
+  // to the content root rather than document.body, and coalesced: every
+  // registerBlocks() rebuilds the section index with a querySelectorAll over
+  // the whole page, and body-wide observation meant anything else on the page
+  // mutating paid for that. The mascot bubble in particular streams its reply
+  // into the DOM one word at a time, which on body scope was a full content
+  // rescan per token, landing right on top of that bubble's growth animation.
+  var registerTimer = null;
   var mutationObserver = new MutationObserver(function () {
-    registerBlocks();
+    if (registerTimer) return;
+    registerTimer = setTimeout(function () {
+      registerTimer = null;
+      registerBlocks();
+    }, 200);
   });
-  mutationObserver.observe(document.body, { childList: true, subtree: true });
+  mutationObserver.observe(contentRoot(), { childList: true, subtree: true });
 
   // Exposed for debugging from devtools regardless of DEBUG_LOG, since
   // toggling the flag live is only useful if there's something to inspect.
