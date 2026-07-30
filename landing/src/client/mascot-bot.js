@@ -3,10 +3,15 @@
 // click asks the backend for a one-sentence comment addressed to the visitor
 // about something they just did on the page.
 //
+// Nothing is shown while the request is in flight: the button swaps its own
+// icon for a spinner, and that is the entire waiting state. The bubble only
+// appears once there is something to read, so its enter transition and its
+// growth are one continuous motion instead of two stages around an empty box.
+//
 // The reply is streamed, so the bubble can't be laid out once and be done: it
-// opens small, then grows as words arrive. Growing a box whose text reflows on
-// every frame looks like a jitter, so the box is sized in px from pretext's
-// off-DOM measurements (see sizeFor) and the text element inside is absolutely
+// opens holding the first word, then grows as the rest arrive. Growing a box
+// whose text reflows on every frame looks like a jitter, so the box is sized in
+// px from pretext's off-DOM measurements (see sizeFor) and the text is absolutely
 // positioned at its final wrap width from the start. The box animates toward
 // that size while the words fade in behind it, and nothing ever re-wraps.
 import { Sparkles, LoaderCircle, X } from "lucide-static";
@@ -51,10 +56,11 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
   var DESKTOP_MIN_PX = 1024;
 
   // The bubble is sized as a content box, so these are the bounds of the text
-  // area itself, padding excluded. MIN is what it opens at while waiting for
-  // the first token: comfortably wider than the 22.4px row of thinking dots, so
-  // the waiting bubble reads as a bubble and not as a sliver, while still being
-  // small enough that growing into a full sentence is a visible change.
+  // area itself, padding excluded. MIN is a floor under every measured width,
+  // which matters most at the open: the box opens at the width of the first
+  // word, and "Y" or "Un" would otherwise open a sliver narrower than the
+  // bubble's own corner radius. Still small enough that growing into a full
+  // sentence is a visible change.
   var MAX_TEXT_REM = 20;
   var MIN_TEXT_REM = 3.25;
   var PAD_X_REM = 1;
@@ -161,16 +167,6 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       ".mascot-bot-word{opacity:0;filter:blur(5px);" +
       "transition:opacity 300ms ease-out,filter 300ms ease-out;}" +
       ".mascot-bot-word.mascot-bot-word-in{opacity:1;filter:blur(0);}" +
-      // Thinking dots, shown from the click until the first token lands.
-      ".mascot-bot-dots{position:absolute;left:" + PAD_X_REM + "rem;top:" + PAD_Y_REM + "rem;" +
-      "display:flex;align-items:center;gap:.25rem;height:1.45em;" +
-      "opacity:1;transition:opacity 150ms ease-out;}" +
-      ".mascot-bot-dots.mascot-bot-dots-out{opacity:0;}" +
-      ".mascot-bot-dots span{width:.3rem;height:.3rem;border-radius:9999px;background:currentColor;" +
-      "opacity:.35;animation:mascot-bot-pulse 1200ms ease-in-out infinite;}" +
-      ".mascot-bot-dots span:nth-child(2){animation-delay:150ms;}" +
-      ".mascot-bot-dots span:nth-child(3){animation-delay:300ms;}" +
-      "@keyframes mascot-bot-pulse{0%,100%{opacity:.25;}50%{opacity:.9;}}" +
       // The announcement region: never painted, never gated behind the
       // breakpoint. Clipped rather than display:none or visibility:hidden,
       // because either of those takes it out of the accessibility tree and a
@@ -187,8 +183,7 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       ".mascot-bot-bubble{transition:opacity 120ms linear,visibility 0s linear 120ms;" +
       "transform:none;filter:none;}" +
       ".mascot-bot-bubble.mascot-bot-visible{transform:none;}" +
-      ".mascot-bot-word{opacity:1;filter:none;transition:none;}" +
-      ".mascot-bot-dots span{animation:none;}}";
+      ".mascot-bot-word{opacity:1;filter:none;transition:none;}}";
     document.head.appendChild(style);
   }
 
@@ -209,11 +204,6 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     var bubble = document.createElement("div");
     bubble.className = "mascot-bot-bubble";
 
-    var dots = document.createElement("div");
-    dots.className = "mascot-bot-dots";
-    dots.setAttribute("aria-hidden", "true");
-    dots.innerHTML = "<span></span><span></span><span></span>";
-
     var text = document.createElement("div");
     text.className = "mascot-bot-text";
 
@@ -226,11 +216,10 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     live.className = "mascot-bot-live";
     live.setAttribute("role", "status");
 
-    bubble.appendChild(dots);
     bubble.appendChild(text);
     document.body.appendChild(bubble);
     document.body.appendChild(live);
-    return { bubble: bubble, dots: dots, text: text, live: live };
+    return { bubble: bubble, text: text, live: live };
   }
 
   // One toast at a time, reusing the node: two of them share the same fixed
@@ -343,11 +332,16 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     var btn = createButton();
     var parts = createBubble();
     var bubble = parts.bubble;
-    var dots = parts.dots;
     var textEl = parts.text;
     var liveEl = parts.live;
 
-    var state = "idle"; // idle | loading | streaming | showing
+    // idle | loading | streaming | showing. "loading" is the window where the
+    // request is in flight and nothing is on screen but the button's spinner;
+    // "streaming" starts at the first committed word, which is also when the
+    // bubble opens, so the state is what openBubble is keyed off. Everything
+    // that dismisses (click, Escape, scroll-down, breakpoint) only asks whether
+    // this is "idle", so it works the same before and after the first word.
+    var state = "idle";
     var pretext = null; // measurement API for the message currently open, or null
     var pretextReady = null; // the API once its bundle has landed, or null
     var fullText = ""; // everything committed to the DOM so far
@@ -482,9 +476,10 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     // Jumps to a size instead of animating to it. Needed exactly once per
     // message, at open: the element still carries the previous reply's width
     // and height, and letting the transition run from there means the bubble
-    // fades in while visibly shrinking from the last comment's size down to
-    // the minimum. Suppressing the transition for one flushed frame makes the
-    // open start from small, which is what the growth is supposed to read as.
+    // fades in while visibly shrinking from the last comment's size down to the
+    // first word's. Suppressing the transition for one flushed frame makes the
+    // open start from small, which is what the growth is supposed to read as,
+    // and the flush is also what the growth's first step transitions *from*.
     function setSizeInstant(width, height) {
       bubble.style.transition = "none";
       bubble.style.width = width + "px";
@@ -514,6 +509,7 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     function setIdle() {
       state = "idle";
       btn.innerHTML = Sparkles;
+      btn.removeAttribute("aria-busy");
       setButtonState(false);
     }
 
@@ -522,53 +518,87 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       btn.innerHTML = LoaderCircle;
       var svg = btn.querySelector("svg");
       if (svg) svg.classList.add("mascot-bot-spin");
-      // Already dismissable: the bubble is on screen with its thinking dots and
-      // this click cancels the request behind it.
-      setButtonState(true);
+      // Not dismissable-looking yet, and not expanded either: there is nothing
+      // on screen in this window to call expanded or to offer to dismiss. The
+      // spinning icon is the whole visual feedback and aria-busy is its
+      // equivalent for a screen reader. Pressing the button here still cancels
+      // the request, through the same "not idle" branch that closes a bubble.
+      btn.setAttribute("aria-busy", "true");
+      setButtonState(false);
     }
 
     function setDismissable() {
       btn.innerHTML = X;
+      btn.removeAttribute("aria-busy");
       setButtonState(true);
     }
 
-    // Opens at the minimum size with the thinking dots, before a single token
-    // exists. The growth animation needs somewhere to grow from, and an empty
-    // bubble that appears the instant it's clicked is also the honest signal
-    // that the click registered.
-    function openBubble() {
+    // Everything a message has to start from zero, reset at the click rather
+    // than at the open: the stream commits into these, and the bubble does not
+    // exist yet when the first chunk lands. Nothing here touches the DOM, so
+    // the previous comment's node is left alone until it is replaced.
+    function resetMessage() {
       fullText = "";
       pending = "";
       boxW = 0;
       boxH = 0;
       metrics = null;
+    }
+
+    // Called from the first committed word, never from the click. A bubble
+    // opened on click has nothing in it to read: the enter transition is spent
+    // on an empty box, and whatever is put inside it to fill the wait only
+    // repeats the spinner the button is already showing. Opening here instead
+    // makes the enter and the growth one motion -- it scales and fades in
+    // already holding `firstWord`, and is already growing past it by the time
+    // it is legible.
+    function openBubble(firstWord) {
       textEl.textContent = "";
       liveEl.textContent = "";
-      dots.classList.remove("mascot-bot-dots-out");
       bubble.classList.remove("mascot-bot-auto");
 
       if (pretext && measurable()) {
         metrics = readMetrics();
-        boxW = remToPx(MIN_TEXT_REM);
-        boxH = metrics.lineHeight;
-        setSizeInstant(boxW, boxH);
+        // The first word alone, not the chunk it arrived in: a short reply can
+        // land in a single chunk, and sizing the open to all of it would put the
+        // bubble at its final width before it is even visible, with nothing left
+        // to grow. A failure here downgrades the message to CSS sizing, same as
+        // any other measurement failure.
+        var size = sizeFor(firstWord);
+        if (size) {
+          boxW = size.width;
+          boxH = size.height;
+          setSizeInstant(boxW, boxH);
+        } else {
+          useAutoSizing();
+        }
       } else {
         useAutoSizing();
       }
 
       // Next frame, so the enter transition has an initial state to run from.
       // Guarded by the sequence number because a scroll-down dispatches before
-      // animation-frame callbacks in the same frame: without it, "click, keep
-      // scrolling while I wait" closes the bubble and then this makes it
-      // visible anyway, leaving an empty pulsing bubble with no request behind
-      // it that no further scroll will close.
+      // animation-frame callbacks in the same frame: the first token can land in
+      // the same frame the visitor keeps scrolling in, and without this the
+      // scroll would close the bubble and then this would make it visible
+      // anyway, leaving a bubble with no request behind it that no further
+      // scroll will close. closeBubble bumps the same counter from every path
+      // that can run in that gap -- scroll, Escape, click, breakpoint.
       var seq = ++openSeq;
       requestAnimationFrame(function () {
         if (seq !== openSeq) return;
         bubble.classList.add("mascot-bot-visible");
+        // In here rather than next to the state change, so the X and the
+        // aria-expanded that comes with it land on the same frame the bubble
+        // does: there is no frame where the button offers to dismiss something
+        // that isn't on screen, and if this frame never comes because the
+        // message was closed first, the icon is left as closeBubble set it.
+        setDismissable();
       });
     }
 
+    // Also the cancel path for a message that never got as far as a bubble:
+    // during "loading" the class removal is a no-op and the abort is the point.
     function closeBubble() {
       openSeq++;
       bubble.classList.remove("mascot-bot-visible");
@@ -612,10 +642,11 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     // is held back in `pending`: rendering it and then extending it would make
     // the text twitch, and would make every measurement a measurement of a
     // string that never existed.
+    // Also where the bubble is opened, on the first word and no earlier.
     function commit(chunk, final) {
-      // Nothing is open, so there is nowhere for this to go: a chunk that was
-      // already in flight when the bubble was dismissed must not paint itself
-      // into it, or turn the button back into an X over a closed bubble.
+      // The message was dismissed, so there is nowhere for this to go: a chunk
+      // that was already in flight must not paint itself into a closed bubble,
+      // re-open one, or turn the button back into an X over nothing.
       if (state === "idle") return;
       pending += chunk || "";
       // The server streams the model's raw output, so unlike the old
@@ -631,9 +662,18 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       if (!pieces.length) return;
 
       if (state === "loading") {
+        // pieces[0] is a word, not whitespace: while fullText is empty the strip
+        // above has already eaten any leading space. It can still be empty, from
+        // a final flush with nothing left in it -- an empty 200 body, or a reply
+        // that was only whitespace. Those are about to become an error toast, so
+        // returning here is what keeps them from flashing the empty bubble this
+        // whole path exists to avoid.
+        if (!pieces[0]) return;
+        // State first and synchronously, as everywhere else: openBubble only
+        // schedules the frame that reveals the bubble, and a second click or a
+        // scroll landing before that frame has to find a state it can close.
         state = "streaming";
-        dots.classList.add("mascot-bot-dots-out");
-        setDismissable();
+        openBubble(pieces[0]);
       }
 
       fullText += pieces.join("");
@@ -671,15 +711,17 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       // leaving "idle" is the only thing that stops the next click from
       // starting a second request, and two requests would share fullText,
       // pending, boxW and abort. A gap here is also a gap with no feedback in
-      // it, which is exactly what makes someone click again.
+      // it, which is exactly what makes someone click again: the spinner going
+      // up is now the only thing that happens at click time.
       setLoading();
+      resetMessage();
       // Which sizing strategy this message uses is decided here and never
-      // revisited: a bundle that lands mid-stream can only help the next
+      // revisited, even though the bubble it applies to won't exist until the
+      // first word: a bundle that lands mid-stream can only help the next
       // message, because switching from CSS wrapping to measured px sizing
       // halfway through is a visible jump. Starting the download anyway, since
       // a click without a hover before it is the same signal of intent.
       pretext = pretextReady;
-      openBubble();
       warmPretext();
 
       abort = new AbortController();
@@ -720,7 +762,12 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
           if (signal.aborted) return;
           if (!fullText.trim()) throw new Error(COPY[lang()].error);
           state = "showing";
-          setDismissable();
+          // No setDismissable() here: reaching this means a word was committed,
+          // so openBubble has already scheduled the frame that puts the X up
+          // with the bubble. Doing it again from here would only matter for a
+          // reply that arrived in one chunk, and then it would be doing it a
+          // frame early -- an X over a bubble that isn't on screen yet.
+          //
           // The one and only announcement for this message: the sentence is
           // finished, so a screen reader reads it whole instead of re-reading a
           // growing fragment after every committed word.
