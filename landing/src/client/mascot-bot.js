@@ -57,10 +57,10 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
 
   // The bubble is sized as a content box, so these are the bounds of the text
   // area itself, padding excluded. MIN is a floor under every measured width,
-  // which matters most at the open: the box opens at the width of the first
-  // word, and "Y" or "Un" would otherwise open a sliver narrower than the
-  // bubble's own corner radius. Still small enough that growing into a full
-  // sentence is a visible change.
+  // which matters most at the open: the box opens at the width of its first
+  // word, and a two-letter one would otherwise open a box barely wider than its
+  // own padding. Still small enough that growing into a full sentence is a
+  // visible change.
   var MAX_TEXT_REM = 20;
   var MIN_TEXT_REM = 3.25;
   var PAD_X_REM = 1;
@@ -335,12 +335,13 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     var textEl = parts.text;
     var liveEl = parts.live;
 
-    // idle | loading | streaming | showing. "loading" is the window where the
-    // request is in flight and nothing is on screen but the button's spinner;
-    // "streaming" starts at the first committed word, which is also when the
-    // bubble opens, so the state is what openBubble is keyed off. Everything
-    // that dismisses (click, Escape, scroll-down, breakpoint) only asks whether
-    // this is "idle", so it works the same before and after the first word.
+    // idle | loading | streaming | showing. The two middle ones are worth
+    // keeping apart now that the dots are gone, because they are exactly the
+    // "no bubble yet" and "bubble on screen" halves of a request: "loading" is
+    // the window where nothing is up but the button's spinner, and the move to
+    // "streaming" on the first committed word is what opens the bubble.
+    // Everything that dismisses (click, Escape, scroll-down, breakpoint) only
+    // asks whether this is "idle", so both halves cancel the same way.
     var state = "idle";
     var pretext = null; // measurement API for the message currently open, or null
     var pretextReady = null; // the API once its bundle has landed, or null
@@ -534,9 +535,9 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     }
 
     // Everything a message has to start from zero, reset at the click rather
-    // than at the open: the stream commits into these, and the bubble does not
-    // exist yet when the first chunk lands. Nothing here touches the DOM, so
-    // the previous comment's node is left alone until it is replaced.
+    // than at the open: the stream commits into these, and the bubble is not
+    // open yet when the first chunk lands. Nothing here touches the DOM, so the
+    // previous comment stays in the (hidden) bubble until a word replaces it.
     function resetMessage() {
       fullText = "";
       pending = "";
