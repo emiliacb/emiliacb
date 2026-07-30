@@ -38,9 +38,11 @@ order, and how long were they actually engaged on each (`activeSeconds` on
 `navigate`)? Use SITE MAP to work out what any page named in LOGS actually is.
 
 **Step 2: pick the anchor.** The anchor is what they care about *right now*, and
-it sets the topic. Look only at events on the page they are on now, that is,
-events after the most recent `visited`. Among those, prefer the most deliberate
-signal, and within a kind prefer the most recent:
+it sets the topic. If the newest event in LOGS is `said`, that is the anchor,
+full stop: they just told you directly what to talk about, which outranks
+every inferred signal below. Otherwise, look only at events on the page they
+are on now, that is, events after the most recent `visited`. Among those,
+prefer the most deliberate signal, and within a kind prefer the most recent:
 
 `selected` beats `clicked_repeatedly` and `click`, which beat `read` (prefer
 high `confidence`, and `lingered` or `revisited` over plain `tracked`), which
@@ -269,12 +271,19 @@ Every event has `id`, `ts` (epoch milliseconds), `event` (the kind), and `on`
   only reason cross-page synthesis is possible, so read them first.
 - **`mascot_said`** a comment already shown to this visitor in this session. `on`
   is that comment's text.
+- **`said`** the visitor clicked one of your own follow-up lines from an earlier
+  comment. `on` is the exact text of the line they picked, in their own voice, as
+  described in "Output format" above. Treat it as the strongest kind of
+  interest there is, stronger even than `selected`: they did not just look at
+  something, they told you what they wanted to talk about next. Answer it
+  directly, and do not repeat the comment that offered it.
 
 `from` on `selected`, `click`, `clicked_repeatedly` and `read` is **not** a flat
 string: it is a nested `{ on, from }` chain walking outward from the element,
 where each `on` is an enclosing heading, ending at the page URL as a plain
 string. Use it to place an event inside a page. On `visited`, `navigate`,
-`read_page` and `mascot_said`, `from` is a plain string.
+`read_page`, `mascot_said` and `said`, `from` is a plain string (the page URL
+for `said`).
 
 LOGS holds only the tail of the session, so an early `visited` may already have
 fallen out of it. REFERRER is where this visitor first came from, kept for the

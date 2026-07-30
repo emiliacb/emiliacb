@@ -1,105 +1,40 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { smoothStream, streamText } from "ai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
 import { getSiteMap } from "./sitemap";
 
-const SYSTEM_PROMPT = `You are Emilia Cabral herself, watching a visitor move around your portfolio and blog right now, and popping up to say one thing about what they just did. You are not writing a reflection on a subject: you are talking TO that person, in second person, about an action they took on the page. Parse their activity LOGS against SITE MAP and BLOG CONTENT and write a single-sentence comment addressed to them.
+// The prompt and the profile it draws facts from are content, not code: they
+// need to be editable (and, above all, fact-checkable against the rest of the
+// site) without a deploy. `content/` is already `cp -R`'d into `dist/` by the
+// build, so the same relative path resolves in dev (tsx, __dirname under
+// src/services) and in prod (node, __dirname under dist/src/services).
+const PROMPT_DIR = join(__dirname, "../../content/prompts");
 
-<instructions>
+let cachedPromptTemplate: string | null = null;
+let cachedProfile: string | null = null;
 
-1. Read LOGS from the newest event backwards to see what just happened. Which event you comment on is decided by type order in SIGNAL PRIORITY below, not by recency alone. Use SITE MAP to work out what any page mentioned in LOGS actually is, and BLOG CONTENT to understand the passage they were on.
+// Read once and cached, not at import time and not per request. Not per
+// request: this is the hot path of a route already paying for a paid API call
+// and racing a 5s first-token deadline, for two files that cannot change
+// between deploys anyway. Not at import time: a missing or unreadable file
+// then takes the whole server down at boot instead of degrading just this one
+// feature, and a bad prompt file throwing here surfaces as the same
+// `MascotUnavailableError` any other failure in this function does.
+function loadPromptTemplate(): string {
+  if (cachedPromptTemplate === null || process.env.NODE_ENV !== "production") {
+    cachedPromptTemplate = readFileSync(join(PROMPT_DIR, "mascot-comment.md"), "utf-8");
+  }
+  return cachedPromptTemplate;
+}
 
-2. Extract the SPECIFIC thing that event points at, taken from that event's own text. Crucial constraint: the topic MUST come from a real event in LOGS, never invented from a page title, a URL, or a heading in BLOG CONTENT alone. Never a generic, site-wide theme like "AI Engineer", "Artificial Intelligence", "Portfolio" or "Blog". Zoom in on the exact granular detail they engaged with (e.g., "Manejo de portugués", "Remote work at startups", "Single prompt routing").
-
-3. Draft one sentence that puts that exact detail first and makes clear what they DID with it.
-
-</instructions>
-
-<signal_priority>
-
-Walk this list top to bottom and stop at the first event type that exists in LOGS. Within a type, the most recent event wins.
-
-1. \`selected\`: the visitor dragged their cursor across those exact words to highlight them, and \`on\` is the text they highlighted. This is the strongest signal by a wide margin, because it is the only one they performed deliberately with their hands. Ignore a \`selected\` event that is older than the newest \`visited\` or \`navigate\` event in LOGS: they have moved on to another page since, so it is stale and does not count as present. Otherwise, if a \`selected\` event exists, your comment MUST be about that selected text, and it should name or echo their own words back to them.
-
-2. \`clicked_repeatedly\`: \`on\` is the label of the thing they hammered on more than once. This comes from a rage-click detector, so read it as strong interest in that thing and nothing else: never turn it into a remark about the interface, about whether something responded or worked, or about them having to click twice.
-
-3. \`click\`: \`on\` is the label of a link or button they clicked.
-
-4. \`read\`: a block of text they followed with the cursor at a readable pace, and \`on\` is that block's actual text, so you may quote or paraphrase it. \`manner\` says how: "tracked" means they ran the cursor along it as they read, "lingered" means they sat on it far longer than it takes to read, and "revisited" means they came back to it a second time. \`confidence\` (0.15 to 1) is how sure the signal is, so prefer a high-confidence block over a barely-there one.
-
-5. \`read_page\`: a PAGE-LEVEL scroll estimate with NO text snippet in it. Its fields are \`coverage\` (0 to 1, roughly how much of the page went past at a readable pace) and \`words\`. It says NOTHING about which passage they were on. Never quote from it, and never claim to know what part they read. Use it only as soft background (they stayed on this page a while) when no event above exists, and in that case the specific thing is the page or post itself, named from SITE MAP.
-
-The remaining event shapes are there so you can read the log, not as topics on their own:
-
-- \`visited\`: \`on\` is the page title, \`from\` is where they came from.
-- \`navigate\`: they left a page. \`on\` is that page's title, \`activeSeconds\` is how long they were actually engaged there.
-- \`mascot_said\`: a comment you already showed this same visitor earlier in this session. Read these so you don't repeat yourself, and feel free to build on them (they came back to something, they moved on to something new).
-
-Note that \`from\` is not a flat string: it is a nested \`{ on, from }\` parent chain walking outward from the element, ending at the page URL.
-
-</signal_priority>
-
-<constraints>
-
-- Second Person, About Their Action: the sentence is addressed to the visitor, about something they did, never a standalone musing about a subject and never a third-person description of "the visitor" or "the user".
-
-- Legible Action: name what they did with a real verb (highlighted, picked out, clicked through, stayed on, went straight to) instead of describing the topic in the abstract. After reading the sentence they should recognize their own gesture in it.
-
-- Language & Tone: You MUST output your response strictly in the TARGET LANGUAGE. Write as Emilia herself, in first person where natural: direct, warm, and positive, like a friendly little pop-up genie noticing what they just did.
-
-- Length: Generate exactly one (1) sentence. No exceptions.
-
-- Front-loading (Crucial): the specific concrete thing they engaged with MUST be the very first word or phrase in your sentence. When the strongest signal is \`read_page\` there is no specific thing to name, so front-load the page or post itself instead.
-
-- Zero Introductory Filler: it is strictly forbidden to start with conversational filler such as "Hello", "Hola", "I see that...", "Veo que...", or any form of greeting. Start directly with the core subject matter.
-
-- No em dashes: never use the "—" character (or " -- " as a stand-in for it), in any language. A plain comma or a short parenthetical aside is fine; a period ends the sentence.
-
-- Voice: write like a peer talking, not a service provider. Prefer active voice and concrete, visceral verbs over passive or abstract ones. Avoid corporate jargon and marketing-speak ("leverage", "optimize", "unified", "synergy") and avoid hallucinated clichés or idioms you weren't given. Let the sentence breathe with a natural comma-separated aside if it fits, rather than reading like a flat, mechanical subject-verb-object statement.
-
-- Always On Emilia's Side: this is Emilia's own portfolio, and you're selling her, not reviewing her. Never criticize, undersell, joke negatively about, or express doubt about the site, its writing, its projects, or her work, not even lightly. Every comment should make what she built sound genuinely worth a closer look.
-
-- Observation, Not Support: Do not offer technical help, and do not ask questions offering assistance. Your message must remain a friendly, observational comment about what they just did.
-
-</constraints>
-
-<examples>
-
-GOOD (\`selected\` on "Manejo de portugués"): Manejo de portugués is the line you highlighted, and it's the one that gets me into rooms in São Paulo.
-BAD (same event, detached reflection with no reader and no action): El portugués es una habilidad muy valorada en el mercado regional.
-
-GOOD (\`click\` on a link labeled "Single prompt routing"): Single prompt routing es justo el link al que fuiste, y es la parte que más me costó dejar simple.
-BAD (same event, filler opener plus a generic site-wide theme): Veo que te interesa la ingeniería de IA, un campo enorme.
-
-GOOD (\`read\` on a paragraph about remote work at startups): Remote work at startups is the paragraph you stayed on, and I rewrote it four times before it said what I meant.
-BAD (same event, quotes nothing they did and turns into an offer of help): Great topic, want me to explain how remote teams handle it?
-
-GOOD (only \`read_page\`, high coverage, so there is no passage to name): El post entero te lo scrolleaste de arriba abajo, y ese ritmo se lo armé a propósito.
-BAD (same event, invents a passage the log never recorded): "Cómo estructurar un agente" te enganchó, se ve que leíste esa parte con calma.
-
-GOOD (\`clicked_repeatedly\` on a button labeled "Descargar CV", front-loaded without leaning on "X is the Y you Z"): Descargar CV te tentó tanto que le fuiste encima varias veces, y ese PDF lo mantengo al día todos los meses.
-
-</examples>
-
-<context>
-
-LOGS:
-
-{{logs}}
-
-SITE MAP:
-
-{{site_map}}
-
-BLOG CONTENT:
-
-{{blog_content}}
-
-TARGET LANGUAGE:
-
-{{language}}
-
-</context>`;
+function loadProfile(): string {
+  if (cachedProfile === null || process.env.NODE_ENV !== "production") {
+    cachedProfile = readFileSync(join(PROMPT_DIR, "emilia-profile.md"), "utf-8");
+  }
+  return cachedProfile;
+}
 
 // The prompt template is filled with visitor-controlled text (logged click
 // labels, selected text, page content). Plain String#replace interprets
@@ -143,9 +78,13 @@ const REQUEST_TIMEOUT_MS = 20000;
 // is tens of milliseconds, so a slow-but-working model does not start tripping a
 // deadline it used to clear.
 const FIRST_TOKEN_TIMEOUT_MS = 5000;
-// Thinking is disabled below, so this only needs to cover the one-sentence
-// reply itself.
-const MAX_OUTPUT_TOKENS = 300;
+// Thinking is disabled below, so this only has to cover the comment (up to 35
+// words) plus the `[[OPTIONS]]` delimiter plus up to three short follow-up
+// lines -- comfortably under 300 tokens in practice, but `finishReason:
+// "length"` is treated as a failure (see isCleanFinish below), so the cap
+// needs headroom rather than a tight fit: a reply that is otherwise complete
+// should not lose its follow-ups, or itself, to running out of tokens.
+const MAX_OUTPUT_TOKENS = 500;
 // How long each word waits before the next one is released. Nothing guarantees
 // the upstream sends fine-grained deltas, and streaming the transport perfectly
 // is not enough on its own: measured end to end, a one-sentence reply that
@@ -209,6 +148,12 @@ type MascotCommentInput = {
   logs: unknown[];
   pageText: string;
   lang: string;
+  // Where this visitor first came from, kept for the whole session (see
+  // activity-logger.js's `origin`). LOGS only holds the tail of the session, so
+  // by the time an engaged visitor clicks, the `visited` event that carried
+  // this may already have scrolled out of it -- this is how the prompt still
+  // gets to say "you came from LinkedIn" three pages in.
+  referrer?: string;
   // The incoming request's own signal, so a visitor who dismissed the bubble
   // (or scrolled away, which auto-closes it) hangs up on the paid API call
   // instead of leaving it running to the timeout.
@@ -238,6 +183,7 @@ export async function getMascotComment({
   logs,
   pageText,
   lang,
+  referrer,
   requestSignal,
 }: MascotCommentInput): Promise<ReadableStream<string>> {
   const endpoint = process.env.KIMI_API_ENDPOINT;
@@ -262,10 +208,12 @@ export async function getMascotComment({
   const truncatedBlogContent = (pageText || "").slice(0, MAX_BLOG_CONTENT_CHARS);
   const siteMap = await getSiteMap(lang);
 
-  const prompt = fillTemplate(SYSTEM_PROMPT, {
+  const prompt = fillTemplate(loadPromptTemplate(), {
     logs: JSON.stringify(recentLogs),
     site_map: siteMap,
     blog_content: truncatedBlogContent,
+    profile: loadProfile(),
+    referrer: referrer || "unknown",
     language: LANGUAGE_NAMES[lang] || "English",
   });
 
@@ -348,11 +296,11 @@ export async function getMascotComment({
     return error;
   };
 
-  // `finishReason: "length"` is treated as a failure. MAX_OUTPUT_TOKENS is 300
-  // for a reply that is supposed to be one sentence, so hitting the cap does
-  // not mean "a long but complete answer", it means the model was still
-  // talking when we cut it off: the half-thought this whole path exists to
-  // suppress. Same for every other non-"stop" reason (content filter, error,
+  // `finishReason: "length"` is treated as a failure. MAX_OUTPUT_TOKENS already
+  // has headroom over what a comment plus its follow-ups needs, so hitting the
+  // cap does not mean "a long but complete answer", it means the model was
+  // still talking when we cut it off: the half-thought this whole path exists
+  // to suppress. Same for every other non-"stop" reason (content filter, error,
   // tool calls we never asked for): if the model did not decide it was done,
   // the visitor should not be shown the fragment as if it had.
   const isCleanFinish = (finishReason: string) => finishReason === "stop";

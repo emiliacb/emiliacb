@@ -111,7 +111,7 @@ export default async function handler(c: Context) {
     return jsonError(c, 400, COPY.en.invalidRequest);
   }
 
-  const { logs, pageText, lang } = body || {};
+  const { logs, pageText, lang, referrer } = body || {};
   // Parsed before the cooldown check on purpose: the 429 body is shown to the
   // visitor, so it has to be in the language they asked for.
   const copy = COPY[pickLang(lang)];
@@ -140,6 +140,7 @@ export default async function handler(c: Context) {
       logs,
       pageText: typeof pageText === "string" ? pageText : "",
       lang: typeof lang === "string" ? lang : "en",
+      referrer: typeof referrer === "string" ? referrer : undefined,
       requestSignal: c.req.raw.signal,
     });
 

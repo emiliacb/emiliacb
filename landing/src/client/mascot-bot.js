@@ -65,6 +65,15 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
   var MIN_TEXT_REM = 3.25;
   var PAD_X_REM = 1;
   var PAD_Y_REM = 0.75;
+  var OPTIONS_GAP_REM = 0.75;
+
+  // Marks the end of the comment in the raw stream: everything after it is
+  // follow-up lines, not more of the sentence being painted. `[` and `]` are
+  // otherwise forbidden in the comment (the prompt says so), so the first `[`
+  // anywhere in the stream is unambiguous -- no need to buffer looking for the
+  // whole token before acting on it.
+  var OPTIONS_DELIMITER = "[[OPTIONS]]";
+  var MAX_OPTIONS = 3;
 
   function injectStyles() {
     var style = document.createElement("style");
@@ -167,6 +176,26 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       ".mascot-bot-word{opacity:0;filter:blur(5px);" +
       "transition:opacity 300ms ease-out,filter 300ms ease-out;}" +
       ".mascot-bot-word.mascot-bot-word-in{opacity:1;filter:blur(0);}" +
+      // Positioned in the same coordinate space as the text (see showOptions):
+      // absolute by default so the measured path can place it in px right
+      // below the text box and grow the bubble to include it, both computed
+      // once when the comment finishes rather than every frame. Under the
+      // auto-sizing fallback there's no measured box to sit below, so it drops
+      // into normal flow instead and CSS auto-sizing does the rest.
+      ".mascot-bot-options{position:absolute;left:" + PAD_X_REM + "rem;display:none;" +
+      "flex-direction:column;gap:.375rem;}" +
+      ".mascot-bot-bubble.mascot-bot-auto .mascot-bot-options{position:static;" +
+      "width:auto;margin-top:.75rem;}" +
+      ".mascot-bot-option{display:block;width:100%;text-align:left;" +
+      "background:transparent;border:1px solid rgba(28,25,23,.14);border-radius:.5rem;" +
+      "padding:.4rem .6rem;font:inherit;font-size:.8rem;line-height:1.3;color:inherit;" +
+      "cursor:pointer;transition:background-color 150ms ease-out,border-color 150ms ease-out;}" +
+      ".mascot-bot-option:hover,.mascot-bot-option:focus-visible{" +
+      "background:rgba(28,25,23,.06);border-color:rgba(28,25,23,.26);}" +
+      "@media (prefers-color-scheme: dark){" +
+      ".mascot-bot-option{border-color:rgba(245,245,244,.18);}" +
+      ".mascot-bot-option:hover,.mascot-bot-option:focus-visible{" +
+      "background:rgba(245,245,244,.1);border-color:rgba(245,245,244,.3);}}" +
       // The announcement region: never painted, never gated behind the
       // breakpoint. Clipped rather than display:none or visibility:hidden,
       // because either of those takes it out of the accessibility tree and a
@@ -207,6 +236,12 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     var text = document.createElement("div");
     text.className = "mascot-bot-text";
 
+    // Holds the follow-up lines the reply may end with: things the visitor
+    // could say back, rendered as buttons once the comment itself has finished
+    // streaming. Empty and hidden until then.
+    var options = document.createElement("div");
+    options.className = "mascot-bot-options";
+
     // The live region is a separate, off-screen node rather than the bubble
     // itself: the bubble's text grows a word at a time, and a live region over
     // it re-announces the whole sentence from the top on every one of those
@@ -217,9 +252,10 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     live.setAttribute("role", "status");
 
     bubble.appendChild(text);
+    bubble.appendChild(options);
     document.body.appendChild(bubble);
     document.body.appendChild(live);
-    return { bubble: bubble, text: text, live: live };
+    return { bubble: bubble, text: text, options: options, live: live };
   }
 
   // One toast at a time, reusing the node: two of them share the same fixed
@@ -291,7 +327,13 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     return pretextPromise;
   }
 
-  function readActivityLogs() {
+  // Flushed once per click and cached for it: readActivityLogs() and
+  // readReferrer() both need the same parsed record, and parsing twice would
+  // just be reading localStorage twice for the same answer.
+  var storedLogsCache;
+
+  function storedLogs() {
+    if (storedLogsCache !== undefined) return storedLogsCache;
     try {
       // The logger debounces writes to localStorage, so the most recent
       // events may still be sitting in its in-memory buffer, flush first
@@ -300,12 +342,27 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
         window.__activityLogger.flush();
       }
       var raw = localStorage.getItem("activity_logs");
-      var stored = raw ? JSON.parse(raw) : null;
-      var events = (stored && stored.events) || [];
-      return events.slice(-SENT_LOGS_MAX);
+      storedLogsCache = raw ? JSON.parse(raw) : null;
     } catch (e) {
-      return [];
+      storedLogsCache = null;
     }
+    return storedLogsCache;
+  }
+
+  function readActivityLogs() {
+    var stored = storedLogs();
+    var events = (stored && stored.events) || [];
+    return events.slice(-SENT_LOGS_MAX);
+  }
+
+  // Where this visitor first arrived from, captured once by activity-logger.js
+  // for the whole session. LOGS only holds the last SENT_LOGS_MAX events, so an
+  // engaged visitor's own `visited` carrying this has usually scrolled out of
+  // it by the time they click -- this is the only way the prompt still gets to
+  // say "you came from LinkedIn" three pages in.
+  function readReferrer() {
+    var stored = storedLogs();
+    return (stored && stored.origin) || "";
   }
 
   // So the LLM can see what it already told this visitor and build on it
@@ -333,6 +390,7 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     var parts = createBubble();
     var bubble = parts.bubble;
     var textEl = parts.text;
+    var optionsEl = parts.options;
     var liveEl = parts.live;
 
     // idle | loading | streaming | showing. The two middle ones are worth
@@ -353,6 +411,8 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     var openSeq = 0; // bumped on every open and every close, see openBubble
     var abort = null;
     var fontHooked = false;
+    var optionsStarted = false; // the delimiter has been seen in this message
+    var optionsRaw = ""; // everything from the delimiter on, unparsed
 
     // Injects the bundle, so only intent (hover, focus, click) may call it.
     // Everything that has to happen once it lands hangs off here rather than
@@ -544,6 +604,8 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       boxW = 0;
       boxH = 0;
       metrics = null;
+      optionsStarted = false;
+      optionsRaw = "";
     }
 
     // Called from the first committed word, never from the click. A bubble
@@ -556,6 +618,8 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     function openBubble(firstWord) {
       textEl.textContent = "";
       liveEl.textContent = "";
+      optionsEl.style.display = "none";
+      optionsEl.innerHTML = "";
       bubble.classList.remove("mascot-bot-auto");
 
       if (pretext && measurable()) {
@@ -639,16 +703,12 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       });
     }
 
-    // Commits as much of the stream as forms whole words. A half-arrived word
-    // is held back in `pending`: rendering it and then extending it would make
-    // the text twitch, and would make every measurement a measurement of a
-    // string that never existed.
+    // Commits as much of the COMMENT half of the stream as forms whole words.
+    // A half-arrived word is held back in `pending`: rendering it and then
+    // extending it would make the text twitch, and would make every
+    // measurement a measurement of a string that never existed.
     // Also where the bubble is opened, on the first word and no earlier.
-    function commit(chunk, final) {
-      // The message was dismissed, so there is nowhere for this to go: a chunk
-      // that was already in flight must not paint itself into a closed bubble,
-      // re-open one, or turn the button back into an X over nothing.
-      if (state === "idle") return;
+    function commitCommentChunk(chunk, commentDone) {
       pending += chunk || "";
       // The server streams the model's raw output, so unlike the old
       // await-then-trim version a leading newline arrives verbatim. Inside an
@@ -656,10 +716,10 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       // down past the padding, and it would be measured as a line that the
       // DOM then collapses.
       if (!fullText) pending = pending.replace(/^\s+/, "");
-      if (!pending && !final) return;
+      if (!pending && !commentDone) return;
 
       var pieces = pending.split(/(\s+)/);
-      pending = final ? "" : pieces.pop() || "";
+      pending = commentDone ? "" : pieces.pop() || "";
       if (!pieces.length) return;
 
       if (state === "loading") {
@@ -680,6 +740,109 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       fullText += pieces.join("");
       appendPieces(pieces);
       resizeToText();
+    }
+
+    // Splits the raw stream into the comment (painted word by word, as
+    // before) and whatever comes after OPTIONS_DELIMITER (buffered raw, parsed
+    // once the stream ends). `[` cannot occur inside the comment itself -- the
+    // prompt forbids it -- so its first appearance anywhere in the stream is
+    // unambiguously where the comment ends, no need to buffer looking for the
+    // whole marker before acting on it.
+    function commit(chunk, final) {
+      // The message was dismissed, so there is nowhere for this to go: a chunk
+      // that was already in flight must not paint itself into a closed bubble,
+      // re-open one, or turn the button back into an X over nothing.
+      if (state === "idle") return;
+
+      if (optionsStarted) {
+        optionsRaw += chunk || "";
+        return;
+      }
+
+      var bracketIdx = (chunk || "").indexOf("[");
+      if (bracketIdx === -1) {
+        commitCommentChunk(chunk, final);
+        return;
+      }
+
+      // Everything up to the bracket is the last of the comment, flushed as
+      // done regardless of whether the HTTP body itself has ended yet: nothing
+      // more of the SENTENCE is coming either way.
+      commitCommentChunk(chunk.slice(0, bracketIdx), true);
+      optionsStarted = true;
+      optionsRaw = chunk.slice(bracketIdx);
+    }
+
+    // Turns the raw tail of the stream (starting at the delimiter itself)
+    // into a list of up to MAX_OPTIONS strings. `NONE` and a missing or empty
+    // body both mean no follow-ups; anything else is one line per option, each
+    // one stripped of its leading "- ".
+    function parseOptions(raw) {
+      var idx = raw.indexOf(OPTIONS_DELIMITER);
+      if (idx === -1) return [];
+      var body = raw.slice(idx + OPTIONS_DELIMITER.length);
+      var lines = body
+        .split("\n")
+        .map(function (l) {
+          return l.replace(/^\s*-\s*/, "").trim();
+        })
+        .filter(function (l) {
+          return l && l !== "NONE";
+        });
+      return lines.slice(0, MAX_OPTIONS);
+    }
+
+    // Renders the follow-ups, once, after the comment has finished streaming.
+    // Under measured sizing the options block is positioned in the same px
+    // coordinate space as the text and the bubble's height is grown to include
+    // it -- both read straight off the real rendered block rather than
+    // guessed, which only costs a forced layout because this runs once per
+    // message instead of once per word. Under the auto-sizing fallback there
+    // is no measured box to sit below, so CSS (.mascot-bot-auto .mascot-bot-
+    // options{position:static}) handles it for free.
+    function showOptions(list) {
+      optionsEl.innerHTML = "";
+      if (!list.length) {
+        optionsEl.style.display = "none";
+        return;
+      }
+
+      list.forEach(function (label) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "mascot-bot-option";
+        b.textContent = label;
+        b.addEventListener("click", function () {
+          handleOptionClick(label);
+        });
+        optionsEl.appendChild(b);
+      });
+      optionsEl.style.display = "flex";
+
+      if (pretext && metrics) {
+        var gapPx = remToPx(OPTIONS_GAP_REM);
+        optionsEl.style.width = boxW + "px";
+        optionsEl.style.top = remToPx(PAD_Y_REM) + boxH + gapPx + "px";
+        var optionsH = optionsEl.getBoundingClientRect().height;
+        bubble.style.height = boxH + gapPx + optionsH + "px";
+      }
+    }
+
+    // A follow-up is the visitor telling the mascot what to talk about next,
+    // in their own words -- logged the same way a selection or a click is, and
+    // immediately answered the same way the button itself would: close what is
+    // open (interruptible, like every other dismissal here) and ask again, so
+    // the fresh request's own LOGS carries the `said` event that names it.
+    function handleOptionClick(label) {
+      try {
+        if (window.__activityLogger && typeof window.__activityLogger.log === "function") {
+          window.__activityLogger.log({ event: "said", on: label, from: location.href });
+        }
+      } catch (e) {
+        // non-critical, skip
+      }
+      closeBubble();
+      requestComment();
     }
 
     function readStream(res) {
@@ -716,6 +879,10 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       // up is now the only thing that happens at click time.
       setLoading();
       resetMessage();
+      // Cleared per click, not per page load: a `said` click logs a fresh
+      // event and immediately starts the next request, and that event has to
+      // be in THIS request's logs, not a cached read from before it existed.
+      storedLogsCache = undefined;
       // Which sizing strategy this message uses is decided here and never
       // revisited, even though the bubble it applies to won't exist until the
       // first word: a bundle that lands mid-stream can only help the next
@@ -736,6 +903,7 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
           logs: readActivityLogs(),
           pageText: pageText(),
           lang: lang(),
+          referrer: readReferrer(),
         }),
       })
         .then(function (res) {
@@ -774,6 +942,11 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
           // growing fragment after every committed word.
           liveEl.textContent = fullText.trim();
           logMascotSaid(fullText.trim());
+          // After the comment, never before: appending buttons while the box is
+          // still growing word by word would mean measuring against a boxH that
+          // is about to change again, so the options block would have to be
+          // re-positioned on every remaining word instead of once.
+          showOptions(parseOptions(optionsRaw));
         })
         .catch(function (err) {
           if (signal.aborted || (err && err.name === "AbortError")) return;
