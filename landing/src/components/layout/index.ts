@@ -6,6 +6,8 @@ import tree from "../tree";
 import forest from "../forest";
 import footer from "../footer";
 import languageSwitcher from "../language-switcher";
+import activityPanel from "../activity-panel";
+import { AI_LAYOUT_ENABLED, AI_LAYOUT } from "./frame";
 
 config();
 
@@ -43,8 +45,32 @@ export default function layout({
 
   return html`
     <!DOCTYPE html>
-    <html lang="${siteData.lang}">
+    <html
+      lang="${siteData.lang}"
+      class="${AI_LAYOUT_ENABLED ? "ai-layout-enabled" : ""}"
+      style="--ai-layout-top: ${AI_LAYOUT.top}; --ai-layout-right: ${AI_LAYOUT.right}; --ai-layout-bottom: ${AI_LAYOUT.bottom}; --ai-layout-left: ${AI_LAYOUT.left};"
+    >
       <head>
+        <script>
+          // Keeps the AI layout across full-page navigations inside the site
+          // (this is a multi-page app, not an SPA -- the toggle would otherwise
+          // reset on every link click), and only those: a reload or an arrival
+          // from outside starts on the normal layout. Clearing the flag there is
+          // the point -- left set, the next internal link click would bring the
+          // layout back after the visitor had already been dropped out of it.
+          // Runs before paint so there's no flash of the wrong layout.
+          (function () {
+            var nav = performance.getEntriesByType("navigation")[0];
+            var fromInside =
+              (!nav || nav.type !== "reload") &&
+              document.referrer.indexOf(location.origin + "/") === 0;
+            if (fromInside && localStorage.getItem("ai-layout-enabled") === "true") {
+              document.documentElement.classList.add("ai-layout-enabled");
+            } else {
+              localStorage.removeItem("ai-layout-enabled");
+            }
+          })();
+        </script>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link
@@ -194,6 +220,16 @@ document.head.appendChild(o)}initApollo();</script>
             contain: paint;
           }
 
+          /* A named element is captured into the top layer, where no ancestor
+             overflow or border-radius clips it -- and #content is ~6rem taller
+             than the framed layout's viewport, so its snapshot spills over the
+             gap and footer even with no transform. Dropping the name folds it
+             back into the viewport-sized root snapshot, which cannot spill.
+             The rules below then match nothing in this state. */
+          html.ai-layout-enabled #content {
+            view-transition-name: none;
+          }
+
           html {
             scroll-behavior: auto;
           }
@@ -220,10 +256,8 @@ document.head.appendChild(o)}initApollo();</script>
         </script>
       </head>
 
-      <body
-        class="text-stone-800 dark:text-stone-100 overscroll-none md:overscroll-auto"
-
-      >
+      <body class="text-stone-800 dark:text-stone-100 overscroll-none md:overscroll-auto">
+        <div id="scroll-wrapper">
         <div id="loading-bar"></div>
         <div
           id="overlay-content"
@@ -268,11 +302,20 @@ document.head.appendChild(o)}initApollo();</script>
             </main>
           </div>
         </div>
+        <!--
+          The footer stays outside #overlay-content on purpose: overlay-content
+          overlaps it, so scrolling "reveals" the footer underneath while the
+          footer itself stays put. Moving it inside would tie it to overlay-content's
+          scroll and break that reveal effect.
+        -->
         ${withFooter ? footer({ lang: siteData.lang }) : null}
+        </div>
         ${languageSwitcher({ lang: siteData.lang })}
+        ${activityPanel()}
         <script src="/public/${CACHE_VERSION}/_layout-bundle.js" defer></script>
         <script src="/public/${CACHE_VERSION}/_navigation-bundle.js" defer></script>
         <script src="/public/${CACHE_VERSION}/_activity-logger-bundle.js" defer></script>
+        <script src="/public/${CACHE_VERSION}/_activity-panel-bundle.js" defer></script>
         <script src="/public/${CACHE_VERSION}/_mascot-bot-bundle.js" defer></script>
       </body>
     </html>

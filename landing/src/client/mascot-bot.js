@@ -20,6 +20,11 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
   "use strict";
 
   var TOAST_DURATION_MS = 4000;
+  // The debounce turns a burst of actions into one comment about all of them;
+  // the interval stays above the server's 8s per-IP cooldown, so an auto-fired
+  // request is never the one that gets 429'd.
+  var AUTO_DEBOUNCE_MS = 1500;
+  var AUTO_MIN_INTERVAL_MS = 10000;
   var PAGE_TEXT_MAX_CHARS = 4000;
   var SENT_LOGS_MAX = 10;
 
@@ -370,15 +375,23 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
 
   // So the LLM can see what it already told this visitor and build on it
   // instead of repeating itself, this session's mascot replies become part
-  // of the same activity log sent back on the next click.
+  // of the same activity log sent back on the next request.
+
+  // Held while logging the mascot's own reply: that entry dispatches
+  // `activity:event` like any other, and auto-commenting on it would have the
+  // mascot answering itself forever.
+  var suppressAuto = false;
+
   function logMascotSaid(message) {
     try {
       if (window.__activityLogger && typeof window.__activityLogger.log === "function") {
+        suppressAuto = true;
         window.__activityLogger.log({ event: "mascot_said", on: message, from: location.href });
       }
     } catch (e) {
       // non-critical, skip
     }
+    suppressAuto = false;
   }
 
   function pageText() {
@@ -413,6 +426,8 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     var metrics = null; // font metrics of the message currently open, or null
     var openSeq = 0; // bumped on every open and every close, see openBubble
     var abort = null;
+    var autoTimer = null;
+    var lastRequestAt = 0;
     var fontHooked = false;
     var optionsStarted = false; // the delimiter has been seen in this message
     var optionsRaw = ""; // everything from the delimiter on, unparsed
@@ -873,7 +888,7 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       return pump();
     }
 
-    function requestComment() {
+    function requestComment(auto) {
       // Synchronous, all of it, and nothing may be awaited before it: `state`
       // leaving "idle" is the only thing that stops the next click from
       // starting a second request, and two requests would share fullText,
@@ -882,6 +897,7 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
       // up is now the only thing that happens at click time.
       setLoading();
       resetMessage();
+      lastRequestAt = Date.now();
       // Cleared per click, not per page load: a `said` click logs a fresh
       // event and immediately starts the next request, and that event has to
       // be in THIS request's logs, not a cached read from before it existed.
@@ -934,36 +950,61 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
           if (signal.aborted) return;
           if (!fullText.trim()) throw new Error(COPY[lang()].error);
           state = "showing";
-          // No setDismissable() here: reaching this means a word was committed,
-          // so openBubble has already scheduled the frame that puts the X up
-          // with the bubble. Doing it again from here would only matter for a
-          // reply that arrived in one chunk, and then it would be doing it a
-          // frame early -- an X over a bubble that isn't on screen yet.
-          //
-          // The one and only announcement for this message: the sentence is
-          // finished, so a screen reader reads it whole instead of re-reading a
-          // growing fragment after every committed word.
           liveEl.textContent = fullText.trim();
           logMascotSaid(fullText.trim());
-          // After the comment, never before: appending buttons while the box is
-          // still growing word by word would mean measuring against a boxH that
-          // is about to change again, so the options block would have to be
-          // re-positioned on every remaining word instead of once.
           showOptions(parseOptions(optionsRaw));
         })
         .catch(function (err) {
           if (signal.aborted || (err && err.name === "AbortError")) return;
           closeBubble();
+          // Nobody asked for an auto-fired comment, so its failure is not worth
+          // a toast -- it would be one per action the mascot couldn't comment on.
+          if (auto) return;
           showToast(err && err.fromServer ? err.message : COPY[lang()].error);
         });
     }
 
+    // Going ON needs no help: #scroll-wrapper is `height: 100%` of a body that is
+    // viewport-tall from the frame the class lands, so it tracks the animating
+    // padding down on its own. Going OFF, those same rules disappear in one frame
+    // and the box jumps to its content height -- a length against `auto`, which no
+    // browser interpolates. So .ai-layout-animating holds the framed geometry (see
+    // styles.css) for the length of the animation and the box tracks the padding
+    // back out instead; nothing here measures anything, the layout engine resolves
+    // it per frame.
+    var LAYOUT_ANIM_MS = 800;
+    var animTimer = null;
+    var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    function animateWrapper(toggle) {
+      var root = document.documentElement;
+      var enabling = !root.classList.contains("ai-layout-enabled");
+      // Dropped before the toggle, so a close interrupted halfway hands the box
+      // straight back to the enabled rules -- which describe the same geometry it
+      // is already at, so there is nothing to jump.
+      if (animTimer) clearTimeout(animTimer);
+      root.classList.remove("ai-layout-animating");
+
+      toggle();
+
+      if (enabling || reducedMotion.matches || !desktop.matches) return;
+      root.classList.add("ai-layout-animating");
+      animTimer = setTimeout(function () {
+        animTimer = null;
+        root.classList.remove("ai-layout-animating");
+      }, LAYOUT_ANIM_MS);
+    }
+
+    // The button only switches the AI layout on and off. What asks for a comment
+    // is the visitor doing things while it is on -- including this very click,
+    // which the logger records like any other.
     btn.addEventListener("click", function () {
-      if (state !== "idle") {
-        closeBubble();
-        return;
-      }
-      requestComment();
+      animateWrapper(function () {
+        var enabled = document.documentElement.classList.toggle("ai-layout-enabled");
+        localStorage.setItem("ai-layout-enabled", String(enabled));
+      });
+
+      if (state !== "idle") closeBubble();
     });
 
     // Warms the measurement bundle on intent, well before the click needs it.
@@ -1023,6 +1064,32 @@ import { Sparkles, LoaderCircle, X } from "lucide-static";
     } else if (desktop.addListener) {
       desktop.addListener(onBreakpointChange);
     }
+
+    function scheduleAuto(delay) {
+      if (autoTimer) clearTimeout(autoTimer);
+      autoTimer = setTimeout(runAuto, delay);
+    }
+
+    function runAuto() {
+      autoTimer = null;
+      if (!document.documentElement.classList.contains("ai-layout-enabled")) return;
+      if (!desktop.matches) return;
+      if (state === "loading" || state === "streaming") return;
+      // Re-armed rather than dropped, so the action still gets its comment once
+      // the interval is up.
+      var wait = AUTO_MIN_INTERVAL_MS - (Date.now() - lastRequestAt);
+      if (wait > 0) {
+        scheduleAuto(wait);
+        return;
+      }
+      if (state === "showing") closeBubble();
+      requestComment(true);
+    }
+
+    window.addEventListener("activity:event", function () {
+      if (suppressAuto) return;
+      scheduleAuto(AUTO_DEBOUNCE_MS);
+    });
   }
 
   if (document.readyState === "loading") {

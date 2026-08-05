@@ -3,8 +3,6 @@ import { raw } from "hono/html";
 import { Languages } from "lucide-static";
 import contact from "../contacts";
 
-const DELTA_HEIGHT = 200;
-
 type FooterProps = {
   lang: string;
 };
@@ -109,16 +107,17 @@ function footerContent({ lang }: FooterProps) {
   `;
 }
 
-function footerFixed({ lang }: FooterProps) {
+export default function footer({ lang }: FooterProps) {
+  // ponytail: no inset variant here. The classes were interpolated from
+  // AI_LAYOUT, so Tailwind's scanner never saw them and never generated
+  // them -- and `html.ai-layout-enabled footer` in styles.css already
+  // applies the offset/margins/radius, for both the SSR'd initial state and
+  // the live toggle. No `w-full` either: a block-level box already fills its
+  // container, and width:100% over-constrained the inset state so margin-right
+  // was dropped and the right corner landed outside the overflow-x clip.
   return html`<footer
-    class="fixed bottom-0 h-fit py-4 pb-8 z-0 w-full flex px-4 sm:px-8 justify-center bg-yellow-300 dark:bg-blue-900 items-center"
-    style="margin-top: ${DELTA_HEIGHT}px; padding-top: calc(${DELTA_HEIGHT}px + 2rem)"
+    class="sticky bottom-0 h-fit py-4 pb-8 z-0 flex px-4 sm:px-8 justify-center bg-yellow-300 dark:bg-blue-900 items-center"
   >
     ${footerContent({ lang })}
   </footer>`;
-}
-
-export default function footer({ lang }: FooterProps) {
-  return html`<div class="opacity-0 py-8" aria-hidden="true">${footerContent({ lang })}</div>
-    <div>${footerFixed({ lang })}</div>`;
 }

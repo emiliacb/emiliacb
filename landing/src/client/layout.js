@@ -30,6 +30,15 @@ if (
   window.matchMedia("(prefers-reduced-motion: no-preference)").matches
 ) {
   const overlayContent = document.getElementById("overlay-content");
+  const scrollWrapper = document.getElementById("scroll-wrapper");
+
+  // The mascot button can flip .ai-layout-enabled on <html> at any time,
+  // which changes which element actually scrolls -- so this is re-checked on
+  // every read instead of cached once at load.
+  function usesWrapperScroll() {
+    return document.documentElement.classList.contains("ai-layout-enabled");
+  }
+
   if (overlayContent) {
     let timeout;
     let ticking = false;
@@ -40,9 +49,12 @@ if (
     });
 
     function checkIfOverlayScrolled() {
-      const isScrolled =
-        window.scrollY >
-        cachedOverlayHeight - window.innerHeight + 1;
+      const wrapperScroll = usesWrapperScroll();
+      const scrollY = wrapperScroll ? scrollWrapper.scrollTop : window.scrollY;
+      const viewportHeight = wrapperScroll
+        ? scrollWrapper.clientHeight
+        : window.innerHeight;
+      const isScrolled = scrollY > cachedOverlayHeight - viewportHeight + 1;
       return isScrolled;
     }
 
@@ -65,10 +77,7 @@ if (
       ticking = false;
     }
 
-    // Modern browsers: scrollend event (registered once, outside scroll handler)
-    window.addEventListener("scrollend", forcedTick);
-
-    window.addEventListener("scroll", () => {
+    function onScroll() {
       const isScrolled = checkIfOverlayScrolled();
 
       // Wait for requestAnimationFrame if not scrolled
@@ -84,6 +93,16 @@ if (
       // Debounce scroll handler to handle inertial scrolling animations
       clearTimeout(timeout);
       timeout = setTimeout(forcedTick, 200);
-    });
+    }
+
+    // Both targets are wired up unconditionally: only one of them actually
+    // scrolls at a time, depending on .ai-layout-enabled, and that can
+    // flip live (mascot button), so neither can be picked once and cached.
+    window.addEventListener("scrollend", forcedTick);
+    window.addEventListener("scroll", onScroll);
+    if (scrollWrapper) {
+      scrollWrapper.addEventListener("scrollend", forcedTick);
+      scrollWrapper.addEventListener("scroll", onScroll);
+    }
   }
 }

@@ -86,6 +86,174 @@ html {
   }
 }
 
+/* AI layout: toggled live by the mascot button (see src/client/mascot-bot.js).
+   Off by default; AI_LAYOUT_ENABLED in src/components/layout/frame.ts controls
+   the initial state.
+
+   Two 400ms stages, mirrored: turning it ON opens the frame (top/bottom/left)
+   first and then the right gap, with the activity panel riding in on it; turning
+   it OFF plays that backwards. So every element carries its transition twice --
+   the base selector times the OFF direction, the .ai-layout-enabled one times
+   ON. The two lists have to stay the reverse of each other; editing one means
+   editing the other. Height is left out: animating between auto and 100vh
+   doesn't interpolate in browsers today.
+
+   ponytail: reversing mid-flight leaves the stage that had not started yet
+   sitting at its 400ms delay, so an interrupted toggle can stall for that long
+   before unwinding. Zeroing the delay for a stage that never ran needs JS. */
+body {
+  /* The gap colour goes with whichever stage opens or closes the gap, so a fully
+     open gap is never painted the wrong colour. */
+  transition: padding-right 400ms ease-out, padding-top 400ms ease-out 400ms,
+    padding-bottom 400ms ease-out 400ms, padding-left 400ms ease-out 400ms,
+    background-color 400ms ease-out 400ms;
+}
+
+#scroll-wrapper {
+  transition: border-radius 400ms ease-out 400ms;
+}
+
+footer {
+  /* `bottom` rides along because the footer is sticky: left out, its offset
+     snapped while everything else eased. */
+  transition: margin-right 400ms ease-out, bottom 400ms ease-out 400ms,
+    margin-left 400ms ease-out 400ms, border-radius 400ms ease-out 400ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  #scroll-wrapper,
+  footer,
+  #activity-panel {
+    /* !important, because the .ai-layout-enabled rules below out-specify this
+       one and media queries add no specificity of their own. */
+    transition: none !important;
+  }
+}
+
+html.ai-layout-enabled body {
+  @apply bg-stone-200 dark:bg-stone-900;
+  height: 100vh;
+  height: 100svh;
+  padding: var(--ai-layout-top) var(--ai-layout-right) var(--ai-layout-bottom)
+    var(--ai-layout-left);
+  transition: padding-top 400ms ease-out, padding-bottom 400ms ease-out,
+    padding-left 400ms ease-out, padding-right 400ms ease-out 400ms,
+    background-color 400ms ease-out;
+}
+
+html.ai-layout-enabled #scroll-wrapper {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 2rem;
+  transition: border-radius 400ms ease-out;
+}
+
+/* Held for the length of the closing animation only (mascot-bot.js adds the class
+   on the way out and drops it at the end): without it the wrapper's height goes
+   from 100% of a viewport-tall body to the height of the whole page in one frame,
+   and a length against `auto` is not interpolable. Held, the box tracks the
+   padding closing around it instead -- nothing measured, resolved per frame -- and
+   by the time this is dropped the growth left is below the fold. overflow comes
+   along, or the content spills while the box is still shorter than it. Has to sit
+   after the rules above: same specificity, so source order decides. */
+html.ai-layout-animating body {
+  height: 100vh;
+  height: 100svh;
+}
+
+html.ai-layout-animating #scroll-wrapper {
+  height: 100%;
+  overflow: hidden;
+}
+
+html.ai-layout-enabled footer {
+  bottom: var(--ai-layout-bottom);
+  margin-left: var(--ai-layout-left);
+  margin-right: var(--ai-layout-right);
+  border-radius: 2rem;
+  transition: bottom 400ms ease-out, margin-left 400ms ease-out,
+    border-radius 400ms ease-out, margin-right 400ms ease-out 400ms;
+}
+
+/* Activity panel: lives in the widened right-hand gap of the AI layout,
+   showing activity-logger's events as a chat-style transcript
+   (src/client/activity-panel.js). Parked off-screen rather than display:none
+   when the flag is off, so it has somewhere to slide in from -- visibility, not
+   just the transform, because an on-screen-but-translated panel is still in the
+   accessibility tree. */
+#activity-panel {
+  display: flex;
+  position: fixed;
+  top: var(--ai-layout-top);
+  bottom: var(--ai-layout-bottom);
+  right: 1rem;
+  width: calc(var(--ai-layout-right) - 2rem);
+  border-radius: 2rem;
+  overflow: hidden;
+  z-index: 20;
+  transform: translateX(calc(100% + 1rem));
+  visibility: hidden;
+  /* Leaves first, in the same window as the gap it sits in. visibility waits out
+     the slide, or there is nothing left to watch. */
+  transition: transform 400ms ease-out, visibility 0s linear 400ms;
+}
+
+html.ai-layout-enabled #activity-panel {
+  transform: none;
+  visibility: visible;
+  /* Enters last, on the gap being opened for it. */
+  transition: transform 400ms ease-out 400ms, visibility 0s linear 400ms;
+}
+
+.activity-msg {
+  max-width: 88%;
+  align-self: flex-start;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.7rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  word-break: break-word;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.activity-msg.activity-msg-mascot {
+  align-self: flex-end;
+  background: #292524;
+  color: #fff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .activity-msg {
+    background: #44403c;
+  }
+
+  .activity-msg.activity-msg-mascot {
+    background: #f5f5f4;
+    color: #1c1917;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .activity-msg {
+    animation: activity-msg-in 220ms ease-out both;
+  }
+}
+
+@keyframes activity-msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .lucide {
   @apply relative size-4 md:size-[1.3rem];
 }

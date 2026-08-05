@@ -101,6 +101,11 @@ async function bundleClientFile({ entry, outfile, label }: {
     outfile: "_mascot-bot-bundle.js",
     label: "Mascot bot",
   });
+  await bundleClientFile({
+    entry: "src/client/activity-panel.js",
+    outfile: "_activity-panel-bundle.js",
+    label: "Activity panel",
+  });
   // Its own bundle on purpose: the mascot injects it on first hover, so the
   // text-layout tables aren't downloaded by the visitors who never click.
   await bundleClientFile({
