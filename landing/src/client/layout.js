@@ -33,7 +33,7 @@ if (
   const scrollWrapper = document.getElementById("scroll-wrapper");
 
   // The mascot button can flip .ai-layout-enabled on <html> at any time,
-  // which changes which element actually scrolls -- so this is re-checked on
+  // which changes which element actually scrolls, so this is re-checked on
   // every read instead of cached once at load.
   function usesWrapperScroll() {
     return document.documentElement.classList.contains("ai-layout-enabled");

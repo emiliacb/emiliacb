@@ -87,16 +87,13 @@ html {
 }
 
 /* AI layout: toggled live by the mascot button (see src/client/mascot-bot.js).
-   Off by default; AI_LAYOUT_ENABLED in src/components/layout/frame.ts controls
-   the initial state.
 
    Two 400ms stages, mirrored: turning it ON opens the frame (top/bottom/left)
    first and then the right gap, with the activity panel riding in on it; turning
-   it OFF plays that backwards. So every element carries its transition twice --
-   the base selector times the OFF direction, the .ai-layout-enabled one times
-   ON. The two lists have to stay the reverse of each other; editing one means
-   editing the other. Height is left out: animating between auto and 100vh
-   doesn't interpolate in browsers today.
+   it OFF plays that backwards. So every element carries its transition twice: the
+   base selector times the OFF direction, the .ai-layout-enabled one times ON. The
+   two lists have to stay the reverse of each other, editing one means editing the
+   other.
 
    ponytail: reversing mid-flight leaves the stage that had not started yet
    sitting at its 400ms delay, so an interrupted toggle can stall for that long
@@ -151,13 +148,12 @@ html.ai-layout-enabled #scroll-wrapper {
 }
 
 /* Held for the length of the closing animation only (mascot-bot.js adds the class
-   on the way out and drops it at the end): without it the wrapper's height goes
-   from 100% of a viewport-tall body to the height of the whole page in one frame,
-   and a length against `auto` is not interpolable. Held, the box tracks the
-   padding closing around it instead -- nothing measured, resolved per frame -- and
-   by the time this is dropped the growth left is below the fold. overflow comes
-   along, or the content spills while the box is still shorter than it. Has to sit
-   after the rules above: same specificity, so source order decides. */
+   on the way out, drops it at the end). Without it the wrapper's height goes from
+   100% of a viewport-tall body to the height of the whole page in one frame, and a
+   length against `auto` is not interpolable; held, the box tracks the padding
+   closing around it instead. overflow comes along, or the content spills while the
+   box is still shorter than it. Has to sit after the rules above: same
+   specificity, so source order decides. */
 html.ai-layout-animating body {
   height: 100vh;
   height: 100svh;
@@ -177,41 +173,65 @@ html.ai-layout-enabled footer {
     border-radius 400ms ease-out, margin-right 400ms ease-out 400ms;
 }
 
-/* Activity panel: lives in the widened right-hand gap of the AI layout,
-   showing activity-logger's events as a chat-style transcript
-   (src/client/activity-panel.js). Parked off-screen rather than display:none
-   when the flag is off, so it has somewhere to slide in from -- visibility, not
-   just the transform, because an on-screen-but-translated panel is still in the
-   accessibility tree. */
+/* Activity panel: the transcript in the widened right-hand gap, filled by
+   src/client/activity-panel.js. Parked off-screen rather than display:none when
+   the flag is off, so it has somewhere to slide in from, and hidden with
+   visibility as well as the transform, because an on-screen but translated panel
+   is still in the accessibility tree. */
 #activity-panel {
   display: flex;
   position: fixed;
   top: var(--ai-layout-top);
   bottom: var(--ai-layout-bottom);
-  right: 1rem;
-  width: calc(var(--ai-layout-right) - 2rem);
+  /* --ai-layout-left is not a left/right mixup: top, bottom and left all carry the
+     same inset the frame keeps from its edges, and the panel keeps it on its right so
+     the four edges line up. --ai-layout-right is the whole gap it sits in, so the
+     width is that gap minus the outer inset and half an inset for the seam between
+     the two cards. Derived rather than typed, so both track the frame. */
+  right: var(--ai-layout-left);
+  width: calc(var(--ai-layout-right) - var(--ai-layout-left) * 1.5);
   border-radius: 2rem;
   overflow: hidden;
   z-index: 20;
-  transform: translateX(calc(100% + 1rem));
+  transform: translateX(calc(100% + var(--ai-layout-left)));
   visibility: hidden;
-  /* Leaves first, in the same window as the gap it sits in. visibility waits out
-     the slide, or there is nothing left to watch. */
+  /* visibility waits out the slide, or there is nothing left to watch. */
   transition: transform 400ms ease-out, visibility 0s linear 400ms;
 }
 
 html.ai-layout-enabled #activity-panel {
   transform: none;
   visibility: visible;
-  /* Enters last, on the gap being opened for it. */
   transition: transform 400ms ease-out 400ms, visibility 0s linear 400ms;
 }
 
+/* Fades the transcript out at both edges, so a list running past the card reads as
+   scrollable. A mask rather than gradient overlays, because it works over whatever is
+   behind it: two card colours plus the messages' own. The 1.5rem fades match the
+   list's py-6, or the first and last bubble sit inside the fade at rest. */
+#activity-panel-messages {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 1.5rem,
+    #000 calc(100% - 1.5rem),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 1.5rem,
+    #000 calc(100% - 1.5rem),
+    transparent 100%
+  );
+}
+
+/* Sides read as a conversation: the visitor's own actions on the right, where their
+   messages sit in any chat, and the mascot answering from the left. */
 .activity-msg {
   max-width: 88%;
-  align-self: flex-start;
+  align-self: flex-end;
   padding: 0.5rem 0.7rem;
-  border-radius: 0.7rem;
   font-size: 0.75rem;
   line-height: 1.35;
   word-break: break-word;
@@ -220,8 +240,71 @@ html.ai-layout-enabled #activity-panel {
 }
 
 .activity-msg.activity-msg-mascot {
-  align-self: flex-end;
+  align-self: flex-start;
   background: #292524;
+  color: #fff;
+}
+
+/* The mascot's turn while the request is out: the bubble it will answer in, holding
+   three dots until the reply starts arriving. */
+.activity-msg.activity-msg-pending {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Set while activity-panel.js drives the box in px off pretext's measurements.
+   overflow, because the box and the text can disagree by a pixel, and a clipped
+   pixel beats a line spilling out of the bubble. */
+.activity-msg.activity-msg-sized {
+  overflow: hidden;
+  transition: width 300ms cubic-bezier(0.32, 0.72, 0, 1),
+    height 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-msg.activity-msg-sized {
+    transition: none;
+  }
+}
+
+.activity-dot {
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.3;
+  animation: activity-dot-pulse 1s ease-in-out infinite;
+}
+
+.activity-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.activity-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes activity-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-dot {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+.activity-msg.activity-msg-error {
+  background: #7f1d1d;
   color: #fff;
 }
 
@@ -233,6 +316,11 @@ html.ai-layout-enabled #activity-panel {
   .activity-msg.activity-msg-mascot {
     background: #f5f5f4;
     color: #1c1917;
+  }
+
+  .activity-msg.activity-msg-error {
+    background: #fecaca;
+    color: #7f1d1d;
   }
 }
 

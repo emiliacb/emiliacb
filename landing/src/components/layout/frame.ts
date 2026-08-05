@@ -3,7 +3,6 @@ export const AI_LAYOUT_ENABLED = false;
 
 export const AI_LAYOUT = {
   top: "3rem",
-  // Holds the activity panel, so it tracks the viewport instead of being fixed.
   right: "clamp(350px, 20vw, 900px)",
   bottom: "3rem",
   left: "3rem",

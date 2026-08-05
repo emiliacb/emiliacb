@@ -110,7 +110,7 @@ function footerContent({ lang }: FooterProps) {
 export default function footer({ lang }: FooterProps) {
   // ponytail: no inset variant here. The classes were interpolated from
   // AI_LAYOUT, so Tailwind's scanner never saw them and never generated
-  // them -- and `html.ai-layout-enabled footer` in styles.css already
+  // them, and `html.ai-layout-enabled footer` in styles.css already
   // applies the offset/margins/radius, for both the SSR'd initial state and
   // the live toggle. No `w-full` either: a block-level box already fills its
   // container, and width:100% over-constrained the inset state so margin-right

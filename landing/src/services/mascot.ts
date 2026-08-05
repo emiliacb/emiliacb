@@ -56,7 +56,14 @@ const MAX_LOGS = 10;
 const MAX_BLOG_CONTENT_CHARS = 3000;
 // Overall ceiling on a generation that is working but slow: once tokens are
 // arriving the visitor is watching words appear, so there is room to wait.
-const REQUEST_TIMEOUT_MS = 20000;
+//
+// ponytail: both deadlines are tuned against a fast hosted API (production);
+// a local model behind KIMI_API_ENDPOINT can take 10+ seconds just to prefill
+// the real prompt (measured ~13s), which the production deadlines would
+// always kill before a single token arrives. Relaxed outside production
+// rather than raised globally, since the 5s production deadline is doing real
+// work below -- see FIRST_TOKEN_TIMEOUT_MS.
+const REQUEST_TIMEOUT_MS = process.env.NODE_ENV === "production" ? 20000 : 60000;
 // Deadline for the *first* token. An upstream that accepts the connection and
 // then says nothing used to hold the visitor on the thinking dots for the full
 // REQUEST_TIMEOUT_MS; failing at 5s instead is still early enough that no
@@ -77,7 +84,7 @@ const REQUEST_TIMEOUT_MS = 20000;
 // costs is one inter-token interval, which on any model that is streaming at all
 // is tens of milliseconds, so a slow-but-working model does not start tripping a
 // deadline it used to clear.
-const FIRST_TOKEN_TIMEOUT_MS = 5000;
+const FIRST_TOKEN_TIMEOUT_MS = process.env.NODE_ENV === "production" ? 5000 : 20000;
 // Thinking is disabled below, so this only has to cover the comment (up to 35
 // words) plus the `[[OPTIONS]]` delimiter plus up to three short follow-up
 // lines -- comfortably under 300 tokens in practice, but `finishReason:

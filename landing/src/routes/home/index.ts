@@ -47,7 +47,10 @@ export default async function handler(c: Context) {
   return c.html(view, {
     headers: {
       "Content-Type": "text/html",
-      "Cache-Control": "public, max-age=3605",
+      // Overrides generalCacheMiddleware, no-store included, so it needs the same
+      // dev guard or a reload keeps serving an hour-old document.
+      "Cache-Control":
+        process.env.NODE_ENV === "production" ? "public, max-age=3605" : "no-store",
     },
   });
 }

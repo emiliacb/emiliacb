@@ -52,13 +52,12 @@ export default function layout({
     >
       <head>
         <script>
-          // Keeps the AI layout across full-page navigations inside the site
-          // (this is a multi-page app, not an SPA -- the toggle would otherwise
-          // reset on every link click), and only those: a reload or an arrival
-          // from outside starts on the normal layout. Clearing the flag there is
-          // the point -- left set, the next internal link click would bring the
-          // layout back after the visitor had already been dropped out of it.
-          // Runs before paint so there's no flash of the wrong layout.
+          // Keeps the AI layout across navigations inside the site (a multi-page
+          // app, so the toggle would otherwise reset on every link click), and
+          // only those. Clearing the flag on the other paths is the point: left
+          // set, the next internal link click would bring the layout back after
+          // the visitor had already been dropped out of it. Runs before paint so
+          // there is no flash of the wrong layout.
           (function () {
             var nav = performance.getEntriesByType("navigation")[0];
             var fromInside =
@@ -221,7 +220,7 @@ document.head.appendChild(o)}initApollo();</script>
           }
 
           /* A named element is captured into the top layer, where no ancestor
-             overflow or border-radius clips it -- and #content is ~6rem taller
+             overflow or border-radius clips it, and #content is ~6rem taller
              than the framed layout's viewport, so its snapshot spills over the
              gap and footer even with no transform. Dropping the name folds it
              back into the viewport-sized root snapshot, which cannot spill.
@@ -269,7 +268,7 @@ document.head.appendChild(o)}initApollo();</script>
 
             The element itself stays. src/client/gradient-distortion.js bails
             out entirely if it cannot find #gradient-bg, and it is the same
-            pass that distorts the drawn tree — removing the div would quietly
+            pass that distorts the drawn tree, and removing the div would quietly
             take that with it. Without the paint classes this is an empty box
             that textures to nothing, and putting them back is the whole undo.
           -->
