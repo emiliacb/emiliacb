@@ -25,7 +25,7 @@ const wordings: Record<
 } as const;
 
 export default async function handler(c: Context, next: Next) {
-  const lang = c.req.param("lang");
+  const lang = c.req.param("lang") || "en";
   const slug = c.req.path.split("/").pop();
   const isPost = slug && slug !== "blog";
 
