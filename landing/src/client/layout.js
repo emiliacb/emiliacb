@@ -48,14 +48,14 @@ if (
       "position:absolute;bottom:0;left:50%;width:1px;height:1px;pointer-events:none;";
     overlayContent.appendChild(sentinel);
 
-    // The bottom margin keeps the old threshold: the edge has to be a pixel
-    // above the viewport's bottom, not merely touching it (the sentinel is 1px
-    // tall, and an edge that only touches the root still counts).
+    // The bottom margin keeps the old threshold, an edge more than a pixel
+    // above the viewport's bottom: the sentinel spans the overlay's last pixel,
+    // and a target that only touches the root's edge still counts.
     new IntersectionObserver(
       ([entry]) => {
         overlayContent.classList.toggle("scrolled", entry.isIntersecting);
       },
-      { rootMargin: "0px 0px -2px 0px" }
+      { rootMargin: "0px 0px -3px 0px" }
     ).observe(sentinel);
   }
 }
