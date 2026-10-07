@@ -3,6 +3,12 @@ import { raw } from "hono/html";
 import { Languages } from "lucide-static";
 import contact from "../contacts";
 
+// How far the footer's background runs up behind #overlay-content. The overlay
+// rounds its bottom corners once it is scrolled past, and this is what shows
+// through them: without it the footer's top edge sits flush with the overlay's
+// bottom and the corners open onto the page background instead of the footer.
+const DELTA_HEIGHT = 200;
+
 type FooterProps = {
   lang: string;
 };
@@ -115,8 +121,13 @@ export default function footer({ lang }: FooterProps) {
   // the live toggle. No `w-full` either: a block-level box already fills its
   // container, and width:100% over-constrained the inset state so margin-right
   // was dropped and the right corner landed outside the overflow-x clip.
+  //
+  // The negative margin tucks the extra height under the overlay without
+  // changing how far the page scrolls, and the padding gives it back, so the
+  // content still sits 2rem below the overlay's bottom edge.
   return html`<footer
-    class="sticky bottom-0 h-fit py-4 pb-8 z-0 flex px-4 sm:px-8 justify-center bg-yellow-300 dark:bg-blue-900 items-center"
+    class="sticky bottom-0 h-fit pb-8 z-0 flex px-4 sm:px-8 justify-center bg-yellow-300 dark:bg-blue-900 items-center"
+    style="margin-top: -${DELTA_HEIGHT}px; padding-top: calc(${DELTA_HEIGHT}px + 2rem)"
   >
     ${footerContent({ lang })}
   </footer>`;
