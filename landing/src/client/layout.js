@@ -48,14 +48,32 @@ if (
       "position:absolute;bottom:0;left:50%;width:1px;height:1px;pointer-events:none;";
     overlayContent.appendChild(sentinel);
 
+    // The overlay itself is watched too, because the sentinel alone can't
+    // tell the two ways it can be out of view apart: still below the visible
+    // area, or already gone through its top, which happens whenever the footer
+    // is taller than the view (a phone held sideways). The overlay starts at
+    // the top of the page, so it can only drop out of view upwards, and when it
+    // does it is scrolled past. Its own change is also what reports a jump that
+    // carries the sentinel from below the view to above it in one frame, which
+    // the sentinel never sees.
+    //
     // The bottom margin keeps the old threshold, an edge more than a pixel
     // above the viewport's bottom: the sentinel spans the overlay's last pixel,
     // and a target that only touches the root's edge still counts.
-    new IntersectionObserver(
-      ([entry]) => {
-        overlayContent.classList.toggle("scrolled", entry.isIntersecting);
+    const inView = new Map();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          inView.set(entry.target, entry.isIntersecting);
+        }
+        overlayContent.classList.toggle(
+          "scrolled",
+          inView.get(sentinel) || !inView.get(overlayContent)
+        );
       },
       { rootMargin: "0px 0px -3px 0px" }
-    ).observe(sentinel);
+    );
+    observer.observe(overlayContent);
+    observer.observe(sentinel);
   }
 }
