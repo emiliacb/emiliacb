@@ -26,83 +26,36 @@
 })();
 
 // Overlay-content scroll effect (siempre)
+//
+// .scrolled rounds the overlay's bottom corners once its bottom edge has come
+// up into view. A 1px sentinel pinned to that edge is watched instead of
+// listening to scroll: the observer reports when it comes into view, with no
+// layout reads per scroll event and no cached height to go stale on resize.
+// It also needs no idea of which element scrolls: with the AI layout on that is
+// #scroll-wrapper, not the window, and the implicit root still clips the
+// sentinel by every scrolling ancestor on the way up to the viewport.
 if (
   window.matchMedia("(prefers-reduced-motion: no-preference)").matches
 ) {
   const overlayContent = document.getElementById("overlay-content");
-  const scrollWrapper = document.getElementById("scroll-wrapper");
-
-  // The mascot button can flip .ai-layout-enabled on <html> at any time,
-  // which changes which element actually scrolls, so this is re-checked on
-  // every read instead of cached once at load.
-  function usesWrapperScroll() {
-    return document.documentElement.classList.contains("ai-layout-enabled");
-  }
 
   if (overlayContent) {
-    let timeout;
-    let ticking = false;
-    let cachedOverlayHeight = overlayContent.offsetHeight;
+    const sentinel = document.createElement("div");
+    sentinel.setAttribute("aria-hidden", "true");
+    // Centred, not at the left edge: the rounded corner it switches on would
+    // otherwise clip it out of its own trigger.
+    sentinel.style.cssText =
+      "position:absolute;bottom:0;left:50%;width:1px;height:1px;pointer-events:none;";
+    overlayContent.appendChild(sentinel);
 
-    window.addEventListener("resize", () => {
-      cachedOverlayHeight = overlayContent.offsetHeight;
-    });
-
-    function checkIfOverlayScrolled() {
-      const wrapperScroll = usesWrapperScroll();
-      const scrollY = wrapperScroll ? scrollWrapper.scrollTop : window.scrollY;
-      const viewportHeight = wrapperScroll
-        ? scrollWrapper.clientHeight
-        : window.innerHeight;
-      const isScrolled = scrollY > cachedOverlayHeight - viewportHeight + 1;
-      return isScrolled;
-    }
-
-    function tick() {
-      const isScrolled = checkIfOverlayScrolled();
-      overlayContent.classList.toggle("scrolled", isScrolled);
-
-      return !isScrolled;
-    }
-
-    function forcedTick() {
-      //Cancel any requested animation
-      const animationFrameId = requestAnimationFrame(tick);
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-
-      // Now, force the tick and reset the ticking flag
-      tick();
-      ticking = false;
-    }
-
-    function onScroll() {
-      const isScrolled = checkIfOverlayScrolled();
-
-      // Wait for requestAnimationFrame if not scrolled
-      if (!ticking && !isScrolled) {
-        ticking = requestAnimationFrame(tick);
-      }
-
-      // Don't wait for requestAnimationFrame if scrolled, to avoid waiting for the animation to finish
-      if (isScrolled && !overlayContent.classList.contains("scrolled")) {
-        forcedTick();
-      }
-
-      // Debounce scroll handler to handle inertial scrolling animations
-      clearTimeout(timeout);
-      timeout = setTimeout(forcedTick, 200);
-    }
-
-    // Both targets are wired up unconditionally: only one of them actually
-    // scrolls at a time, depending on .ai-layout-enabled, and that can
-    // flip live (mascot button), so neither can be picked once and cached.
-    window.addEventListener("scrollend", forcedTick);
-    window.addEventListener("scroll", onScroll);
-    if (scrollWrapper) {
-      scrollWrapper.addEventListener("scrollend", forcedTick);
-      scrollWrapper.addEventListener("scroll", onScroll);
-    }
+    // The bottom margin keeps the old threshold: the edge has to be a pixel
+    // above the viewport's bottom, not merely touching it (the sentinel is 1px
+    // tall, and an edge that only touches the root still counts).
+    new IntersectionObserver(
+      ([entry]) => {
+        overlayContent.classList.toggle("scrolled", entry.isIntersecting);
+      },
+      { rootMargin: "0px 0px -2px 0px" }
+    ).observe(sentinel);
   }
 }
