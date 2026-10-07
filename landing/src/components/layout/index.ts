@@ -7,7 +7,7 @@ import forest from "../forest";
 import footer from "../footer";
 import languageSwitcher from "../language-switcher";
 import activityPanel from "../activity-panel";
-import { AI_LAYOUT_ENABLED, AI_LAYOUT } from "./frame";
+import { AI_LAYOUT_ENABLED, AI_LAYOUT, AI_FEATURE_ENABLED } from "./frame";
 
 config();
 
@@ -61,6 +61,7 @@ export default function layout({
           (function () {
             var nav = performance.getEntriesByType("navigation")[0];
             var fromInside =
+              ${AI_FEATURE_ENABLED ? "true" : "false"} &&
               (!nav || nav.type !== "reload") &&
               document.referrer.indexOf(location.origin + "/") === 0;
             if (fromInside && localStorage.getItem("ai-layout-enabled") === "true") {
@@ -310,12 +311,16 @@ document.head.appendChild(o)}initApollo();</script>
         ${withFooter ? footer({ lang: siteData.lang }) : null}
         </div>
         ${languageSwitcher({ lang: siteData.lang })}
-        ${activityPanel()}
+        ${AI_FEATURE_ENABLED ? activityPanel() : null}
         <script src="/public/${CACHE_VERSION}/_layout-bundle.js" defer></script>
         <script src="/public/${CACHE_VERSION}/_navigation-bundle.js" defer></script>
-        <script src="/public/${CACHE_VERSION}/_activity-logger-bundle.js" defer></script>
-        <script src="/public/${CACHE_VERSION}/_activity-panel-bundle.js" defer></script>
-        <script src="/public/${CACHE_VERSION}/_mascot-bot-bundle.js" defer></script>
+        ${AI_FEATURE_ENABLED
+          ? html`
+              <script src="/public/${CACHE_VERSION}/_activity-logger-bundle.js" defer></script>
+              <script src="/public/${CACHE_VERSION}/_activity-panel-bundle.js" defer></script>
+              <script src="/public/${CACHE_VERSION}/_mascot-bot-bundle.js" defer></script>
+            `
+          : null}
       </body>
     </html>
   `;
