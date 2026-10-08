@@ -5,6 +5,15 @@
 :root {
   --tree-invert: 0;
   --nav-height: 7rem;
+  /* The overlay's bottom corners once it is scrolled past. The footer reads it
+     too, to run its background up behind those corners. */
+  --overlay-radius: 2rem;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --overlay-radius: 6rem;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -75,15 +84,8 @@ html {
 }
 
 #overlay-content.scrolled {
-  border-bottom-left-radius: 2rem;
-  border-bottom-right-radius: 2rem;
-}
-
-@media (min-width: 768px) {
-  #overlay-content.scrolled {
-    border-bottom-left-radius: 6rem;
-    border-bottom-right-radius: 6rem;
-  }
+  border-bottom-left-radius: var(--overlay-radius);
+  border-bottom-right-radius: var(--overlay-radius);
 }
 
 /* AI layout: toggled live by the mascot button (see src/client/mascot-bot.js).

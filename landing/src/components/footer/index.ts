@@ -115,8 +115,16 @@ export default function footer({ lang }: FooterProps) {
   // the live toggle. No `w-full` either: a block-level box already fills its
   // container, and width:100% over-constrained the inset state so margin-right
   // was dropped and the right corner landed outside the overflow-x clip.
+  //
+  // The overlay rounds its bottom corners (--overlay-radius) once it is
+  // scrolled past, and what shows through them is whatever sits behind it.
+  // The negative margin runs the footer's background up under the overlay by
+  // that radius, so the corners open onto the footer rather than the page
+  // background, without changing how far the page scrolls; the padding gives
+  // the height back, so the content still sits 2rem below the overlay's edge.
   return html`<footer
-    class="sticky bottom-0 h-fit py-4 pb-8 z-0 flex px-4 sm:px-8 justify-center bg-yellow-300 dark:bg-blue-900 items-center"
+    class="sticky bottom-0 h-fit pb-8 z-0 flex px-4 sm:px-8 justify-center bg-yellow-300 dark:bg-blue-900 items-center"
+    style="margin-top: calc(-1 * var(--overlay-radius)); padding-top: calc(var(--overlay-radius) + 2rem)"
   >
     ${footerContent({ lang })}
   </footer>`;

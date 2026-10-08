@@ -26,83 +26,54 @@
 })();
 
 // Overlay-content scroll effect (siempre)
+//
+// .scrolled rounds the overlay's bottom corners once its bottom edge has come
+// up into view. A 1px sentinel pinned to that edge is watched instead of
+// listening to scroll: the observer reports when it comes into view, with no
+// layout reads per scroll event and no cached height to go stale on resize.
+// It also needs no idea of which element scrolls: with the AI layout on that is
+// #scroll-wrapper, not the window, and the implicit root still clips the
+// sentinel by every scrolling ancestor on the way up to the viewport.
 if (
   window.matchMedia("(prefers-reduced-motion: no-preference)").matches
 ) {
   const overlayContent = document.getElementById("overlay-content");
-  const scrollWrapper = document.getElementById("scroll-wrapper");
-
-  // The mascot button can flip .ai-layout-enabled on <html> at any time,
-  // which changes which element actually scrolls, so this is re-checked on
-  // every read instead of cached once at load.
-  function usesWrapperScroll() {
-    return document.documentElement.classList.contains("ai-layout-enabled");
-  }
 
   if (overlayContent) {
-    let timeout;
-    let ticking = false;
-    let cachedOverlayHeight = overlayContent.offsetHeight;
+    const sentinel = document.createElement("div");
+    sentinel.setAttribute("aria-hidden", "true");
+    // Centred, not at the left edge: the rounded corner it switches on would
+    // otherwise clip it out of its own trigger.
+    sentinel.style.cssText =
+      "position:absolute;bottom:0;left:50%;width:1px;height:1px;pointer-events:none;";
+    overlayContent.appendChild(sentinel);
 
-    window.addEventListener("resize", () => {
-      cachedOverlayHeight = overlayContent.offsetHeight;
-    });
-
-    function checkIfOverlayScrolled() {
-      const wrapperScroll = usesWrapperScroll();
-      const scrollY = wrapperScroll ? scrollWrapper.scrollTop : window.scrollY;
-      const viewportHeight = wrapperScroll
-        ? scrollWrapper.clientHeight
-        : window.innerHeight;
-      const isScrolled = scrollY > cachedOverlayHeight - viewportHeight + 1;
-      return isScrolled;
-    }
-
-    function tick() {
-      const isScrolled = checkIfOverlayScrolled();
-      overlayContent.classList.toggle("scrolled", isScrolled);
-
-      return !isScrolled;
-    }
-
-    function forcedTick() {
-      //Cancel any requested animation
-      const animationFrameId = requestAnimationFrame(tick);
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-
-      // Now, force the tick and reset the ticking flag
-      tick();
-      ticking = false;
-    }
-
-    function onScroll() {
-      const isScrolled = checkIfOverlayScrolled();
-
-      // Wait for requestAnimationFrame if not scrolled
-      if (!ticking && !isScrolled) {
-        ticking = requestAnimationFrame(tick);
-      }
-
-      // Don't wait for requestAnimationFrame if scrolled, to avoid waiting for the animation to finish
-      if (isScrolled && !overlayContent.classList.contains("scrolled")) {
-        forcedTick();
-      }
-
-      // Debounce scroll handler to handle inertial scrolling animations
-      clearTimeout(timeout);
-      timeout = setTimeout(forcedTick, 200);
-    }
-
-    // Both targets are wired up unconditionally: only one of them actually
-    // scrolls at a time, depending on .ai-layout-enabled, and that can
-    // flip live (mascot button), so neither can be picked once and cached.
-    window.addEventListener("scrollend", forcedTick);
-    window.addEventListener("scroll", onScroll);
-    if (scrollWrapper) {
-      scrollWrapper.addEventListener("scrollend", forcedTick);
-      scrollWrapper.addEventListener("scroll", onScroll);
-    }
+    // The overlay itself is watched too, because the sentinel alone can't
+    // tell the two ways it can be out of view apart: still below the visible
+    // area, or already gone through its top, which happens whenever the footer
+    // is taller than the view (a phone held sideways). The overlay starts at
+    // the top of the page, so it can only drop out of view upwards, and when it
+    // does it is scrolled past. Its own change is also what reports a jump that
+    // carries the sentinel from below the view to above it in one frame, which
+    // the sentinel never sees.
+    //
+    // The bottom margin keeps the old threshold, an edge more than a pixel
+    // above the viewport's bottom: the sentinel spans the overlay's last pixel,
+    // and a target that only touches the root's edge still counts.
+    const inView = new Map();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          inView.set(entry.target, entry.isIntersecting);
+        }
+        overlayContent.classList.toggle(
+          "scrolled",
+          inView.get(sentinel) || !inView.get(overlayContent)
+        );
+      },
+      { rootMargin: "0px 0px -3px 0px" }
+    );
+    observer.observe(overlayContent);
+    observer.observe(sentinel);
   }
 }
