@@ -1,39 +1,43 @@
 {
   "name": "landing",
-  "version": "1.0.4",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "dev": "tsx watch scripts/bundle-client.ts & tsx watch src/index.ts & npx tailwindcss -i ./src/styles.css -o ./public/_output.css --watch",
-    "start": "node dist/src/index.js",
-    "bundle-client": "tsx ./scripts/bundle-client.ts",
-    "build": "rm -rf dist && tsc && cp -R content dist/ && npm run bundle-client && npx tailwindcss -i ./src/styles.css -o ./public/_output.css --minify",
-    "export": "rm -rf export && npm run bundle-client && npm run build && (npm run start & pid=$! && (tsx ./scripts/generate-static.ts || (kill $pid && exit 1)) && kill $pid)"
+    "build": "tsx scripts/build.ts",
+    "dev": "npm run build && wrangler dev",
+    "preview": "npm run build && wrangler dev",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
-    "@ai-sdk/openai-compatible": "^2.0.62",
     "@chenglou/pretext": "^0.0.8",
     "@dotlottie/player-component": "^2.7.0",
     "@floating-ui/dom": "^1.7.4",
-    "@hono/node-server": "^2.0.12",
     "@lottiefiles/dotlottie-web": "^0.34.0",
-    "ai": "^6.0.237",
-    "caniuse-lite": "latest",
-    "dotenv": "^16.6.1",
-    "esbuild": "^0.25.1",
-    "gray-matter": "^4.0.3",
     "hono": "^4.7.5",
     "html-to-image": "^1.11.13",
-    "lucide-static": "^0.445.0",
-    "marked": "^14.0.0",
-    "rate-limiter-flexible": "^7.1.1",
     "three": "^0.185.1",
     "throttle-debounce": "^5.0.2"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.3.7",
+    "@cloudflare/workers-types": "^5.20261008.1",
     "@tailwindcss/typography": "^0.5.15",
-    "@types/node": "20.11.17",
+    "@types/node": "^22.10.0",
+    "esbuild": "^0.25.1",
+    "gray-matter": "^4.0.3",
+    "lucide-static": "^0.445.0",
+    "marked": "^14.0.0",
     "tailwindcss": "^3.4.13",
     "tsx": "^4.19.3",
-    "typescript": "5.5.4",
-    "wrangler": "^4.4.0"
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.148.0",
+    "zod": "^4.0.0"
   }
 }

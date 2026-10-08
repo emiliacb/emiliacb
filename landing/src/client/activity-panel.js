@@ -73,12 +73,17 @@
         resolve(null);
         return;
       }
-      var meta = document.querySelector('meta[name="cache-version"]');
-      var version = meta && meta.getAttribute("content");
+      // The bundle's hashed URL is rendered into <meta name="asset:pretext">.
+      // Without it there is nothing to load, which is the same downgrade as
+      // a failed download.
+      var meta = document.querySelector('meta[name="asset:pretext"]');
+      var src = meta && meta.getAttribute("content");
+      if (!src) {
+        resolve(null);
+        return;
+      }
       var script = document.createElement("script");
-      script.src = version
-        ? "/public/" + version + "/_pretext-bundle.js"
-        : "/public/_pretext-bundle.js";
+      script.src = src;
       script.onload = function () {
         resolve(window.__pretext || null);
       };

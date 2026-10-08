@@ -21,7 +21,7 @@
  * Nothing here is required for the page to work: if this bundle never runs, the
  * canvas stays blank, the bands stay empty, and the page is what it was.
  */
-import { animateTree } from "../components/tree/generate";
+import { animateTree } from "./tree/generate";
 
 const field = document.getElementById("forest-field");
 const forestPlane = document.getElementById("forest-plane");

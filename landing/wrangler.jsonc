@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "emiliacb",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  // No routes/custom_domain yet: the cutover from the Node server attaches the
+  // domain by hand. Until then the Worker runs on its *.workers.dev URL only.
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "html_handling": "drop-trailing-slash",
+    // Must match the language-less routes in src/worker/index.ts (the test in
+    // test/site/worker-routes.test.ts checks every PAGES path is listed here).
+    "run_worker_first": ["/", "/about", "/services", "/courses", "/blog", "/blog/*", "/labs/*", "/health", "/api/*"]
+  },
+  "observability": { "enabled": true }
+}

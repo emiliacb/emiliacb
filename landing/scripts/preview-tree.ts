@@ -10,7 +10,7 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { generateTree } from "../src/components/tree/generate";
+import { generateTree } from "../src/client/tree/generate";
 
 const args = process.argv.slice(2);
 const seeds = args.length

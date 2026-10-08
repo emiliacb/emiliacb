@@ -14,7 +14,7 @@
     {
       devShells = forAll (pkgs: {
         default = pkgs.mkShell {
-          packages = [ pkgs.nodejs_20 ];
+          packages = [ pkgs.nodejs_22 ];
         };
       });
     };
