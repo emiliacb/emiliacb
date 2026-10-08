@@ -3,8 +3,15 @@
   "name": "emiliacb",
   "main": "src/worker/index.ts",
   "compatibility_date": "2026-10-01",
-  // No routes/custom_domain yet: the cutover from the Node server attaches the
-  // domain by hand. Until then the Worker runs on its *.workers.dev URL only.
+  // Custom Domains: deploying creates their DNS records and certificates, so
+  // the zone needs no hand-made records. www serves the same site; every page's
+  // canonical points at the apex.
+  "routes": [
+    { "pattern": "emiliacabral.com", "custom_domain": true },
+    { "pattern": "www.emiliacabral.com", "custom_domain": true }
+  ],
+  // Keeps the *.workers.dev URL as a second way in, to test a deploy against.
+  "workers_dev": true,
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
