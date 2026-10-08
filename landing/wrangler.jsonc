@@ -3,15 +3,18 @@
   "name": "emiliacb",
   "main": "src/worker/index.ts",
   "compatibility_date": "2026-10-01",
-  // Custom Domains: deploying creates their DNS records and certificates, so
-  // the zone needs no hand-made records. www serves the same site; every page's
-  // canonical points at the apex.
+  // Mirrors the dashboard. Custom Domains create their own DNS records and
+  // certificates. www serves the same site; every page's canonical points at
+  // the apex. beta.emiliacabral.com serves only Preview versions
+  // (pr-<n>.beta.emiliacabral.com from the CI preview upload).
   "routes": [
     { "pattern": "emiliacabral.com", "custom_domain": true },
-    { "pattern": "www.emiliacabral.com", "custom_domain": true }
+    { "pattern": "www.emiliacabral.com", "custom_domain": true },
+    { "pattern": "beta.emiliacabral.com", "custom_domain": true, "previews_enabled": true, "enabled": false }
   ],
-  // Keeps the *.workers.dev URL as a second way in, to test a deploy against.
-  "workers_dev": true,
+  // Off in the dashboard: previews live under beta.emiliacabral.com instead.
+  "workers_dev": false,
+  "preview_urls": false,
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
