@@ -44,4 +44,6 @@ jobs:
       # the fork check avoids a confusing "missing token" failure.
       - name: Upload preview version
         if: github.event.pull_request.head.repo.full_name == github.repository && env.CLOUDFLARE_API_TOKEN != ''
-        run: npx wrangler versions upload --message "PR #${{ github.event.pull_request.number }} ${{ github.event.pull_request.head.sha }}" --preview-alias "pr-${{ github.event.pull_request.number }}"
+        # Block scalar: in a plain scalar the " #" in the message starts a YAML comment.
+        run: |
+          npx wrangler versions upload --message "PR #${{ github.event.pull_request.number }} ${{ github.event.pull_request.head.sha }}" --preview-alias "pr-${{ github.event.pull_request.number }}"
