@@ -3,8 +3,18 @@
   "name": "emiliacb",
   "main": "src/worker/index.ts",
   "compatibility_date": "2026-10-01",
-  // No routes/custom_domain yet: the cutover from the Node server attaches the
-  // domain by hand. Until then the Worker runs on its *.workers.dev URL only.
+  // Mirrors the dashboard. Custom Domains create their own DNS records and
+  // certificates. www serves the same site; every page's canonical points at
+  // the apex. beta.emiliacabral.com serves only Preview versions
+  // (pr-<n>.beta.emiliacabral.com from the CI preview upload).
+  "routes": [
+    { "pattern": "emiliacabral.com", "custom_domain": true },
+    { "pattern": "www.emiliacabral.com", "custom_domain": true },
+    { "pattern": "beta.emiliacabral.com", "custom_domain": true, "previews_enabled": true, "enabled": false }
+  ],
+  // Off in the dashboard: previews live under beta.emiliacabral.com instead.
+  "workers_dev": false,
+  "preview_urls": false,
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
