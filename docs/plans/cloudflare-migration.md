@@ -8,7 +8,7 @@
 
 **Hecho en el repo:**
 
-- **Fase 1.** `scripts/build.ts` genera `dist/` sin servidor. Hay una sola lista de páginas, en `src/shared/site.ts`, y un diccionario tipado en `src/shared/i18n/`. Las páginas son funciones puras en `src/site/pages/`. El contenido se valida con Zod. Los bundles y el CSS llevan hash. Se borraron el servidor Hono/Node, `Dockerfile`, `docker-compose.yml` y `vercel.json`. El proyecto pasó a ESM con Node 22.
+- **Fase 1.** `scripts/build.ts` genera `dist/` sin servidor. Hay una sola lista de páginas, en `src/shared/site.ts`, y un diccionario tipado en `src/shared/i18n/`. Las páginas son funciones puras en `src/site/pages/`. El contenido se valida con Zod. Los bundles y el CSS llevan hash. Se borraron el servidor Hono/Node, `Dockerfile`, `docker-compose.yml` y `vercel.json`. El proyecto pasó a ESM con Node 24 (Node 22 trae npm 10, que crashea al resolver las peer deps de vitest 4).
 - **Fase 2.** El Worker (`src/worker/index.ts`) y `wrangler.jsonc`, con tests en `test/` sobre `@cloudflare/vitest-plugin` (el nuevo nombre de `vitest-pool-workers`).
 - **Fase 3.** `.github/workflows/ci.yml` y `deploy.yml`.
 - Del Opcional/Fase 0: se sacó el preload de `_dotlottie-bundle.js`; canonical y `og:url` por página.
