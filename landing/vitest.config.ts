@@ -19,7 +19,7 @@ export default defineConfig({
             wrangler: { configPath: "./wrangler.jsonc" },
             // Tests use a fixture asset tree so they do not need `npm run build`.
             miniflare: {
-              assets: { directory: "./test/worker/fixtures/dist" },
+              assets: { directory: "./test/worker/fixtures/assets" },
             },
           }),
         ],
