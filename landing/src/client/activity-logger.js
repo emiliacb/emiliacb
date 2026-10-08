@@ -30,11 +30,11 @@
   }
 
   // Reuse the same cache-busting version the rest of the site already uses
-  // (rendered server-side into <meta name="cache-version">) instead of a
+  // (rendered at build time into <meta name="build-id">) instead of a
   // separate ad hoc "_v1" suffix, so the log schema versions in lockstep
   // with everything else.
   function getSiteVersion() {
-    var meta = document.querySelector('meta[name="cache-version"]');
+    var meta = document.querySelector('meta[name="build-id"]');
     return (meta && meta.getAttribute("content")) || "unversioned";
   }
 

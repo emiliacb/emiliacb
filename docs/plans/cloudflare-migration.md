@@ -1,8 +1,34 @@
 # Plan: migrar emiliacabral.com a Cloudflare
 
 - **Fecha:** 2026-10-08
-- **Estado:** propuesta, sin implementar
+- **Estado:** Fases 1–3 implementadas en el código; Fase 0 y Fase 4 pendientes (son pasos en los dashboards de Cloudflare y GitHub); Fase 5 sin empezar.
 - **Alcance:** `landing/` y la infraestructura de deploy
+
+## Estado de la ejecución (2026-10-08)
+
+**Hecho en el repo:**
+
+- **Fase 1.** `scripts/build.ts` genera `dist/` sin servidor. Hay una sola lista de páginas, en `src/shared/site.ts`, y un diccionario tipado en `src/shared/i18n/`. Las páginas son funciones puras en `src/site/pages/`. El contenido se valida con Zod. Los bundles y el CSS llevan hash. Se borraron el servidor Hono/Node, `Dockerfile`, `docker-compose.yml` y `vercel.json`. El proyecto pasó a ESM con Node 24 (Node 22 trae npm 10, que crashea al resolver las peer deps de vitest 4).
+- **Fase 2.** El Worker (`src/worker/index.ts`) y `wrangler.jsonc`, con tests en `test/` sobre `@cloudflare/vitest-plugin` (el nuevo nombre de `vitest-pool-workers`).
+- **Fase 3.** `.github/workflows/ci.yml` y `deploy.yml`.
+- Del Opcional/Fase 0: se sacó el preload de `_dotlottie-bundle.js`; canonical y `og:url` por página.
+
+**Verificado:**
+
+- El HTML de las 20 páginas se comparó contra el servidor viejo (`db897e2`). Las únicas diferencias son las buscadas: canonical y `og:url`, `build-id`, sin preload de lottie, `data-set-lang`, fechas con `Intl`, TOC en español bajo `/es` y slugs con acentos.
+- Con `wrangler dev` se probaron `/` por idioma y por cookie, los 302 de las URLs sin idioma, `/cv`, el redirect de `/public/<version>/*`, los headers de `/assets/*` y `/sw.js`, y los 404 por idioma.
+
+**Cambios de comportamiento a tener en cuenta:**
+
+- Los anchors con acento cambian (`#mentora` → `#mentoría`). Es lo que pedía el plan.
+- `/cv` ahora es un 302 a `/public/cv.pdf`, que se descarga con el mismo nombre de archivo.
+- `/api/*` responde 404 hasta la Fase 5. El código viejo del mascot (`src/services/mascot.ts`, `src/routes/api/mascot/index.ts`) se recupera de `db897e2`.
+
+**Falta (a mano):**
+
+1. Fase 0: borrar la Cache Rule que congela `/` y purgar la caché.
+2. Crear los secrets `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID` en GitHub y el environment `production`.
+3. Fase 4 completa: deploy a `*.workers.dev`, crawl de paridad contra producción, route, revisión de la zona, custom domain y borrar Render y Vercel.
 
 ## Objetivo
 

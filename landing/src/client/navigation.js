@@ -1,6 +1,6 @@
-// Register Service Worker with cache version as query param
+// Register Service Worker with build id as query param
 if ('serviceWorker' in navigator) {
-  var meta = document.querySelector('meta[name="cache-version"]');
+  var meta = document.querySelector('meta[name="build-id"]');
   var v = meta ? meta.content : '';
   navigator.serviceWorker.register('/sw.js?v=' + v);
 }
@@ -69,5 +69,16 @@ if ('serviceWorker' in navigator) {
       return;
 
     bar.classList.add('loading');
+  });
+})();
+
+// Language switcher: remember an explicit choice in a cookie. "/" picks the
+// language from this cookie before Accept-Language, so the choice sticks.
+(function () {
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('a[data-set-lang]');
+    if (!link) return;
+    var lang = link.getAttribute('data-set-lang');
+    document.cookie = 'lang=' + lang + '; path=/; max-age=31536000; samesite=lax';
   });
 })();

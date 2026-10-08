@@ -7,6 +7,7 @@
 // transcript the actions land in, through window.__activityPanel. This file owns
 // the button, the trigger and the request; the panel owns everything drawn.
 import { Sparkles, LoaderCircle } from "lucide-static";
+import { MASCOT_COPY, MASCOT_ENDPOINT } from "../shared/mascot";
 
 (function () {
   "use strict";
@@ -23,14 +24,10 @@ import { Sparkles, LoaderCircle } from "lucide-static";
   // activity-logger describes a click by its accessible name, so this is also the
   // line the button writes into the transcript the prompt reads back.
   var LABEL = "AI layout";
-  var COPY = {
-    en: { error: "Couldn't come up with anything to say, try again in a bit." },
-    es: { error: "No se me ocurrió nada que decir, probá de nuevo en un rato." },
-  };
 
   function lang() {
     var l = (document.documentElement.lang || "en").slice(0, 2);
-    return COPY[l] ? l : "en";
+    return MASCOT_COPY[l] ? l : "en";
   }
 
   // Pinned to the top-left corner, mirroring the 1rem gap the language switcher
@@ -276,7 +273,7 @@ import { Sparkles, LoaderCircle } from "lucide-static";
       abort = new AbortController();
       var signal = abort.signal;
 
-      fetch("/api/mascot-comment", {
+      fetch(MASCOT_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: signal,
@@ -300,7 +297,7 @@ import { Sparkles, LoaderCircle } from "lucide-static";
                 return null;
               })
               .then(function (data) {
-                var err = new Error((data && data.error) || COPY[lang()].error);
+                var err = new Error((data && data.error) || MASCOT_COPY[lang()].unavailable);
                 err.fromServer = true;
                 throw err;
               });
@@ -309,7 +306,7 @@ import { Sparkles, LoaderCircle } from "lucide-static";
         })
         .then(function () {
           if (signal.aborted) return;
-          if (!fullText.trim()) throw new Error(COPY[lang()].error);
+          if (!fullText.trim()) throw new Error(MASCOT_COPY[lang()].unavailable);
           // Logged before the streamed bubble goes: the log write renders the entry
           // that replaces it, so the reply never blinks out of the transcript.
           logMascotSaid(fullText.trim());
@@ -319,7 +316,7 @@ import { Sparkles, LoaderCircle } from "lucide-static";
         .catch(function (err) {
           if (signal.aborted || (err && err.name === "AbortError")) return;
           // Same two steps as the reply above, in the same order.
-          logMascotSaid(err && err.fromServer ? err.message : COPY[lang()].error, true);
+          logMascotSaid(err && err.fromServer ? err.message : MASCOT_COPY[lang()].unavailable, true);
           panelCall("drop");
           setIdle();
         });
