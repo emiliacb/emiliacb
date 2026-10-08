@@ -5,7 +5,7 @@ description: "A closer look at self-hosting a Hermes agent: the infrastructure, 
 date: 2026-07-27T18:00:00.000Z
 preview: "hermes-warning.png"
 draft: false
-tags: ["AI Agents", "Hermes", "Nous Research", "Autonomous Agents", "Self-Hosting", "VPS", "Security", "Kimi", "Google Workspace", "WhatsApp", "Ops", "Limitations"]
+tags: ["AI Agents", "Hermes", "OpenClaw", "Nous Research", "Autonomous Agents", "Self-Hosting", "VPS", "Security", "Kimi", "Google Workspace", "WhatsApp", "Ops", "Limitations"]
 categories: ["AI/ML Development", "Security", "Opinion"]
 ---
 
@@ -15,160 +15,162 @@ categories: ["AI/ML Development", "Security", "Opinion"]
 
 ## Introduction
 
-Self-hosted autonomous agents are having a moment, and so is the wider category around them: OpenHands and Goose are open-source cousins, Devin is the proprietary poster child, and much of what follows applies to all of them. I'll focus on Nous Research's Hermes agent, the clearest example of the breed: MIT-licensed, runs on your own VPS instead of your laptop, keeps persistent memory across sessions, writes and improves its own skills, and can be reached through a couple dozen messaging gateways.
+Self-hosted personal agents are having a moment. OpenClaw made the idea popular, and Nous Research's Hermes Agent is the open-source alternative it usually gets compared with. Both promise the same thing: an assistant that runs on your own server, remembers what you told it last week, and answers you on Telegram, WhatsApp or email.
 
-The pitch is intoxicating: an always-on assistant with its own identity that just _does things_ for you.
+I set up Hermes on a VPS to see what that promise actually takes. Hermes is MIT-licensed, keeps persistent memory across sessions, and writes its own skills as it learns your workflows. On paper, it's an always-on assistant with its own identity that just _does things_ for you.
 
-But let me be blunt up front: **this is not a finished product.** It's an MVP-grade experiment. I don't see anyone realistically running one of these in front of customers or end users yet, they're tests, internal tooling, back-office automation. That's a real and valid use, but it isn't a production feature you hand to your users. And between "I deployed it" and even "it's a dependable internal tool" sits a pile of infrastructure and risk that nobody puts on the landing page. I ran into all of it. This post covers the good, the real cost, and where it actually fits today.
+In practice, it's an experiment, not a product. It works as internal tooling for you and your team, but it isn't ready to face customers or end users. Between "I deployed it" and "it's a dependable internal tool" sits a pile of infrastructure and risk that nobody mentions on the landing page. This post covers the good part, the real costs, the risks, and where it fits today.
 
-## First, the good part
+## The good part
 
-It's worth being clear about why this is even tempting, because the upside is real.
+The upside is real, and it's the reason the rest of this post is worth reading.
 
-- **The models are finally there.** You can point Hermes at a frontier open model like **Kimi K3**, a 2.8T-parameter MoE with a 1M-token context window and native vision, whose weights Moonshot published openly in July 2026. A year ago the open models weren't good enough to build these experiments on at all. Now they are, which is exactly why an MVP like this is worth taking seriously.
-- **It's yours.** Self-hosted, open source, persistent memory on disk you control. No vendor holding your assistant's brain hostage.
-- **It self-improves.** Hermes can author new skills over time, so it genuinely gets more capable at your specific workflows.
-- **It speaks everything.** 24+ gateways (Telegram, Discord, Slack, WhatsApp, Signal, email, plain CLI) and multiple execution backends.
+- **The models are finally there.** You can point Hermes at a frontier open model like **Kimi K3**, a 2.8T-parameter MoE with a 1M-token context window and native vision, whose weights Moonshot published in July 2026. A year ago, open models weren't good enough to build this kind of experiment on.
+- **It's yours.** Self-hosted, open source, with memory stored on a disk you control. No vendor holds your assistant's brain hostage.
+- **It self-improves.** Hermes turns tasks it completes into reusable skills, so it gets better at your specific workflows over time.
+- **It speaks everything.** Telegram, Discord, Slack, WhatsApp, Signal, email and a plain CLI, plus several execution backends.
 
-None of what follows is a reason not to do it. It's a reason to go in with your eyes open.
+None of what follows is a reason not to try it. It's a reason to go in with your eyes open.
 
-## So what's it actually for?
+## What it's actually for
 
-Here's the uncomfortable part: the day-to-day use cases are **narrow, and they overlap heavily with what Claude and Claude Code already do.** If you live in Claude Code and use Claude's connectors and projects, a lot of a self-hosted Hermes setup is redundant, you'd be rebuilding, at real operational cost, things you already have.
+For day-to-day work, the use cases are **narrow, and they overlap heavily with what Claude and Claude Code already do.** If you already use Claude Code, Claude's connectors and projects, a lot of a self-hosted Hermes setup is redundant. You'd be rebuilding things you already have, at a real operational cost.
 
-So why reach for it at all? One reason, and it's the important one: **configurability.**
+The reason to reach for it anyway is **configurability**:
 
-- **Any model, any provider.** You're not locked to one lab. Swap in a frontier open model like Kimi K3, a hosted API, or something you run yourself.
-- **Your data, your way.** You decide _where_ the agent's memory lives, _how_ it's stored, and _what_ it retains, on your VPS, in your database, in plain files you can read.
-- **Your interaction model.** Which channels, which triggers, what the agent is even allowed to do.
-- **You can edit the execution code itself.** It's open source, so you can change what it does, add plugins, and reshape the agent around your workflow. With Claude, that same level of surgery is harder or outright impossible.
+- **Any model, any provider.** You're not locked to one lab. Use an open model like Kimi K3, a hosted API, or something you run yourself.
+- **Your data, your way.** You decide where the agent's memory lives, how it's stored and what it retains: on your VPS, in your database, or in plain files you can read.
+- **Your interaction model.** You choose the channels, the triggers, and what the agent is allowed to do.
+- **You can edit the code.** It's open source, so you can change its behavior, add plugins and reshape it around your workflow. With Claude, that level of change is harder or impossible.
 
-That's the real trade: you give up the polish and safety of a managed assistant to gain total control over the model, the memory, and the code. If you don't need that control, you probably don't need this. If you do, nothing else gets you there.
+That's the trade: you give up the polish and safety of a managed assistant in exchange for control over the model, the memory and the code. If you don't need that control, you probably don't need this.
 
-With that lens, here are use cases where the flexibility earns its keep:
+With that lens, these are the use cases where the flexibility pays off:
 
 - **Email correspondence.** It has its own inbox and handles email threads for you, from its own identity.
-- **Webmaster-style edits.** It can act like a webmaster that edits your website, tweaking copy, content, or code on a project that's already set up, but it won't deploy it. Think "edits the site, doesn't ship it."
-- **A living company memory / CRM.** Feed it information and let it research on a schedule, keeping a persistent, always-current record of your business, client details and history, in storage you chose. A CRM you own the shape of.
-- **Wire it into your existing CRM** instead of reinventing one.
-- **Wire it into your company chat** (Slack, Discord, whatever your team already uses).
-- **Talk to your whole team with a unified identity.** Because you can shape the code, the agent can resolve the _same person_ across platforms: if an employee messages it on Slack, then later on GitHub or Telegram, it maps all of those to one identity and carries the same context across every channel, so nobody has to re-explain themselves.
+- **Webmaster-style edits.** It can edit copy, content or code on a website project that's already set up, without deploying it. It edits the site, it doesn't ship it.
+- **A company memory or CRM.** Feed it information and let it research on a schedule, keeping an up-to-date record of your business, your clients and their history, in storage you chose.
+- **Integration with your existing CRM**, instead of reinventing one.
+- **Integration with your company chat**, whether that's Slack, Discord or something else.
+- **One identity per teammate across channels.** Because you can change the code, the agent can recognize the same person on Slack, GitHub and Telegram, and carry the same context across all of them. Nobody has to explain themselves twice.
 
-That last one is where the earlier **allow-list** does double duty: the list of known, trusted identities that keeps strangers out is exactly what lets the agent cross-reference your employees' accounts across Slack, GitHub, and Telegram into a single, contextual relationship. Safety and capability turn out to be the same feature.
+That last one relies on the **allow-list** described in the risks section below. The list of trusted identities that keeps strangers out is the same list that lets the agent link your teammates' accounts. Safety and capability turn out to be the same feature.
 
-Notice that every one of these is **internal**: back-office automation and tooling for you and your team, not something pointed at customers. That's the ceiling today. At its best, this is an internal experiment that matures into a genuinely useful internal tool, not a product you put in front of end users.
+Every one of these use cases is **internal**: back-office automation and tooling for you and your team. That's the ceiling today.
 
 ## Costs
 
-### Cost 1: everything is separate plumbing you assemble yourself
+### Cost 1: you assemble the plumbing yourself
 
-There is no "assistant account" you sign up for. To make Hermes useful you provision, and wire together, a pile of independent services by hand:
+There is no "assistant account" to sign up for. To make Hermes useful, you provision and connect a set of independent services by hand:
 
 - A model provider (or Nous Portal) for the brain.
 - An **email** identity.
 - A **phone number** for WhatsApp, on its own SIM.
 - A **Google account** for Drive and Calendar.
-- The messaging gateway config for each channel.
+- The gateway config for each messaging channel.
 
-Each one is a separate signup, a separate credential, a separate thing that can break. The agent is only as connected as the plumbing you personally ran, and every pipe is one you own and maintain.
+Each one is a separate signup, a separate credential, and a separate thing that can break.
 
-**Why it matters:** the "assistant" is really a systems-integration project wearing a chat interface. Budget for that, not for a five-minute install.
+**Why it matters:** the assistant is really a systems-integration project with a chat interface. Budget for that, not for a five-minute install.
 
-### Cost 2: you're now running a server (and backing it up)
+### Cost 2: you're running a server (and backing it up)
 
-Hermes' persistence, the memory, the self-authored skills, the relationship notes, lives on a VPS. That's a real machine you rent (~$5–10/month) and, more importantly, **operate**.
+Hermes keeps its memory, its self-authored skills and its notes about people on a VPS. That's a machine you rent (~$5–10/month) and, more importantly, **operate**.
 
 - You pick and pay for the VPS.
-- You do the **backups**. The agent's entire accumulated memory and skills are files on that box. Lose the box, lose the assistant's brain. There is no "restore from cloud" unless you built one.
-- You keep it patched and alive.
+- You handle the **backups**. The agent's memory and skills are files on that machine. If you lose the machine without a backup, you lose the assistant's brain.
+- You keep it patched and running.
 
-Nous does offer a managed **Hermes Cloud** to skip this, but the moment you self-host for control or cost, you've signed up to be a sysadmin. An autonomous assistant that forgets everything when a disk dies isn't autonomous, it's fragile.
+Nous offers a managed **Hermes Cloud** to skip this, but if you self-host for control or cost, you're now a sysadmin.
+
+**Why it matters:** an assistant that forgets everything when a disk dies isn't autonomous, it's fragile.
 
 ### Cost 3: you need Fastmail, because a VPS looks like an attacker
 
-Here's a non-obvious one. You'd think you'd just give the agent a Gmail and let it send mail. Don't.
+The obvious move is to give the agent a Gmail account and let it send mail. Don't.
 
-When automated logins and outbound mail come from a **datacenter IP** (which is what a VPS is), Google's abuse heuristics light up. New IP, headless automation, programmatic sending, this is the exact fingerprint of a compromised or spam account, and Google will challenge, throttle, or **suspend** the account.
+When automated logins and outbound mail come from a **datacenter IP**, which is what a VPS has, Google's abuse detection kicks in. A new IP, headless automation and programmatic sending is the exact pattern of a compromised or spam account. Google will challenge, throttle or **suspend** it.
 
-So the practical move is to route email through a provider built for programmatic SMTP, like **Fastmail**: clean IMAP/SMTP, app-specific passwords, and its own sending reputation. It's not that Gmail _can't_ do it; it's that Gmail from a VPS is a suspension waiting to happen.
+The practical alternative is a provider built for programmatic email, like **Fastmail**: standard IMAP/SMTP, app-specific passwords and its own sending reputation. Gmail _can_ do it, but Gmail from a VPS is a suspension waiting to happen.
 
-**Why it matters:** the "obvious" free path (Gmail SMTP) is the one most likely to get your agent's identity nuked. You pay for Fastmail to buy deliverability and account stability.
+**Why it matters:** the free path (Gmail SMTP) is the one most likely to get your agent's identity banned. Paying for Fastmail buys deliverability and account stability.
 
 ### Cost 4: Google Cloud setup (less than you'd fear)
 
-The agent reaches Drive and Calendar through the new Google Workspace CLI (`gws`). If you've set up Google Cloud projects before, you're bracing for the usual console slog: create a project, enable each API, configure the OAuth consent screen, generate credentials.
+The agent reaches Drive and Calendar through the Google Workspace CLI (`gws`). If you've set up Google Cloud projects before, you expect the usual console work: create a project, enable each API, configure the OAuth consent screen, generate credentials.
 
-Good news: **`gws auth setup` does almost all of it for you.** Per the CLI's own docs, the command _"creates a Cloud project, enables APIs, logs you in."_ You don't hand-configure the project or click through API enablement, the CLI provisions it behind the scenes. This isn't spelled out loudly anywhere, but it's real, watch any setup walkthrough and you'll see it just happen.
+**`gws auth setup` does almost all of it for you.** According to the CLI's docs, the command _"creates a Cloud project, enables APIs, logs you in."_ It's not advertised much, but it works.
 
 Two caveats:
 
-- It needs the `gcloud` CLI installed (otherwise you fall back to manual console setup).
-- On Windows the automated path is broken (Rust binaries don't resolve `gcloud.cmd`), so it's a macOS/Linux convenience.
+- It needs the `gcloud` CLI installed. Without it, you're back to manual console setup.
+- On Windows the automated path is broken (the Rust binaries don't resolve `gcloud.cmd`), so it only helps on macOS and Linux.
 
-**Why it matters:** this is the one step that's _easier_ than expected. Credit where due, and don't burn an afternoon doing by hand what the tool already does.
+**Why it matters:** this is the one step that's _easier_ than expected. Don't spend an afternoon doing by hand what the tool already does.
 
 ### Cost 5: it's terminal-first
 
-Configuration lives in the terminal and in YAML config files over SSH. That's fine if you live there, but it's a real barrier, and it means the person who sets the agent up is also the person on the hook when something in the config breaks at 2am. There's a desktop app now, but the self-hosted control surface is still fundamentally a shell.
+Configuration lives in YAML files that you edit over SSH. That's fine if you're comfortable in a terminal, but it's a real barrier, and whoever sets the agent up is also on call when the config breaks at 2am. There's a desktop app now, but the self-hosted setup is still managed from a shell.
 
-If you're going in anyway, [alejandro-ao's `hermes-vps-setup` skill](https://github.com/alejandro-ao/skills/blob/main/skills/hermes-vps-setup/SKILL.md) at least turns that terminal work into a guided walkthrough, SSH hardening, firewall, systemd services, hourly Git backups, instead of improvising commands from a blank prompt.
+If you're going ahead anyway, [alejandro-ao's `hermes-vps-setup` skill](https://github.com/alejandro-ao/skills/blob/main/skills/hermes-vps-setup/SKILL.md) turns that work into a guided walkthrough: SSH hardening, firewall, systemd services and hourly Git backups.
 
-## The risks
+## Risks
 
-The costs above are annoying. These next ones can actually take you down, and they're the reason I'd keep an agent like this on a short leash today.
+The costs above are annoying. The risks below can take you down, and they're the reason I'd keep an agent like this on a short leash.
 
-### Account and IP blocks from automation
+### Account and IP blocks
 
-This is the big one. Running automation against consumer services from a static datacenter IP is precisely the pattern those services are built to detect and punish.
+Running automation against consumer services from a datacenter IP is exactly the pattern those services are built to detect.
 
-- **VPS IPs are static.** To answer the question directly: a VPS almost always ships with a **dedicated static IPv4** that stays constant for the life of the instance. That's convenient for you, and convenient for Google or Meta to fingerprint and block. A static datacenter IP driving a "personal" account is a glaring anomaly.
-- **Google can block the account even through the CLI.** Using the official terminal CLI instead of browser automation lowers the footprint, it's headless and API-based rather than a puppeteered browser, but it does **not** make you immune. Google can still flag the login pattern and lock the Google account.
-- **WhatsApp bans automation numbers.** WhatsApp is aggressive about numbers that behave like bots. The dedicated number you bought a SIM for is exactly the kind of account that gets **banned**, taking your gateway with it.
+- **VPS IPs are static.** A VPS almost always comes with a **dedicated static IPv4** for the life of the instance. That's convenient for you, and equally convenient for Google or Meta to fingerprint and block. A static datacenter IP driving a "personal" account stands out.
+- **Google can block the account even through the CLI.** The official CLI is headless and API-based, so it leaves a smaller footprint than browser automation, but it doesn't make you immune. Google can still flag the login pattern and lock the account.
+- **WhatsApp bans automated numbers.** WhatsApp is aggressive with numbers that behave like bots. The number you bought a SIM for is exactly the kind of account that gets **banned**, and your gateway goes with it.
 
-**Why it matters:** you can lose an identity you spent real effort provisioning, with little recourse, because "autonomous agent on a VPS" and "abusive automation" look identical from the outside.
+**Why it matters:** you can lose an identity you spent real effort setting up, with little recourse, because "agent on a VPS" and "abusive automation" look the same from the outside.
 
-### A quick note on browsers vs the CLI
+### Browsers vs the CLI
 
-It's worth distinguishing the tools the agent uses to reach the outside world. A **puppeteered browser** (headful or headless Chromium driving a real web session) throws off far more bot signals than a **headless API CLI** like `gws`, which talks to Google's APIs directly with proper OAuth. If you have the choice, the CLI is the lighter-footprint path. But "lighter" isn't "safe", both can end in a locked account. Prefer official APIs over browser automation, and don't assume either is invisible.
+The tools the agent uses to reach the outside world matter. A **puppeteered browser** (Chromium driving a real web session) gives off far more bot signals than a **headless API CLI** like `gws`, which talks to Google's APIs directly with proper OAuth. When you have the choice, use the official API. But a smaller footprint isn't safety: both can end in a locked account.
 
-### Auto-installed and self-authored skills you never audited
+### Skills you never audited
 
-Hermes' self-improvement is a feature and a liability. It ships with skills and can install or generate more, and **a skill is just code**: scripts that run on your VPS with your agent's credentials.
+Hermes' self-improvement is both a feature and a liability. It ships with skills and can install or generate more, and **a skill is just code**: scripts that run on your VPS with your agent's credentials.
 
-- A pre-bundled or auto-installed skill can contain scripts you never read.
-- Those scripts can have vulnerabilities, or do things you didn't intend, while holding access to your email, Drive, and calendar.
-- A self-improving agent that writes its own tools is, by definition, running code no human reviewed.
+- A bundled or auto-installed skill can contain scripts you never read.
+- Those scripts can have vulnerabilities, or do things you didn't intend, while holding access to your email, Drive and calendar.
+- An agent that writes its own tools is, by definition, running code no human reviewed.
 
-This is a supply-chain problem pointed straight at your most sensitive accounts. (For contrast, the `gws` CLI's own skills are an explicit opt-in, `npx skills add ...`, which is the model you actually want: nothing runs until you say so.) Treat every skill as untrusted until you've read it, and be wary of any setup that installs a pile of them for you.
+This is a supply-chain problem pointed at your most sensitive accounts. For contrast, the `gws` CLI's skills are an explicit opt-in (`npx skills add ...`): nothing runs until you say so. That's the model you want. Treat every skill as untrusted until you've read it.
 
-### These agents aren't ready to talk to strangers
+### It isn't ready to talk to strangers
 
-The deepest limitation is architectural. The moment you expose the agent's channels, its email, its WhatsApp, so other people can reach it, **other people can reach it.** They can probe it, socially engineer it, or push it to act outside its lane, and today's agents are not hardened against that. Exposing those channels is opening a breach.
+The deepest limitation is architectural. Once you expose the agent's email or WhatsApp so other people can reach it, **other people can reach it.** They can probe it, manipulate it, or push it to act outside its scope, and today's agents aren't hardened against that.
 
-Right now these are, realistically, **personal assistants for a party of one**: they should talk to _you_, and maybe to a tightly scoped **allow-list** of known identities, specific email addresses, specific phone numbers you explicitly trust. Anyone whose identity isn't on the list shouldn't get to drive the agent at all.
+Realistically, these are **personal assistants for one person**. They should talk to _you_, and at most to a tightly scoped **allow-list** of trusted identities: specific email addresses and phone numbers. Anyone not on the list shouldn't be able to drive the agent.
 
-**Why it matters:** the dream is an agent that fields your clients directly. The reality is that letting it talk to arbitrary strangers is, for now, an unbounded risk. Keep it behind an allow-list until the safety story catches up.
+**Why it matters:** the goal is an agent that talks to your clients directly. For now, letting it talk to strangers is an unbounded risk. Keep it behind an allow-list until the security story catches up.
 
 ## Tradeoffs
 
-**Self-hosted autonomous agent vs. a plain scoped assistant**
+**Self-hosted autonomous agent vs. a managed assistant**
 
-- **What you gain:** ownership, persistence, self-improvement, frontier open models like Kimi K3, and an identity of its own.
-- **What you pay:** VPS ops and backups, per-service provisioning, the constant risk of account and IP bans, exposure to unaudited skill code, and a hard ceiling on who the agent can safely talk to.
+- **What you gain:** ownership, persistent memory, self-improvement, frontier open models like Kimi K3, and an identity of its own.
+- **What you pay:** VPS operations and backups, per-service setup, the risk of account and IP bans, exposure to unaudited skill code, and a hard limit on who the agent can safely talk to.
 
-The bottom line: the _capability_ is finally here, but the _operational and safety envelope_ is small. This is a power tool for someone who's comfortable being its sysadmin and its security team, aimed at their own private workflows, not a drop-in employee you point at the public.
+The _capability_ is here, but the _operational and security envelope_ is small. This is a tool for someone willing to be its sysadmin and its security team, aimed at their own internal workflows. It's not an employee you can put in front of the public.
 
 ## Conclusion
 
-The positioning is simple: for everyday tasks, most of what a self-hosted agent like this does overlaps with Claude and Claude Code. The reason to pay the cost is **control**, over the model, the storage, and the code itself. If you need that, this is the only thing that gives it to you.
+For everyday tasks, most of what a self-hosted agent does overlaps with Claude and Claude Code. The reason to pay the cost is **control** over the model, the storage and the code.
 
-But "useful autonomous assistant" today means signing up to:
+But running one today means you have to:
 
 - **Assemble** a stack of separate services by hand.
 - **Operate and back up** a VPS that holds the agent's entire memory.
-- **Pay for the right tools** (Fastmail over Gmail) to avoid tripping abuse systems.
-- **Accept ban risk** on accounts and IPs you can't fully control.
+- **Pay for the right tools** (Fastmail over Gmail) to avoid triggering abuse systems.
+- **Accept the risk** of account and IP bans.
 - **Audit every skill**, including the ones the agent writes itself.
-- **Keep it behind an allow-list**, because it isn't ready to face strangers.
+- **Keep it behind an allow-list**, because it isn't ready to talk to strangers.
 
-Put plainly: these systems are **not ready to be relied on** as a finished, fully trustworthy and secure product, not without a deep engineering effort built around them, and that effort is not small. Realistically it's months of work from an engineering team to get one of these safe enough to communicate with end users. What they _are_ ready for is delivering real benefits **internally**: back-office automation, internal tooling, and experiments for you and your team. That's the line today, and everything above it still has to be built.
+These systems aren't ready to be relied on as a finished, secure product without serious engineering around them, and that work is measured in months for a team, not weekends. What they _are_ ready for is internal use: back-office automation, internal tooling and experiments for you and your team.
