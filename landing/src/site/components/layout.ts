@@ -8,6 +8,7 @@ import forest from "./forest";
 import footer from "./footer";
 import languageSwitcher from "./language-switcher";
 import activityPanel from "./activity-panel";
+import sidePhoto from "./side-photo";
 import { AI_LAYOUT_ENABLED, AI_LAYOUT, AI_FEATURE_ENABLED } from "./frame";
 
 type LayoutProps = {
@@ -21,6 +22,8 @@ type LayoutProps = {
   };
   withFooter?: boolean;
   withIlustration?: boolean;
+  /** Emilia's photo beside the content (services page). */
+  withSidePhoto?: boolean;
 
   children?: HtmlEscapedString | Promise<HtmlEscapedString>;
 };
@@ -31,6 +34,7 @@ export default function layout({
   siteData,
   withFooter = true,
   withIlustration = false,
+  withSidePhoto = false,
 
   children,
 }: LayoutProps) {
@@ -304,6 +308,7 @@ document.head.appendChild(o)}initApollo();</script>
         -->
         ${withFooter ? footer(ctx) : null}
         </div>
+        ${withSidePhoto ? sidePhoto(ctx) : null}
         ${languageSwitcher(ctx)}
         ${AI_FEATURE_ENABLED ? activityPanel() : null}
         <script src="${ctx.assets.script("layout")}" defer></script>

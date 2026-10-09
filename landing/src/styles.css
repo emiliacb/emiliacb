@@ -363,6 +363,66 @@ html.ai-layout-enabled #activity-panel {
   @apply prose-pre:bg-pink-100 prose-pre:dark:bg-stone-900 prose-code:text-pink-900 prose-code:dark:text-orange-300;
 }
 
+/* --- side photo (services) ------------------------------------------------ */
+/* Emilia's photo, drawn by src/client/side-photo.ts. The <img> is the
+   fallback until (or unless) WebGPU takes over the canvas on top of it. */
+
+#side-photo {
+  position: absolute;
+  top: 180px;
+  left: calc(50% + 250px);
+  width: clamp(200px, 22vw, 320px);
+  aspect-ratio: 1;
+  z-index: 20;
+  pointer-events: none;
+}
+
+#side-photo img,
+#side-photo canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#side-photo img {
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+#side-photo canvas {
+  opacity: 0;
+}
+
+#side-photo.side-photo--gpu canvas {
+  opacity: 1;
+}
+
+#side-photo.side-photo--gpu img {
+  display: none;
+}
+
+/* No free column beside the text: the script places the photo in a gap next
+   to the heading and moves it with transforms (it is a fixed 300px box,
+   scaled, so the canvas never reallocates). Hidden until placed. Blended so
+   any text it brushes stays legible. */
+@media (max-width: 1099px) {
+  #side-photo {
+    top: 0;
+    left: 0;
+    width: 300px;
+    opacity: 0;
+    transform-origin: 100% 50%;
+    mix-blend-mode: multiply;
+  }
+}
+
+@media (max-width: 1099px) and (prefers-color-scheme: dark) {
+  #side-photo {
+    mix-blend-mode: screen;
+  }
+}
+
 /* --- generated forest ---------------------------------------------------- */
 /* A ruled ground plane behind the page with a forest standing on it. The
    ruling is drawn to a canvas by src/client/forest.js, which also plants the

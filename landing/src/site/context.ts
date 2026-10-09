@@ -19,7 +19,8 @@ export type ClientEntry =
   | "mascot-bot"
   | "navigation"
   | "posthog"
-  | "pretext";
+  | "pretext"
+  | "side-photo";
 
 export type Assets = {
   /** Hashed URL of a client bundle, e.g. "/assets/forest-3HX2K.js". */
