@@ -209,6 +209,19 @@ document.head.appendChild(o)}initApollo();</script>
             pointer-events: none;
           }
 
+          /* A captured element does not respond to hit testing until the whole
+             transition is over, and the root is captured by default, so the
+             navbar and everything else stayed dead for the length of the
+             slowest animation (~500ms): a second link click right after a
+             navigation went nowhere. Only #content animates, so the root needs
+             no snapshot. Without it the rest of the page is live from the
+             moment it is revealed, and the pointer-events rule above lets
+             clicks through the overlay to it. The AI layout keeps the root
+             snapshot: its #content folds into it, see below. */
+          html:not(.ai-layout-enabled) {
+            view-transition-name: none;
+          }
+
           #content {
             view-transition-name: content;
             contain: paint;
