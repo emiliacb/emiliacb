@@ -1,9 +1,9 @@
 /**
  * Procedural generator for the site's tree illustration.
  *
- * It reproduces the *language* of the original hand-drawn tree (the one baked
- * into public/tree.lottie) rather than any single instance of it. The rules
- * that actually define the look:
+ * It reproduces the *language* of the original hand-drawn tree (the one drawn
+ * in src/site/components/tree.ts) rather than any single instance of it. The
+ * rules that actually define the look:
  *
  *   - A branch is a chain of bowed bezier runs meeting at visible elbows. The
  *     runs curve; the elbows crease. Straight segments between kinks read
