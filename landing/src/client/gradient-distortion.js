@@ -326,12 +326,8 @@ function setupNativeLayer(renderer, gl, targetEl) {
 // FALLBACK path: html-to-image snapshot (what every real browser uses today)
 //
 // Captured from #overlay-content as a whole (excluding #page-shell), not
-// per-element: the tree illustration renders through a Shadow DOM (the
-// dotlottie-player web component), and html-to-image only manages to flatten
-// that shadow content when the capture root is high enough in the tree —
-// capturing #tree-illustration in isolation comes back essentially blank.
-// One combined texture also sidesteps needing separate positioning math;
-// it simply covers the same box #overlay-content already occupies.
+// per-element: one combined texture sidesteps needing separate positioning
+// math; it simply covers the same box #overlay-content already occupies.
 // ---------------------------------------------------------------------------
 function captureDecoration(overlayEl, maxTextureSize) {
   const rect = overlayEl.getBoundingClientRect();

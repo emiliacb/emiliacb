@@ -472,6 +472,8 @@ html.ai-layout-enabled #activity-panel {
   @apply absolute h-[80%] 2xl:h-[80vh] max-h-[1000px] opacity-60 lg:opacity-90 w-auto bottom-0 object-cover dark:invert;
   right: max(30vw, 200px);
   margin-right: -300px;
+  /* Swaying leaves may cross the edge of the drawing's own box. */
+  overflow: visible;
 
   @media (prefers-reduced-motion: no-preference) {
     animation: treeAppear 1s ease-in forwards;

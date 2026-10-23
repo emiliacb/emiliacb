@@ -16,9 +16,7 @@
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.8",
-    "@dotlottie/player-component": "^2.7.0",
     "@floating-ui/dom": "^1.7.4",
-    "@lottiefiles/dotlottie-web": "^0.34.0",
     "hono": "^4.7.5",
     "html-to-image": "^1.11.13",
     "three": "^0.185.1",

@@ -10,7 +10,6 @@ export type ClientEntry =
   | "activity-logger"
   | "activity-panel"
   | "distortion"
-  | "dotlottie"
   | "dropdown"
   | "email-link"
   | "forest"
@@ -19,7 +18,8 @@ export type ClientEntry =
   | "mascot-bot"
   | "navigation"
   | "posthog"
-  | "pretext";
+  | "pretext"
+  | "tree-sway";
 
 export type Assets = {
   /** Hashed URL of a client bundle, e.g. "/assets/forest-3HX2K.js". */
