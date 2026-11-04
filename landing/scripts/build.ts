@@ -75,7 +75,7 @@ const { metafile } = await esbuild.build({
 });
 if (!metafile) throw new Error("esbuild returned no metafile");
 
-// Entry name ("forest") → public URL ("/assets/forest-ABC123.js").
+// Entry name ("layout") → public URL ("/assets/layout-ABC123.js").
 const scriptUrls = new Map<string, string>();
 for (const [outFile, output] of Object.entries(metafile.outputs)) {
   if (!output.entryPoint || !outFile.endsWith(".js")) continue;
@@ -85,7 +85,7 @@ for (const [outFile, output] of Object.entries(metafile.outputs)) {
 if (scriptUrls.size !== clientEntries.length) {
   throw new Error(
     `Expected ${clientEntries.length} client bundles, esbuild produced ${scriptUrls.size}. ` +
-      "Two files in src/client/ may share a name (forest.js and forest.ts).",
+      "Two files in src/client/ may share a name (layout.js and layout.ts).",
   );
 }
 

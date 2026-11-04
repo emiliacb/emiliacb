@@ -20,9 +20,9 @@
  * every limb below it, a share of it, which is how brushing the crown sways the
  * whole tree a little. A breeze keeps it from ever standing dead still.
  *
- * The tree sits behind the page, so it listens to the pointer on the window,
- * the same way the parallax in forest.js does. Nothing here is needed for the
- * page to work: without it the tree is the same SVG, standing still.
+ * The tree sits behind the page, so it listens to the pointer on the window.
+ * Nothing here is needed for the page to work: without it the tree is the
+ * same SVG, standing still.
  */
 
 const svg = document.querySelector("#tree-illustration .cover-tree");
