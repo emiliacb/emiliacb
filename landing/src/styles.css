@@ -73,6 +73,19 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* No visible scrollbars anywhere: the page, the AI layout's #scroll-wrapper and
+   the activity panel transcript all still scroll by wheel, touch and keyboard,
+   only the bar is gone. Global rather than a utility class, because the
+   scrolling element changes with the AI layout (html when it is off,
+   #scroll-wrapper when it is on). */
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
 #overlay-content {
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
@@ -396,19 +409,6 @@ html.ai-layout-enabled #activity-panel {
   .h-static-screen {
     height: 100vh;
     height: 100svh;
-  }
-
-  /* Scrollbar */
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    /* IE and Edge */
-    scrollbar-width: none;
-    /* Firefox */
-  }
-
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-    /* Chrome, Safari and Opera */
   }
 
   .light-gradient-projection {
