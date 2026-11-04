@@ -4,7 +4,6 @@ import { SITE_NAME, SITE_URL } from "../../shared/site";
 import type { RenderCtx } from "../context";
 import navbar from "./navbar";
 import tree from "./tree";
-import forest from "./forest";
 import footer from "./footer";
 import languageSwitcher from "./language-switcher";
 import activityPanel from "./activity-panel";
@@ -271,8 +270,7 @@ document.head.appendChild(o)}initApollo();</script>
           class="relative overflow-hidden shadow-lg flex flex-col min-h-static-screen bg-stone-100 z-10 dark:bg-stone-800 prose-h1:text-3xl"
         >
           <!--
-            The gradient wash is off on the illustration page for now: it and
-            the ruled ground plane were competing for the same corner.
+            The gradient wash is off on the illustration page for now.
 
             The element itself stays. src/client/gradient-distortion.js bails
             out entirely if it cannot find #gradient-bg, and it is the same
@@ -290,7 +288,6 @@ document.head.appendChild(o)}initApollo();</script>
           ></div>
           ${withIlustration
             ? html`
-                ${forest(ctx)}
                 <div
                   id="tree-illustration"
                   class="absolute bottom-0 w-[50vw] right-0 h-static-screen overflow-hidden"

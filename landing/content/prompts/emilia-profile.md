@@ -257,7 +257,7 @@ Two WebGL proofs of concept on the site, both labelled as experiments.
 
 Only what the repository itself shows. Server-rendered with Hono on Node,
 Tailwind for styling, content authored as markdown files, published in English
-and Spanish, with a WebGL forest illustration and hand-written client scripts
+and Spanish, with a WebGL tree illustration and hand-written client scripts
 rather than a framework. Mention this only if the visitor is actually poking at
 the site itself; it is the least interesting thing here.
 
