@@ -14,6 +14,8 @@ export type PostMeta = {
 export type Post = PostMeta & {
   /** Rendered HTML per language (the body is the same; the table of contents label changes). */
   html: Record<Lang, string>;
+  /** Markdown body, frontmatter stripped. Source of the /{lang}/blog/<slug>.md version. */
+  markdown: string;
 };
 
 /** Markdown pages under content/pages/{lang}/. */
@@ -23,6 +25,8 @@ export type PageContentId = "home" | "about" | "services";
 export type Content = {
   /** Rendered HTML of content/pages/{lang}/{id}.md. */
   pages: Record<Lang, Record<PageContentId, string>>;
+  /** Markdown source of content/pages/{lang}/{id}.md. Source of the .md versions. */
+  pageSources: Record<Lang, Record<PageContentId, string>>;
   /** Published posts (drafts excluded), newest first. */
   posts: Post[];
 };

@@ -46,6 +46,35 @@ describe("language-less page redirects", () => {
   });
 });
 
+describe("Markdown versions", () => {
+  it("serves the home's Markdown in the negotiated language at /.md", async () => {
+    const res = await get("/.md", { "Accept-Language": "es" });
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain("home es markdown");
+    expect(res.headers.get("Content-Type")).toBe("text/markdown; charset=utf-8");
+    expect(res.headers.get("Content-Language")).toBe("es");
+    expect(res.headers.get("Vary")).toContain("Accept-Language");
+  });
+
+  it("redirects a language-less .md page to the language's .md", async () => {
+    const res = await get("/about.md", { Cookie: "lang=es" });
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/es/about.md");
+  });
+
+  it("redirects a language-less post .md", async () => {
+    const res = await get("/blog/foo.md", { "Accept-Language": "en" });
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/en/blog/foo.md");
+  });
+
+  it("leaves language-prefixed .md files to the static assets", async () => {
+    const res = await get("/en.md");
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain("home en markdown");
+  });
+});
+
 describe("other Worker routes", () => {
   it("answers /health", async () => {
     const res = await get("/health");

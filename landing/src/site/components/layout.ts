@@ -1,6 +1,6 @@
 import { html } from "hono/html";
 import type { HtmlEscapedString } from "hono/utils/html";
-import { SITE_NAME, SITE_URL } from "../../shared/site";
+import { SITE_NAME, SITE_URL, markdownPath } from "../../shared/site";
 import type { RenderCtx } from "../context";
 import navbar from "./navbar";
 import tree from "./tree";
@@ -20,6 +20,8 @@ type LayoutProps = {
   };
   withFooter?: boolean;
   withIlustration?: boolean;
+  /** Advertise the page's .md version (off for the 404, which has none). */
+  withMarkdown?: boolean;
 
   children?: HtmlEscapedString | Promise<HtmlEscapedString>;
 };
@@ -30,6 +32,7 @@ export default function layout({
   siteData,
   withFooter = true,
   withIlustration = false,
+  withMarkdown = true,
 
   children,
 }: LayoutProps) {
@@ -80,6 +83,9 @@ export default function layout({
         <meta name="title" content="${siteData.title}" />
         <meta name="description" content="${siteData.description}" />
         <link rel="canonical" href="${canonicalUrl}" />
+        ${withMarkdown
+          ? html`<link rel="alternate" type="text/markdown" href="${SITE_URL}${markdownPath(ctx.lang, path)}" />`
+          : null}
         <meta name="build-id" content="${ctx.assets.buildId}" />
         ${AI_FEATURE_ENABLED
           ? html`<meta name="asset:pretext" content="${ctx.assets.script("pretext")}" />`

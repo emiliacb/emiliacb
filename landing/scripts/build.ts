@@ -10,6 +10,7 @@ import { dictionaries } from "../src/shared/i18n";
 import type { Assets, ClientEntry, RenderCtx } from "../src/site/context";
 import { loadContent } from "../src/site/content";
 import { renderSite } from "../src/site/pages";
+import { renderLlmsTxt, renderSiteMarkdown } from "../src/site/markdown";
 
 // The only file in the project allowed to read process.env.
 // Note: import.meta.dirname is scripts/, so the project root is one level up.
@@ -134,6 +135,18 @@ for (const page of pages) {
   await fs.writeFile(file, page.html);
 }
 
+// Markdown versions for LLMs and agents: /en/about.md beside /en/about/index.html.
+const markdownFiles = renderSiteMarkdown(ctxFor);
+for (const file of markdownFiles) {
+  if (!/^\/[a-z]{2}(\/[\w./-]*)?\.md$/.test(file.path) || file.path.split("/").includes("..")) {
+    throw new Error(`Invalid markdown path: "${file.path}"`);
+  }
+  await fs.mkdir(path.dirname(path.join(dist, file.path)), { recursive: true });
+  await fs.writeFile(path.join(dist, file.path), file.markdown);
+}
+const llmsTxt = renderLlmsTxt(ctxFor);
+await fs.writeFile(path.join(dist, "llms.txt"), llmsTxt);
+
 const notFoundFiles: [string, string][] = [
   ["404.html", notFound.en],
   ["en/404.html", notFound.en],
@@ -152,6 +165,10 @@ await fs.writeFile(
     "  Cache-Control: public, max-age=31536000, immutable",
     "/sw.js",
     "  Cache-Control: no-cache",
+    // The Markdown versions (served as text/markdown by default) duplicate
+    // the HTML pages: keep them out of search results.
+    "/*.md",
+    "  X-Robots-Tag: noindex",
     "/public/cv.pdf",
     '  Content-Disposition: attachment; filename="Emilia_C_B_Resume.pdf"',
     "",
@@ -178,6 +195,20 @@ for (const urlPath of expectedPaths) {
 }
 if (missing.length) throw new Error(`Missing index.html for: ${missing.join(", ")}`);
 
+const missingMd = expectedPaths
+  .map((urlPath) => `${urlPath}.md`)
+  .filter((mdPath) => !markdownFiles.some((file) => file.path === mdPath));
+if (missingMd.length) throw new Error(`Missing markdown version for: ${missingMd.join(", ")}`);
+
+// "](/" is a root-relative link left unrewritten: agents read these files
+// without a base URL, so every link must be absolute.
+const BAD_MD_MARKERS = ["](undefined", "[object ", "%table-of-contents%", "](/"];
+for (const { path: where, markdown } of [...markdownFiles, { path: "/llms.txt", markdown: llmsTxt }]) {
+  for (const marker of BAD_MD_MARKERS) {
+    if (markdown.includes(marker)) throw new Error(`Markdown at ${where} contains "${marker}"`);
+  }
+}
+
 const BAD_MARKERS = ["undefined</", "[object Promise]", "[object Object]"];
 const renderedHtml: [string, string][] = [
   ...pages.map((p): [string, string] => [p.path, p.html]),
@@ -195,6 +226,7 @@ const totalBytes = await dirSize(dist);
 console.log(
   `build ${buildId}: ${pages.length + notFoundFiles.length} HTML files ` +
     `(${pages.length} pages, ${notFoundFiles.length} 404s), ` +
+    `${markdownFiles.length} markdown files + llms.txt, ` +
     `${assetFiles.filter((f) => !f.endsWith(".map")).length} assets, ` +
     `dist ${(totalBytes / 1024).toFixed(1)} KB`,
 );

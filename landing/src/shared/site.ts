@@ -39,6 +39,14 @@ export const FOOTER_NAV: readonly PageId[] = ["home", "about", "blog", "services
 
 export const BLOG_PATH = "/blog";
 
+/**
+ * URL path of a page's Markdown version: the HTML path plus ".md".
+ * "/en" + "/about" → "/en/about.md"; the home ("") → "/en.md".
+ */
+export function markdownPath(lang: string, path: string): string {
+  return `/${lang}${path}.md`;
+}
+
 export const CONTACT = {
   email: "emiliacabralb@gmail.com",
   linkedin: "https://www.linkedin.com/in/emiliacb",

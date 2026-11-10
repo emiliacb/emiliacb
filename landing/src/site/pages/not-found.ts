@@ -14,6 +14,7 @@ export default async function render(ctx: RenderCtx): Promise<string> {
       path: "",
       siteData: { title: notFound.title, description: notFound.description },
       withFooter: true,
+      withMarkdown: false,
       children: html`
         <section
           class="py-16 md:py-24 flex flex-col items-center text-center gap-4 md:gap-6"
