@@ -3,7 +3,7 @@ import { fileURLToPath } from "url";
 import { describe, expect, it } from "vitest";
 
 import { LANGS, type Lang } from "../../src/shared/lang";
-import { PAGES, SITE_URL } from "../../src/shared/site";
+import { CONTACT, PAGES, SITE_URL } from "../../src/shared/site";
 import { dictionaries } from "../../src/shared/i18n";
 import { loadContent } from "../../src/site/content";
 import type { RenderCtx } from "../../src/site/context";
@@ -86,5 +86,16 @@ describe("renderLlmsTxt", () => {
     expect(links.length).toBeGreaterThan(0);
     for (const link of links) expect(byPath.has(link), link).toBe(true);
     for (const post of content.posts) expect(links).toContain(`/en/blog/${post.slug}.md`);
+  });
+
+  it("keeps the surname and the email out of llms.txt", async () => {
+    const { ctxFor } = await setup();
+    const txt = renderLlmsTxt(ctxFor);
+    // The domain (emiliacabral.com) is in every URL; the name must not be anywhere else.
+    const withoutDomain = txt.replaceAll(SITE_URL, "");
+
+    expect(withoutDomain).not.toMatch(/cabral/i);
+    expect(txt).not.toContain(CONTACT.email);
+    expect(txt).not.toContain("mailto:");
   });
 });

@@ -1,7 +1,7 @@
 import { Lexer, type Tokens } from "marked";
 
 import { LANGS, type Lang } from "../../shared/lang";
-import { CONTACT, PAGES, SITE_NAME, SITE_URL, markdownPath, type PageId } from "../../shared/site";
+import { CONTACT, PAGES, SITE_URL, markdownPath, type PageId } from "../../shared/site";
 import { headingSlug } from "../content";
 import type { Post } from "../content/types";
 import type { RenderCtx } from "../context";
@@ -177,6 +177,12 @@ export function renderSiteMarkdown(ctxFor: (lang: Lang) => RenderCtx): MarkdownF
 /** Labs pages are WebGL experiments: listed under "Optional" in llms.txt. */
 const OPTIONAL_PAGES: readonly PageId[] = ["labs-distortion", "labs-distortion-bg"];
 
+/**
+ * The name llms.txt goes by: first name and initials only. llms.txt is the one
+ * file robots.txt lets crawlers fetch, so it carries no surname and no email.
+ */
+const LLMS_NAME = "Emilia CB";
+
 /** /llms.txt: what the site is and where the Markdown versions live. */
 export function renderLlmsTxt(ctxFor: (lang: Lang) => RenderCtx): string {
   const en = ctxFor("en");
@@ -197,11 +203,11 @@ export function renderLlmsTxt(ctxFor: (lang: Lang) => RenderCtx): string {
   );
 
   return [
-    `# ${SITE_NAME}`,
+    `# ${LLMS_NAME}`,
     "",
     `> ${en.t.pages.home.description}`,
     "",
-    `Personal site of ${SITE_NAME} (Emilia CB): AI engineer, mentor and consultant. ` +
+    `Personal site of ${LLMS_NAME}: AI engineer, mentor and consultant. ` +
       `It is published in English (${SITE_URL}/en) and Spanish (${SITE_URL}/es). ` +
       `Every page has a Markdown version at the same URL plus ".md", for example ` +
       `${SITE_URL}/en/about.md; ${SITE_URL}/.md serves the home in the visitor's language. ` +
@@ -222,7 +228,6 @@ export function renderLlmsTxt(ctxFor: (lang: Lang) => RenderCtx): string {
     "## Contact",
     "",
     list([
-      `- [Email](mailto:${CONTACT.email}): ${CONTACT.email}`,
       `- [LinkedIn](${CONTACT.linkedin})`,
       `- [GitHub](${CONTACT.github})`,
       `- [Schedule a meeting](${CONTACT.calendar})`,
