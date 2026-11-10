@@ -21,6 +21,18 @@ function escapeAttr(value: string): string {
 }
 
 /**
+ * Heading id rule: hyphens are stripped, spaces become "-", and accented
+ * letters are kept: "Qué es" → "qué-es". Shared with the .md versions so their
+ * table of contents links the same anchors as the HTML pages.
+ */
+export function headingSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N} ]/gu, "")
+    .replace(/ /g, "-");
+}
+
+/**
  * Renders Markdown to HTML synchronously. A fresh Marked instance is created
  * per call, so nothing leaks into the global marked defaults.
  */
@@ -30,13 +42,9 @@ export function renderMarkdown(source: string, lang: Lang): string {
 
   marked.use({
     renderer: {
-      // Heading ids are link targets. Same rule as before (hyphens are stripped,
-      // spaces become "-") except accented letters are kept: "Qué es" → "qué-es".
+      // Heading ids are link targets, see headingSlug.
       heading({ text, depth }: Tokens.Heading) {
-        const slug = text
-          .toLowerCase()
-          .replace(/[^\p{L}\p{N} ]/gu, "")
-          .replace(/ /g, "-");
+        const slug = headingSlug(text);
 
         if (depth === 1) {
           return `<h${depth} id="${slug}">${text}</h${depth}>`;

@@ -16,11 +16,14 @@ const PAGE_IDS: PageContentId[] = ["home", "about", "services"];
  */
 export async function loadContent(rootDir: string): Promise<Content> {
   const pages = {} as Content["pages"];
+  const pageSources = {} as Content["pageSources"];
   for (const lang of LANGS) {
     pages[lang] = {} as Record<PageContentId, string>;
+    pageSources[lang] = {} as Record<PageContentId, string>;
     for (const id of PAGE_IDS) {
       const file = path.join(rootDir, "content/pages", lang, `${id}.md`);
       const source = await readFile(file, "utf8");
+      pageSources[lang][id] = source;
       pages[lang][id] = renderMarkdown(source, lang);
     }
   }
@@ -50,11 +53,12 @@ export async function loadContent(rootDir: string): Promise<Content> {
       preview: meta.preview,
       draft: meta.draft,
       html,
+      markdown: content,
     });
   }
 
   // ISO strings sort correctly as text; newest first.
   posts.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
-  return { pages, posts };
+  return { pages, pageSources, posts };
 }

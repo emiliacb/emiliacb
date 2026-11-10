@@ -21,6 +21,15 @@ describe("Worker routes vs wrangler.jsonc", () => {
     }
   });
 
+  it("sends every language-less Markdown version to the Worker", () => {
+    for (const page of PAGES) {
+      // The home has no path of its own: its language-less .md is "/.md".
+      const mdPath = `${page.path || "/"}.md`;
+      const covered = runWorkerFirst.some((entry) => matchesRoute(entry, mdPath));
+      expect(covered, `${mdPath} is not in run_worker_first`).toBe(true);
+    }
+  });
+
   it("lists every redirect route in run_worker_first", () => {
     expect(runWorkerFirst).toEqual(expect.arrayContaining(LANGLESS_ROUTES.filter((r) => r === "/blog/*")));
   });
