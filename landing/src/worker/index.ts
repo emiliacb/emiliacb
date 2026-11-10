@@ -50,7 +50,13 @@ async function serveNegotiated(request: Request, env: Env, assetPath: (lang: Lan
 app.get("/", (c) => serveNegotiated(c.req.raw, c.env, (lang) => `/${lang}`));
 
 // The home's Markdown version, for LLMs and agents ("/en.md", "/es.md" in dist).
-app.get("/.md", (c) => serveNegotiated(c.req.raw, c.env, (lang) => markdownPath(lang, "")));
+// The charset is explicit: production serves .md without one, which browsers
+// read as Windows-1252. Only on success: a miss is the HTML 404 page.
+app.get("/.md", async (c) => {
+  const res = await serveNegotiated(c.req.raw, c.env, (lang) => markdownPath(lang, ""));
+  if (res.ok) res.headers.set("Content-Type", "text/markdown; charset=utf-8");
+  return res;
+});
 
 // Everything else that reaches the Worker: language-less pages (and their .md
 // versions, "/about.md" → "/en/about.md") redirect, the rest is static.
