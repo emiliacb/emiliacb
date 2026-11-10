@@ -165,10 +165,15 @@ await fs.writeFile(
     "  Cache-Control: public, max-age=31536000, immutable",
     "/sw.js",
     "  Cache-Control: no-cache",
-    // The Markdown versions (served as text/markdown by default) duplicate
-    // the HTML pages: keep them out of search results.
+    // Production serves .md and .txt with no charset (local Miniflare adds
+    // one, so wrangler dev hides this), and browsers then read the UTF-8 as
+    // Windows-1252: "Qué" shows as "QuÃ©". The charset has to be explicit.
+    // The .md versions duplicate the HTML pages: keep them out of search.
     "/*.md",
+    "  Content-Type: text/markdown; charset=utf-8",
     "  X-Robots-Tag: noindex",
+    "/llms.txt",
+    "  Content-Type: text/plain; charset=utf-8",
     "/public/cv.pdf",
     '  Content-Disposition: attachment; filename="Emilia_C_B_Resume.pdf"',
     "",
