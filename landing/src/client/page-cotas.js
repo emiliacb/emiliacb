@@ -66,14 +66,18 @@
   }
 
   /* ---- the blocks that can be dimensioned ---- */
-  const blocks = [...document.querySelectorAll("nav[aria-label] a.interactive, nav[aria-label] dropdown-trigger, #content :is(h1, h2, h3, p, li)")].map((el) => ({ el, a: 0, want: 0, hold: 0 }));
+  const blocks = [...document.querySelectorAll(
+    "nav[aria-label] a.interactive, nav[aria-label] dropdown-trigger," +
+    " [data-cota-row] > li > :is(a, dropdown-trigger), footer li > :is(a, dropdown-trigger)," +
+    " #content .markdown-content > a, #content a:has(> article)," +
+    " #content :is(h1, h2, h3, p, li):not([data-cota-row] *, a:has(> article) *)")].map((el) => ({ el, a: 0, want: 0, hold: 0 }));
 
   /** The box of the block's ink: the union of its text's line boxes. */
   const range = document.createRange();
-  // A nav link is measured by its own box, the one its hover fills; anything
-  // else by its text.
+  // A link is measured by its own box, the one its hover fills; anything else
+  // by its text.
   function inkBox(el) {
-    if (el.closest("nav")) {
+    if (el.matches("a, dropdown-trigger")) {
       // The dropdown's trigger is a button inside its shadow root.
       const q = ((el.shadowRoot && el.shadowRoot.querySelector("button")) || el).getBoundingClientRect();
       return { left: q.left, top: q.top, right: q.right, bottom: q.bottom };
@@ -222,9 +226,13 @@
     if (h < 1 || box.right - box.left < 1) return; // hidden at this width
     // Left of the text, clear of a list's bullet.
     const hx = box.left - (el.tagName === "LI" ? 30 : 12);
+    // Links in a row (the navbar, the contact icons) take their values on
+    // 45° leaders, their shelves under the row: under the navbar's rule when
+    // the row is drawn on one ("rule"), else under the links themselves.
+    const row = el.closest("[data-cota-row]");
     vMark(box.top, box.bottom, hx, box.left - (el.tagName === "LI" ? 20 : 0), mm(h), "measure", a, -1,
-      { x: box.right + 12, ex: box.right + 2, lead: !!el.closest("nav"),
-        below: el.closest("nav") ? el.closest("nav").getBoundingClientRect().bottom : 0 });
+      { x: box.right + 12, ex: box.right + 2, lead: !!row,
+        below: !row ? 0 : row.dataset.cotaRow === "rule" ? row.getBoundingClientRect().bottom : box.bottom });
   }
 
   function layout() {
@@ -551,9 +559,11 @@
     }
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, W, Hh);
-    blocks.forEach((b, i) => { if (b.a > 0.004) drawBlock(i, b.a); });
     drawAir();
     mask();
+    // Only touched blocks are drawn, so their marks skip the focus mask: a
+    // wide block (a post's card) puts its mark far from the pointer.
+    blocks.forEach((b, i) => { if (b.a > 0.004) drawBlock(i, b.a); });
     drawScroll();
     g.globalAlpha = 1;
     const moving = Math.hypot(px - fcx, py - fcy) > 0.3 && here;

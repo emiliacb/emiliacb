@@ -42,6 +42,7 @@ export default function contact(ctx: RenderCtx, { columnMode = false }: ContactO
 
   return html`
     <ul
+      data-cota-row
       class="flex items-center md:flex-row-reverse py-8 md:-ml-2 justify-between md:gap-6 w-full md:w-fit"
     >
       <li>
@@ -59,7 +60,7 @@ export default function contact(ctx: RenderCtx, { columnMode = false }: ContactO
         </a>
       </li>
       <li>
-        ${emailLink({ email: CONTACT.email, lang: ctx.lang, label: c.email, variant: "icon" })}
+        ${emailLink({ email: CONTACT.email, lang: ctx.lang, label: c.email, variant: "icon", className: "!flex" })}
       </li>
       <li>
         <a

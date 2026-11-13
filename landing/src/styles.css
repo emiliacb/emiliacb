@@ -773,8 +773,13 @@ dropdown-trigger[variant="prose"]::part(trigger) {
   @apply dark:hover:bg-white dark:hover:text-black dark:hover:outline-white;
 }
 
-/* Email link: a dropdown-trigger dressed up as an icon-only contact button */
+/* Email link: a dropdown-trigger dressed up as an icon-only contact button.
+   Its box has to match the LinkedIn/GitHub links beside it: the base trigger
+   rule's -my-1 is undone, and the border needs its style set, since the
+   shadow root's button is `all: unset` and Tailwind's preflight never reaches
+   it (without a style the 1px width computes to 0). */
 dropdown-trigger[variant="icon"]::part(trigger) {
+  @apply my-0 border-solid;
   @apply interactive flex w-fit border border-transparent px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black h-fit;
 }
 

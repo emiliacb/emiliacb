@@ -11,6 +11,7 @@ export default function navbar(ctx: RenderCtx) {
 
   return html`
     <nav
+      data-cota-row="rule"
       class="sticky px-4 sm:pl-6 sm:pr-8 top-0 pt-2 md:pt-4 pb-2 mb-4 md:mb-0 flex flex-wrap mt-4 md:mt-12 justify-between w-full max-w-[60rem] m-auto bg-stone-100/70 dark:bg-stone-800/80 backdrop-blur-sm z-50 "
       aria-label="${nav.mainNavigation}"
     >
