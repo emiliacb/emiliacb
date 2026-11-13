@@ -1,6 +1,6 @@
 /**
  * The hand-drawn tree in the illustration column, bending in the air the
- * pointer moves through it.
+ * pointer moves through it, and drawing its own anatomy where it is touched.
  *
  * The drawing is one outline for the wood plus six loose leaves. A skeleton
  * runs down the middle of the wood: a chain of samples per limb, every limb
@@ -15,19 +15,35 @@
  * follows that limb's frame as it turns. At rest every frame is where it
  * started, so the resting tree is exactly the drawing in the markup.
  *
- * The pointer pushes like air: with the square of its speed, so a drift barely
- * stirs the tree and a flick sets it swinging. A push on any part also bends
- * every limb below it, a share of it, which is how brushing the crown sways the
- * whole tree a little. A breeze keeps it from ever standing dead still.
+ * The pointer pushes like air: its velocity times a coefficient, and the
+ * coefficient is interpolated by the pointer's speed, from K0 for a drift to
+ * K1 at V1 and beyond, so a drift barely stirs the tree and a flick sets it
+ * swinging. A push on any part also bends every limb below it, a share of it,
+ * which is how brushing the crown sways the whole tree a little. A breeze
+ * keeps it from ever standing dead still.
+ *
+ * Touching a part inks its construction over it, in one colour, and lets the
+ * equations it obeys float beside it; a moment after the pointer leaves, it is
+ * gone. Nothing is labelled, and everything drawn is computed from the same
+ * state the tree moves by: the bone, its rest pose and a few afterimages; a
+ * rule along it every four units; circles of curvature (radius 1/κ) where it
+ * bends most and under the pointer; a scale at the tip, graduated in degrees
+ * of turn; a curl at the tip, which is the part's free decay from where it is
+ * now, in the plane of angle and angular speed; a protractor about each leaf's
+ * pivot; the force on the part pushed; and the part's angle in radians, live.
+ * Each term of the equation of motion shows as strong as it is in the sum.
  *
  * The tree sits behind the page, so it listens to the pointer on the window.
  * Nothing here is needed for the page to work: without it the tree is the
- * same SVG, standing still.
+ * same SVG, standing still, and with reduced motion that is all there is.
  */
 
-const svg = document.querySelector("#tree-illustration .cover-tree");
+const box = document.getElementById("tree-illustration");
+const svg = box ? box.querySelector(".cover-tree") : null;
 const woodEl = svg ? svg.querySelector("[data-wood]") : null;
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Only a pointer that can hover is shown, once, what a touch does.
+const hovers = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
 /* ==========================================================================
    Tuning
@@ -103,6 +119,7 @@ const LEAVES = {
 const FEEL = { gain: 0.5, bounce: 0.25, stiffness: 0.78, wind: 2.6 };
 
 const TAU = Math.PI * 2;
+const DEG = 180 / Math.PI;
 const STEP = 4; // spacing of the skeleton samples
 const BLEND = 14; // how far past the nearest limb a second one still holds the outline
 const SEG = 12; // longest piece the outline is cut into, so a bend has somewhere to happen
@@ -111,13 +128,15 @@ const CONTACT = 24; // reach of the pointer's push
 const WAKE = 80; // reach of the weaker air it drags along behind it
 const WAKE_SHARE = 0.18;
 
-// The push grows with the square of the pointer's speed, up to a cap. The
-// linear part keeps a slow pass from doing nothing at all, and leaves get more
-// of it because they catch air that wood does not.
-const V_REF = 500;
-const V_CAP = 2600;
-const V_LIN_WOOD = 300;
-const V_LIN_LEAF = 900;
+// The push is the pointer's velocity times a coefficient, and the coefficient
+// is interpolated by the pointer's speed: K0 for a pointer that barely moves,
+// K1 for one at V1 or faster. Leaves get more of it because they catch air
+// that wood does not.
+const V1 = 2600;
+const K0 = 0.6;
+const K1 = 5.8;
+const KL0 = 1.8;
+const KL1 = 7;
 const GAIN = 1.7;
 
 const TRANSMIT = 0.55; // share of a push that reaches the limbs below the part pushed
@@ -130,12 +149,84 @@ const TWIST_MAX = 1.2;
 /** Bounce, as a multiple of the damping in the tables. */
 const DAMP = Math.pow(2.6, (0.5 - FEEL.bounce) * 2);
 
+// How a touched part is inked: fully within 10 units of the pointer, not at
+// all past 30; it stays HOLD seconds after the pointer leaves, then fades.
+const NEAR = 10;
+const FAR = 30;
+const HOLD = 0.2;
+const RISE = 0.05; // time constants of the ink coming and going, in seconds
+const FALL = 0.2;
+const DEMO = 2.8; // seconds the opening shows what a touch does
+const TRAIL = 9; // afterimages kept of the skeleton
+const GK = 12; // half the samples of each tip's graduated scale
+
+/* ==========================================================================
+   The formulas. Each is true of this tree: the equation every part obeys,
+   how a bone's turn is spread along it, how the bark follows, what the curls
+   and circles on the plate are.
+   ========================================================================== */
+
+const INT =
+  '<svg class="int" viewBox="0 0 12 30" aria-hidden="true"><path d="M9.8 2.6c-1.9-1.3-3.3.3-3.6 3.1L5 24.3c-.3 2.8-1.7 4.4-3.6 3.1"/></svg>';
+const frac = (a, b) => `<span class="frac"><span>${a}</span><span>${b}</span></span>`;
+const lim = (hi, lo) => `<span class="lim"><span>${hi}</span><span>${lo}</span></span>`;
+const G = (s, cls) => `<i${cls ? ` class="${cls}"` : ""}>${s}</i>`;
+
+/** The equation of motion, each term on its own so it can weigh what it weighs. */
+const ode = (s, lo) =>
+  `${G(s, "ddot" + lo)} <span class="t">+ 2${G("ζω")}&#8239;${G(s, "dot" + lo)}</span> ` +
+  `<span class="t">+ ${G("ω")}<sup>2</sup>[1 + (${G(s)}/${G(s)}<sub>m</sub>)<sup>2</sup>]&#8239;${G(s)}</span> = ` +
+  `<span class="t">${G("μτ")}</span> <span class="t">+ ${G("ω")}<sup>2</sup>w B</span> <span class="t">− ${G("λ")} a</span>`;
+const decay = (s) => `${G(s)}(t) = A e<sup>−${G("ζω")}t</sup> cos(${G("ω")}<sub>d</sub> t + ${G("φ")}<sub>0</sub>)`;
+
+const F = {
+  odeTheta: ode("θ", ""),
+  odeAlpha: ode("α", " lo"),
+  decayTheta: decay("θ"),
+  decayAlpha: decay("α"),
+  turn: `${G("φ")}(s) = ${INT}${lim("s", "0")}${G("κ")}(${G("σ")}) d${G("σ")}`,
+  curvature: `${G("κ")} = ${G("κ")}<sub>0</sub> + ${frac(G("ϑ") + " p", "L")} (${frac("s", "L")})<sup>p − 1</sup>`,
+  radius: `R = ${frac("1", G("κ"))}`,
+  chainX: `x(s) = x<sub>0</sub> + ${INT}${lim("s", "0")}cos ${G("ψ")} d${G("σ")}`,
+  chainY: `y(s) = y<sub>0</sub> + ${INT}${lim("s", "0")}sin ${G("ψ")} d${G("σ")}`,
+  skin: `x′ = ${G("Σ")} w<sub>k</sub> [p<sub>k</sub> + R(${G("φ")}<sub>k</sub>)(x − r<sub>k</sub>)]`,
+  energy: `E = ½&#8239;${G("θ", "dot")}<sup>2</sup> + ½&#8239;${G("ω")}<sup>2</sup>${G("θ")}<sup>2</sup>`,
+  loss: `${frac("dE", "dt")} = − 2${G("ζω")}&#8239;${G("α", "dot lo")}<sup>2</sup>`,
+  soft: `${G("ϑ")} = ${G("θ")}<sub>m</sub> tanh ${frac(G("θ"), G("θ") + "<sub>m</sub>")}`,
+  spiral: `r = A e<sup>−${G("ζω")}t</sup>`,
+  spiralRate: `${frac("dr", "dt")} = − ${G("ζω")} r`,
+  squash: `q = 1 − c ${frac("1 − cos " + G("ξ"), "1 − cos " + G("ξ") + "<sub>m</sub>")}`,
+  leafMatrix: `M = R(${G("α")}) (I + (q − 1) n n<sup>T</sup>)`,
+  push: `F = k v`,
+  lerp: `k = (1 − t) k<sub>0</sub> + t k<sub>1</sub>`,
+  lever: `${G("τ")} = r × F`,
+};
+
+// Where each part's formulas float, in the drawing's own units at rest:
+// [formula, x, y, align, tilt in degrees, size in px]. "num" is the part's
+// own angle, in radians, as it is this instant.
+const FRAGS = {
+  trunk: [["odeTheta", 136, 646, "r", -2, 19], ["skin", 236, 590, "l", 3, 15], ["num", 240, 704, "l", -4, 15]],
+  stem: [["turn", 236, 232, "l", -3, 19], ["chainX", 146, 212, "r", -2, 15], ["chainY", 150, 240, "r", -2, 15]],
+  left: [["odeTheta", 84, 404, "r", -2, 19], ["decayTheta", 118, 474, "r", 3, 16], ["num", 96, 358, "r", -5, 14]],
+  right: [["curvature", 298, 362, "l", -3, 18], ["radius", 330, 420, "l", 4, 19], ["energy", 262, 462, "l", 2, 15],
+    ["num", 356, 330, "l", -6, 13]],
+  twig: [["soft", 250, 34, "l", 2, 17], ["spiral", 290, 204, "l", -4, 17], ["num", 232, 70, "l", 5, 13]],
+  "leaf:crown": [["odeAlpha", 96, 62, "r", -3, 18], ["num", 92, 104, "r", 4, 14]],
+  "leaf:left": [["squash", 8, 296, "r", 2, 16], ["num", 14, 344, "r", -4, 13]],
+  "leaf:stem": [["decayAlpha", 148, 270, "r", 2, 15]],
+  "leaf:elbow": [["spiralRate", 236, 474, "l", -3, 17], ["spiral", 250, 520, "l", 3, 15]],
+  "leaf:right": [["loss", 366, 262, "l", 4, 17], ["num", 372, 304, "l", -3, 13]],
+  "leaf:twig": [["leafMatrix", 346, 92, "l", -2, 15], ["num", 350, 128, "l", 5, 13]],
+};
+
 /* ==========================================================================
    Geometry
    ========================================================================== */
 
 /** Squeezes a value into ±lim, gently: no hard stop to bounce off. */
-const soft = (v, lim) => lim * Math.tanh(v / lim);
+const soft = (v, bound) => bound * Math.tanh(v / bound);
+const smooth = (x) => x * x * (3 - 2 * x);
 
 /** "M x,y C ... Z" back into cubics of [x0, y0, x1, y1, x2, y2, x3, y3]. */
 function cubicsOf(d) {
@@ -240,21 +331,77 @@ function nearest(limb, x, y) {
   return { at, dist: Math.sqrt(best) };
 }
 
+function segDist(px, py, x0, y0, x1, y1) {
+  const vx = x1 - x0;
+  const vy = y1 - y0;
+  const t = Math.max(0, Math.min(1, ((px - x0) * vx + (py - y0) * vy) / (vx * vx + vy * vy || 1)));
+  return Math.hypot(px - x0 - vx * t, py - y0 - vy * t);
+}
+
+/** The circle through three points: centre and radius into `out`. False if they are in line. */
+function circle3(x1, y1, x2, y2, x3, y3, out) {
+  const a = x2 - x1;
+  const b = y2 - y1;
+  const c = x3 - x1;
+  const d = y3 - y1;
+  const e = a * (x1 + x2) + b * (y1 + y2);
+  const f = c * (x1 + x3) + d * (y1 + y3);
+  const den = 2 * (a * (y3 - y2) - b * (x3 - x2));
+  if (Math.abs(den) < 1e-6) return false;
+  out[0] = (d * e - b * f) / den;
+  out[1] = (a * f - c * e) / den;
+  out[2] = Math.hypot(out[0] - x1, out[1] - y1);
+  return true;
+}
+
 /* ==========================================================================
    The tree
    ========================================================================== */
 
+/** What every part, bone or leaf, carries for its anatomy. */
+const plateState = () => ({
+  rv: 0, // how much of this part is inked, 0 to 1
+  gap: 1e9, // pointer to its surface, in tree units
+  hold: 0,
+  fresh: false,
+  demo: false,
+  // Each term of its equation of motion, summed over a frame and eased:
+  // brake, spring, push, wind, drag.
+  sum: new Float64Array(5),
+  shown: new Float64Array(5),
+  felt: 0,
+  off: 0, // where its afterimages start in a snapshot
+  frags: [],
+});
+
 const limbs = LIMBS.map((def, index) => {
   const r = resample(def.pts, STEP);
   const shape = new Float64Array(r.n);
-  for (let i = 0; i < r.n; i++) shape[i] = Math.pow(r.s[i] / r.len, def.bend);
+  const nx = new Float64Array(r.n);
+  const ny = new Float64Array(r.n);
+  for (let i = 0; i < r.n; i++) {
+    shape[i] = Math.pow(r.s[i] / r.len, def.bend);
+    // The normal at rest, for drawing across the bone.
+    const a = Math.max(0, i - 1);
+    const b = Math.min(r.n - 1, i + 1);
+    const tx = r.x[b] - r.x[a];
+    const ty = r.y[b] - r.y[a];
+    const d = Math.hypot(tx, ty) || 1;
+    nx[i] = -ty / d;
+    ny[i] = tx / d;
+  }
   return {
     ...def,
+    ...plateState(),
+    key: def.id,
+    kind: "limb",
     n: r.n,
     len: r.len,
     rx: r.x,
     ry: r.y,
     shape,
+    nx,
+    ny,
     // The bent pose, and each sample's turn away from rest.
     dx: Float64Array.from(r.x),
     dy: Float64Array.from(r.y),
@@ -272,6 +419,19 @@ const limbs = LIMBS.map((def, index) => {
     baseAcc: 0,
     torque: 0,
     seed: 101 + index * 17,
+    // Where it is being pushed, for the arrow of the force.
+    pcx: 0,
+    pcy: 0,
+    // The tip's locus, for its scale, and how finely the scale is cut.
+    gx: new Float64Array(2 * GK + 1),
+    gy: new Float64Array(2 * GK + 1),
+    tick: 0.03,
+    major: 5,
+    // The sample under the pointer, and an eased copy of it.
+    ai: Math.round(0.5 * (r.n - 1)),
+    aiF: Math.round(0.5 * (r.n - 1)),
+    veil: 30,
+    osc: [],
   };
 });
 
@@ -282,12 +442,47 @@ for (const l of limbs) {
   l.attach = nearest(l.up, l.rx[0], l.ry[0]).at;
 }
 
+// Where each tip lands for every turn it can take: the same chain the pose
+// runs, from a base that has not moved. The scale at the tip is drawn on it.
+for (const l of limbs) {
+  for (let k = -GK; k <= GK; k++) {
+    const th = (l.limit * k) / GK;
+    let px = 0;
+    let py = 0;
+    let prev = 0;
+    for (let i = 1; i < l.n; i++) {
+      const r = th * l.shape[i];
+      const mid = 0.5 * (r + prev);
+      const c = Math.cos(mid);
+      const s = Math.sin(mid);
+      const vx = l.rx[i] - l.rx[i - 1];
+      const vy = l.ry[i] - l.ry[i - 1];
+      px += c * vx - s * vy;
+      py += s * vx + c * vy;
+      prev = r;
+    }
+    l.gx[k + GK] = px;
+    l.gy[k + GK] = py;
+  }
+}
+
+function tipAt(l, th, out) {
+  const u = Math.max(-1, Math.min(1, th / l.limit)) * GK + GK;
+  const i = Math.min(2 * GK - 1, Math.floor(u));
+  const f = u - i;
+  out[0] = l.gx[i] + (l.gx[i + 1] - l.gx[i]) * f;
+  out[1] = l.gy[i] + (l.gy[i + 1] - l.gy[i]) * f;
+}
+
 let wood = [];
 let anchors = [];
 let leaves = [];
+let parts = [];
 // The bent anchors, reused every frame.
 let ax = new Float64Array(0);
 let ay = new Float64Array(0);
+let woodD = "";
+const c3 = [0, 0, 0];
 
 /**
  * Which limbs hold a point of the outline, and how much. The nearest one
@@ -316,10 +511,25 @@ function build() {
   const outline = [];
   for (const c of wood) for (let i = 0; i < 4; i++) outline.push(bez(c, i / 4));
   for (const l of limbs) {
+    let widest = 0;
     for (let i = 0; i < l.n; i++) {
       let best = Infinity;
       for (const [x, y] of outline) best = Math.min(best, (x - l.rx[i]) ** 2 + (y - l.ry[i]) ** 2);
       l.half[i] = Math.sqrt(best);
+      widest = Math.max(widest, l.half[i]);
+    }
+    l.veil = Math.max(30, Math.min(130, 2.4 * widest));
+
+    // Where the bone bends most at rest: its circles of curvature go there.
+    const k = [];
+    for (let i = 4; i < l.n - 4; i++) {
+      const ok = circle3(l.rx[i - 3], l.ry[i - 3], l.rx[i], l.ry[i], l.rx[i + 3], l.ry[i + 3], c3);
+      k.push({ i, bend: ok ? 1 / c3[2] : 0 });
+    }
+    k.sort((a, b) => b.bend - a.bend);
+    for (const c of k) {
+      if (l.osc.length >= 3 || c.bend < 1 / 170) break;
+      if (l.osc.every((j) => Math.abs(j - c.i) >= 9)) l.osc.push(c.i);
     }
   }
 
@@ -358,10 +568,51 @@ function build() {
     for (const [x, y] of poly) radius += Math.hypot(x - cx, y - cy);
     radius /= poly.length;
 
+    // The line from the pivot to the far tip: the midrib it turns about.
+    const tx = cubics[0][6];
+    const ty = cubics[0][7];
+    const axis = Math.atan2(ty - py, tx - px);
+    const rib = Math.hypot(tx - px, ty - py);
+
+    // Side veins, from the midrib out to the leaf's own edge.
+    const veins = [];
+    for (const t of [0.2, 0.36, 0.52, 0.67, 0.81]) {
+      for (const sgn of [-1, 1]) {
+        const sx = px + Math.cos(axis) * rib * t;
+        const sy = py + Math.sin(axis) * rib * t;
+        const vx = Math.cos(axis + sgn * 0.95);
+        const vy = Math.sin(axis + sgn * 0.95);
+        let best = Infinity;
+        for (let k = 0; k < poly.length; k++) {
+          const [xa, ya] = poly[k];
+          const [xb, yb] = poly[(k + 1) % poly.length];
+          const ex = xb - xa;
+          const ey = yb - ya;
+          const den = vx * ey - vy * ex;
+          if (Math.abs(den) < 1e-9) continue;
+          const tt = ((xa - sx) * ey - (ya - sy) * ex) / den;
+          const ss = ((xa - sx) * vy - (ya - sy) * vx) / den;
+          if (tt > 0.5 && ss >= 0 && ss <= 1 && tt < best) best = tt;
+        }
+        if (best < Infinity) {
+          const out = Math.min(best * 0.92, rib * 0.6);
+          veins.push(sx, sy, sx + vx * out, sy + vy * out);
+        }
+      }
+    }
+
     return [
       {
         ...tune,
+        ...plateState(),
+        key: "leaf:" + el.dataset.leaf,
+        kind: "leaf",
         el,
+        path,
+        // Its outline, inked on the plate, and whether the wood is painted
+        // over it: the elbow leaf hangs behind the trunk.
+        edge: new Path2D(path.getAttribute("d")),
+        behind: !!(woodEl.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_PRECEDING),
         limb,
         attach: nearest(limb, px, py).at,
         px,
@@ -370,8 +621,7 @@ function build() {
         cy,
         radius,
         lever: Math.max(20, Math.hypot(cx - px, cy - py)),
-        // The line from the pivot to the far tip: the midrib it turns about.
-        axis: Math.atan2(cubics[0][7] - py, cubics[0][6] - px),
+        axis,
         pivX: px,
         pivY: py,
         nowX: cx,
@@ -383,9 +633,22 @@ function build() {
         twistV: 0,
         torque: 0,
         seed: 401 + index * 23,
+        tx,
+        ty,
+        rib,
+        halfW: (Math.abs(area) / rib) * 0.6,
+        veins,
+        tipX: tx,
+        tipY: ty,
+        ghost: 0, // the turn of the limb it hangs from
+        ang: 0, // its own turn on top of that
+        m: [1, 0, 0, 1, 0, 0],
+        fleshO: -1,
       },
     ];
   });
+
+  parts = [...limbs, ...leaves];
 }
 
 /* ==========================================================================
@@ -406,6 +669,10 @@ function noise1(x, seed) {
   return (hash1(i, seed) * (1 - u) + hash1(i + 1, seed) * u) * 2 - 1;
 }
 
+// One gust to open with, so the tree is seen to move while the opening shows
+// what a touch does.
+const gust = { t0: 0.15, amp: 6 };
+
 /**
  * The breeze at a part, as a multiple of that part's own lean. It reaches the
  * left of the tree a moment before the right, so the crown never moves as one
@@ -415,21 +682,26 @@ function noise1(x, seed) {
  */
 function breeze(t, x, seed, flutter) {
   const tt = t - x / 520;
-  return (
+  let b =
     FEEL.wind *
     (0.22 +
       0.6 * noise1(tt * 0.15, 11) +
       0.35 * noise1(tt * 0.37, 23) +
       1.4 * Math.max(0, noise1(tt * 0.06, 37)) ** 2 +
-      0.3 * noise1(t * flutter, seed))
-  );
+      0.3 * noise1(t * flutter, seed));
+  const u = t - gust.t0 - x / 900;
+  if (u > 0 && u < 2.5) {
+    const z = u / 0.16;
+    b += gust.amp * z * Math.exp(1 - z);
+  }
+  return b;
 }
 
 /* ==========================================================================
    Pointer
    ========================================================================== */
 
-const pointer = { x: 0, y: 0, fromX: 0, fromY: 0, vx: 0, vy: 0, last: -1e9, tracking: false };
+const pointer = { x: 0, y: 0, fromX: 0, fromY: 0, vx: 0, vy: 0, last: -1e9, tracking: false, inBox: false };
 
 function track(event) {
   // A finger dragging the page scrolls it; it is not brushing the tree.
@@ -456,10 +728,15 @@ function track(event) {
   pointer.y = p.y;
   pointer.last = event.timeStamp;
   pointer.tracking = true;
+  // Only over the illustration's own box can it ink anything.
+  const r = box.getBoundingClientRect();
+  pointer.inBox =
+    event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom;
 }
 
 function release() {
   pointer.tracking = false;
+  pointer.inBox = false;
 }
 
 /* ==========================================================================
@@ -474,7 +751,8 @@ function reach(gap) {
 
 /**
  * One physics step, with the pointer at (qx, qy) pushing wood with (fx, fy)
- * and leaves with (lx, ly).
+ * and leaves with (lx, ly). Each term of each part's sum is also kept apart,
+ * so the equation on the page can weigh them.
  */
 function step(t, qx, qy, fx, fy, lx, ly) {
   // Far from the drawing the push is nothing; not worth measuring.
@@ -497,7 +775,14 @@ function step(t, qx, qy, fx, fy, lx, ly) {
         my += k * l.dy[i];
       }
       if (!w) continue;
-      l.torque += (mx - w * l.dx[0]) * fy - (my - w * l.dy[0]) * fx;
+      const own = (mx - w * l.dx[0]) * fy - (my - w * l.dy[0]) * fx;
+      l.torque += own;
+      const felt = (GAIN * FEEL.gain * l.mobility * Math.abs(own)) / (l.len * l.len);
+      if (felt > l.felt) {
+        l.felt = felt;
+        l.pcx = mx / w;
+        l.pcy = my / w;
+      }
       for (let a = l.up; a; a = a.up) {
         a.torque += TRANSMIT * ((mx - w * a.dx[0]) * fy - (my - w * a.dy[0]) * fx);
       }
@@ -521,12 +806,17 @@ function step(t, qx, qy, fx, fy, lx, ly) {
     // Stiffer the further it is bent: wood resists more the more it gives.
     const k = wn * wn * (1 + (l.theta / l.limit) ** 2);
     l.baseAcc = l.up ? l.up.baseAcc + l.up.acc * l.up.shape[l.attach] : 0;
-    l.acc =
-      -k * l.theta -
-      2 * l.zeta * DAMP * wn * l.omega +
-      (GAIN * FEEL.gain * l.mobility * l.torque) / (l.len * l.len) +
-      wn * wn * l.wind * breeze(t, l.rx[l.n - 1], l.seed, 0.7) -
-      INERTIA * l.baseAcc;
+    const aSpring = -k * l.theta;
+    const aBrake = -2 * l.zeta * DAMP * wn * l.omega;
+    const aPush = (GAIN * FEEL.gain * l.mobility * l.torque) / (l.len * l.len);
+    const aWind = wn * wn * l.wind * breeze(t, l.rx[l.n - 1], l.seed, 0.7);
+    const aDrag = -INERTIA * l.baseAcc;
+    l.acc = aSpring + aBrake + aPush + aWind + aDrag;
+    l.sum[0] += aBrake;
+    l.sum[1] += aSpring;
+    l.sum[2] += aPush;
+    l.sum[3] += aWind;
+    l.sum[4] += aDrag;
     l.omega += l.acc * H;
     l.theta += l.omega * H;
     // Never reached in practice; there so a freak frame cannot blow it up.
@@ -543,8 +833,17 @@ function step(t, qx, qy, fx, fy, lx, ly) {
     const k = wn * wn * (1 + (f.theta / f.limit) ** 2);
     const drive = (GAIN * FEEL.gain * f.mobility * f.torque) / (f.lever * f.lever);
     const air = breeze(t, f.px, f.seed, 1.4);
-    f.acc =
-      -k * f.theta - 2 * f.zeta * DAMP * wn * f.omega + drive + wn * wn * f.wind * air - LEAF_INERTIA * baseAcc;
+    const aSpring = -k * f.theta;
+    const aBrake = -2 * f.zeta * DAMP * wn * f.omega;
+    const aWind = wn * wn * f.wind * air;
+    const aDrag = -LEAF_INERTIA * baseAcc;
+    f.acc = aSpring + aBrake + drive + aWind + aDrag;
+    f.sum[0] += aBrake;
+    f.sum[1] += aSpring;
+    f.sum[2] += drive;
+    f.sum[3] += aWind;
+    f.sum[4] += aDrag;
+    if (Math.abs(drive) > f.felt) f.felt = Math.abs(drive);
     f.omega += f.acc * H;
     f.theta += f.omega * H;
     if (!(Math.abs(f.theta) <= 4 * f.limit)) {
@@ -563,7 +862,7 @@ function step(t, qx, qy, fx, fy, lx, ly) {
 }
 
 /* ==========================================================================
-   Drawing
+   Drawing the tree
    ========================================================================== */
 
 /** Lays every limb out along its bend, base first, each starting where its parent carries it. */
@@ -640,7 +939,8 @@ function drawWood() {
     carry(c[4], c[5], anchors[next].holders, tmp);
     d += `C${r1(h1x)},${r1(h1y)} ${r1(tmp[0])},${r1(tmp[1])} ${r1(ax[next])},${r1(ay[next])}`;
   }
-  woodEl.setAttribute("d", d + "Z");
+  woodD = d + "Z";
+  woodEl.setAttribute("d", woodD);
 }
 
 function drawLeaves() {
@@ -651,7 +951,8 @@ function drawLeaves() {
     const oy = f.py - L.ry[j];
     const px = L.dx[j] + L.cos[j] * ox - L.sin[j] * oy;
     const py = L.dy[j] + L.sin[j] * ox + L.cos[j] * oy;
-    const ang = L.rot[j] + soft(f.theta, f.limit);
+    const turn = soft(f.theta, f.limit);
+    const ang = L.rot[j] + turn;
     const twist = soft(f.twist, TWIST_MAX);
     const q = 1 - (f.squash * (1 - Math.cos(twist))) / (1 - Math.cos(TWIST_MAX));
 
@@ -678,17 +979,755 @@ function drawLeaves() {
     f.pivY = py;
     f.nowX = a * f.cx + cc * f.cy + e;
     f.nowY = b * f.cx + dd * f.cy + ff;
+    f.m[0] = a;
+    f.m[1] = b;
+    f.m[2] = cc;
+    f.m[3] = dd;
+    f.m[4] = e;
+    f.m[5] = ff;
+    f.tipX = a * f.tx + cc * f.ty + e;
+    f.tipY = b * f.tx + dd * f.ty + ff;
+    f.ghost = L.rot[j];
+    f.ang = turn;
   }
+}
+
+/* ==========================================================================
+   Touch: which parts the pointer is on, and how much of each is inked
+   ========================================================================== */
+
+let clock = 0;
+let near = false; // the pointer is within its wake of some part
+let everNear = false;
+
+function touch(dt) {
+  const on = pointer.inBox;
+  let closest = 1e9;
+  for (const l of limbs) {
+    let gap = 1e9;
+    let at = l.ai;
+    if (on) {
+      for (let i = 0; i < l.n; i++) {
+        const d = Math.hypot(l.dx[i] - pointer.x, l.dy[i] - pointer.y) - l.half[i];
+        if (d < gap) {
+          gap = d;
+          at = i;
+        }
+      }
+    }
+    l.gap = gap;
+    if (gap < FAR) l.ai = at;
+    l.aiF += (l.ai - l.aiF) * (1 - Math.exp(-dt / 0.08));
+    closest = Math.min(closest, gap);
+  }
+  for (const f of leaves) {
+    f.gap = on ? segDist(pointer.x, pointer.y, f.pivX, f.pivY, f.tipX, f.tipY) - f.halfW : 1e9;
+    closest = Math.min(closest, f.gap);
+  }
+  near = closest < WAKE;
+  if (near) everNear = true;
+
+  const showing = hovers && !everNear && clock < DEMO;
+  for (const p of parts) {
+    const c = p.gap >= FAR ? 0 : p.gap <= NEAR ? 1 : smooth((FAR - p.gap) / (FAR - NEAR));
+    if (c > 0.5) p.hold = HOLD;
+    else p.hold = Math.max(0, p.hold - dt);
+    const want = Math.max(c, p.hold > 0 ? 1 : 0, showing && p.demo ? 1 : 0);
+    const was = p.rv;
+    p.rv += (want - p.rv) * (1 - Math.exp(-dt / (want > p.rv ? RISE : FALL)));
+    if (p.rv < 0.004) p.rv = 0;
+    p.fresh = was < 0.03 && p.rv >= 0.03;
+  }
+}
+
+/* ==========================================================================
+   Formulas afloat
+   ========================================================================== */
+
+// The plate the construction is drawn on, and the layer the formulas float
+// in, both laid over the illustration's box. Made here: without the script
+// there is nothing to show.
+let plate = null;
+let g = null;
+let floats = null;
+let curA = null; // F = k v, by the pointer while it moves
+let curB = null; // and how k is interpolated
+let levF = null; // τ = r × F, by the point a part is pushed at
+
+// The drawing's place on the plate: one tree unit is `sc` CSS pixels, and
+// (ox, oy) is where the drawing's own origin lands.
+let W = 0;
+let Hh = 0;
+let dpr = 1;
+let sc = 1;
+let ox = 0;
+let oy = 0;
+let small = 1; // formulas shrink with a small tree
+
+function makeFrags(p) {
+  for (const [name, x, y, align, tilt, size] of FRAGS[p.key] || []) {
+    const el = document.createElement("div");
+    el.className = "fx" + (align === "r" ? " r" : "");
+    el.style.fontSize = `calc(var(--k, 1) * ${size}px)`;
+    const num = name === "num";
+    el.innerHTML = num ? '<span class="n">0.0000000</span>' : F[name];
+    floats.appendChild(el);
+    // The bit of the part this formula rides on.
+    const j = p.kind === "limb" ? nearest(p, x, y).at : 0;
+    p.frags.push({
+      el,
+      x,
+      y,
+      right: align === "r",
+      tilt,
+      j,
+      num,
+      n: num ? el.firstChild : null,
+      terms: name.startsWith("ode") ? [...el.querySelectorAll(".t")].map((node) => ({ node, o: -1 })) : null,
+      w: 0,
+      h: 0,
+      px: 0,
+      py: 0,
+      vis: false,
+      o: -1,
+      text: "",
+      phase: p.seed * 0.37 + x * 0.05,
+    });
+  }
+}
+
+function loose(name, size, tilt) {
+  const el = document.createElement("div");
+  el.className = "fx";
+  el.style.fontSize = `calc(var(--k, 1) * ${size}px)`;
+  el.innerHTML = F[name];
+  floats.appendChild(el);
+  return { el, w: 0, h: 0, vis: false, o: -1, phase: size, tilt };
+}
+
+function measure() {
+  for (const p of parts) {
+    for (const fr of p.frags) {
+      fr.w = fr.el.offsetWidth;
+      fr.h = fr.el.offsetHeight;
+    }
+  }
+  for (const fr of [curA, curB, levF]) {
+    fr.w = fr.el.offsetWidth;
+    fr.h = fr.el.offsetHeight;
+  }
+}
+
+function show(fr, x, y, o, tilt) {
+  if (o < 0.01) {
+    if (fr.vis) {
+      fr.vis = false;
+      fr.el.style.visibility = "hidden";
+      fr.el.style.opacity = "0";
+      fr.o = 0;
+    }
+    return;
+  }
+  if (!fr.vis) {
+    fr.vis = true;
+    fr.el.style.visibility = "visible";
+  }
+  // A slow drift, so they read as afloat and not pinned.
+  const bx = 2.6 * Math.sin(clock * 1.05 + fr.phase);
+  const by = 3.4 * Math.sin(clock * 0.8 + fr.phase * 1.7);
+  fr.el.style.transform = `translate3d(${(x + bx).toFixed(1)}px,${(y + by).toFixed(1)}px,0) rotate(${tilt.toFixed(2)}deg)`;
+  if (Math.abs(o - fr.o) > 0.01) {
+    fr.o = o;
+    fr.el.style.opacity = o.toFixed(2);
+  }
+}
+
+/** Puts a part's formulas where its drawing is, riding on its swing. */
+function float(p, dt) {
+  const e = 1 - Math.exp(-dt / 0.13);
+  for (const fr of p.frags) {
+    if (p.rv <= 0.01) {
+      show(fr, 0, 0, 0, 0);
+      continue;
+    }
+    let mx;
+    let my;
+    if (p.kind === "limb") {
+      mx = p.dx[fr.j] - p.rx[fr.j];
+      my = p.dy[fr.j] - p.ry[fr.j];
+    } else {
+      mx = p.nowX - p.cx;
+      my = p.nowY - p.cy;
+    }
+    let x = ox + (fr.x + mx) * sc;
+    const y = oy + (fr.y + my) * sc - fr.h / 2;
+    if (fr.right) x = Math.max(6 + fr.w, Math.min(W - 6, x)) - fr.w;
+    else x = Math.max(6, Math.min(W - 6 - fr.w, x));
+    if (p.fresh) {
+      fr.px = x;
+      fr.py = y + 7;
+    }
+    fr.px += (x - fr.px) * e;
+    fr.py += (y - fr.py) * e;
+    // They lean a little with the part's own turn.
+    show(fr, fr.px, fr.py, p.rv * 0.95, fr.tilt + soft(p.theta, p.limit) * DEG * 0.35);
+  }
+}
+
+/* ==========================================================================
+   The plate, in one ink
+   ========================================================================== */
+
+let INK = "#8f2a73";
+let PAPER = "#f5f5f4";
+
+function readTheme() {
+  const cs = getComputedStyle(box);
+  INK = cs.getPropertyValue("--tree-ink").trim() || INK;
+  PAPER = cs.getPropertyValue("--tree-paper").trim() || PAPER;
+}
+
+let airA = 0; // the pointer's own air, drawn round it
+let curAl = 0; // its formula
+let curHold = 0;
+let leverA = 0;
+let lever = null; // the part being pushed
+let leverFx = 0;
+let leverFy = 0;
+let tNow = 0; // where the push is between k0 and k1, eased
+
+// Afterimages: the last poses of the skeleton, a little apart in time.
+let trail = [];
+let trailHead = 0;
+let trailLen = 0;
+let lastSnap = -1;
+
+function snapshot() {
+  const s = trail[trailHead];
+  let o = 0;
+  for (const l of limbs) {
+    for (let i = 0; i < l.n; i++) {
+      s[o++] = l.dx[i];
+      s[o++] = l.dy[i];
+    }
+  }
+  for (const f of leaves) {
+    s[o++] = f.pivX;
+    s[o++] = f.pivY;
+    s[o++] = f.tipX;
+    s[o++] = f.tipY;
+  }
+  trailHead = (trailHead + 1) % TRAIL;
+  if (trailLen < TRAIL) trailLen++;
+}
+
+/** Fits the plate to the illustration's box and finds the drawing on it. */
+function layout() {
+  const r = box.getBoundingClientRect();
+  const m = svg.getScreenCTM();
+  if (!r.width || !r.height || !m || !m.a) return;
+  W = r.width;
+  Hh = r.height;
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  plate.width = Math.round(W * dpr);
+  plate.height = Math.round(Hh * dpr);
+  drawn = false;
+  sc = m.a;
+  ox = m.e - r.left;
+  oy = m.f - r.top;
+  small = Math.max(0.72, Math.min(1, sc));
+  floats.style.setProperty("--k", String(small));
+
+  // Graduate each tip's scale as finely as the screen can show.
+  for (const l of limbs) {
+    tipAt(l, l.limit, tmp);
+    const span = Math.hypot(tmp[0] - l.gx[GK], tmp[1] - l.gy[GK]) * sc;
+    const perDeg = span / (l.limit * DEG);
+    const stepDeg = [0.5, 1, 2, 5, 10].find((s) => s * perDeg >= 2.6) || 10;
+    l.tick = stepDeg / DEG;
+    l.major = stepDeg === 0.5 || stepDeg === 5 ? 2 : 5;
+  }
+  measure();
+}
+
+const ghx = new Float64Array(200);
+const ghy = new Float64Array(200);
+const cnx = new Float64Array(200);
+const cny = new Float64Array(200);
+
+function arrow(x0, y0, x1, y1, headLen) {
+  const d = Math.hypot(x1 - x0, y1 - y0) || 1;
+  const ux = (x1 - x0) / d;
+  const uy = (y1 - y0) / d;
+  g.beginPath();
+  g.moveTo(x0, y0);
+  g.lineTo(x1, y1);
+  g.moveTo(x1 - headLen * (ux * 0.9 - uy * 0.45), y1 - headLen * (uy * 0.9 + ux * 0.45));
+  g.lineTo(x1, y1);
+  g.lineTo(x1 - headLen * (ux * 0.9 + uy * 0.45), y1 - headLen * (uy * 0.9 - ux * 0.45));
+}
+
+/** Thins the flesh along each touched bone, back to the page, and inks its bark. */
+function drawVeil(u) {
+  let any = false;
+  for (const l of limbs) if (l.rv > 0.01) any = true;
+  if (!any || !woodD) return;
+  const bark = new Path2D(woodD);
+  g.save();
+  g.clip(bark);
+  g.strokeStyle = PAPER;
+  for (const l of limbs) {
+    if (l.rv <= 0.01) continue;
+    g.beginPath();
+    g.moveTo(l.dx[0], l.dy[0]);
+    for (let i = 1; i < l.n; i++) g.lineTo(l.dx[i], l.dy[i]);
+    g.globalAlpha = 0.3 * l.rv;
+    for (let k = 0; k < 4; k++) {
+      g.lineWidth = l.veil * (1 - 0.2 * k);
+      g.stroke();
+    }
+  }
+  g.restore();
+
+  // The bark's own outline, only along the touched bone.
+  g.strokeStyle = INK;
+  for (const l of limbs) {
+    if (l.rv <= 0.01) continue;
+    const n = l.n;
+    g.save();
+    g.beginPath();
+    for (let i = 0; i < n; i++) {
+      const nx = l.cos[i] * l.nx[i] - l.sin[i] * l.ny[i];
+      const ny = l.sin[i] * l.nx[i] + l.cos[i] * l.ny[i];
+      const h = l.half[i] + 7;
+      cnx[i] = nx;
+      cny[i] = ny;
+      if (i) g.lineTo(l.dx[i] + nx * h, l.dy[i] + ny * h);
+      else g.moveTo(l.dx[i] + nx * h, l.dy[i] + ny * h);
+    }
+    // A cap past the tip, so the bark's end is inside the band too.
+    const ex = l.dx[n - 1] - l.dx[n - 2];
+    const ey = l.dy[n - 1] - l.dy[n - 2];
+    const el = Math.hypot(ex, ey) || 1;
+    const hx = l.dx[n - 1] + (ex / el) * 12;
+    const hy = l.dy[n - 1] + (ey / el) * 12;
+    g.lineTo(hx + cnx[n - 1] * 9, hy + cny[n - 1] * 9);
+    g.lineTo(hx - cnx[n - 1] * 9, hy - cny[n - 1] * 9);
+    for (let i = n - 1; i >= 0; i--) {
+      const h = l.half[i] + 7;
+      g.lineTo(l.dx[i] - cnx[i] * h, l.dy[i] - cny[i] * h);
+    }
+    g.closePath();
+    g.clip();
+    g.globalAlpha = 0.85 * l.rv;
+    g.lineWidth = 1.1 * u;
+    g.stroke(bark);
+    g.restore();
+  }
+}
+
+/**
+ * A part's free decay from where it is now, drawn as a curl at its tip: its
+ * path in the plane of angle and angular speed, which is a spiral winding
+ * into rest. The damping sets how tight it winds; a push unfurls it.
+ */
+function drawCurl(p, x0, y0, tx, ty, size, u, a) {
+  const wn = TAU * p.freq * FEEL.stiffness;
+  const bound = p.limit;
+  const brake = 2 * p.zeta * DAMP * wn;
+  const nx = -ty;
+  const ny = tx;
+  let th = p.theta;
+  let om = p.omega;
+  let ex = x0;
+  let ey = y0;
+  g.beginPath();
+  for (let i = 0; i < 240; i++) {
+    let A = th / bound;
+    let B = om / (wn * bound);
+    const r = Math.hypot(A, B);
+    // Very large swings are drawn a little closer in, so the curl stays by its tip.
+    const f = r > 1e-6 ? (size * 1.8 * Math.tanh(r / 1.8)) / r : 0;
+    A *= f;
+    B *= f;
+    const X = x0 + A * nx + B * tx;
+    const Y = y0 + A * ny + B * ty;
+    if (i) g.lineTo(X, Y);
+    else {
+      g.moveTo(X, Y);
+      ex = X;
+      ey = Y;
+    }
+    if (i > 12 && Math.abs(A) + Math.abs(B) < 0.5 * u) break;
+    for (let k = 0; k < 2; k++) {
+      const acc = -wn * wn * (1 + (th / bound) ** 2) * th - brake * om;
+      om += acc * H;
+      th += om * H;
+    }
+  }
+  g.lineTo(x0, y0);
+  g.globalAlpha = a * 0.9;
+  g.lineWidth = 1 * u;
+  g.stroke();
+  g.beginPath();
+  g.arc(ex, ey, 2 * u, 0, TAU);
+  g.fill();
+}
+
+function drawLimb(l, u) {
+  const a = l.rv;
+  const n = l.n;
+  const gap = 6 * u;
+  const tk = 4 * u;
+  const cb = l.cos[0];
+  const sb = l.sin[0];
+  const bx = l.dx[0];
+  const by = l.dy[0];
+  const tx = l.dx[n - 1];
+  const ty = l.dy[n - 1];
+  g.strokeStyle = INK;
+  g.fillStyle = INK;
+
+  // The tip and the joint, dropped onto the page's axes.
+  g.globalAlpha = a * 0.34;
+  g.lineWidth = 0.7 * u;
+  g.beginPath();
+  g.moveTo(tx - 150, ty);
+  g.lineTo(tx + 150, ty);
+  g.moveTo(tx, ty - 120);
+  g.lineTo(tx, ty + 70);
+  g.moveTo(bx - 80, by);
+  g.lineTo(bx + 80, by);
+  g.stroke();
+
+  // The scale at the tip: where the tip lands for each degree of turn.
+  g.lineWidth = 0.8 * u;
+  g.globalAlpha = a * 0.75;
+  g.beginPath();
+  for (let k = 0; k <= 2 * GK; k++) {
+    const px = l.gx[k];
+    const py = l.gy[k];
+    const q = (Math.hypot(px, py) + gap) / Math.hypot(px, py);
+    const x = bx + cb * px * q - sb * py * q;
+    const y = by + sb * px * q + cb * py * q;
+    if (k) g.lineTo(x, y);
+    else g.moveTo(x, y);
+  }
+  const ticks = Math.floor(l.limit / l.tick + 1e-6);
+  for (let k = -ticks; k <= ticks; k++) {
+    tipAt(l, k * l.tick, tmp);
+    const d = Math.hypot(tmp[0], tmp[1]);
+    const len = k === 0 ? 2.4 * tk : k % l.major === 0 ? 1.7 * tk : tk;
+    const q0 = (d + gap) / d;
+    const q1 = (d + gap + len) / d;
+    g.moveTo(bx + cb * tmp[0] * q0 - sb * tmp[1] * q0, by + sb * tmp[0] * q0 + cb * tmp[1] * q0);
+    g.lineTo(bx + cb * tmp[0] * q1 - sb * tmp[1] * q1, by + sb * tmp[0] * q1 + cb * tmp[1] * q1);
+  }
+  g.stroke();
+
+  // The bone at rest, carried by the bone below it, and the gap it has opened.
+  for (let i = 0; i < n; i++) {
+    const offX = l.rx[i] - l.rx[0];
+    const offY = l.ry[i] - l.ry[0];
+    ghx[i] = bx + cb * offX - sb * offY;
+    ghy[i] = by + sb * offX + cb * offY;
+    cnx[i] = l.cos[i] * l.nx[i] - l.sin[i] * l.ny[i];
+    cny[i] = l.sin[i] * l.nx[i] + l.cos[i] * l.ny[i];
+  }
+  g.beginPath();
+  g.moveTo(ghx[0], ghy[0]);
+  for (let i = 1; i < n; i++) g.lineTo(ghx[i], ghy[i]);
+  for (let i = n - 1; i >= 0; i--) g.lineTo(l.dx[i], l.dy[i]);
+  g.closePath();
+  g.globalAlpha = a * 0.16;
+  g.fill();
+  g.beginPath();
+  g.moveTo(ghx[0], ghy[0]);
+  for (let i = 1; i < n; i++) g.lineTo(ghx[i], ghy[i]);
+  g.globalAlpha = a * 0.5;
+  g.lineWidth = 0.7 * u;
+  g.stroke();
+
+  // Afterimages, oldest faintest.
+  for (let age = trailLen - 1; age >= 1; age--) {
+    const s = trail[(trailHead - 1 - age + TRAIL * 2) % TRAIL];
+    g.globalAlpha = a * 0.34 * Math.pow(1 - age / TRAIL, 1.5);
+    g.beginPath();
+    g.moveTo(s[l.off], s[l.off + 1]);
+    for (let i = 1; i < n; i++) g.lineTo(s[l.off + 2 * i], s[l.off + 2 * i + 1]);
+    g.stroke();
+  }
+
+  // Circles of curvature: where the bone bends most, and under the pointer.
+  const at = Math.max(3, Math.min(n - 4, Math.round(l.aiF)));
+  g.lineWidth = 0.8 * u;
+  for (let k = 0; k <= l.osc.length; k++) {
+    const i = k < l.osc.length ? l.osc[k] : at;
+    const own = k === l.osc.length;
+    if (own && l.gap >= FAR) continue;
+    if (!circle3(l.dx[i - 3], l.dy[i - 3], l.dx[i], l.dy[i], l.dx[i + 3], l.dy[i + 3], c3)) continue;
+    const R = c3[2];
+    if (R > 260 || R < 6) continue;
+    g.globalAlpha = a * (own ? 0.8 : 0.5);
+    g.beginPath();
+    g.arc(c3[0], c3[1], R, 0, TAU);
+    // its radius, and a cross at its centre
+    g.moveTo(c3[0], c3[1]);
+    g.lineTo(l.dx[i], l.dy[i]);
+    g.moveTo(c3[0] - 3.5 * u, c3[1]);
+    g.lineTo(c3[0] + 3.5 * u, c3[1]);
+    g.moveTo(c3[0], c3[1] - 3.5 * u);
+    g.lineTo(c3[0], c3[1] + 3.5 * u);
+    g.stroke();
+  }
+
+  // A rule along the bone: a mark every four units of its length.
+  g.globalAlpha = a * 0.7;
+  g.lineWidth = 0.7 * u;
+  g.beginPath();
+  for (let i = 1; i < n - 1; i++) {
+    const w = (1.7 - 1.15 * (i / (n - 1))) * u;
+    const len = (i % 5 === 0 ? 6 : 2.8) * u;
+    g.moveTo(l.dx[i] + cnx[i] * (w + u), l.dy[i] + cny[i] * (w + u));
+    g.lineTo(l.dx[i] + cnx[i] * (w + u + len), l.dy[i] + cny[i] * (w + u + len));
+  }
+  g.stroke();
+
+  // The bone itself, a stroke that thins towards its tip.
+  g.globalAlpha = a;
+  g.beginPath();
+  for (let i = 0; i < n; i++) {
+    const w = (1.7 - 1.25 * (i / (n - 1))) * u;
+    if (i) g.lineTo(l.dx[i] + cnx[i] * w, l.dy[i] + cny[i] * w);
+    else g.moveTo(l.dx[i] + cnx[i] * w, l.dy[i] + cny[i] * w);
+  }
+  for (let i = n - 1; i >= 0; i--) {
+    const w = (1.7 - 1.25 * (i / (n - 1))) * u;
+    g.lineTo(l.dx[i] - cnx[i] * w, l.dy[i] - cny[i] * w);
+  }
+  g.closePath();
+  g.fill();
+
+  // The tip is the needle of its scale, and it ends in its curl.
+  const d = Math.hypot(tx - bx, ty - by) || 1;
+  g.beginPath();
+  g.moveTo(tx, ty);
+  g.lineTo(tx + ((tx - bx) / d) * (gap + 2.6 * tk), ty + ((ty - by) / d) * (gap + 2.6 * tk));
+  g.lineWidth = 0.9 * u;
+  g.stroke();
+  const ex = tx - l.dx[n - 2];
+  const ey = ty - l.dy[n - 2];
+  const el = Math.hypot(ex, ey) || 1;
+  drawCurl(l, tx, ty, ex / el, ey / el, 44, u, a);
+
+  // The joint it turns about.
+  g.globalAlpha = a;
+  g.lineWidth = 1 * u;
+  g.beginPath();
+  g.arc(bx, by, 3.6 * u, 0, TAU);
+  g.fillStyle = PAPER;
+  g.fill();
+  g.stroke();
+  g.fillStyle = INK;
+}
+
+function drawLeaf(f, u) {
+  const a = f.rv;
+  const a0 = f.axis + f.ghost;
+  const a1 = a0 + f.ang;
+  const rad = f.rib * 0.62;
+  const m = f.m;
+  g.strokeStyle = INK;
+  g.fillStyle = INK;
+
+  // Its own edge, where the flesh has thinned. A leaf the wood hides keeps
+  // its edge hidden there too.
+  g.save();
+  if (f.behind && woodD) {
+    const rest = new Path2D();
+    rest.rect(-1000, -1000, 2400, 2800);
+    rest.addPath(new Path2D(woodD));
+    g.clip(rest, "evenodd");
+  }
+  g.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
+  g.globalAlpha = a * 0.9;
+  g.lineWidth = 1.1 * u;
+  g.stroke(f.edge);
+  g.restore();
+
+  // The pivot, dropped onto the page's axes.
+  g.globalAlpha = a * 0.3;
+  g.lineWidth = 0.7 * u;
+  g.beginPath();
+  g.moveTo(f.pivX - 110, f.pivY);
+  g.lineTo(f.pivX + 110, f.pivY);
+  g.moveTo(f.pivX, f.pivY - 90);
+  g.lineTo(f.pivX, f.pivY + 50);
+  g.stroke();
+
+  // A protractor about the pivot, a mark every five degrees, and the turn so far.
+  g.beginPath();
+  g.moveTo(f.pivX, f.pivY);
+  g.arc(f.pivX, f.pivY, rad, a0, a1, f.ang < 0);
+  g.closePath();
+  g.globalAlpha = a * 0.18;
+  g.fill();
+  g.globalAlpha = a * 0.75;
+  g.lineWidth = 0.8 * u;
+  g.beginPath();
+  g.arc(f.pivX, f.pivY, rad, a0 - f.limit, a0 + f.limit);
+  const marks = Math.floor((f.limit * DEG) / 5);
+  for (let k = -marks; k <= marks; k++) {
+    const t = a0 + (k * 5) / DEG;
+    const len = (k === 0 ? 9 : k % 3 === 0 ? 6 : 3.4) * u;
+    g.moveTo(f.pivX + Math.cos(t) * rad, f.pivY + Math.sin(t) * rad);
+    g.lineTo(f.pivX + Math.cos(t) * (rad + len), f.pivY + Math.sin(t) * (rad + len));
+  }
+  g.moveTo(f.pivX, f.pivY);
+  g.lineTo(f.pivX + Math.cos(a0) * f.rib, f.pivY + Math.sin(a0) * f.rib);
+  g.stroke();
+
+  for (let age = trailLen - 1; age >= 1; age--) {
+    const s = trail[(trailHead - 1 - age + TRAIL * 2) % TRAIL];
+    g.globalAlpha = a * 0.34 * Math.pow(1 - age / TRAIL, 1.5);
+    g.beginPath();
+    g.moveTo(s[f.off], s[f.off + 1]);
+    g.lineTo(s[f.off + 2], s[f.off + 3]);
+    g.stroke();
+  }
+
+  // Veins ride the leaf's own matrix, so the squash shows on them.
+  const v = f.veins;
+  g.globalAlpha = a * 0.6;
+  g.lineWidth = 0.7 * u;
+  g.beginPath();
+  for (let k = 0; k < v.length; k += 4) {
+    g.moveTo(m[0] * v[k] + m[2] * v[k + 1] + m[4], m[1] * v[k] + m[3] * v[k + 1] + m[5]);
+    g.lineTo(m[0] * v[k + 2] + m[2] * v[k + 3] + m[4], m[1] * v[k + 2] + m[3] * v[k + 3] + m[5]);
+  }
+  g.stroke();
+
+  // The midrib, and the curl it ends in.
+  g.globalAlpha = a;
+  g.lineWidth = 1.5 * u;
+  g.beginPath();
+  g.moveTo(f.pivX, f.pivY);
+  g.lineTo(f.tipX, f.tipY);
+  g.stroke();
+  const ex = f.tipX - f.pivX;
+  const ey = f.tipY - f.pivY;
+  const el = Math.hypot(ex, ey) || 1;
+  drawCurl(f, f.tipX, f.tipY, ex / el, ey / el, 30, u, a);
+  g.globalAlpha = a;
+  g.beginPath();
+  g.arc(f.pivX, f.pivY, 2.2 * u, 0, TAU);
+  g.fill();
+}
+
+/** The pointer's push and its wake, and its velocity on a rule from k0 to k1. */
+function drawAir(u) {
+  if (airA < 0.01) return;
+  g.strokeStyle = INK;
+  g.lineWidth = (0.8 + 1.2 * tNow) * u;
+  g.globalAlpha = airA * (0.4 + 0.5 * tNow);
+  g.beginPath();
+  g.arc(pointer.x, pointer.y, CONTACT, 0, TAU);
+  g.stroke();
+  g.lineWidth = 0.7 * u;
+  g.globalAlpha = airA * 0.3;
+  g.beginPath();
+  g.arc(pointer.x, pointer.y, WAKE, 0, TAU);
+  g.stroke();
+  // The arrow reaches as far along the rule as t.
+  const sp = Math.hypot(pointer.vx, pointer.vy);
+  if (sp > 30 && curAl > 0.01) {
+    const ux = pointer.vx / sp;
+    const uy = pointer.vy / sp;
+    const x0 = pointer.x + ux * CONTACT;
+    const y0 = pointer.y + uy * CONTACT;
+    const full = 110;
+    g.globalAlpha = airA * curAl * 0.55;
+    g.beginPath();
+    g.moveTo(x0, y0);
+    g.lineTo(x0 + ux * full, y0 + uy * full);
+    for (let k = 0; k <= 10; k++) {
+      const len = (k % 5 === 0 ? 6 : 3) * u;
+      const px = x0 + ux * full * (k / 10);
+      const py = y0 + uy * full * (k / 10);
+      g.moveTo(px, py);
+      g.lineTo(px - uy * len, py + ux * len);
+    }
+    g.stroke();
+    arrow(x0, y0, x0 + ux * full * tNow, y0 + uy * full * tNow, 6 * u);
+    g.globalAlpha = airA * curAl;
+    g.lineWidth = 1.7 * u;
+    g.stroke();
+  }
+}
+
+function leverPoint(p, out) {
+  out[0] = p.kind === "limb" ? p.pcx : p.nowX;
+  out[1] = p.kind === "limb" ? p.pcy : p.nowY;
+}
+
+/** The force on the part pushed, from where it is pushed, and its lever to the pivot. */
+function drawLever(u) {
+  if (leverA < 0.02 || !lever) return;
+  const p = lever;
+  const bx = p.kind === "limb" ? p.dx[0] : p.pivX;
+  const by = p.kind === "limb" ? p.dy[0] : p.pivY;
+  leverPoint(p, tmp);
+  const cx = tmp[0];
+  const cy = tmp[1];
+  g.strokeStyle = INK;
+  g.fillStyle = INK;
+  g.globalAlpha = leverA * 0.7;
+  g.lineWidth = 0.8 * u;
+  g.beginPath();
+  g.moveTo(bx, by);
+  g.lineTo(cx, cy);
+  g.stroke();
+  g.globalAlpha = leverA;
+  arrow(cx, cy, cx + leverFx * 52, cy + leverFy * 52, 7 * u);
+  g.lineWidth = 1.7 * u;
+  g.stroke();
+  g.beginPath();
+  g.arc(cx, cy, 2.6 * u, 0, TAU);
+  g.fill();
+}
+
+let drawn = false; // whether the plate has anything on it to clear
+
+function drawPlate() {
+  if (!W) return;
+  let any = airA >= 0.01 || (lever && leverA >= 0.02);
+  for (const p of parts) if (p.rv > 0.01) any = true;
+  // Most of the time nothing is touched: one clear, then nothing to do.
+  if (!any && !drawn) return;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, W, Hh);
+  drawn = any;
+  if (!any) return;
+  g.lineCap = "round";
+  g.lineJoin = "round";
+  g.setTransform(dpr * sc, 0, 0, dpr * sc, dpr * ox, dpr * oy);
+  const u = 1 / sc; // one CSS pixel, in tree units
+  drawVeil(u);
+  for (const l of limbs) if (l.rv > 0.01) drawLimb(l, u);
+  for (const f of leaves) if (f.rv > 0.01) drawLeaf(f, u);
+  drawAir(u);
+  drawLever(u);
+  g.globalAlpha = 1;
 }
 
 /* ==========================================================================
    Run
    ========================================================================== */
 
-let clock = 0;
 let spare = 0;
 let lastFrame = 0;
 let frame = 0;
+let lastText = -1;
 
 function tick(now) {
   frame = 0;
@@ -703,11 +1742,13 @@ function tick(now) {
     pointer.vx *= fade;
     pointer.vy *= fade;
   }
+  // The push: the pointer's velocity times a coefficient interpolated by its
+  // speed, from K0 (still) to K1 (at V1 and beyond).
   const speed = Math.hypot(pointer.vx, pointer.vy);
-  const moving = speed > 1 ? 1 / V_REF : 0;
-  const capped = Math.min(speed, V_CAP);
-  const woodDrag = (capped + V_LIN_WOOD) * moving;
-  const leafDrag = (capped + V_LIN_LEAF) * moving;
+  const t = Math.min(1, speed / V1);
+  const going = speed > 1 ? 1 : 0;
+  const kWood = (K0 + (K1 - K0) * t) * going;
+  const kLeaf = (KL0 + (KL1 - KL0) * t) * going;
 
   // Fixed steps, walking the pointer along the path it took since the last
   // one, so a fast swipe cannot jump clean over a thin branch. On a fast
@@ -719,6 +1760,10 @@ function tick(now) {
     start();
     return;
   }
+  for (const p of parts) {
+    p.sum.fill(0);
+    p.felt = 0;
+  }
   for (let i = 0; i < steps; i++) {
     const u = (i + 1) / steps;
     clock += H;
@@ -726,10 +1771,10 @@ function tick(now) {
       clock,
       pointer.fromX + (pointer.x - pointer.fromX) * u,
       pointer.fromY + (pointer.y - pointer.fromY) * u,
-      pointer.vx * woodDrag,
-      pointer.vy * woodDrag,
-      pointer.vx * leafDrag,
-      pointer.vy * leafDrag
+      pointer.vx * kWood,
+      pointer.vy * kWood,
+      pointer.vx * kLeaf,
+      pointer.vy * kLeaf
     );
   }
   pointer.fromX = pointer.x;
@@ -738,6 +1783,97 @@ function tick(now) {
   pose();
   drawWood();
   drawLeaves();
+  if (clock - lastSnap >= 0.045) {
+    lastSnap = clock;
+    snapshot();
+  }
+
+  touch(dt);
+
+  const ease = 1 - Math.exp(-dt / 0.07);
+  for (const p of parts) for (let k = 0; k < 5; k++) p.shown[k] += (p.sum[k] / steps - p.shown[k]) * ease;
+
+  // The part the pointer is levering, and the force on it.
+  let pushed = null;
+  for (const p of parts) if (p.gap < FAR && p.felt > 0.5 && (!pushed || p.felt > pushed.felt)) pushed = p;
+  if (pushed && speed > 1) {
+    lever = pushed;
+    const out = 0.25 + 0.75 * t;
+    leverFx = (pointer.vx / speed) * out;
+    leverFy = (pointer.vy / speed) * out;
+    leverA += (1 - leverA) * (1 - Math.exp(-dt / 0.04));
+  } else {
+    leverA *= Math.exp(-dt / 0.16);
+  }
+
+  // The pointer's own air, and its formula while it moves, near the tree.
+  airA += ((near ? 1 : 0) - airA) * (1 - Math.exp(-dt / 0.1));
+  if (airA < 0.004) airA = 0;
+  tNow += (t - tNow) * (1 - Math.exp(-dt / 0.05));
+  if (near && speed > 40) curHold = 0.16;
+  else curHold = Math.max(0, curHold - dt);
+  const wantCur = curHold > 0 ? 1 : 0;
+  curAl += (wantCur - curAl) * (1 - Math.exp(-dt / (wantCur > curAl ? RISE : FALL)));
+  if (curAl < 0.004) curAl = 0;
+
+  // Float what is inked.
+  for (const p of parts) {
+    float(p, dt);
+    if (p.rv <= 0.01) continue;
+    for (const fr of p.frags) {
+      if (!fr.terms) continue;
+      // Every term of the equation weighs on the page what it weighs in the sum.
+      for (let k = 0; k < 5; k++) {
+        const o = 0.5 + 0.5 * Math.min(1, Math.sqrt(Math.abs(p.shown[k]) / 30));
+        const term = fr.terms[k];
+        if (Math.abs(o - term.o) > 0.015) {
+          term.o = o;
+          term.node.style.opacity = o.toFixed(2);
+        }
+      }
+    }
+  }
+  // A touched leaf thins back to the page, so its anatomy reads through it.
+  for (const f of leaves) {
+    const o = 1 - 0.78 * f.rv;
+    if (Math.abs(o - f.fleshO) > 0.008) {
+      f.fleshO = o;
+      f.path.style.fillOpacity = o.toFixed(3);
+    }
+  }
+  {
+    const px = ox + pointer.x * sc;
+    const py = oy + pointer.y * sc;
+    let x = px + 26;
+    let y = py + 30;
+    if (x + curB.w > W - 8) x = px - 26 - curB.w;
+    if (y + 56 * small > Hh - 6) y = py - 30 - 56 * small;
+    x = Math.max(6, Math.min(W - 6 - curB.w, x));
+    y = Math.max(6, y);
+    show(curA, x, y, curAl, curA.tilt);
+    show(curB, x + 4, y + 30 * small, curAl * 0.9, curB.tilt);
+    if (lever) {
+      leverPoint(lever, tmp);
+      show(levF, ox + tmp[0] * sc + 10, oy + tmp[1] * sc + 10, leverA, levF.tilt);
+    }
+  }
+  if (clock - lastText > 0.06) {
+    lastText = clock;
+    for (const p of parts) {
+      if (p.rv <= 0.01) continue;
+      for (const fr of p.frags) {
+        if (!fr.num) continue;
+        // The part's own angle, in radians, as it is this instant.
+        const text = (p.theta < 0 ? "−" : "") + Math.abs(p.theta).toFixed(7);
+        if (text !== fr.text) {
+          fr.text = text;
+          fr.n.textContent = text;
+        }
+      }
+    }
+  }
+
+  drawPlate();
   start();
 }
 
@@ -753,12 +1889,65 @@ function stop() {
   lastFrame = 0;
 }
 
-if (svg && woodEl && !reduced) {
+function setup() {
+  plate = document.createElement("canvas");
+  g = plate.getContext("2d");
+  if (!g) return false;
+  plate.className = "tree-plate";
+  plate.setAttribute("aria-hidden", "true");
+  floats = document.createElement("div");
+  floats.className = "tree-floats";
+  floats.setAttribute("aria-hidden", "true");
+  box.append(plate, floats);
+
   build();
+  let total = 0;
+  for (const l of limbs) {
+    l.off = total;
+    total += 2 * l.n;
+  }
+  for (const f of leaves) {
+    f.off = total;
+    total += 4;
+  }
+  trail = Array.from({ length: TRAIL }, () => new Float32Array(total));
+  for (const p of parts) makeFrags(p);
+  curA = loose("push", 19, -3);
+  curB = loose("lerp", 15, -3);
+  levF = loose("lever", 17, 4);
+
+  // Until the pointer first comes near, the opening shows once what a touch does.
+  byId.left.demo = true;
+  const crown = leaves.find((f) => f.key === "leaf:crown");
+  if (crown) crown.demo = true;
+  return true;
+}
+
+if (box && svg && woodEl && !reduced && setup()) {
+  readTheme();
+  layout();
+  pose();
+  drawWood();
+  drawLeaves();
 
   window.addEventListener("pointermove", track, { passive: true });
   document.documentElement.addEventListener("pointerleave", release);
   window.addEventListener("blur", release);
+
+  if ("ResizeObserver" in window) {
+    new ResizeObserver(() => {
+      layout();
+      drawPlate();
+    }).observe(box);
+  } else {
+    window.addEventListener("resize", layout);
+  }
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", readTheme);
+  // The formulas' faces arrive after the first layout; measure them again.
+  if (document.fonts) {
+    document.fonts.ready.then(measure);
+    document.fonts.addEventListener("loadingdone", measure);
+  }
 
   // Scrolled out of view, the tree costs nothing.
   if ("IntersectionObserver" in window) {

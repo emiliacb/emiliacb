@@ -3,8 +3,10 @@ import type { RenderCtx } from "../context";
 
 /**
  * The hand-drawn tree in the illustration column, as plain SVG in its resting
- * pose. src/client/tree-sway.js bends it in the air the pointer moves; with no
- * JS, or with reduced motion, this is the whole of it and it stands still.
+ * pose. src/client/tree-sway.js bends it in the air the pointer moves and
+ * draws its anatomy, with the equations it moves by, over whatever part the
+ * pointer touches; with no JS, or with reduced motion, this is the whole of
+ * it and it stands still.
  *
  * The trunk is cut off flat by the bottom of the frame, so the drawing is
  * pinned to the bottom of its box (xMidYMax): if the box ever comes out

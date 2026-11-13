@@ -146,8 +146,12 @@ document.head.appendChild(o)}initApollo();</script>
         <!-- Google Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <!-- The tree's formulas (src/client/tree-sway.js) are set in a script
+             face, with an italic for the Greek; only pages with the tree ask for them. -->
         <link
-          href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900${withIlustration
+            ? "&family=EB+Garamond:ital@1&family=Petit+Formal+Script"
+            : ""}&display=swap"
           rel="stylesheet"
           crossorigin="anonymous"
         />
