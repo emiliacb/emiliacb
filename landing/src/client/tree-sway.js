@@ -42,8 +42,6 @@ const box = document.getElementById("tree-illustration");
 const svg = box ? box.querySelector(".cover-tree") : null;
 const woodEl = svg ? svg.querySelector("[data-wood]") : null;
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-// Only a pointer that can hover is shown, once, what a touch does.
-const hovers = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
 /* ==========================================================================
    Tuning
@@ -156,7 +154,10 @@ const FAR = 30;
 const HOLD = 0.2;
 const RISE = 0.05; // time constants of the ink coming and going, in seconds
 const FALL = 0.2;
-const DEMO = 2.8; // seconds the opening shows what a touch does
+// With no pointer about, the breeze alone inks each part faintly, as much as
+// it is moving: up to BREEZE_INK, reached at BREEZE_V of its full swing speed.
+const BREEZE_INK = 0.22;
+const BREEZE_V = 0.03;
 const GK = 12; // half the samples of each tip's graduated scale
 
 /* ==========================================================================
@@ -363,7 +364,7 @@ const plateState = () => ({
   gap: 1e9, // pointer to its surface, in tree units
   hold: 0,
   fresh: false,
-  demo: false,
+  amb: 0, // the breeze's own faint ink
   // Each term of its equation of motion, summed over a frame and eased:
   // brake, spring, push, wind, drag.
   sum: new Float64Array(5),
@@ -640,10 +641,6 @@ function noise1(x, seed) {
   return (hash1(i, seed) * (1 - u) + hash1(i + 1, seed) * u) * 2 - 1;
 }
 
-// One gust to open with, so the tree is seen to move while the opening shows
-// what a touch does.
-const gust = { t0: 0.15, amp: 6 };
-
 /**
  * The breeze at a part, as a multiple of that part's own lean. It reaches the
  * left of the tree a moment before the right, so the crown never moves as one
@@ -653,19 +650,14 @@ const gust = { t0: 0.15, amp: 6 };
  */
 function breeze(t, x, seed, flutter) {
   const tt = t - x / 520;
-  let b =
+  return (
     FEEL.wind *
     (0.22 +
       0.6 * noise1(tt * 0.15, 11) +
       0.35 * noise1(tt * 0.37, 23) +
       1.4 * Math.max(0, noise1(tt * 0.06, 37)) ** 2 +
-      0.3 * noise1(t * flutter, seed));
-  const u = t - gust.t0 - x / 900;
-  if (u > 0 && u < 2.5) {
-    const z = u / 0.16;
-    b += gust.amp * z * Math.exp(1 - z);
-  }
-  return b;
+      0.3 * noise1(t * flutter, seed))
+  );
 }
 
 /* ==========================================================================
@@ -969,7 +961,6 @@ function drawLeaves() {
 
 let clock = 0;
 let near = false; // the pointer is within its wake of some part
-let everNear = false;
 
 function touch(dt) {
   const on = pointer.inBox;
@@ -996,14 +987,14 @@ function touch(dt) {
     closest = Math.min(closest, f.gap);
   }
   near = closest < WAKE;
-  if (near) everNear = true;
 
-  const showing = hovers && !everNear && clock < DEMO;
   for (const p of parts) {
     const c = p.gap >= FAR ? 0 : p.gap <= NEAR ? 1 : smooth((FAR - p.gap) / (FAR - NEAR));
     if (c > 0.5) p.hold = HOLD;
     else p.hold = Math.max(0, p.hold - dt);
-    const want = Math.max(c, p.hold > 0 ? 1 : 0, showing && p.demo ? 1 : 0);
+    const sway = Math.abs(p.omega) / (TAU * p.freq * FEEL.stiffness * p.limit * BREEZE_V);
+    p.amb += (BREEZE_INK * smooth(Math.min(1, sway)) - p.amb) * (1 - Math.exp(-dt / 0.3));
+    const want = Math.max(c, p.hold > 0 ? 1 : 0, p.amb);
     const was = p.rv;
     p.rv += (want - p.rv) * (1 - Math.exp(-dt / (want > p.rv ? RISE : FALL)));
     if (p.rv < 0.004) p.rv = 0;
@@ -1906,11 +1897,6 @@ function setup() {
   curA = loose("push", 19, -3);
   curB = loose("lerp", 15, -3);
   levF = loose("lever", 17, 4);
-
-  // Until the pointer first comes near, the opening shows once what a touch does.
-  byId.left.demo = true;
-  const crown = leaves.find((f) => f.key === "leaf:crown");
-  if (crown) crown.demo = true;
   return true;
 }
 
