@@ -11,7 +11,6 @@ export default async function render(ctx: RenderCtx): Promise<string> {
       path: "/about",
       siteData: { title: pages.about.title, description: pages.about.description },
       withFooter: true,
-      withCotas: true,
       children: html`<div class="markdown-content">${raw(ctx.content.pages[ctx.lang].about)}</div>`,
     })
   );
