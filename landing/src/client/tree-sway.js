@@ -26,7 +26,7 @@
  * equations it obeys float beside it; a moment after the pointer leaves, it is
  * gone. Nothing is labelled, and everything drawn is computed from the same
  * state the tree moves by: the bone and its rest pose; a
- * rule along it every four units; circles of curvature (radius 1/κ) where it
+ * rule along it every four units, and its length, dimensioned; circles of curvature (radius 1/κ) where it
  * bends most and under the pointer; a scale at the tip, graduated in degrees
  * of turn; a curl at the tip, which is the part's free decay from where it is
  * now, in the plane of angle and angular speed; a protractor about each leaf's
@@ -1355,6 +1355,69 @@ function drawCurl(p, x0, y0, tx, ty, size, u, a) {
   g.fill();
 }
 
+/* ==========================================================================
+   The length mark: the bone's arc length, as a dimension on a technical
+   drawing, on a line that follows the bone on the side the rule is not on.
+   ========================================================================== */
+
+function head(x, y, ux, uy, len) {
+  g.moveTo(x - len * (ux * 0.9 - uy * 0.4), y - len * (uy * 0.9 + ux * 0.4));
+  g.lineTo(x, y);
+  g.lineTo(x - len * (ux * 0.9 + uy * 0.4), y - len * (uy * 0.9 - ux * 0.4));
+}
+
+/** A value written along a direction, kept upright. */
+function label(text, x, y, ang, u) {
+  if (Math.cos(ang) < 0) ang += Math.PI;
+  g.save();
+  g.translate(x, y);
+  g.rotate(ang);
+  g.font = `italic ${14 * u}px "EB Garamond", serif`;
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.fillText(text, 0, 0);
+  g.restore();
+}
+
+/** Expects cnx/cny to hold the bone's normals, as drawLimb leaves them. */
+function drawLength(l, u, a) {
+  const n = l.n;
+  const hl = 6 * u;
+  g.strokeStyle = INK;
+  g.fillStyle = INK;
+  g.lineWidth = 0.75 * u;
+  const off = (i) => l.half[i] + 16 * u;
+  g.globalAlpha = a * 0.85;
+  g.beginPath();
+  for (let i = 0; i < n; i++) {
+    const x = l.dx[i] - cnx[i] * off(i);
+    const y = l.dy[i] - cny[i] * off(i);
+    if (i) g.lineTo(x, y);
+    else g.moveTo(x, y);
+  }
+  for (const i of [0, n - 1]) {
+    g.moveTo(l.dx[i] - cnx[i] * (l.half[i] + 3 * u), l.dy[i] - cny[i] * (l.half[i] + 3 * u));
+    g.lineTo(l.dx[i] - cnx[i] * (off(i) + 5 * u), l.dy[i] - cny[i] * (off(i) + 5 * u));
+  }
+  const e0x = l.dx[0] - cnx[0] * off(0);
+  const e0y = l.dy[0] - cny[0] * off(0);
+  const e1x = l.dx[n - 1] - cnx[n - 1] * off(n - 1);
+  const e1y = l.dy[n - 1] - cny[n - 1] * off(n - 1);
+  const wx0 = l.dx[1] - l.dx[0];
+  const wy0 = l.dy[1] - l.dy[0];
+  const wd = Math.hypot(wx0, wy0) || 1;
+  head(e0x, e0y, -wx0 / wd, -wy0 / wd, hl);
+  const vx = l.dx[n - 1] - l.dx[n - 2];
+  const vy = l.dy[n - 1] - l.dy[n - 2];
+  const vd = Math.hypot(vx, vy) || 1;
+  head(e1x, e1y, vx / vd, vy / vd, hl);
+  g.stroke();
+  const m = Math.round(n / 2);
+  const mo = off(m) + 9 * u;
+  const ta = Math.atan2(l.dy[m + 1] - l.dy[m - 1], l.dx[m + 1] - l.dx[m - 1]);
+  label(`L = ${l.len.toFixed(1)}`, l.dx[m] - cnx[m] * mo, l.dy[m] - cny[m] * mo, ta, u);
+}
+
 function drawLimb(l, u) {
   const a = l.rv;
   const n = l.n;
@@ -1480,6 +1543,8 @@ function drawLimb(l, u) {
   const ey = ty - l.dy[n - 2];
   const el = Math.hypot(ex, ey) || 1;
   drawCurl(l, tx, ty, ex / el, ey / el, 44, u, a);
+
+  drawLength(l, u, a);
 
   // The joint it turns about.
   g.globalAlpha = a;
