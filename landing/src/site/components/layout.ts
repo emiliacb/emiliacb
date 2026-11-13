@@ -23,8 +23,8 @@ type LayoutProps = {
   /** Advertise the page's .md version (off for the 404, which has none). */
   withMarkdown?: boolean;
   /**
-   * Dimension the page in ink (src/client/page-cotas.js). On by default
-   * everywhere but the pages with the tree, which draws its own anatomy.
+   * Dimension the page in ink (src/client/page-cotas.js). On every page by
+   * default; with the tree, without the pointer's rings, which it draws itself.
    */
   withCotas?: boolean;
 
@@ -38,7 +38,7 @@ export default function layout({
   withFooter = true,
   withIlustration = false,
   withMarkdown = true,
-  withCotas = !withIlustration,
+  withCotas = true,
 
   children,
 }: LayoutProps) {
@@ -335,7 +335,9 @@ document.head.appendChild(o)}initApollo();</script>
         ${AI_FEATURE_ENABLED ? activityPanel() : null}
         <script src="${ctx.assets.script("layout")}" defer></script>
         <script src="${ctx.assets.script("navigation")}" defer></script>
-        ${withCotas ? html`<script src="${ctx.assets.script("page-cotas")}" defer></script>` : null}
+        ${withCotas
+          ? html`<script src="${ctx.assets.script("page-cotas")}" data-air="${withIlustration ? "off" : "on"}" defer></script>`
+          : null}
         <!-- The ink cursor, on every page (src/client/ink-cursor.js). -->
         <script src="${ctx.assets.script("ink-cursor")}" defer></script>
         ${AI_FEATURE_ENABLED
