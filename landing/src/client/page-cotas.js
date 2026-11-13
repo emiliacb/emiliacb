@@ -276,12 +276,6 @@
       g.lineWidth = 0.7;
       g.globalAlpha = A(airA * 0.18);
       g.beginPath(); g.arc(px, py, WAKE, 0, Math.PI * 2); g.stroke();
-      // The pointer's acceleration, on a leader from the contact ring.
-      ink("force");
-      const rx = px + CONTACT * Math.SQRT1_2, ry = py - CONTACT * Math.SQRT1_2;
-      g.save();
-      leader(`a = ${(accel * PX_M).toFixed(2)} m/s²`, rx, ry, 1, -1, airA * 0.6);
-      g.restore();
     }
     const ux = dirX, uy = dirY;
     const x0 = px + ux * CONTACT, y0 = py + uy * CONTACT;
@@ -310,6 +304,25 @@
       g.beginPath();
       g.arc(x0 + ux * FULL * peak, y0 + uy * FULL * peak, 3, 0, Math.PI * 2);
       g.stroke();
+    }
+    // The acceleration, on a leader to the peak mark (to the contact ring
+    // before there is one), leaning off the rule on its upper side.
+    if (airA > 0.01) {
+      let nx = -uy, ny = ux;
+      if (ny > 0) { nx = -nx; ny = -ny; }
+      const sx = nx < 0 ? -1 : 1, sy = -1;
+      let tx, ty;
+      if (peak > 0.01) {
+        tx = x0 + ux * FULL * peak + sx * 3 * Math.SQRT1_2;
+        ty = y0 + uy * FULL * peak + sy * 3 * Math.SQRT1_2;
+      } else {
+        tx = px + sx * CONTACT * Math.SQRT1_2;
+        ty = py + sy * CONTACT * Math.SQRT1_2;
+      }
+      ink("force");
+      g.save();
+      leader(`a = ${(accel * PX_M).toFixed(2)} m/s²`, tx, ty, sx, sy, airA * 0.6);
+      g.restore();
     }
   }
 
