@@ -105,7 +105,7 @@
     g.save();
     g.translate(x, y);
     g.rotate(ang);
-    g.font = `italic 15px "EB Garamond", serif`;
+    g.font = FONT;
     g.textAlign = "center";
     g.textBaseline = "middle";
     g.fillText(text, 0, 0);
@@ -113,6 +113,7 @@
   }
   // CSS millimetres: CSS fixes 1in = 96px, so 1px = 25.4/96 mm. True to the
   // page's own units; a physical ruler on the screen will differ by device.
+  const FONT = `300 15px "Barlow Condensed", sans-serif`;
   const mm = (px) => {
     const v = (px * 25.4) / 96;
     return `${v < 100 ? v.toFixed(1) : Math.round(v)} mm`;
@@ -123,7 +124,7 @@
    * the box it measures, the diagonal runs on until the shelf clears it. */
   function leader(text, tx, ty, sx, sy, a, clear = 0) {
     let LEAD = 22;
-    g.font = `italic 15px "EB Garamond", serif`;
+    g.font = FONT;
     const tw = g.measureText(text).width;
     LEAD = Math.max(LEAD, clear);
     if (sx < 0 && tx - LEAD - tw - 8 < 6) sx = 1;
@@ -152,7 +153,7 @@
   function vMark(y0, y1, x, ex, text, kind, a, side, alt) {
     if (y1 - y0 < 2) return;
     const EDGE = 6;
-    g.font = `italic 15px "EB Garamond", serif`;
+    g.font = FONT;
     const seen0 = Math.min(y1, Hh - EDGE) - Math.max(y0, EDGE);
     let leadSide = -1;
     if (alt && alt.lead) {
@@ -181,7 +182,7 @@
     g.stroke();
     g.globalAlpha = A(a);
     g.save();
-    g.font = `italic 15px "EB Garamond", serif`;
+    g.font = FONT;
     const tw = g.measureText(text).width;
     if (alt && alt.lead) {
       // On a leader from the mark's middle, down and away from the text.
@@ -464,7 +465,7 @@
       }
       ay = Math.min(Hh - 4, Math.max(4, ay));
       const tx = x - 1 - shift;
-      g.font = `italic 15px "EB Garamond", serif`;
+      g.font = FONT;
       const tw = g.measureText(text).width;
       if (ay + dir * (LEAD + 18) < 0 || ay + dir * (LEAD + 18) > Hh) dir = -dir;
       // A flip swings the leader through the horizontal instead of jumping.
@@ -577,5 +578,8 @@
   addEventListener("resize", () => { layout(); kick(); });
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readTheme(); kick(); });
   new MutationObserver(() => { readTheme(); kick(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  // Nothing in the page's CSS uses the cotas' face, so the browser would not
+  // fetch it for a canvas: ask for it, and redraw once it is in.
+  document.fonts && document.fonts.load(FONT).then(kick, () => {});
   document.fonts && document.fonts.ready.then(kick);
 })();

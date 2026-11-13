@@ -154,11 +154,12 @@ document.head.appendChild(o)}initApollo();</script>
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <!-- The tree's formulas (src/client/tree-sway.js) are set in a script
              face, only on pages with the tree, with an italic for the Greek;
-             the cotas (src/client/page-cotas.js) label in the same italic. -->
+             every cota, the tree's and the page's (src/client/page-cotas.js),
+             is labelled in Barlow Condensed Light. -->
         <link
-          href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900${withIlustration || withCotas
-            ? "&family=EB+Garamond:ital@1"
-            : ""}${withIlustration ? "&family=Petit+Formal+Script" : ""}&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900${withIlustration
+            ? "&family=EB+Garamond:ital@1&family=Petit+Formal+Script"
+            : ""}${withIlustration || withCotas ? "&family=Barlow+Condensed:wght@300" : ""}&display=swap"
           rel="stylesheet"
           crossorigin="anonymous"
         />
