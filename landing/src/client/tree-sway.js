@@ -25,7 +25,7 @@
  * Touching a part inks its construction over it, in one colour, and lets the
  * equations it obeys float beside it; a moment after the pointer leaves, it is
  * gone. Nothing is labelled, and everything drawn is computed from the same
- * state the tree moves by: the bone, its rest pose and a few afterimages; a
+ * state the tree moves by: the bone and its rest pose; a
  * rule along it every four units; circles of curvature (radius 1/κ) where it
  * bends most and under the pointer; a scale at the tip, graduated in degrees
  * of turn; a curl at the tip, which is the part's free decay from where it is
@@ -157,7 +157,6 @@ const HOLD = 0.2;
 const RISE = 0.05; // time constants of the ink coming and going, in seconds
 const FALL = 0.2;
 const DEMO = 2.8; // seconds the opening shows what a touch does
-const TRAIL = 9; // afterimages kept of the skeleton
 const GK = 12; // half the samples of each tip's graduated scale
 
 /* ==========================================================================
@@ -370,7 +369,6 @@ const plateState = () => ({
   sum: new Float64Array(5),
   shown: new Float64Array(5),
   felt: 0,
-  off: 0, // where its afterimages start in a snapshot
   frags: [],
 });
 
@@ -1169,30 +1167,6 @@ let leverFx = 0;
 let leverFy = 0;
 let tNow = 0; // where the push is between k0 and k1, eased
 
-// Afterimages: the last poses of the skeleton, a little apart in time.
-let trail = [];
-let trailHead = 0;
-let trailLen = 0;
-let lastSnap = -1;
-
-function snapshot() {
-  const s = trail[trailHead];
-  let o = 0;
-  for (const l of limbs) {
-    for (let i = 0; i < l.n; i++) {
-      s[o++] = l.dx[i];
-      s[o++] = l.dy[i];
-    }
-  }
-  for (const f of leaves) {
-    s[o++] = f.pivX;
-    s[o++] = f.pivY;
-    s[o++] = f.tipX;
-    s[o++] = f.tipY;
-  }
-  trailHead = (trailHead + 1) % TRAIL;
-  if (trailLen < TRAIL) trailLen++;
-}
 
 /** Fits the plate to the illustration's box and finds the drawing on it. */
 function layout() {
@@ -1410,15 +1384,6 @@ function drawLimb(l, u) {
   g.lineWidth = 0.7 * u;
   g.stroke();
 
-  // Afterimages, oldest faintest.
-  for (let age = trailLen - 1; age >= 1; age--) {
-    const s = trail[(trailHead - 1 - age + TRAIL * 2) % TRAIL];
-    g.globalAlpha = a * 0.34 * Math.pow(1 - age / TRAIL, 1.5);
-    g.beginPath();
-    g.moveTo(s[l.off], s[l.off + 1]);
-    for (let i = 1; i < n; i++) g.lineTo(s[l.off + 2 * i], s[l.off + 2 * i + 1]);
-    g.stroke();
-  }
 
   // Circles of curvature: where the bone bends most, and under the pointer.
   const at = Math.max(3, Math.min(n - 4, Math.round(l.aiF)));
@@ -1540,14 +1505,6 @@ function drawLeaf(f, u) {
   g.lineTo(f.pivX + Math.cos(a0) * f.rib, f.pivY + Math.sin(a0) * f.rib);
   g.stroke();
 
-  for (let age = trailLen - 1; age >= 1; age--) {
-    const s = trail[(trailHead - 1 - age + TRAIL * 2) % TRAIL];
-    g.globalAlpha = a * 0.34 * Math.pow(1 - age / TRAIL, 1.5);
-    g.beginPath();
-    g.moveTo(s[f.off], s[f.off + 1]);
-    g.lineTo(s[f.off + 2], s[f.off + 3]);
-    g.stroke();
-  }
 
 
   // The midrib, and the curl it ends in.
@@ -1726,10 +1683,6 @@ function tick(now) {
   pose();
   drawWood();
   drawLeaves();
-  if (clock - lastSnap >= 0.045) {
-    lastSnap = clock;
-    snapshot();
-  }
 
   touch(dt);
 
@@ -1844,16 +1797,6 @@ function setup() {
   box.append(plate, floats);
 
   build();
-  let total = 0;
-  for (const l of limbs) {
-    l.off = total;
-    total += 2 * l.n;
-  }
-  for (const f of leaves) {
-    f.off = total;
-    total += 4;
-  }
-  trail = Array.from({ length: TRAIL }, () => new Float32Array(total));
   for (const p of parts) makeFrags(p);
   curA = loose("push", 19, -3);
   curB = loose("lerp", 15, -3);
