@@ -275,7 +275,20 @@
   // each reached in this movement, the values shown.
   let ax = 0, ay = 0, prevVX = 0, prevVY = 0;
   let peakAx = 0, peakAy = 0;
-  const AX_STEP = 11, AX_PAST = 22, AX_MIN = 40, AX_BACK = 10;
+  const AX_STEP = 11, AX_PAST = 22, AX_MIN = 40, AX_BACK = 10, AX_AMP = 28;
+  // This movement's acceleration as it went: where the pointer was and the
+  // acceleration on each axis there, for the curves along the axes.
+  const trace = [];
+  /** A smooth line through the points, by their midpoints. */
+  function curve(pts) {
+    if (pts.length < 2) return;
+    g.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length - 1; i++) {
+      g.quadraticCurveTo(pts[i][0], pts[i][1], (pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2);
+    }
+    const q = pts[pts.length - 1];
+    g.lineTo(q[0], q[1]);
+  }
   // The movement on a Cartesian plot: the origin where the pointer last
   // stood still, an x and a y axis through it, graduated and running past
   // the pointer, and the pointer itself as the plotted point, projected onto
@@ -326,6 +339,19 @@
     if (Math.abs(dx) >= 4) { g.moveTo(px, py); g.lineTo(ox, py); }
     g.stroke();
     g.setLineDash([]);
+    // The acceleration as it went, along each axis: a(x) over the x axis and
+    // a(y) beside the y one, positive (speeding up the way the pointer went)
+    // away from the point, scaled so this movement's peak reaches AX_AMP.
+    if (trace.length > 1) {
+      let mx = 1e-6, my = 1e-6;
+      for (const t of trace) { mx = Math.max(mx, Math.abs(t[2])); my = Math.max(my, Math.abs(t[3])); }
+      g.globalAlpha = A(a * 0.7);
+      g.lineWidth = 1;
+      g.beginPath();
+      if (Math.abs(dx) >= 8) curve(trace.map((t) => [t[0], oy - sy * ((t[2] * sx) / mx) * AX_AMP]));
+      if (Math.abs(dy) >= 8) curve(trace.map((t) => [ox - sx * ((t[3] * sy) / my) * AX_AMP, t[1]]));
+      g.stroke();
+    }
     if (airA < 0.01) return;
     g.globalAlpha = A(airA * 0.6);
     g.lineWidth = 0.9;
@@ -333,10 +359,11 @@
     g.moveTo(px + 3, oy); g.arc(px, oy, 3, 0, Math.PI * 2);
     g.moveTo(ox + 3, py); g.arc(ox, py, 3, 0, Math.PI * 2);
     g.stroke();
-    // Each axis's acceleration off its projection, away from the point.
+    // Each axis's acceleration off its projection, away from the point and
+    // clear of its curve.
     g.save();
-    leader(`ax = ${(peakAx * PX_M).toFixed(2)} m/s²`, px + sx * 2, oy - sy * 2, sx, -sy, airA * 0.6);
-    leader(`ay = ${(peakAy * PX_M).toFixed(2)} m/s²`, ox - sx * 2, py + sy * 2, -sx, sy, airA * 0.6);
+    leader(`ax = ${(peakAx * PX_M).toFixed(2)} m/s²`, px + sx * 2, oy - sy * 2, sx, -sy, airA * 0.6, AX_AMP + 14);
+    leader(`ay = ${(peakAy * PX_M).toFixed(2)} m/s²`, ox - sx * 2, py + sy * 2, -sx, sy, airA * 0.6, AX_AMP + 14);
     g.restore();
   }
 
@@ -530,9 +557,11 @@
       // A new movement wipes the last one's mark.
       if (!moved) {
         peakAx = 0; peakAy = 0; moved = true;
+        trace.length = 0;
         // Before any stop seen (the pointer just came in), where it is.
         if (stillX < -1e3) { stillX = px; stillY = py; }
         restX = stillX; restY = stillY;
+        trace.push([restX, restY, 0, 0]);
         stowed = !!under;
       }
       curHold = 0.25;
@@ -545,6 +574,7 @@
       if (here && speed < 40) { stillX = px; stillY = py; }
     }
     reach += ((curHold > 0 ? tNow : 0) - reach) * (1 - Math.exp(-dt / 0.14));
+    if (moved && trace.length < 600) trace.push([px, py, ax, ay]);
     if (moved && Math.abs(ax) > peakAx) peakAx = Math.abs(ax);
     if (moved && Math.abs(ay) > peakAy) peakAy = Math.abs(ay);
     const wantCur = curHold > 0 ? 1 : 0;
