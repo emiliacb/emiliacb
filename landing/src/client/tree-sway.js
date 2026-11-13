@@ -1174,7 +1174,7 @@ function float(p, dt) {
    The plate, in one ink
    ========================================================================== */
 
-let INK = "#8f2a73";
+let INK = "#0d5729";
 let PAPER = "#f5f5f4";
 
 // Each kind of mark has its own ink, set in styles.css: spirals and angles
