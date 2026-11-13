@@ -8,6 +8,9 @@
 // Prototyped as an artifact; with reduced motion this does nothing.
 (() => {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  // data-air="off" on the script tag leaves the pointer's rings, rule and
+  // acceleration out, for the pages whose tree draws its own.
+  const NO_AIR = !!(document.currentScript && document.currentScript.dataset.air === "off");
   const canvas = document.createElement("canvas");
   canvas.className = "page-cotas-plate";
   canvas.setAttribute("aria-hidden", "true");
@@ -266,8 +269,11 @@
   const FULL = 110;
   // CSS metres: 1px = 0.0254/96 m.
   const PX_M = 0.0254 / 96;
-  let accel = 0, prevVX = 0, prevVY = 0;
+  // `accel` follows the pointer; `peakAccel` is the most this movement
+  // reached, the value shown, kept like the peak mark until the next one.
+  let accel = 0, peakAccel = 0, prevVX = 0, prevVY = 0;
   function drawAir() {
+    if (NO_AIR) return;
     if (airA > 0.01) {
       ink("circle");
       g.lineWidth = 0.8 + 1.2 * reach;
@@ -321,7 +327,7 @@
       }
       ink("force");
       g.save();
-      leader(`a = ${(accel * PX_M).toFixed(2)} m/s²`, tx, ty, sx, sy, airA * 0.6);
+      leader(`a = ${(peakAccel * PX_M).toFixed(2)} m/s²`, tx, ty, sx, sy, airA * 0.6);
       g.restore();
     }
   }
@@ -513,7 +519,7 @@
     tNow += (Math.min(1, speed / V1) - tNow) * (1 - Math.exp(-dt / 0.05));
     if (here && speed > 40) {
       // A new movement wipes the last one's mark.
-      if (!moved) { peak = 0; moved = true; }
+      if (!moved) { peak = 0; peakAccel = 0; moved = true; }
       curHold = 0.25;
       // The direction is the velocity's own, never eased: an eased angle
       // lags and points where the pointer no longer goes.
@@ -524,6 +530,7 @@
     }
     reach += ((curHold > 0 ? tNow : 0) - reach) * (1 - Math.exp(-dt / 0.14));
     if (moved && reach > peak) peak = reach;
+    if (moved && accel > peakAccel) peakAccel = accel;
     const wantCur = curHold > 0 ? 1 : 0;
     curAl += (wantCur - curAl) * (1 - Math.exp(-dt / (wantCur > curAl ? 0.1 : 0.35)));
     if (curAl < 0.004) curAl = 0;
