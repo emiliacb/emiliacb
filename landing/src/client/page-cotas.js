@@ -1,6 +1,6 @@
 // The page in technical-drawing ink: whatever block the pointer touches is
-// dimensioned (its height, in CSS millimetres), the pointer carries its rings,
-// its velocity on a rule and its acceleration, and the right edge holds two
+// dimensioned (its height, in CSS millimetres), the pointer carries its
+// velocity on a rule and its acceleration (not over a dimensioned block), and the right edge holds two
 // marks at true scale, up to the start of the page and down to its end,
 // meeting at the break (where a scrollbar's thumb would be). Nothing is drawn
 // until the pointer moves; everything fades with distance from it and shortly
@@ -8,7 +8,7 @@
 // Prototyped as an artifact; with reduced motion this does nothing.
 (() => {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  // data-air="off" on the script tag leaves the pointer's rings, rule and
+  // data-air="off" on the script tag leaves the pointer's rule and
   // acceleration out, for the pages whose tree draws its own.
   const NO_AIR = !!(document.currentScript && document.currentScript.dataset.air === "off");
   const canvas = document.createElement("canvas");
@@ -30,7 +30,6 @@
     const cs = getComputedStyle(document.documentElement);
     TONE.length = cs.getPropertyValue("--cota-length").trim();
     TONE.measure = cs.getPropertyValue("--cota-measure").trim();
-    TONE.circle = cs.getPropertyValue("--cota-circle").trim();
     TONE.force = cs.getPropertyValue("--cota-force").trim();
     lift = isDark() ? 1 : LIFT;
   }
@@ -256,10 +255,11 @@
   }
   const vel = { x: 0, y: 0, last: 0, lastNow: 0 };
 
-  /* ---- the pointer's air, as on the tree: the contact ring thickens with
-     speed, the wake ring around it, and the velocity on a rule ---- */
-  const CONTACT = 24, WAKE = 80, V1 = 2600, RISE = 0.05, FALL = 0.2;
-  let airA = 0, tNow = 0, curAl = 0, curHold = 0;
+  /* ---- the pointer's air: its velocity on a rule that starts a little
+     off the pointer (CONTACT), and its acceleration; hidden while the
+     pointer is over something dimensioned ---- */
+  const CONTACT = 24, V1 = 2600, RISE = 0.05, FALL = 0.2;
+  let airA = 0, tNow = 0, curAl = 0, curHold = 0, airVis = 1;
   function arrow(x0, y0, x1, y1, hl) {
     const d = Math.hypot(x1 - x0, y1 - y0) || 1;
     const ux = (x1 - x0) / d, uy = (y1 - y0) / d;
@@ -283,15 +283,6 @@
   let accel = 0, peakAccel = 0, prevVX = 0, prevVY = 0;
   function drawAir() {
     if (NO_AIR) return;
-    if (airA > 0.01) {
-      ink("circle");
-      g.lineWidth = 0.8 + 1.2 * reach;
-      g.globalAlpha = A(airA * (0.25 + 0.3 * reach));
-      g.beginPath(); g.arc(px, py, CONTACT, 0, Math.PI * 2); g.stroke();
-      g.lineWidth = 0.7;
-      g.globalAlpha = A(airA * 0.18);
-      g.beginPath(); g.arc(px, py, WAKE, 0, Math.PI * 2); g.stroke();
-    }
     const ux = dirX, uy = dirY;
     const x0 = px + ux * CONTACT, y0 = py + uy * CONTACT;
     ink("force");
@@ -560,7 +551,15 @@
     }
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, W, Hh);
+    // Over something dimensioned the pointer's air steps aside for its cota.
+    const wantAir = under ? 0 : 1;
+    airVis += (wantAir - airVis) * (1 - Math.exp(-dt / (wantAir > airVis ? 0.2 : 0.1)));
+    if (Math.abs(wantAir - airVis) < 0.004) airVis = wantAir;
+    else live = true;
+    const keepA = airA, keepC = curAl;
+    airA *= airVis; curAl *= airVis;
     drawAir();
+    airA = keepA; curAl = keepC;
     mask();
     // Only touched blocks are drawn, so their marks skip the focus mask: a
     // wide block (a post's card) puts its mark far from the pointer.
