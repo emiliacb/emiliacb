@@ -1089,7 +1089,41 @@ function measure() {
   }
 }
 
+// Everything within FOCUS_IN CSS pixels of the pointer is at full strength;
+// past it, the plate and the formulas fade with distance, down to FOCUS_MIN
+// at FOCUS_OUT. `focus` eases the whole effect in while the pointer is here.
+const FOCUS_IN = 50;
+const FOCUS_OUT = 320;
+const FOCUS_MIN = 0.12;
+let focus = 0;
+let fcx = 0;
+let fcy = 0;
+
+function dim(x, y) {
+  if (focus <= 0.001) return 1;
+  const u = Math.min(1, Math.max(0, (Math.hypot(x - fcx, y - fcy) - FOCUS_IN) / (FOCUS_OUT - FOCUS_IN)));
+  return 1 - focus * (1 - FOCUS_MIN) * smooth(u);
+}
+
+/** Fades what is already on the plate by its distance from the pointer. */
+function mask() {
+  if (focus <= 0.001) return;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const gr = g.createRadialGradient(fcx, fcy, 0, fcx, fcy, FOCUS_OUT);
+  gr.addColorStop(0, "#000");
+  for (let k = 0; k <= 12; k++) {
+    const d = FOCUS_IN + ((FOCUS_OUT - FOCUS_IN) * k) / 12;
+    gr.addColorStop(d / FOCUS_OUT, `rgba(0,0,0,${dim(fcx + d, fcy).toFixed(3)})`);
+  }
+  g.globalAlpha = 1;
+  g.globalCompositeOperation = "destination-in";
+  g.fillStyle = gr;
+  g.fillRect(0, 0, W, Hh);
+  g.globalCompositeOperation = "source-over";
+}
+
 function show(fr, x, y, o, tilt) {
+  o *= dim(x + fr.w / 2, y + fr.h / 2);
   if (o < 0.01) {
     if (fr.vis) {
       fr.vis = false;
@@ -1617,6 +1651,7 @@ function drawPlate() {
   for (const f of leaves) if (f.rv > 0.01) drawLeaf(f, u);
   drawAir(u);
   drawLever(u);
+  mask();
   g.globalAlpha = 1;
 }
 
@@ -1711,6 +1746,11 @@ function tick(now) {
   const wantCur = curHold > 0 ? 1 : 0;
   curAl += (wantCur - curAl) * (1 - Math.exp(-dt / (wantCur > curAl ? RISE : FALL)));
   if (curAl < 0.004) curAl = 0;
+
+  // Where the pointer is, for how strongly everything shows.
+  focus += ((pointer.inBox ? 1 : 0) - focus) * (1 - Math.exp(-dt / 0.12));
+  fcx = ox + pointer.x * sc;
+  fcy = oy + pointer.y * sc;
 
   // Float what is inked.
   for (const p of parts) {
