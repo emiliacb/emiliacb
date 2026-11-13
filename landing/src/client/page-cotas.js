@@ -272,19 +272,18 @@
   // CSS metres: 1px = 0.0254/96 m.
   const PX_M = 0.0254 / 96;
   // The acceleration on each axis, eased (`ax`, `ay`, px/s²), and the most
-  // each reached in this movement, the values shown, with where the pointer
-  // was along that axis when it did.
+  // each reached in this movement, the values shown.
   let ax = 0, ay = 0, prevVX = 0, prevVY = 0;
-  let peakAx = 0, peakAy = 0, peakAtX = 0, peakAtY = 0;
+  let peakAx = 0, peakAy = 0;
   // The axes' sides: the x dimension above (-1) or below (+1) the movement,
   // the y one left (-1) or right (+1); each eased when it has to flip.
   let xSide = -1, xSideWant = -1, ySide = -1, ySideWant = -1;
   const AIR_OFF = 26, AIR_GAP = 3, AIR_OVER = 5, AIR_STEP = 11;
   // One axis of the movement: a dimension line along `axis` ("x" or "y")
   // from the start to the pointer, at `at` across it, extension lines back to
-  // the two points, graduated from the start, and the axis' acceleration on a
-  // leader to the point where it peaked.
-  function axisMark(axis, at, side, a, peakAt, value) {
+  // the two points, graduated from the start, and the axis' peak acceleration
+  // on a leader to the dimension's end, the pointer's coordinate.
+  function axisMark(axis, at, side, a, value) {
     const X = axis === "x";
     const s0 = X ? restX : restY, s1 = X ? px : py; // along the axis
     const c0 = X ? restY : restX, c1 = X ? py : px; // across it
@@ -310,8 +309,8 @@
     head(...P(s1, at), X ? dir : 0, X ? 0 : dir, 6);
     g.stroke();
     if (airA < 0.01) return;
-    const s = s0 + dir * Math.max(0, Math.min(len, (peakAt - s0) * dir));
-    const [cx, cy] = P(s, at);
+    // At the pointer's own coordinate on this axis: the dimension's end.
+    const [cx, cy] = P(s1, at);
     g.globalAlpha = A(airA * 0.6);
     g.lineWidth = 0.9;
     g.beginPath();
@@ -341,8 +340,8 @@
     const u = (xSide + 1) / 2, v = (ySide + 1) / 2;
     const xAt = (top - AIR_OFF) * (1 - u) + (bot + AIR_OFF) * u;
     const yAt = (lef - AIR_OFF) * (1 - v) + (rig + AIR_OFF) * v;
-    axisMark("x", xAt, xSide < 0 ? -1 : 1, a, peakAtX, peakAx);
-    axisMark("y", yAt, ySide < 0 ? -1 : 1, a, peakAtY, peakAy);
+    axisMark("x", xAt, xSide < 0 ? -1 : 1, a, peakAx);
+    axisMark("y", yAt, ySide < 0 ? -1 : 1, a, peakAy);
     // The start point.
     g.globalAlpha = A(a * 0.5);
     g.lineWidth = 0.8;
@@ -556,8 +555,8 @@
       if (here && speed < 40) { stillX = px; stillY = py; }
     }
     reach += ((curHold > 0 ? tNow : 0) - reach) * (1 - Math.exp(-dt / 0.14));
-    if (moved && Math.abs(ax) > peakAx) { peakAx = Math.abs(ax); peakAtX = px; }
-    if (moved && Math.abs(ay) > peakAy) { peakAy = Math.abs(ay); peakAtY = py; }
+    if (moved && Math.abs(ax) > peakAx) peakAx = Math.abs(ax);
+    if (moved && Math.abs(ay) > peakAy) peakAy = Math.abs(ay);
     const sideK = 1 - Math.exp(-dt / 0.12);
     xSide += (xSideWant - xSide) * sideK;
     if (Math.abs(xSideWant - xSide) < 0.004) xSide = xSideWant;
