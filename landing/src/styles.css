@@ -429,7 +429,7 @@ html.ai-layout-enabled #activity-panel {
     --tree-ink-construct: hsl(323 15% 80% / 0.4);
     --tree-ink-circle: hsl(323 10% 80% / 0.22);
     --tree-ink-force: hsl(323 50% 78% / 0.85);
-                                          }
+  }
 }
 
 .tree-plate,
