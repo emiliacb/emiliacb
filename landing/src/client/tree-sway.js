@@ -1438,7 +1438,7 @@ function drawLength(l, u, a) {
   const m = Math.round(n / 2);
   const mo = off(m) + 9 * u;
   const ta = Math.atan2(l.dy[m + 1] - l.dy[m - 1], l.dx[m + 1] - l.dx[m - 1]);
-  label(`L = ${mm(l.len * sc)}`, l.dx[m] - cnx[m] * mo, l.dy[m] - cny[m] * mo, ta, u);
+  label(mm(l.len * sc), l.dx[m] - cnx[m] * mo, l.dy[m] - cny[m] * mo, ta, u);
 }
 
 function drawLimb(l, u) {
