@@ -22,16 +22,18 @@
  * which is how brushing the crown sways the whole tree a little. A breeze
  * keeps it from ever standing dead still.
  *
- * Touching a part inks its construction over it, in one colour, and lets the
- * equations it obeys float beside it; a moment after the pointer leaves, it is
- * gone. Nothing is labelled, and everything drawn is computed from the same
- * state the tree moves by: the bone, its rest pose and a few afterimages; a
- * rule along it every four units; circles of curvature (radius 1/κ) where it
- * bends most and under the pointer; a scale at the tip, graduated in degrees
- * of turn; a curl at the tip, which is the part's free decay from where it is
- * now, in the plane of angle and angular speed; a protractor about each leaf's
- * pivot; the force on the part pushed; and the part's angle in radians, live.
- * Each term of the equation of motion shows as strong as it is in the sum.
+ * Touching a part inks its construction over it and lets the equations it
+ * obeys float beside it; a moment after the pointer leaves, it is gone, and
+ * everything fades with distance from the pointer. Between touches the breeze
+ * alone inks each part faintly, as much as it is moving. Nothing is labelled,
+ * and everything drawn is computed from the same state the tree moves by: the
+ * bone and its rest pose; a rule along it every four units, and its length,
+ * dimensioned; circles of curvature (radius 1/κ) where it bends most and under
+ * the pointer; a scale at the tip, graduated in degrees of turn; a curl at the
+ * tip, which is the part's free decay from where it is now, in the plane of
+ * angle and angular speed; a protractor about each leaf's pivot; the force on
+ * the part pushed; and the part's angle in radians, live. Each term of the
+ * equation of motion shows as strong as it is in the sum.
  *
  * The tree sits behind the page, so it listens to the pointer on the window.
  * Nothing here is needed for the page to work: without it the tree is the
@@ -42,8 +44,6 @@ const box = document.getElementById("tree-illustration");
 const svg = box ? box.querySelector(".cover-tree") : null;
 const woodEl = svg ? svg.querySelector("[data-wood]") : null;
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-// Only a pointer that can hover is shown, once, what a touch does.
-const hovers = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
 /* ==========================================================================
    Tuning
@@ -156,8 +156,10 @@ const FAR = 30;
 const HOLD = 0.2;
 const RISE = 0.05; // time constants of the ink coming and going, in seconds
 const FALL = 0.2;
-const DEMO = 2.8; // seconds the opening shows what a touch does
-const TRAIL = 9; // afterimages kept of the skeleton
+// With no pointer about, the breeze alone inks each part faintly, as much as
+// it is moving: up to BREEZE_INK, reached at BREEZE_V of its full swing speed.
+const BREEZE_INK = 0.22;
+const BREEZE_V = 0.03;
 const GK = 12; // half the samples of each tip's graduated scale
 
 /* ==========================================================================
@@ -364,13 +366,12 @@ const plateState = () => ({
   gap: 1e9, // pointer to its surface, in tree units
   hold: 0,
   fresh: false,
-  demo: false,
+  amb: 0, // the breeze's own faint ink
   // Each term of its equation of motion, summed over a frame and eased:
   // brake, spring, push, wind, drag.
   sum: new Float64Array(5),
   shown: new Float64Array(5),
   felt: 0,
-  off: 0, // where its afterimages start in a snapshot
   frags: [],
 });
 
@@ -574,33 +575,6 @@ function build() {
     const axis = Math.atan2(ty - py, tx - px);
     const rib = Math.hypot(tx - px, ty - py);
 
-    // Side veins, from the midrib out to the leaf's own edge.
-    const veins = [];
-    for (const t of [0.2, 0.36, 0.52, 0.67, 0.81]) {
-      for (const sgn of [-1, 1]) {
-        const sx = px + Math.cos(axis) * rib * t;
-        const sy = py + Math.sin(axis) * rib * t;
-        const vx = Math.cos(axis + sgn * 0.95);
-        const vy = Math.sin(axis + sgn * 0.95);
-        let best = Infinity;
-        for (let k = 0; k < poly.length; k++) {
-          const [xa, ya] = poly[k];
-          const [xb, yb] = poly[(k + 1) % poly.length];
-          const ex = xb - xa;
-          const ey = yb - ya;
-          const den = vx * ey - vy * ex;
-          if (Math.abs(den) < 1e-9) continue;
-          const tt = ((xa - sx) * ey - (ya - sy) * ex) / den;
-          const ss = ((xa - sx) * vy - (ya - sy) * vx) / den;
-          if (tt > 0.5 && ss >= 0 && ss <= 1 && tt < best) best = tt;
-        }
-        if (best < Infinity) {
-          const out = Math.min(best * 0.92, rib * 0.6);
-          veins.push(sx, sy, sx + vx * out, sy + vy * out);
-        }
-      }
-    }
-
     return [
       {
         ...tune,
@@ -637,7 +611,6 @@ function build() {
         ty,
         rib,
         halfW: (Math.abs(area) / rib) * 0.6,
-        veins,
         tipX: tx,
         tipY: ty,
         ghost: 0, // the turn of the limb it hangs from
@@ -669,10 +642,6 @@ function noise1(x, seed) {
   return (hash1(i, seed) * (1 - u) + hash1(i + 1, seed) * u) * 2 - 1;
 }
 
-// One gust to open with, so the tree is seen to move while the opening shows
-// what a touch does.
-const gust = { t0: 0.15, amp: 6 };
-
 /**
  * The breeze at a part, as a multiple of that part's own lean. It reaches the
  * left of the tree a moment before the right, so the crown never moves as one
@@ -682,19 +651,14 @@ const gust = { t0: 0.15, amp: 6 };
  */
 function breeze(t, x, seed, flutter) {
   const tt = t - x / 520;
-  let b =
+  return (
     FEEL.wind *
     (0.22 +
       0.6 * noise1(tt * 0.15, 11) +
       0.35 * noise1(tt * 0.37, 23) +
       1.4 * Math.max(0, noise1(tt * 0.06, 37)) ** 2 +
-      0.3 * noise1(t * flutter, seed));
-  const u = t - gust.t0 - x / 900;
-  if (u > 0 && u < 2.5) {
-    const z = u / 0.16;
-    b += gust.amp * z * Math.exp(1 - z);
-  }
-  return b;
+      0.3 * noise1(t * flutter, seed))
+  );
 }
 
 /* ==========================================================================
@@ -998,7 +962,6 @@ function drawLeaves() {
 
 let clock = 0;
 let near = false; // the pointer is within its wake of some part
-let everNear = false;
 
 function touch(dt) {
   const on = pointer.inBox;
@@ -1025,14 +988,14 @@ function touch(dt) {
     closest = Math.min(closest, f.gap);
   }
   near = closest < WAKE;
-  if (near) everNear = true;
 
-  const showing = hovers && !everNear && clock < DEMO;
   for (const p of parts) {
     const c = p.gap >= FAR ? 0 : p.gap <= NEAR ? 1 : smooth((FAR - p.gap) / (FAR - NEAR));
     if (c > 0.5) p.hold = HOLD;
     else p.hold = Math.max(0, p.hold - dt);
-    const want = Math.max(c, p.hold > 0 ? 1 : 0, showing && p.demo ? 1 : 0);
+    const sway = Math.abs(p.omega) / (TAU * p.freq * FEEL.stiffness * p.limit * BREEZE_V);
+    p.amb += (BREEZE_INK * smooth(Math.min(1, sway)) - p.amb) * (1 - Math.exp(-dt / 0.3));
+    const want = Math.max(c, p.hold > 0 ? 1 : 0, p.amb);
     const was = p.rv;
     p.rv += (want - p.rv) * (1 - Math.exp(-dt / (want > p.rv ? RISE : FALL)));
     if (p.rv < 0.004) p.rv = 0;
@@ -1098,7 +1061,7 @@ function makeFrags(p) {
 
 function loose(name, size, tilt) {
   const el = document.createElement("div");
-  el.className = "fx";
+  el.className = "fx force";
   el.style.fontSize = `calc(var(--k, 1) * ${size}px)`;
   el.innerHTML = F[name];
   floats.appendChild(el);
@@ -1118,7 +1081,41 @@ function measure() {
   }
 }
 
+// Everything within FOCUS_IN CSS pixels of the pointer is at full strength;
+// past it, the plate and the formulas fade with distance, down to FOCUS_MIN
+// at FOCUS_OUT. `focus` eases the whole effect in while the pointer is here.
+const FOCUS_IN = 50;
+const FOCUS_OUT = 320;
+const FOCUS_MIN = 0.12;
+let focus = 0;
+let fcx = 0;
+let fcy = 0;
+
+function dim(x, y) {
+  if (focus <= 0.001) return 1;
+  const u = Math.min(1, Math.max(0, (Math.hypot(x - fcx, y - fcy) - FOCUS_IN) / (FOCUS_OUT - FOCUS_IN)));
+  return 1 - focus * (1 - FOCUS_MIN) * smooth(u);
+}
+
+/** Fades what is already on the plate by its distance from the pointer. */
+function mask() {
+  if (focus <= 0.001) return;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const gr = g.createRadialGradient(fcx, fcy, 0, fcx, fcy, FOCUS_OUT);
+  gr.addColorStop(0, "#000");
+  for (let k = 0; k <= 12; k++) {
+    const d = FOCUS_IN + ((FOCUS_OUT - FOCUS_IN) * k) / 12;
+    gr.addColorStop(d / FOCUS_OUT, `rgba(0,0,0,${dim(fcx + d, fcy).toFixed(3)})`);
+  }
+  g.globalAlpha = 1;
+  g.globalCompositeOperation = "destination-in";
+  g.fillStyle = gr;
+  g.fillRect(0, 0, W, Hh);
+  g.globalCompositeOperation = "source-over";
+}
+
 function show(fr, x, y, o, tilt) {
+  o *= dim(x + fr.w / 2, y + fr.h / 2);
   if (o < 0.01) {
     if (fr.vis) {
       fr.vis = false;
@@ -1178,13 +1175,24 @@ function float(p, dt) {
    The plate, in one ink
    ========================================================================== */
 
-let INK = "#8f2a73";
+let INK = "#0d5729";
 let PAPER = "#f5f5f4";
+
+// Each kind of mark has its own ink, set in styles.css: spirals and angles
+// lead, the equations sit back, the length mark further, the circles of
+// curvature and the pointer's rings barely there.
+const KINDS = ["bone", "spiral", "angle", "num", "eq", "measure", "length", "construct", "circle", "force"];
+const TONE = {};
+
+function ink(kind) {
+  g.strokeStyle = g.fillStyle = TONE[kind] || INK;
+}
 
 function readTheme() {
   const cs = getComputedStyle(box);
   INK = cs.getPropertyValue("--tree-ink").trim() || INK;
   PAPER = cs.getPropertyValue("--tree-paper").trim() || PAPER;
+  for (const k of KINDS) TONE[k] = cs.getPropertyValue("--tree-ink-" + k).trim() || INK;
 }
 
 let airA = 0; // the pointer's own air, drawn round it
@@ -1195,31 +1203,6 @@ let lever = null; // the part being pushed
 let leverFx = 0;
 let leverFy = 0;
 let tNow = 0; // where the push is between k0 and k1, eased
-
-// Afterimages: the last poses of the skeleton, a little apart in time.
-let trail = [];
-let trailHead = 0;
-let trailLen = 0;
-let lastSnap = -1;
-
-function snapshot() {
-  const s = trail[trailHead];
-  let o = 0;
-  for (const l of limbs) {
-    for (let i = 0; i < l.n; i++) {
-      s[o++] = l.dx[i];
-      s[o++] = l.dy[i];
-    }
-  }
-  for (const f of leaves) {
-    s[o++] = f.pivX;
-    s[o++] = f.pivY;
-    s[o++] = f.tipX;
-    s[o++] = f.tipY;
-  }
-  trailHead = (trailHead + 1) % TRAIL;
-  if (trailLen < TRAIL) trailLen++;
-}
 
 /** Fits the plate to the illustration's box and finds the drawing on it. */
 function layout() {
@@ -1290,7 +1273,7 @@ function drawVeil(u) {
   g.restore();
 
   // The bark's own outline, only along the touched bone.
-  g.strokeStyle = INK;
+  ink("bone");
   for (const l of limbs) {
     if (l.rv <= 0.01) continue;
     const n = l.n;
@@ -1366,12 +1349,74 @@ function drawCurl(p, x0, y0, tx, ty, size, u, a) {
     }
   }
   g.lineTo(x0, y0);
-  g.globalAlpha = a * 0.9;
-  g.lineWidth = 1 * u;
+  g.globalAlpha = a;
+  g.lineWidth = 1.35 * u;
   g.stroke();
   g.beginPath();
-  g.arc(ex, ey, 2 * u, 0, TAU);
+  g.arc(ex, ey, 2.4 * u, 0, TAU);
   g.fill();
+}
+
+/* ==========================================================================
+   The length mark: the bone's arc length, as a dimension on a technical
+   drawing, on a line that follows the bone on the side the rule is not on.
+   ========================================================================== */
+
+function head(x, y, ux, uy, len) {
+  g.moveTo(x - len * (ux * 0.9 - uy * 0.4), y - len * (uy * 0.9 + ux * 0.4));
+  g.lineTo(x, y);
+  g.lineTo(x - len * (ux * 0.9 + uy * 0.4), y - len * (uy * 0.9 - ux * 0.4));
+}
+
+/** A value written along a direction, kept upright. */
+function label(text, x, y, ang, u) {
+  if (Math.cos(ang) < 0) ang += Math.PI;
+  g.save();
+  g.translate(x, y);
+  g.rotate(ang);
+  g.font = `italic ${14 * u}px "EB Garamond", serif`;
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.fillText(text, 0, 0);
+  g.restore();
+}
+
+/** Expects cnx/cny to hold the bone's normals, as drawLimb leaves them. */
+function drawLength(l, u, a) {
+  const n = l.n;
+  const hl = 6 * u;
+  ink("length");
+  g.lineWidth = 0.75 * u;
+  const off = (i) => l.half[i] + 16 * u;
+  g.globalAlpha = a * 0.85;
+  g.beginPath();
+  for (let i = 0; i < n; i++) {
+    const x = l.dx[i] - cnx[i] * off(i);
+    const y = l.dy[i] - cny[i] * off(i);
+    if (i) g.lineTo(x, y);
+    else g.moveTo(x, y);
+  }
+  for (const i of [0, n - 1]) {
+    g.moveTo(l.dx[i] - cnx[i] * (l.half[i] + 3 * u), l.dy[i] - cny[i] * (l.half[i] + 3 * u));
+    g.lineTo(l.dx[i] - cnx[i] * (off(i) + 5 * u), l.dy[i] - cny[i] * (off(i) + 5 * u));
+  }
+  const e0x = l.dx[0] - cnx[0] * off(0);
+  const e0y = l.dy[0] - cny[0] * off(0);
+  const e1x = l.dx[n - 1] - cnx[n - 1] * off(n - 1);
+  const e1y = l.dy[n - 1] - cny[n - 1] * off(n - 1);
+  const wx0 = l.dx[1] - l.dx[0];
+  const wy0 = l.dy[1] - l.dy[0];
+  const wd = Math.hypot(wx0, wy0) || 1;
+  head(e0x, e0y, -wx0 / wd, -wy0 / wd, hl);
+  const vx = l.dx[n - 1] - l.dx[n - 2];
+  const vy = l.dy[n - 1] - l.dy[n - 2];
+  const vd = Math.hypot(vx, vy) || 1;
+  head(e1x, e1y, vx / vd, vy / vd, hl);
+  g.stroke();
+  const m = Math.round(n / 2);
+  const mo = off(m) + 9 * u;
+  const ta = Math.atan2(l.dy[m + 1] - l.dy[m - 1], l.dx[m + 1] - l.dx[m - 1]);
+  label(`L = ${l.len.toFixed(1)}`, l.dx[m] - cnx[m] * mo, l.dy[m] - cny[m] * mo, ta, u);
 }
 
 function drawLimb(l, u) {
@@ -1385,20 +1430,7 @@ function drawLimb(l, u) {
   const by = l.dy[0];
   const tx = l.dx[n - 1];
   const ty = l.dy[n - 1];
-  g.strokeStyle = INK;
-  g.fillStyle = INK;
-
-  // The tip and the joint, dropped onto the page's axes.
-  g.globalAlpha = a * 0.34;
-  g.lineWidth = 0.7 * u;
-  g.beginPath();
-  g.moveTo(tx - 150, ty);
-  g.lineTo(tx + 150, ty);
-  g.moveTo(tx, ty - 120);
-  g.lineTo(tx, ty + 70);
-  g.moveTo(bx - 80, by);
-  g.lineTo(bx + 80, by);
-  g.stroke();
+  ink("angle");
 
   // The scale at the tip: where the tip lands for each degree of turn.
   g.lineWidth = 0.8 * u;
@@ -1425,6 +1457,7 @@ function drawLimb(l, u) {
   }
   g.stroke();
 
+  ink("construct");
   // The bone at rest, carried by the bone below it, and the gap it has opened.
   for (let i = 0; i < n; i++) {
     const offX = l.rx[i] - l.rx[0];
@@ -1448,16 +1481,7 @@ function drawLimb(l, u) {
   g.lineWidth = 0.7 * u;
   g.stroke();
 
-  // Afterimages, oldest faintest.
-  for (let age = trailLen - 1; age >= 1; age--) {
-    const s = trail[(trailHead - 1 - age + TRAIL * 2) % TRAIL];
-    g.globalAlpha = a * 0.34 * Math.pow(1 - age / TRAIL, 1.5);
-    g.beginPath();
-    g.moveTo(s[l.off], s[l.off + 1]);
-    for (let i = 1; i < n; i++) g.lineTo(s[l.off + 2 * i], s[l.off + 2 * i + 1]);
-    g.stroke();
-  }
-
+  ink("circle");
   // Circles of curvature: where the bone bends most, and under the pointer.
   const at = Math.max(3, Math.min(n - 4, Math.round(l.aiF)));
   g.lineWidth = 0.8 * u;
@@ -1481,6 +1505,7 @@ function drawLimb(l, u) {
     g.stroke();
   }
 
+  ink("measure");
   // A rule along the bone: a mark every four units of its length.
   g.globalAlpha = a * 0.7;
   g.lineWidth = 0.7 * u;
@@ -1493,6 +1518,7 @@ function drawLimb(l, u) {
   }
   g.stroke();
 
+  ink("bone");
   // The bone itself, a stroke that thins towards its tip.
   g.globalAlpha = a;
   g.beginPath();
@@ -1508,6 +1534,7 @@ function drawLimb(l, u) {
   g.closePath();
   g.fill();
 
+  ink("angle");
   // The tip is the needle of its scale, and it ends in its curl.
   const d = Math.hypot(tx - bx, ty - by) || 1;
   g.beginPath();
@@ -1518,9 +1545,13 @@ function drawLimb(l, u) {
   const ex = tx - l.dx[n - 2];
   const ey = ty - l.dy[n - 2];
   const el = Math.hypot(ex, ey) || 1;
+  ink("spiral");
   drawCurl(l, tx, ty, ex / el, ey / el, 44, u, a);
 
+  drawLength(l, u, a);
+
   // The joint it turns about.
+  ink("bone");
   g.globalAlpha = a;
   g.lineWidth = 1 * u;
   g.beginPath();
@@ -1528,7 +1559,7 @@ function drawLimb(l, u) {
   g.fillStyle = PAPER;
   g.fill();
   g.stroke();
-  g.fillStyle = INK;
+  ink("bone");
 }
 
 function drawLeaf(f, u) {
@@ -1537,8 +1568,7 @@ function drawLeaf(f, u) {
   const a1 = a0 + f.ang;
   const rad = f.rib * 0.62;
   const m = f.m;
-  g.strokeStyle = INK;
-  g.fillStyle = INK;
+  ink("bone");
 
   // Its own edge, where the flesh has thinned. A leaf the wood hides keeps
   // its edge hidden there too.
@@ -1555,16 +1585,7 @@ function drawLeaf(f, u) {
   g.stroke(f.edge);
   g.restore();
 
-  // The pivot, dropped onto the page's axes.
-  g.globalAlpha = a * 0.3;
-  g.lineWidth = 0.7 * u;
-  g.beginPath();
-  g.moveTo(f.pivX - 110, f.pivY);
-  g.lineTo(f.pivX + 110, f.pivY);
-  g.moveTo(f.pivX, f.pivY - 90);
-  g.lineTo(f.pivX, f.pivY + 50);
-  g.stroke();
-
+  ink("angle");
   // A protractor about the pivot, a mark every five degrees, and the turn so far.
   g.beginPath();
   g.moveTo(f.pivX, f.pivY);
@@ -1587,26 +1608,7 @@ function drawLeaf(f, u) {
   g.lineTo(f.pivX + Math.cos(a0) * f.rib, f.pivY + Math.sin(a0) * f.rib);
   g.stroke();
 
-  for (let age = trailLen - 1; age >= 1; age--) {
-    const s = trail[(trailHead - 1 - age + TRAIL * 2) % TRAIL];
-    g.globalAlpha = a * 0.34 * Math.pow(1 - age / TRAIL, 1.5);
-    g.beginPath();
-    g.moveTo(s[f.off], s[f.off + 1]);
-    g.lineTo(s[f.off + 2], s[f.off + 3]);
-    g.stroke();
-  }
-
-  // Veins ride the leaf's own matrix, so the squash shows on them.
-  const v = f.veins;
-  g.globalAlpha = a * 0.6;
-  g.lineWidth = 0.7 * u;
-  g.beginPath();
-  for (let k = 0; k < v.length; k += 4) {
-    g.moveTo(m[0] * v[k] + m[2] * v[k + 1] + m[4], m[1] * v[k] + m[3] * v[k + 1] + m[5]);
-    g.lineTo(m[0] * v[k + 2] + m[2] * v[k + 3] + m[4], m[1] * v[k + 2] + m[3] * v[k + 3] + m[5]);
-  }
-  g.stroke();
-
+  ink("bone");
   // The midrib, and the curl it ends in.
   g.globalAlpha = a;
   g.lineWidth = 1.5 * u;
@@ -1617,7 +1619,9 @@ function drawLeaf(f, u) {
   const ex = f.tipX - f.pivX;
   const ey = f.tipY - f.pivY;
   const el = Math.hypot(ex, ey) || 1;
+  ink("spiral");
   drawCurl(f, f.tipX, f.tipY, ex / el, ey / el, 30, u, a);
+  ink("bone");
   g.globalAlpha = a;
   g.beginPath();
   g.arc(f.pivX, f.pivY, 2.2 * u, 0, TAU);
@@ -1627,7 +1631,7 @@ function drawLeaf(f, u) {
 /** The pointer's push and its wake, and its velocity on a rule from k0 to k1. */
 function drawAir(u) {
   if (airA < 0.01) return;
-  g.strokeStyle = INK;
+  ink("circle");
   g.lineWidth = (0.8 + 1.2 * tNow) * u;
   g.globalAlpha = airA * (0.4 + 0.5 * tNow);
   g.beginPath();
@@ -1639,6 +1643,7 @@ function drawAir(u) {
   g.arc(pointer.x, pointer.y, WAKE, 0, TAU);
   g.stroke();
   // The arrow reaches as far along the rule as t.
+  ink("force");
   const sp = Math.hypot(pointer.vx, pointer.vy);
   if (sp > 30 && curAl > 0.01) {
     const ux = pointer.vx / sp;
@@ -1679,8 +1684,7 @@ function drawLever(u) {
   leverPoint(p, tmp);
   const cx = tmp[0];
   const cy = tmp[1];
-  g.strokeStyle = INK;
-  g.fillStyle = INK;
+  ink("force");
   g.globalAlpha = leverA * 0.7;
   g.lineWidth = 0.8 * u;
   g.beginPath();
@@ -1717,6 +1721,7 @@ function drawPlate() {
   for (const f of leaves) if (f.rv > 0.01) drawLeaf(f, u);
   drawAir(u);
   drawLever(u);
+  mask();
   g.globalAlpha = 1;
 }
 
@@ -1783,10 +1788,6 @@ function tick(now) {
   pose();
   drawWood();
   drawLeaves();
-  if (clock - lastSnap >= 0.045) {
-    lastSnap = clock;
-    snapshot();
-  }
 
   touch(dt);
 
@@ -1815,6 +1816,11 @@ function tick(now) {
   const wantCur = curHold > 0 ? 1 : 0;
   curAl += (wantCur - curAl) * (1 - Math.exp(-dt / (wantCur > curAl ? RISE : FALL)));
   if (curAl < 0.004) curAl = 0;
+
+  // Where the pointer is, for how strongly everything shows.
+  focus += ((pointer.inBox ? 1 : 0) - focus) * (1 - Math.exp(-dt / 0.12));
+  fcx = ox + pointer.x * sc;
+  fcy = oy + pointer.y * sc;
 
   // Float what is inked.
   for (const p of parts) {
@@ -1901,25 +1907,10 @@ function setup() {
   box.append(plate, floats);
 
   build();
-  let total = 0;
-  for (const l of limbs) {
-    l.off = total;
-    total += 2 * l.n;
-  }
-  for (const f of leaves) {
-    f.off = total;
-    total += 4;
-  }
-  trail = Array.from({ length: TRAIL }, () => new Float32Array(total));
   for (const p of parts) makeFrags(p);
   curA = loose("push", 19, -3);
   curB = loose("lerp", 15, -3);
   levF = loose("lever", 17, 4);
-
-  // Until the pointer first comes near, the opening shows once what a touch does.
-  byId.left.demo = true;
-  const crown = leaves.find((f) => f.key === "leaf:crown");
-  if (crown) crown.demo = true;
   return true;
 }
 

@@ -397,7 +397,21 @@ html.ai-layout-enabled #activity-panel {
    take the dark ink from here instead. The paper is the page behind the tree,
    which the touched wood is thinned back to. */
 #tree-illustration {
-  --tree-ink: #8f2a73;
+  /* The ink is the inverse of the dark one, as the tree's own colours are:
+     hue turned half way round, lightness flipped. Each kind of mark has its
+     own saturation and opacity; spirals and angles lead, at full saturation
+     and nearer mid lightness where it shows. */
+  --tree-ink: #0d5729;
+  --tree-ink-bone: hsl(143 45% 20% / 1);
+  --tree-ink-spiral: hsl(143 100% 30% / 1);
+  --tree-ink-angle: hsl(143 100% 30% / 1);
+  --tree-ink-num: hsl(143 50% 22% / 0.9);
+  --tree-ink-eq: hsl(143 25% 20% / 0.6);
+  --tree-ink-measure: hsl(143 25% 20% / 0.6);
+  --tree-ink-length: hsl(143 18% 20% / 0.45);
+  --tree-ink-construct: hsl(143 15% 20% / 0.4);
+  --tree-ink-circle: hsl(143 10% 20% / 0.22);
+  --tree-ink-force: hsl(143 50% 22% / 0.85);
   --tree-paper: #f5f5f4;
 }
 
@@ -405,6 +419,16 @@ html.ai-layout-enabled #activity-panel {
   #tree-illustration {
     --tree-ink: #f2a8d6;
     --tree-paper: #292524;
+    --tree-ink-bone: hsl(323 45% 80% / 1);
+    --tree-ink-spiral: hsl(323 100% 70% / 1);
+    --tree-ink-angle: hsl(323 100% 70% / 1);
+    --tree-ink-num: hsl(323 50% 78% / 0.9);
+    --tree-ink-eq: hsl(323 25% 80% / 0.6);
+    --tree-ink-measure: hsl(323 25% 80% / 0.6);
+    --tree-ink-length: hsl(323 18% 80% / 0.45);
+    --tree-ink-construct: hsl(323 15% 80% / 0.4);
+    --tree-ink-circle: hsl(323 10% 80% / 0.22);
+    --tree-ink-force: hsl(323 50% 78% / 0.85);
   }
 }
 
@@ -428,11 +452,15 @@ html.ai-layout-enabled #activity-panel {
   font-family: "Petit Formal Script", "EB Garamond", cursive;
   font-weight: 400;
   line-height: 1.35;
-  color: var(--tree-ink);
+  color: var(--tree-ink-eq);
   opacity: 0;
   visibility: hidden;
   will-change: transform, opacity;
   transform-origin: 0 50%;
+}
+
+.tree-floats .fx.force {
+  color: var(--tree-ink-force);
 }
 
 .tree-floats .fx.r {
@@ -453,6 +481,7 @@ html.ai-layout-enabled #activity-panel {
 }
 
 .tree-floats .fx .n {
+  color: var(--tree-ink-num);
   font-family: "EB Garamond", "Times New Roman", serif;
   font-style: italic;
   font-size: 1.1em;
