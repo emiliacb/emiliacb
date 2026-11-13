@@ -22,16 +22,18 @@
  * which is how brushing the crown sways the whole tree a little. A breeze
  * keeps it from ever standing dead still.
  *
- * Touching a part inks its construction over it, in one colour, and lets the
- * equations it obeys float beside it; a moment after the pointer leaves, it is
- * gone. Nothing is labelled, and everything drawn is computed from the same
- * state the tree moves by: the bone and its rest pose; a
- * rule along it every four units, and its length, dimensioned; circles of curvature (radius 1/κ) where it
- * bends most and under the pointer; a scale at the tip, graduated in degrees
- * of turn; a curl at the tip, which is the part's free decay from where it is
- * now, in the plane of angle and angular speed; a protractor about each leaf's
- * pivot; the force on the part pushed; and the part's angle in radians, live.
- * Each term of the equation of motion shows as strong as it is in the sum.
+ * Touching a part inks its construction over it and lets the equations it
+ * obeys float beside it; a moment after the pointer leaves, it is gone, and
+ * everything fades with distance from the pointer. Between touches the breeze
+ * alone inks each part faintly, as much as it is moving. Nothing is labelled,
+ * and everything drawn is computed from the same state the tree moves by: the
+ * bone and its rest pose; a rule along it every four units, and its length,
+ * dimensioned; circles of curvature (radius 1/κ) where it bends most and under
+ * the pointer; a scale at the tip, graduated in degrees of turn; a curl at the
+ * tip, which is the part's free decay from where it is now, in the plane of
+ * angle and angular speed; a protractor about each leaf's pivot; the force on
+ * the part pushed; and the part's angle in radians, live. Each term of the
+ * equation of motion shows as strong as it is in the sum.
  *
  * The tree sits behind the page, so it listens to the pointer on the window.
  * Nothing here is needed for the page to work: without it the tree is the
@@ -572,7 +574,6 @@ function build() {
     const ty = cubics[0][7];
     const axis = Math.atan2(ty - py, tx - px);
     const rib = Math.hypot(tx - px, ty - py);
-
 
     return [
       {
@@ -1203,7 +1204,6 @@ let leverFx = 0;
 let leverFy = 0;
 let tNow = 0; // where the push is between k0 and k1, eased
 
-
 /** Fits the plate to the illustration's box and finds the drawing on it. */
 function layout() {
   const r = box.getBoundingClientRect();
@@ -1432,7 +1432,6 @@ function drawLimb(l, u) {
   const ty = l.dy[n - 1];
   ink("angle");
 
-
   // The scale at the tip: where the tip lands for each degree of turn.
   g.lineWidth = 0.8 * u;
   g.globalAlpha = a * 0.75;
@@ -1481,7 +1480,6 @@ function drawLimb(l, u) {
   g.globalAlpha = a * 0.5;
   g.lineWidth = 0.7 * u;
   g.stroke();
-
 
   ink("circle");
   // Circles of curvature: where the bone bends most, and under the pointer.
@@ -1587,7 +1585,6 @@ function drawLeaf(f, u) {
   g.stroke(f.edge);
   g.restore();
 
-
   ink("angle");
   // A protractor about the pivot, a mark every five degrees, and the turn so far.
   g.beginPath();
@@ -1610,8 +1607,6 @@ function drawLeaf(f, u) {
   g.moveTo(f.pivX, f.pivY);
   g.lineTo(f.pivX + Math.cos(a0) * f.rib, f.pivY + Math.sin(a0) * f.rib);
   g.stroke();
-
-
 
   ink("bone");
   // The midrib, and the curl it ends in.
