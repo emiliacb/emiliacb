@@ -27,8 +27,8 @@
  * everything fades with distance from the pointer. Between touches the breeze
  * alone inks each part faintly, as much as it is moving. Nothing is labelled,
  * and everything drawn is computed from the same state the tree moves by: the
- * bone and its rest pose; a rule along it every four units, and its length,
- * dimensioned; circles of curvature (radius 1/κ) where it bends most and under
+ * bone and its rest pose; a rule along it in millimetres, and its length,
+ * dimensioned in millimetres; circles of curvature (radius 1/κ) where it bends most and under
  * the pointer; a scale at the tip, graduated in degrees of turn; a curl at the
  * tip, which is the part's free decay from where it is now, in the plane of
  * angle and angular speed; a protractor about each leaf's pivot; the force on
@@ -1382,13 +1382,21 @@ function head(x, y, ux, uy, len) {
   g.lineTo(x - len * (ux * 0.9 + uy * 0.4), y - len * (uy * 0.9 - ux * 0.4));
 }
 
+// CSS millimetres: CSS fixes 1in = 96px, so a millimetre is 96/25.4 px.
+const MM = 96 / 25.4;
+/** A length in CSS px, in CSS millimetres. */
+const mm = (px) => {
+  const v = px / MM;
+  return `${v < 100 ? v.toFixed(1) : Math.round(v)} mm`;
+};
+
 /** A value written along a direction, kept upright. */
 function label(text, x, y, ang, u) {
   if (Math.cos(ang) < 0) ang += Math.PI;
   g.save();
   g.translate(x, y);
   g.rotate(ang);
-  g.font = `italic ${14 * u}px "EB Garamond", serif`;
+  g.font = `300 ${15 * u}px "Barlow Condensed", sans-serif`;
   g.textAlign = "center";
   g.textBaseline = "middle";
   g.fillText(text, 0, 0);
@@ -1430,7 +1438,7 @@ function drawLength(l, u, a) {
   const m = Math.round(n / 2);
   const mo = off(m) + 9 * u;
   const ta = Math.atan2(l.dy[m + 1] - l.dy[m - 1], l.dx[m + 1] - l.dx[m - 1]);
-  label(`L = ${l.len.toFixed(1)}`, l.dx[m] - cnx[m] * mo, l.dy[m] - cny[m] * mo, ta, u);
+  label(`L = ${mm(l.len * sc)}`, l.dx[m] - cnx[m] * mo, l.dy[m] - cny[m] * mo, ta, u);
 }
 
 function drawLimb(l, u) {
@@ -1520,15 +1528,28 @@ function drawLimb(l, u) {
   }
 
   ink("measure");
-  // A rule along the bone: a mark every four units of its length.
+  // A rule along the bone, graduated in CSS millimetres as drawn on screen:
+  // a mark every millimetre, a longer one every five.
   g.globalAlpha = A(a * 0.7);
   g.lineWidth = 0.7 * u;
   g.beginPath();
-  for (let i = 1; i < n - 1; i++) {
-    const w = (1.7 - 1.15 * (i / (n - 1))) * u;
-    const len = (i % 5 === 0 ? 6 : 2.8) * u;
-    g.moveTo(l.dx[i] + cnx[i] * (w + u), l.dy[i] + cny[i] * (w + u));
-    g.lineTo(l.dx[i] + cnx[i] * (w + u + len), l.dy[i] + cny[i] * (w + u + len));
+  const step = MM * u; // one millimetre, in tree units
+  let run = 0, k = 1;
+  for (let i = 1; i < n; i++) {
+    const seg = Math.hypot(l.dx[i] - l.dx[i - 1], l.dy[i] - l.dy[i - 1]);
+    while (k * step <= run + seg) {
+      const f = (k * step - run) / (seg || 1);
+      const x = l.dx[i - 1] + (l.dx[i] - l.dx[i - 1]) * f;
+      const y = l.dy[i - 1] + (l.dy[i] - l.dy[i - 1]) * f;
+      const nx = cnx[i - 1] + (cnx[i] - cnx[i - 1]) * f;
+      const ny = cny[i - 1] + (cny[i] - cny[i - 1]) * f;
+      const w = (1.7 - 1.15 * ((i - 1 + f) / (n - 1))) * u;
+      const len = (k % 5 === 0 ? 6 : 2.8) * u;
+      g.moveTo(x + nx * (w + u), y + ny * (w + u));
+      g.lineTo(x + nx * (w + u + len), y + ny * (w + u + len));
+      k++;
+    }
+    run += seg;
   }
   g.stroke();
 
@@ -1950,6 +1971,8 @@ if (box && svg && woodEl && !reduced && setup()) {
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", readTheme);
   // The formulas' faces arrive after the first layout; measure them again.
   if (document.fonts) {
+    // The cotas' face is used only on the canvas, so ask for it outright.
+    document.fonts.load(`300 15px "Barlow Condensed"`).catch(() => {});
     document.fonts.ready.then(measure);
     document.fonts.addEventListener("loadingdone", measure);
   }
