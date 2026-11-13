@@ -22,7 +22,10 @@ type LayoutProps = {
   withIlustration?: boolean;
   /** Advertise the page's .md version (off for the 404, which has none). */
   withMarkdown?: boolean;
-  /** Dimension the page in ink and draw the ink cursor (src/client/page-cotas.js, ink-cursor.js). */
+  /**
+   * Dimension the page in ink (src/client/page-cotas.js). On by default
+   * everywhere but the pages with the tree, which draws its own anatomy.
+   */
   withCotas?: boolean;
 
   children?: HtmlEscapedString | Promise<HtmlEscapedString>;
@@ -35,7 +38,7 @@ export default function layout({
   withFooter = true,
   withIlustration = false,
   withMarkdown = true,
-  withCotas = false,
+  withCotas = !withIlustration,
 
   children,
 }: LayoutProps) {
@@ -150,14 +153,12 @@ document.head.appendChild(o)}initApollo();</script>
         <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <!-- The tree's formulas (src/client/tree-sway.js) are set in a script
-             face, with an italic for the Greek; only pages with the tree ask for
-             them. The cotas (src/client/page-cotas.js) label in the italic. -->
+             face, only on pages with the tree, with an italic for the Greek;
+             the cotas (src/client/page-cotas.js) label in the same italic. -->
         <link
-          href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900${withIlustration
-            ? "&family=EB+Garamond:ital@1&family=Petit+Formal+Script"
-            : withCotas
-              ? "&family=EB+Garamond:ital@1"
-              : ""}&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900${withIlustration || withCotas
+            ? "&family=EB+Garamond:ital@1"
+            : ""}${withIlustration ? "&family=Petit+Formal+Script" : ""}&display=swap"
           rel="stylesheet"
           crossorigin="anonymous"
         />
@@ -334,12 +335,9 @@ document.head.appendChild(o)}initApollo();</script>
         ${AI_FEATURE_ENABLED ? activityPanel() : null}
         <script src="${ctx.assets.script("layout")}" defer></script>
         <script src="${ctx.assets.script("navigation")}" defer></script>
-        ${withCotas
-          ? html`
-              <script src="${ctx.assets.script("page-cotas")}" defer></script>
-              <script src="${ctx.assets.script("ink-cursor")}" defer></script>
-            `
-          : null}
+        ${withCotas ? html`<script src="${ctx.assets.script("page-cotas")}" defer></script>` : null}
+        <!-- The ink cursor, on every page (src/client/ink-cursor.js). -->
+        <script src="${ctx.assets.script("ink-cursor")}" defer></script>
         ${AI_FEATURE_ENABLED
           ? html`
               <script src="${ctx.assets.script("activity-logger")}" defer></script>
