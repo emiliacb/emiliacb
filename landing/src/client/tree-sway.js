@@ -1060,7 +1060,7 @@ function makeFrags(p) {
 
 function loose(name, size, tilt) {
   const el = document.createElement("div");
-  el.className = "fx";
+  el.className = "fx force";
   el.style.fontSize = `calc(var(--k, 1) * ${size}px)`;
   el.innerHTML = F[name];
   floats.appendChild(el);
@@ -1177,10 +1177,21 @@ function float(p, dt) {
 let INK = "#8f2a73";
 let PAPER = "#f5f5f4";
 
+// Each kind of mark has its own ink, set in styles.css: spirals and angles
+// lead, the equations sit back, the length mark further, the circles of
+// curvature and the pointer's rings barely there.
+const KINDS = ["bone", "spiral", "angle", "num", "eq", "measure", "length", "construct", "circle", "force"];
+const TONE = {};
+
+function ink(kind) {
+  g.strokeStyle = g.fillStyle = TONE[kind] || INK;
+}
+
 function readTheme() {
   const cs = getComputedStyle(box);
   INK = cs.getPropertyValue("--tree-ink").trim() || INK;
   PAPER = cs.getPropertyValue("--tree-paper").trim() || PAPER;
+  for (const k of KINDS) TONE[k] = cs.getPropertyValue("--tree-ink-" + k).trim() || INK;
 }
 
 let airA = 0; // the pointer's own air, drawn round it
@@ -1262,7 +1273,7 @@ function drawVeil(u) {
   g.restore();
 
   // The bark's own outline, only along the touched bone.
-  g.strokeStyle = INK;
+  ink("bone");
   for (const l of limbs) {
     if (l.rv <= 0.01) continue;
     const n = l.n;
@@ -1338,11 +1349,11 @@ function drawCurl(p, x0, y0, tx, ty, size, u, a) {
     }
   }
   g.lineTo(x0, y0);
-  g.globalAlpha = a * 0.9;
-  g.lineWidth = 1 * u;
+  g.globalAlpha = a;
+  g.lineWidth = 1.35 * u;
   g.stroke();
   g.beginPath();
-  g.arc(ex, ey, 2 * u, 0, TAU);
+  g.arc(ex, ey, 2.4 * u, 0, TAU);
   g.fill();
 }
 
@@ -1374,8 +1385,7 @@ function label(text, x, y, ang, u) {
 function drawLength(l, u, a) {
   const n = l.n;
   const hl = 6 * u;
-  g.strokeStyle = INK;
-  g.fillStyle = INK;
+  ink("length");
   g.lineWidth = 0.75 * u;
   const off = (i) => l.half[i] + 16 * u;
   g.globalAlpha = a * 0.85;
@@ -1420,8 +1430,7 @@ function drawLimb(l, u) {
   const by = l.dy[0];
   const tx = l.dx[n - 1];
   const ty = l.dy[n - 1];
-  g.strokeStyle = INK;
-  g.fillStyle = INK;
+  ink("angle");
 
 
   // The scale at the tip: where the tip lands for each degree of turn.
@@ -1449,6 +1458,7 @@ function drawLimb(l, u) {
   }
   g.stroke();
 
+  ink("construct");
   // The bone at rest, carried by the bone below it, and the gap it has opened.
   for (let i = 0; i < n; i++) {
     const offX = l.rx[i] - l.rx[0];
@@ -1473,6 +1483,7 @@ function drawLimb(l, u) {
   g.stroke();
 
 
+  ink("circle");
   // Circles of curvature: where the bone bends most, and under the pointer.
   const at = Math.max(3, Math.min(n - 4, Math.round(l.aiF)));
   g.lineWidth = 0.8 * u;
@@ -1496,6 +1507,7 @@ function drawLimb(l, u) {
     g.stroke();
   }
 
+  ink("measure");
   // A rule along the bone: a mark every four units of its length.
   g.globalAlpha = a * 0.7;
   g.lineWidth = 0.7 * u;
@@ -1508,6 +1520,7 @@ function drawLimb(l, u) {
   }
   g.stroke();
 
+  ink("bone");
   // The bone itself, a stroke that thins towards its tip.
   g.globalAlpha = a;
   g.beginPath();
@@ -1523,6 +1536,7 @@ function drawLimb(l, u) {
   g.closePath();
   g.fill();
 
+  ink("angle");
   // The tip is the needle of its scale, and it ends in its curl.
   const d = Math.hypot(tx - bx, ty - by) || 1;
   g.beginPath();
@@ -1533,11 +1547,13 @@ function drawLimb(l, u) {
   const ex = tx - l.dx[n - 2];
   const ey = ty - l.dy[n - 2];
   const el = Math.hypot(ex, ey) || 1;
+  ink("spiral");
   drawCurl(l, tx, ty, ex / el, ey / el, 44, u, a);
 
   drawLength(l, u, a);
 
   // The joint it turns about.
+  ink("bone");
   g.globalAlpha = a;
   g.lineWidth = 1 * u;
   g.beginPath();
@@ -1545,7 +1561,7 @@ function drawLimb(l, u) {
   g.fillStyle = PAPER;
   g.fill();
   g.stroke();
-  g.fillStyle = INK;
+  ink("bone");
 }
 
 function drawLeaf(f, u) {
@@ -1554,8 +1570,7 @@ function drawLeaf(f, u) {
   const a1 = a0 + f.ang;
   const rad = f.rib * 0.62;
   const m = f.m;
-  g.strokeStyle = INK;
-  g.fillStyle = INK;
+  ink("bone");
 
   // Its own edge, where the flesh has thinned. A leaf the wood hides keeps
   // its edge hidden there too.
@@ -1573,6 +1588,7 @@ function drawLeaf(f, u) {
   g.restore();
 
 
+  ink("angle");
   // A protractor about the pivot, a mark every five degrees, and the turn so far.
   g.beginPath();
   g.moveTo(f.pivX, f.pivY);
@@ -1597,6 +1613,7 @@ function drawLeaf(f, u) {
 
 
 
+  ink("bone");
   // The midrib, and the curl it ends in.
   g.globalAlpha = a;
   g.lineWidth = 1.5 * u;
@@ -1607,7 +1624,9 @@ function drawLeaf(f, u) {
   const ex = f.tipX - f.pivX;
   const ey = f.tipY - f.pivY;
   const el = Math.hypot(ex, ey) || 1;
+  ink("spiral");
   drawCurl(f, f.tipX, f.tipY, ex / el, ey / el, 30, u, a);
+  ink("bone");
   g.globalAlpha = a;
   g.beginPath();
   g.arc(f.pivX, f.pivY, 2.2 * u, 0, TAU);
@@ -1617,7 +1636,7 @@ function drawLeaf(f, u) {
 /** The pointer's push and its wake, and its velocity on a rule from k0 to k1. */
 function drawAir(u) {
   if (airA < 0.01) return;
-  g.strokeStyle = INK;
+  ink("circle");
   g.lineWidth = (0.8 + 1.2 * tNow) * u;
   g.globalAlpha = airA * (0.4 + 0.5 * tNow);
   g.beginPath();
@@ -1629,6 +1648,7 @@ function drawAir(u) {
   g.arc(pointer.x, pointer.y, WAKE, 0, TAU);
   g.stroke();
   // The arrow reaches as far along the rule as t.
+  ink("force");
   const sp = Math.hypot(pointer.vx, pointer.vy);
   if (sp > 30 && curAl > 0.01) {
     const ux = pointer.vx / sp;
@@ -1669,8 +1689,7 @@ function drawLever(u) {
   leverPoint(p, tmp);
   const cx = tmp[0];
   const cy = tmp[1];
-  g.strokeStyle = INK;
-  g.fillStyle = INK;
+  ink("force");
   g.globalAlpha = leverA * 0.7;
   g.lineWidth = 0.8 * u;
   g.beginPath();
