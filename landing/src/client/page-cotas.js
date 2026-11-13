@@ -1,6 +1,6 @@
 // The page in technical-drawing ink: whatever block the pointer touches is
 // dimensioned (its height, in CSS millimetres), the pointer's movement is
-// dimensioned on x and y from where it last stood still, with its
+// plotted on x and y axes from where it last stood still, with its
 // acceleration on each axis (not over a dimensioned block), and the right edge holds two
 // marks at true scale, up to the start of the page and down to its end,
 // meeting at the break (where a scrollbar's thumb would be). Nothing is drawn
@@ -275,79 +275,69 @@
   // each reached in this movement, the values shown.
   let ax = 0, ay = 0, prevVX = 0, prevVY = 0;
   let peakAx = 0, peakAy = 0;
-  // The axes' sides: the x dimension above (-1) or below (+1) the movement,
-  // the y one left (-1) or right (+1); each eased when it has to flip.
-  let xSide = -1, xSideWant = -1, ySide = -1, ySideWant = -1;
-  const AIR_OFF = 26, AIR_GAP = 3, AIR_OVER = 5, AIR_STEP = 11;
-  // One axis of the movement: a dimension line along `axis` ("x" or "y")
-  // from the start to the pointer, at `at` across it, extension lines back to
-  // the two points, graduated from the start, and the axis' peak acceleration
-  // on a leader to the dimension's end, the pointer's coordinate.
-  function axisMark(axis, at, side, a, value) {
-    const X = axis === "x";
-    const s0 = X ? restX : restY, s1 = X ? px : py; // along the axis
-    const c0 = X ? restY : restX, c1 = X ? py : px; // across it
-    const len = Math.abs(s1 - s0);
-    if (len < 8) return;
-    const dir = Math.sign(s1 - s0);
-    const P = (s, c) => (X ? [s, c] : [c, s]);
-    g.lineWidth = 0.8;
-    g.globalAlpha = A(a * 0.5);
-    g.beginPath();
-    for (const [s, c] of [[s0, c0], [s1, c1]]) {
-      const sg = Math.sign(at - c) || side;
-      g.moveTo(...P(s, c + sg * AIR_GAP));
-      g.lineTo(...P(s, at + sg * AIR_OVER));
-    }
-    g.moveTo(...P(s0, at)); g.lineTo(...P(s1, at));
-    for (let k = 1; k * AIR_STEP < len - 4; k++) {
-      const tl = k % 5 === 0 ? 5 : 2.5;
-      const s = s0 + dir * AIR_STEP * k;
-      g.moveTo(...P(s, at)); g.lineTo(...P(s, at + side * tl));
-    }
-    head(...P(s0, at), X ? -dir : 0, X ? 0 : -dir, 6);
-    head(...P(s1, at), X ? dir : 0, X ? 0 : dir, 6);
-    g.stroke();
-    if (airA < 0.01) return;
-    // At the pointer's own coordinate on this axis: the dimension's end.
-    const [cx, cy] = P(s1, at);
-    g.globalAlpha = A(airA * 0.6);
-    g.lineWidth = 0.9;
-    g.beginPath();
-    g.arc(cx, cy, 3, 0, Math.PI * 2);
-    g.stroke();
-    // Outward from the movement: up or down off the x axis, left or right
-    // off the y one.
-    const lx = X ? 1 : side, ly = X ? side : -1;
-    g.save();
-    leader(`a${axis} = ${(value * PX_M).toFixed(2)} m/s²`, cx + lx * 3 * Math.SQRT1_2, cy + ly * 3 * Math.SQRT1_2, lx, ly, airA * 0.6);
-    g.restore();
-  }
+  const AX_STEP = 11, AX_PAST = 22, AX_MIN = 40, AX_BACK = 10;
+  // The movement on a Cartesian plot: the origin where the pointer last
+  // stood still, an x and a y axis through it, graduated and running past
+  // the pointer, and the pointer itself as the plotted point, projected onto
+  // both axes, where each axis's peak acceleration is read off.
   function drawAir() {
     if (NO_AIR || restX < -1e3) return;
     const a = Math.max(curAl, airA);
     if (a < 0.01) return;
-    const R = AIR_OFF + 26; // the line and its value
-    const top = Math.min(restY, py), bot = Math.max(restY, py);
-    const lef = Math.min(restX, px), rig = Math.max(restX, px);
-    // Above, unless there is no room there and there is below; the y axis
-    // likewise on the left.
-    if (xSideWant < 0 ? top - R < 6 && bot + R < Hh - 6 : bot + R > Hh - 6 || top - R >= 6) xSideWant = -xSideWant;
-    if (ySideWant < 0 ? lef - R < 6 && rig + R < W - 6 : rig + R > W - 6 || lef - R >= 6) ySideWant = -ySideWant;
+    const ox = restX, oy = restY;
+    const dx = px - ox, dy = py - oy;
+    if (Math.hypot(dx, dy) < 8) return;
+    // Each axis points the way the pointer went along it.
+    const sx = dx < 0 ? -1 : 1, sy = dy < 0 ? -1 : 1;
+    const lx = Math.max(AX_MIN, Math.abs(dx) + AX_PAST);
+    const ly = Math.max(AX_MIN, Math.abs(dy) + AX_PAST);
     ink("force");
-    // Across the axis, the line sits off the nearer edge of the movement,
-    // easing between the two sides when it flips.
-    const u = (xSide + 1) / 2, v = (ySide + 1) / 2;
-    const xAt = (top - AIR_OFF) * (1 - u) + (bot + AIR_OFF) * u;
-    const yAt = (lef - AIR_OFF) * (1 - v) + (rig + AIR_OFF) * v;
-    axisMark("x", xAt, xSide < 0 ? -1 : 1, a, peakAx);
-    axisMark("y", yAt, ySide < 0 ? -1 : 1, a, peakAy);
-    // The start point.
-    g.globalAlpha = A(a * 0.5);
     g.lineWidth = 0.8;
+    g.globalAlpha = A(a * 0.5);
     g.beginPath();
-    g.arc(restX, restY, 2.5, 0, Math.PI * 2);
+    g.moveTo(ox - sx * AX_BACK, oy); g.lineTo(ox + sx * lx, oy);
+    g.moveTo(ox, oy - sy * AX_BACK); g.lineTo(ox, oy + sy * ly);
+    for (let k = 1; k * AX_STEP < lx - 6; k++) {
+      const t = k % 5 === 0 ? 4 : 2, x = ox + sx * AX_STEP * k;
+      g.moveTo(x, oy - t); g.lineTo(x, oy + t);
+    }
+    for (let k = 1; k * AX_STEP < ly - 6; k++) {
+      const t = k % 5 === 0 ? 4 : 2, y = oy + sy * AX_STEP * k;
+      g.moveTo(ox - t, y); g.lineTo(ox + t, y);
+    }
+    head(ox + sx * lx, oy, sx, 0, 6);
+    head(ox, oy + sy * ly, 0, sy, 6);
     g.stroke();
+    // The axes' names at their ends, and the origin.
+    g.globalAlpha = A(a * 0.6);
+    g.font = FONT;
+    g.textBaseline = "middle";
+    g.textAlign = sx > 0 ? "left" : "right";
+    g.fillText("x", ox + sx * (lx + 5), oy);
+    g.textAlign = "center";
+    g.fillText("y", ox, oy + sy * (ly + 10));
+    g.textAlign = sx > 0 ? "right" : "left";
+    g.fillText("0", ox - sx * 5, oy - sy * 9);
+    // The point, projected onto each axis.
+    g.globalAlpha = A(a * 0.45);
+    g.setLineDash([3, 3]);
+    g.beginPath();
+    if (Math.abs(dy) >= 4) { g.moveTo(px, py); g.lineTo(px, oy); }
+    if (Math.abs(dx) >= 4) { g.moveTo(px, py); g.lineTo(ox, py); }
+    g.stroke();
+    g.setLineDash([]);
+    if (airA < 0.01) return;
+    g.globalAlpha = A(airA * 0.6);
+    g.lineWidth = 0.9;
+    g.beginPath();
+    g.moveTo(px + 3, oy); g.arc(px, oy, 3, 0, Math.PI * 2);
+    g.moveTo(ox + 3, py); g.arc(ox, py, 3, 0, Math.PI * 2);
+    g.stroke();
+    // Each axis's acceleration off its projection, away from the point.
+    g.save();
+    leader(`ax = ${(peakAx * PX_M).toFixed(2)} m/s²`, px + sx * 2, oy - sy * 2, sx, -sy, airA * 0.6);
+    leader(`ay = ${(peakAy * PX_M).toFixed(2)} m/s²`, ox - sx * 2, py + sy * 2, -sx, sy, airA * 0.6);
+    g.restore();
   }
 
   addEventListener("pointermove", (e) => {
@@ -557,11 +547,6 @@
     reach += ((curHold > 0 ? tNow : 0) - reach) * (1 - Math.exp(-dt / 0.14));
     if (moved && Math.abs(ax) > peakAx) peakAx = Math.abs(ax);
     if (moved && Math.abs(ay) > peakAy) peakAy = Math.abs(ay);
-    const sideK = 1 - Math.exp(-dt / 0.12);
-    xSide += (xSideWant - xSide) * sideK;
-    if (Math.abs(xSideWant - xSide) < 0.004) xSide = xSideWant;
-    ySide += (ySideWant - ySide) * sideK;
-    if (Math.abs(ySideWant - ySide) < 0.004) ySide = ySideWant;
     const wantCur = curHold > 0 ? 1 : 0;
     curAl += (wantCur - curAl) * (1 - Math.exp(-dt / (wantCur > curAl ? 0.1 : 0.35)));
     if (curAl < 0.004) curAl = 0;
@@ -600,7 +585,7 @@
     drawScroll();
     g.globalAlpha = 1;
     const moving = Math.hypot(px - fcx, py - fcy) > 0.3 && here;
-    const airy = airA > 0 || speed > 1 || tNow > 0.002 || reach > 0.002 || curAl > 0 || xSide !== xSideWant || ySide !== ySideWant;
+    const airy = airA > 0 || speed > 1 || tNow > 0.002 || reach > 0.002 || curAl > 0;
     const scrolly = scrollHold > 0 || scrollA !== sw || leaning;
     if (live || moving || airy || scrolly || Math.abs(fw - focus) > 0.002) { raf = requestAnimationFrame(tick); last = now; }
   }
