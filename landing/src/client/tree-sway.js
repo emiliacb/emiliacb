@@ -1081,6 +1081,19 @@ function measure() {
   }
 }
 
+// The same ink is not equally strong on both grounds: a little light on a
+// dark ground reads as more than the same little dark on a light one. In the
+// light theme every opacity is lifted along 1 − (1 − a)^LIFT, which matches
+// the two themes' perceived contrast (in L*) where the ink is faint and
+// leaves full strength alone.
+const LIFT = 1.3;
+let lift = 1;
+
+function A(x) {
+  if (lift === 1) return x;
+  return 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), lift);
+}
+
 // Everything within FOCUS_IN CSS pixels of the pointer is at full strength;
 // past it, the plate and the formulas fade with distance, down to FOCUS_MIN
 // at FOCUS_OUT. `focus` eases the whole effect in while the pointer is here.
@@ -1105,7 +1118,7 @@ function mask() {
   gr.addColorStop(0, "#000");
   for (let k = 0; k <= 12; k++) {
     const d = FOCUS_IN + ((FOCUS_OUT - FOCUS_IN) * k) / 12;
-    gr.addColorStop(d / FOCUS_OUT, `rgba(0,0,0,${dim(fcx + d, fcy).toFixed(3)})`);
+    gr.addColorStop(d / FOCUS_OUT, `rgba(0,0,0,${A(dim(fcx + d, fcy)).toFixed(3)})`);
   }
   g.globalAlpha = 1;
   g.globalCompositeOperation = "destination-in";
@@ -1135,7 +1148,7 @@ function show(fr, x, y, o, tilt) {
   fr.el.style.transform = `translate3d(${(x + bx).toFixed(1)}px,${(y + by).toFixed(1)}px,0) rotate(${tilt.toFixed(2)}deg)`;
   if (Math.abs(o - fr.o) > 0.01) {
     fr.o = o;
-    fr.el.style.opacity = o.toFixed(2);
+    fr.el.style.opacity = A(o).toFixed(2);
   }
 }
 
@@ -1193,6 +1206,7 @@ function readTheme() {
   INK = cs.getPropertyValue("--tree-ink").trim() || INK;
   PAPER = cs.getPropertyValue("--tree-paper").trim() || PAPER;
   for (const k of KINDS) TONE[k] = cs.getPropertyValue("--tree-ink-" + k).trim() || INK;
+  lift = window.matchMedia("(prefers-color-scheme: dark)").matches ? 1 : LIFT;
 }
 
 let airA = 0; // the pointer's own air, drawn round it
@@ -1264,7 +1278,7 @@ function drawVeil(u) {
     g.beginPath();
     g.moveTo(l.dx[0], l.dy[0]);
     for (let i = 1; i < l.n; i++) g.lineTo(l.dx[i], l.dy[i]);
-    g.globalAlpha = 0.3 * l.rv;
+    g.globalAlpha = A(0.3 * l.rv);
     for (let k = 0; k < 4; k++) {
       g.lineWidth = l.veil * (1 - 0.2 * k);
       g.stroke();
@@ -1302,7 +1316,7 @@ function drawVeil(u) {
     }
     g.closePath();
     g.clip();
-    g.globalAlpha = 0.85 * l.rv;
+    g.globalAlpha = A(0.85 * l.rv);
     g.lineWidth = 1.1 * u;
     g.stroke(bark);
     g.restore();
@@ -1349,7 +1363,7 @@ function drawCurl(p, x0, y0, tx, ty, size, u, a) {
     }
   }
   g.lineTo(x0, y0);
-  g.globalAlpha = a;
+  g.globalAlpha = A(a);
   g.lineWidth = 1.35 * u;
   g.stroke();
   g.beginPath();
@@ -1388,7 +1402,7 @@ function drawLength(l, u, a) {
   ink("length");
   g.lineWidth = 0.75 * u;
   const off = (i) => l.half[i] + 16 * u;
-  g.globalAlpha = a * 0.85;
+  g.globalAlpha = A(a * 0.85);
   g.beginPath();
   for (let i = 0; i < n; i++) {
     const x = l.dx[i] - cnx[i] * off(i);
@@ -1434,7 +1448,7 @@ function drawLimb(l, u) {
 
   // The scale at the tip: where the tip lands for each degree of turn.
   g.lineWidth = 0.8 * u;
-  g.globalAlpha = a * 0.75;
+  g.globalAlpha = A(a * 0.75);
   g.beginPath();
   for (let k = 0; k <= 2 * GK; k++) {
     const px = l.gx[k];
@@ -1472,12 +1486,12 @@ function drawLimb(l, u) {
   for (let i = 1; i < n; i++) g.lineTo(ghx[i], ghy[i]);
   for (let i = n - 1; i >= 0; i--) g.lineTo(l.dx[i], l.dy[i]);
   g.closePath();
-  g.globalAlpha = a * 0.16;
+  g.globalAlpha = A(a * 0.16);
   g.fill();
   g.beginPath();
   g.moveTo(ghx[0], ghy[0]);
   for (let i = 1; i < n; i++) g.lineTo(ghx[i], ghy[i]);
-  g.globalAlpha = a * 0.5;
+  g.globalAlpha = A(a * 0.5);
   g.lineWidth = 0.7 * u;
   g.stroke();
 
@@ -1492,7 +1506,7 @@ function drawLimb(l, u) {
     if (!circle3(l.dx[i - 3], l.dy[i - 3], l.dx[i], l.dy[i], l.dx[i + 3], l.dy[i + 3], c3)) continue;
     const R = c3[2];
     if (R > 260 || R < 6) continue;
-    g.globalAlpha = a * (own ? 0.8 : 0.5);
+    g.globalAlpha = A(a * (own ? 0.8 : 0.5));
     g.beginPath();
     g.arc(c3[0], c3[1], R, 0, TAU);
     // its radius, and a cross at its centre
@@ -1507,7 +1521,7 @@ function drawLimb(l, u) {
 
   ink("measure");
   // A rule along the bone: a mark every four units of its length.
-  g.globalAlpha = a * 0.7;
+  g.globalAlpha = A(a * 0.7);
   g.lineWidth = 0.7 * u;
   g.beginPath();
   for (let i = 1; i < n - 1; i++) {
@@ -1520,7 +1534,7 @@ function drawLimb(l, u) {
 
   ink("bone");
   // The bone itself, a stroke that thins towards its tip.
-  g.globalAlpha = a;
+  g.globalAlpha = A(a);
   g.beginPath();
   for (let i = 0; i < n; i++) {
     const w = (1.7 - 1.25 * (i / (n - 1))) * u;
@@ -1552,7 +1566,7 @@ function drawLimb(l, u) {
 
   // The joint it turns about.
   ink("bone");
-  g.globalAlpha = a;
+  g.globalAlpha = A(a);
   g.lineWidth = 1 * u;
   g.beginPath();
   g.arc(bx, by, 3.6 * u, 0, TAU);
@@ -1580,7 +1594,7 @@ function drawLeaf(f, u) {
     g.clip(rest, "evenodd");
   }
   g.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
-  g.globalAlpha = a * 0.9;
+  g.globalAlpha = A(a * 0.9);
   g.lineWidth = 1.1 * u;
   g.stroke(f.edge);
   g.restore();
@@ -1591,9 +1605,9 @@ function drawLeaf(f, u) {
   g.moveTo(f.pivX, f.pivY);
   g.arc(f.pivX, f.pivY, rad, a0, a1, f.ang < 0);
   g.closePath();
-  g.globalAlpha = a * 0.18;
+  g.globalAlpha = A(a * 0.18);
   g.fill();
-  g.globalAlpha = a * 0.75;
+  g.globalAlpha = A(a * 0.75);
   g.lineWidth = 0.8 * u;
   g.beginPath();
   g.arc(f.pivX, f.pivY, rad, a0 - f.limit, a0 + f.limit);
@@ -1610,7 +1624,7 @@ function drawLeaf(f, u) {
 
   ink("bone");
   // The midrib, and the curl it ends in.
-  g.globalAlpha = a;
+  g.globalAlpha = A(a);
   g.lineWidth = 1.5 * u;
   g.beginPath();
   g.moveTo(f.pivX, f.pivY);
@@ -1622,7 +1636,7 @@ function drawLeaf(f, u) {
   ink("spiral");
   drawCurl(f, f.tipX, f.tipY, ex / el, ey / el, 30, u, a);
   ink("bone");
-  g.globalAlpha = a;
+  g.globalAlpha = A(a);
   g.beginPath();
   g.arc(f.pivX, f.pivY, 2.2 * u, 0, TAU);
   g.fill();
@@ -1633,12 +1647,12 @@ function drawAir(u) {
   if (airA < 0.01) return;
   ink("circle");
   g.lineWidth = (0.8 + 1.2 * tNow) * u;
-  g.globalAlpha = airA * (0.4 + 0.5 * tNow);
+  g.globalAlpha = A(airA * (0.4 + 0.5 * tNow));
   g.beginPath();
   g.arc(pointer.x, pointer.y, CONTACT, 0, TAU);
   g.stroke();
   g.lineWidth = 0.7 * u;
-  g.globalAlpha = airA * 0.3;
+  g.globalAlpha = A(airA * 0.3);
   g.beginPath();
   g.arc(pointer.x, pointer.y, WAKE, 0, TAU);
   g.stroke();
@@ -1651,7 +1665,7 @@ function drawAir(u) {
     const x0 = pointer.x + ux * CONTACT;
     const y0 = pointer.y + uy * CONTACT;
     const full = 110;
-    g.globalAlpha = airA * curAl * 0.55;
+    g.globalAlpha = A(airA * curAl * 0.55);
     g.beginPath();
     g.moveTo(x0, y0);
     g.lineTo(x0 + ux * full, y0 + uy * full);
@@ -1664,7 +1678,7 @@ function drawAir(u) {
     }
     g.stroke();
     arrow(x0, y0, x0 + ux * full * tNow, y0 + uy * full * tNow, 6 * u);
-    g.globalAlpha = airA * curAl;
+    g.globalAlpha = A(airA * curAl);
     g.lineWidth = 1.7 * u;
     g.stroke();
   }
@@ -1685,13 +1699,13 @@ function drawLever(u) {
   const cx = tmp[0];
   const cy = tmp[1];
   ink("force");
-  g.globalAlpha = leverA * 0.7;
+  g.globalAlpha = A(leverA * 0.7);
   g.lineWidth = 0.8 * u;
   g.beginPath();
   g.moveTo(bx, by);
   g.lineTo(cx, cy);
   g.stroke();
-  g.globalAlpha = leverA;
+  g.globalAlpha = A(leverA);
   arrow(cx, cy, cx + leverFx * 52, cy + leverFy * 52, 7 * u);
   g.lineWidth = 1.7 * u;
   g.stroke();
