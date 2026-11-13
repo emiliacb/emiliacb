@@ -574,32 +574,6 @@ function build() {
     const axis = Math.atan2(ty - py, tx - px);
     const rib = Math.hypot(tx - px, ty - py);
 
-    // Side veins, from the midrib out to the leaf's own edge.
-    const veins = [];
-    for (const t of [0.2, 0.36, 0.52, 0.67, 0.81]) {
-      for (const sgn of [-1, 1]) {
-        const sx = px + Math.cos(axis) * rib * t;
-        const sy = py + Math.sin(axis) * rib * t;
-        const vx = Math.cos(axis + sgn * 0.95);
-        const vy = Math.sin(axis + sgn * 0.95);
-        let best = Infinity;
-        for (let k = 0; k < poly.length; k++) {
-          const [xa, ya] = poly[k];
-          const [xb, yb] = poly[(k + 1) % poly.length];
-          const ex = xb - xa;
-          const ey = yb - ya;
-          const den = vx * ey - vy * ex;
-          if (Math.abs(den) < 1e-9) continue;
-          const tt = ((xa - sx) * ey - (ya - sy) * ex) / den;
-          const ss = ((xa - sx) * vy - (ya - sy) * vx) / den;
-          if (tt > 0.5 && ss >= 0 && ss <= 1 && tt < best) best = tt;
-        }
-        if (best < Infinity) {
-          const out = Math.min(best * 0.92, rib * 0.6);
-          veins.push(sx, sy, sx + vx * out, sy + vy * out);
-        }
-      }
-    }
 
     return [
       {
@@ -637,7 +611,6 @@ function build() {
         ty,
         rib,
         halfW: (Math.abs(area) / rib) * 0.6,
-        veins,
         tipX: tx,
         tipY: ty,
         ghost: 0, // the turn of the limb it hangs from
@@ -1388,17 +1361,6 @@ function drawLimb(l, u) {
   g.strokeStyle = INK;
   g.fillStyle = INK;
 
-  // The tip and the joint, dropped onto the page's axes.
-  g.globalAlpha = a * 0.34;
-  g.lineWidth = 0.7 * u;
-  g.beginPath();
-  g.moveTo(tx - 150, ty);
-  g.lineTo(tx + 150, ty);
-  g.moveTo(tx, ty - 120);
-  g.lineTo(tx, ty + 70);
-  g.moveTo(bx - 80, by);
-  g.lineTo(bx + 80, by);
-  g.stroke();
 
   // The scale at the tip: where the tip lands for each degree of turn.
   g.lineWidth = 0.8 * u;
@@ -1555,15 +1517,6 @@ function drawLeaf(f, u) {
   g.stroke(f.edge);
   g.restore();
 
-  // The pivot, dropped onto the page's axes.
-  g.globalAlpha = a * 0.3;
-  g.lineWidth = 0.7 * u;
-  g.beginPath();
-  g.moveTo(f.pivX - 110, f.pivY);
-  g.lineTo(f.pivX + 110, f.pivY);
-  g.moveTo(f.pivX, f.pivY - 90);
-  g.lineTo(f.pivX, f.pivY + 50);
-  g.stroke();
 
   // A protractor about the pivot, a mark every five degrees, and the turn so far.
   g.beginPath();
@@ -1596,16 +1549,6 @@ function drawLeaf(f, u) {
     g.stroke();
   }
 
-  // Veins ride the leaf's own matrix, so the squash shows on them.
-  const v = f.veins;
-  g.globalAlpha = a * 0.6;
-  g.lineWidth = 0.7 * u;
-  g.beginPath();
-  for (let k = 0; k < v.length; k += 4) {
-    g.moveTo(m[0] * v[k] + m[2] * v[k + 1] + m[4], m[1] * v[k] + m[3] * v[k + 1] + m[5]);
-    g.lineTo(m[0] * v[k + 2] + m[2] * v[k + 3] + m[4], m[1] * v[k + 2] + m[3] * v[k + 3] + m[5]);
-  }
-  g.stroke();
 
   // The midrib, and the curl it ends in.
   g.globalAlpha = a;
