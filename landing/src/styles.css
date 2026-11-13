@@ -838,3 +838,128 @@ dropdown-trigger[variant="prose"] a::before {
     box-shadow: 0 0 0 1px rgba(214, 211, 209, 0.15);
   }
 }
+
+/* ---- Cotas: the page in technical-drawing ink (src/client/page-cotas.js) ----
+   The tree's ink, a touch stronger than its length marks since it sits over
+   running text: green in light, the tree's pink in dark. */
+:root {
+  --cota-measure: hsl(143 45% 24.5% / 0.9);
+  --cota-length: hsl(143 30% 25.5% / 0.75);
+  --cota-circle: hsl(143 10% 26.7% / 0.3);
+  --cota-force: hsl(143 50% 24.9% / 0.85);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cota-measure: hsl(323 45% 79% / 0.9);
+    --cota-length: hsl(323 30% 80% / 0.75);
+    --cota-circle: hsl(323 10% 80% / 0.3);
+    --cota-force: hsl(323 50% 78% / 0.85);
+  }
+}
+
+.page-cotas-plate {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 60;
+}
+
+/* ---- The ink cursor (src/client/ink-cursor.js) ----
+   Black over white in light, white over the dark paper in dark, each with a
+   halo of its fill so it reads on any ground. --cur-role tells the script
+   which shape the element under the pointer wants. */
+:root {
+  --ic-ink: #000;
+  --ic-halo: #fff;
+  --ic-fill: #fff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ic-ink: #fff;
+    --ic-halo: #1c1917;
+    --ic-fill: #1c1917;
+  }
+}
+
+html {
+  --cur-role: default;
+}
+
+#content :is(p, li, h1, h2, h3, h4, strong, em, span) {
+  --cur-role: text;
+}
+
+:is(a, a *, button, dropdown-trigger, [role="button"], summary, label, select) {
+  --cur-role: pointer !important;
+}
+
+.scroll-strip {
+  --cur-role: ns;
+}
+
+.scroll-strip.held {
+  --cur-role: grab;
+}
+
+html.ink-cursor,
+html.ink-cursor * {
+  cursor: none !important;
+}
+
+#ink-cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+html.ink-cursor #ink-cursor.on {
+  opacity: 1;
+}
+
+#ink-cursor svg {
+  position: absolute;
+  left: -32px;
+  top: -32px;
+  width: 64px;
+  height: 64px;
+  overflow: visible;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform-origin: 32px 32px;
+  transition: transform 0.12s ease-out;
+}
+
+#ink-cursor .ic-halo {
+  stroke: var(--ic-halo);
+  stroke-width: 3.4;
+}
+
+#ink-cursor .ic-fill {
+  fill: var(--ic-fill);
+}
+
+#ink-cursor .ic-ink {
+  stroke: var(--ic-ink);
+  stroke-width: 1.5;
+}
+
+#ink-cursor.press svg {
+  transform: scale(0.88);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #ink-cursor svg {
+    transition: none;
+  }
+}

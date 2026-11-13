@@ -22,6 +22,8 @@ type LayoutProps = {
   withIlustration?: boolean;
   /** Advertise the page's .md version (off for the 404, which has none). */
   withMarkdown?: boolean;
+  /** Dimension the page in ink and draw the ink cursor (src/client/page-cotas.js, ink-cursor.js). */
+  withCotas?: boolean;
 
   children?: HtmlEscapedString | Promise<HtmlEscapedString>;
 };
@@ -33,6 +35,7 @@ export default function layout({
   withFooter = true,
   withIlustration = false,
   withMarkdown = true,
+  withCotas = false,
 
   children,
 }: LayoutProps) {
@@ -147,11 +150,14 @@ document.head.appendChild(o)}initApollo();</script>
         <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <!-- The tree's formulas (src/client/tree-sway.js) are set in a script
-             face, with an italic for the Greek; only pages with the tree ask for them. -->
+             face, with an italic for the Greek; only pages with the tree ask for
+             them. The cotas (src/client/page-cotas.js) label in the italic. -->
         <link
           href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900${withIlustration
             ? "&family=EB+Garamond:ital@1&family=Petit+Formal+Script"
-            : ""}&display=swap"
+            : withCotas
+              ? "&family=EB+Garamond:ital@1"
+              : ""}&display=swap"
           rel="stylesheet"
           crossorigin="anonymous"
         />
@@ -328,6 +334,12 @@ document.head.appendChild(o)}initApollo();</script>
         ${AI_FEATURE_ENABLED ? activityPanel() : null}
         <script src="${ctx.assets.script("layout")}" defer></script>
         <script src="${ctx.assets.script("navigation")}" defer></script>
+        ${withCotas
+          ? html`
+              <script src="${ctx.assets.script("page-cotas")}" defer></script>
+              <script src="${ctx.assets.script("ink-cursor")}" defer></script>
+            `
+          : null}
         ${AI_FEATURE_ENABLED
           ? html`
               <script src="${ctx.assets.script("activity-logger")}" defer></script>

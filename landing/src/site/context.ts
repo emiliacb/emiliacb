@@ -13,9 +13,11 @@ export type ClientEntry =
   | "dropdown"
   | "email-link"
   | "gradient-distortion"
+  | "ink-cursor"
   | "layout"
   | "mascot-bot"
   | "navigation"
+  | "page-cotas"
   | "posthog"
   | "pretext"
   | "tree-sway";
