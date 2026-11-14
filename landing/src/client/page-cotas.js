@@ -357,7 +357,7 @@
     if (e.pointerType !== "touch") return;
     px = e.clientX; py = e.clientY;
     const b = hit(px, py);
-    if (b) b.hold = 1.4;
+    if (b && b.el.closest('[data-cota-row="rule"]')) b.hold = 1.4;
     fcx = px; fcy = py; pointerFocus = 1.4;
     kick();
   }, { passive: true });
@@ -374,7 +374,11 @@
     (document.documentElement.classList.contains("ai-layout-enabled") && document.getElementById("scroll-wrapper")) ||
     document.scrollingElement;
   let scrollA = 0, scrollHold = 0, dragging = false;
-  const ruleX = () => W - 14;
+  // A touch screen has no hover: there the scroll marks sit a little further
+  // in, their values written along them, and a tap dimensions only the
+  // navbar's links.
+  const COARSE = matchMedia("(hover: none), (pointer: coarse)").matches;
+  const ruleX = () => W - (COARSE ? 26 : 14);
   const strip = document.createElement("div");
   strip.setAttribute("aria-hidden", "true");
   strip.style.cssText = "position:fixed;top:0;right:0;bottom:0;width:28px;z-index:61;touch-action:none";
@@ -485,6 +489,23 @@
       g.restore();
     };
     leaning = false;
+    if (COARSE) {
+      // Along the mark, on its right, at the middle of the part of each
+      // segment in view, kept whole on the screen.
+      const along = (text, a, b) => {
+        const v0 = Math.max(a, 6), v1 = Math.min(b, Hh - 6);
+        if (v1 - v0 < 4) return;
+        g.font = FONT;
+        const tw = g.measureText(text).width;
+        const my = Math.min(Hh - tw / 2 - 6, Math.max(tw / 2 + 6, (v0 + v1) / 2));
+        ink("measure");
+        g.globalAlpha = A(scrollA);
+        label(text, x + 10, my, -Math.PI / 2);
+      };
+      along(`y = ${mm(up)}`, pageTop, ref);
+      along(`h − y = ${mm(down)}`, ref, pageEnd);
+      return;
+    }
     put("y", `y = ${mm(up)}`, pageTop, ref, -1, PIN);
     put("rest", `h − y = ${mm(down)}`, ref, pageEnd, 1, Hh - PIN);
   }
