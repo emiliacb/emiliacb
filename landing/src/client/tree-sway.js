@@ -704,6 +704,58 @@ function release() {
 }
 
 /* ==========================================================================
+   The phone's motion
+   ========================================================================== */
+
+/**
+ * On a phone the tree also feels the phone. Tilted, it keeps pointing at the
+ * sky, so it leans toward the raised side; shaken sideways, it lags behind
+ * the shake; spun in the screen's plane, it whips against the turn. All three
+ * add up to one lean, as a share of each part's limit, felt like the breeze.
+ */
+const device = { lean: 0, grav: 0, shake: 0, spinAcc: 0, spinPrev: null, last: 0 };
+const TILT_SMOOTH = 0.12; // s, low-pass on the gravity's sideways share
+const SHAKE_SMOOTH = 0.04;
+const SPIN_SMOOTH = 0.05;
+const SPIN_GAIN = 0.02; // rad/s² of the phone's turn to a lean
+
+function onMotion(e) {
+  const now = e.timeStamp || performance.now();
+  const dt = device.last ? Math.min(0.1, Math.max(0.001, (now - device.last) / 1000)) : 0.016;
+  device.last = now;
+  const ig = e.accelerationIncludingGravity;
+  const a = e.acceleration;
+  const r = e.rotationRate;
+  if (ig && ig.x != null) device.grav += (-ig.x / 9.81 - device.grav) * (1 - Math.exp(-dt / TILT_SMOOTH));
+  if (a && a.x != null) device.shake += (-a.x / 9.81 - device.shake) * (1 - Math.exp(-dt / SHAKE_SMOOTH));
+  if (r && r.alpha != null) {
+    const w = (r.alpha * Math.PI) / 180;
+    if (device.spinPrev != null) {
+      device.spinAcc += ((w - device.spinPrev) / dt - device.spinAcc) * (1 - Math.exp(-dt / SPIN_SMOOTH));
+    }
+    device.spinPrev = w;
+  }
+  const clamp = (v, m) => Math.max(-m, Math.min(m, v));
+  const lean = clamp(device.grav, 1) + clamp(device.shake, 2) + clamp(-device.spinAcc * SPIN_GAIN, 2);
+  device.lean = Number.isFinite(lean) ? lean : 0;
+}
+
+/** Listens to the phone's motion; where the browser asks first (iOS), the
+ * first tap on the page asks. */
+function listenMotion() {
+  const DM = window.DeviceMotionEvent;
+  if (!DM) return;
+  window.addEventListener("devicemotion", onMotion, { passive: true });
+  if (typeof DM.requestPermission !== "function") return;
+  const ask = () => {
+    window.removeEventListener("touchend", ask);
+    // Granted already, or another browser that never prompts: this is quiet.
+    DM.requestPermission().catch(() => {});
+  };
+  window.addEventListener("touchend", ask, { passive: true });
+}
+
+/* ==========================================================================
    Physics
    ========================================================================== */
 
@@ -775,11 +827,12 @@ function step(t, qx, qy, fx, fy, lx, ly) {
     const aPush = (GAIN * FEEL.gain * l.mobility * l.torque) / (l.len * l.len);
     const aWind = wn * wn * l.wind * breeze(t, l.rx[l.n - 1], l.seed, 0.7);
     const aDrag = -INERTIA * l.baseAcc;
-    l.acc = aSpring + aBrake + aPush + aWind + aDrag;
+    const aDev = wn * wn * l.limit * 0.5 * device.lean;
+    l.acc = aSpring + aBrake + aPush + aWind + aDrag + aDev;
     l.sum[0] += aBrake;
     l.sum[1] += aSpring;
     l.sum[2] += aPush;
-    l.sum[3] += aWind;
+    l.sum[3] += aWind + aDev;
     l.sum[4] += aDrag;
     l.omega += l.acc * H;
     l.theta += l.omega * H;
@@ -801,11 +854,12 @@ function step(t, qx, qy, fx, fy, lx, ly) {
     const aBrake = -2 * f.zeta * DAMP * wn * f.omega;
     const aWind = wn * wn * f.wind * air;
     const aDrag = -LEAF_INERTIA * baseAcc;
-    f.acc = aSpring + aBrake + drive + aWind + aDrag;
+    const aDev = wn * wn * f.limit * 0.5 * device.lean;
+    f.acc = aSpring + aBrake + drive + aWind + aDrag + aDev;
     f.sum[0] += aBrake;
     f.sum[1] += aSpring;
     f.sum[2] += drive;
-    f.sum[3] += aWind;
+    f.sum[3] += aWind + aDev;
     f.sum[4] += aDrag;
     if (Math.abs(drive) > f.felt) f.felt = Math.abs(drive);
     f.omega += f.acc * H;
@@ -1968,6 +2022,7 @@ if (box && svg && woodEl && !reduced && setup()) {
   drawLeaves();
 
   window.addEventListener("pointermove", track, { passive: true });
+  if (COARSE) listenMotion();
   document.documentElement.addEventListener("pointerleave", release);
   window.addEventListener("blur", release);
 
