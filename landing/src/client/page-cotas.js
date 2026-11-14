@@ -395,7 +395,7 @@
   // Scroll events do not bubble; caught on the way down, they come from
   // whichever element scrolls.
   // On a touch screen the marks show only while a finger is on the screen:
-  // they go as soon as it lifts, not after the page's momentum settles.
+  // they go 0.2 s after it lifts, not after the page's momentum settles.
   let touching = false;
   addEventListener("scroll", () => {
     if (COARSE && !touching) return;
@@ -403,7 +403,8 @@
   }, { passive: true, capture: true });
   if (COARSE) {
     addEventListener("touchstart", () => { touching = true; }, { passive: true, capture: true });
-    const lift = () => { touching = false; scrollHold = 0; kick(); };
+    // A moment after the finger lifts, not the instant it does.
+    const lift = () => { touching = false; scrollHold = Math.min(scrollHold, 0.2); kick(); };
     addEventListener("touchend", lift, { passive: true, capture: true });
     addEventListener("touchcancel", lift, { passive: true, capture: true });
   }
