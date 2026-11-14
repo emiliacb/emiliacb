@@ -129,8 +129,13 @@
   // along the rule.
   const COARSE = matchMedia("(hover: none), (pointer: coarse)").matches;
   const FONT = `300 ${COARSE ? 12 : 15}px "Barlow Condensed", sans-serif`;
+  // CSS pixels to the inch. CSS says 96, which is about right on a desktop
+  // screen; a phone draws its CSS pixels smaller, near 160 to the inch (the
+  // Android baseline, and an iPhone's 163), so 96 would read a page half again
+  // as long as the glass it is on.
+  const PX_IN = COARSE ? 160 : 96;
   const mm = (px) => {
-    const v = (px * 25.4) / 96;
+    const v = (px * 25.4) / PX_IN;
     return `${v < 100 ? v.toFixed(1) : Math.round(v)} mm`;
   };
 
@@ -300,7 +305,7 @@
   let stillX = -1e4, stillY = -1e4, restX = -1e4, restY = -1e4, stowed = false;
   const FULL = 110;
   // CSS metres: 1px = 0.0254/96 m.
-  const PX_M = 0.0254 / 96;
+  const PX_M = 0.0254 / PX_IN;
   // `accel` follows the pointer; `peakAccel` is the most this movement
   // reached, the value shown, kept like the peak mark until the next one.
   let accel = 0, peakAccel = 0, prevVX = 0, prevVY = 0;
