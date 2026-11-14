@@ -436,6 +436,7 @@
    * comes to st/(total − clientHeight) of the screen: 0 at the start (y = 0)
    * and the screen's foot at the end (h − y = 0). Each end of the marks leaves
    * the screen once the page does, and its arrowhead with it. */
+  const BREAK_R = 4;
   const leanNow = { y: -1, rest: 1 };
   let leaning = false, frameDt = 0;
   function drawScroll() {
@@ -457,14 +458,26 @@
     g.globalAlpha = A(scrollA * 0.85);
     g.lineWidth = 0.9;
     g.beginPath();
-    g.moveTo(x, Math.max(pageTop, -10)); g.lineTo(x, Math.min(pageEnd, Hh + 10));
-    g.moveTo(x - 7, ref); g.lineTo(x + 7, ref);
+    // The break is a small circle on the rule, the two marks ending at it.
+    g.moveTo(x, Math.max(pageTop, -10)); g.lineTo(x, ref - BREAK_R);
+    g.moveTo(x, ref + BREAK_R); g.lineTo(x, Math.min(pageEnd, Hh + 10));
     for (const y of [pageTop, pageEnd]) if (vis(y)) { g.moveTo(x - 7, y); g.lineTo(x + 7, y); }
     if (vis(pageTop)) head(x, pageTop, 0, -1, Math.min(6, (ref - pageTop) / 2.5));
     if (vis(pageEnd)) head(x, pageEnd, 0, 1, Math.min(6, (pageEnd - ref) / 2.5));
-    head(x, ref, 0, 1, Math.min(6, (ref - pageTop) / 2.5));
-    head(x, ref, 0, -1, Math.min(6, (pageEnd - ref) / 2.5));
+    head(x, ref - BREAK_R, 0, 1, Math.min(6, (ref - BREAK_R - pageTop) / 2.5));
+    head(x, ref + BREAK_R, 0, -1, Math.min(6, (pageEnd - ref - BREAK_R) / 2.5));
     stroke();
+    g.beginPath();
+    g.arc(x, ref, BREAK_R, 0, Math.PI * 2);
+    g.stroke();
+    // Its diameter, on a leader pointing at its centre, leaning away from
+    // the nearer end of the screen.
+    {
+      const sy = ref < Hh / 2 ? 1 : -1;
+      g.save();
+      leader(`Ø ${mm(BREAK_R * 2)}`, x - BREAK_R * Math.SQRT1_2, ref + sy * BREAK_R * Math.SQRT1_2, -1, sy, scrollA);
+      g.restore();
+    }
     g.globalAlpha = A(scrollA);
     const up = ref - pageTop, down = pageEnd - ref;
     // Each value on a leader: a 45° line from a fixed point on the mark, with a
