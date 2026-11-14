@@ -496,6 +496,56 @@ html.ai-layout-enabled #activity-panel {
   }
 }
 
+/* The button that asks for the phone's motion where the browser wants a tap
+   for it (iOS), at the foot of the tree. Drawn as the Schedule button is: a
+   hairline box in the page's ink, a Lucide icon, small text, inverted while
+   pressed. The tree's box lets nothing through, so it takes the pointer back. */
+.tree-motion-pill {
+  position: absolute;
+  right: 16px;
+  bottom: 24px;
+  z-index: 5;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #000;
+  background: #f5f5f4;
+  color: #292524;
+  font-family: inherit;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  transition: opacity 0.35s ease;
+}
+.tree-motion-pill svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+.tree-motion-pill:active,
+.tree-motion-pill:focus-visible {
+  background: #000;
+  color: #fff;
+}
+@media (prefers-color-scheme: dark) {
+  .tree-motion-pill {
+    border-color: #fff;
+    background: #292524;
+    color: #f5f5f4;
+  }
+  .tree-motion-pill:active,
+  .tree-motion-pill:focus-visible {
+    background: #fff;
+    color: #000;
+  }
+}
+.tree-motion-pill.is-gone {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .tree-plate,
 .tree-floats {
   position: absolute;
@@ -913,6 +963,9 @@ dropdown-trigger[variant="prose"] a::before {
   --cota-measure: hsl(143 45% 24.5% / 0.9);
   --cota-length: hsl(143 30% 25.5% / 0.75);
   --cota-force: hsl(143 50% 24.9% / 0.85);
+  /* The scroll rule sits over anything, text and tree; darker in light mode
+     so it holds its own. */
+  --cota-scroll: hsl(143 55% 15% / 1);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -920,6 +973,7 @@ dropdown-trigger[variant="prose"] a::before {
     --cota-measure: hsl(323 45% 79% / 0.9);
     --cota-length: hsl(323 30% 80% / 0.75);
     --cota-force: hsl(323 50% 78% / 0.85);
+    --cota-scroll: hsl(323 45% 79% / 0.9);
   }
 }
 
