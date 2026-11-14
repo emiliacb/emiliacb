@@ -438,6 +438,8 @@
    * the screen once the page does, and its arrowhead with it. */
   const BREAK_R = 4;
   let diaA = 1;
+  // How far each value on a touch screen has stepped aside from the circle.
+  const aside = { y: 0, rest: 0 };
   const leanNow = { y: -1, rest: 1 };
   let leaning = false, frameDt = 0;
   function drawScroll() {
@@ -546,19 +548,26 @@
     if (COARSE) {
       // Along the mark, on its left, at the middle of the part of each
       // segment in view, kept whole on the screen.
-      const along = (text, a, b) => {
+      // Kept whole on the screen, a value can reach the circle at either end
+      // of the page; there it steps a few px further from the rule, eased.
+      const along = (key, text, a, b) => {
         const v0 = Math.max(a, 6), v1 = Math.min(b, Hh - 6);
         if (v1 - v0 < 4) return;
         g.font = FONT;
         const tw = g.measureText(text).width;
         const my = Math.min(Hh - tw / 2 - 6, Math.max(tw / 2 + 6, (v0 + v1) / 2));
+        const near = my - tw / 2 < ref + BREAK_R + 3 && my + tw / 2 > ref - BREAK_R - 3;
+        const want = near ? BREAK_R + 6 : 0;
+        const d = (aside[key] += (want - aside[key]) * (1 - Math.exp(-frameDt / 0.12)));
+        if (Math.abs(want - d) > 0.05) leaning = true;
+        else aside[key] = want;
         ink("measure");
         g.globalAlpha = A(scrollA);
-        label(text, x - 8, my, -Math.PI / 2);
-        taken.push({ l: x - 15, r: x - 1, t: my - tw / 2, b: my + tw / 2 });
+        label(text, x - 8 - aside[key], my, -Math.PI / 2);
+        taken.push({ l: x - 15 - aside[key], r: x - 1 - aside[key], t: my - tw / 2, b: my + tw / 2 });
       };
-      along(`y = ${mm(up)}`, pageTop, ref);
-      along(`h − y = ${mm(down)}`, ref, pageEnd);
+      along("y", `y = ${mm(up)}`, pageTop, ref);
+      along("rest", `h − y = ${mm(down)}`, ref, pageEnd);
       diameter();
       return;
     }
