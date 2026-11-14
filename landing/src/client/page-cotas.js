@@ -437,6 +437,9 @@
    * and the screen's foot at the end (h − y = 0). Each end of the marks leaves
    * the screen once the page does, and its arrowhead with it. */
   const BREAK_R = 4;
+  let diaA = 1;
+  // How far each value on a touch screen has stepped aside from the circle.
+  const aside = { y: 0, rest: 0 };
   const leanNow = { y: -1, rest: 1 };
   let leaning = false, frameDt = 0;
   function drawScroll() {
@@ -470,15 +473,28 @@
     g.beginPath();
     g.arc(x, ref, BREAK_R, 0, Math.PI * 2);
     g.stroke();
-    // Its diameter, small and level beside it, with no leader.
-    g.save();
-    g.globalAlpha = A(scrollA * 0.85);
-    g.font = `300 ${COARSE ? 10 : 12}px "Barlow Condensed", sans-serif`;
-    g.textAlign = "right";
-    g.textBaseline = "middle";
-    g.fillText(`Ø ${mm(BREAK_R * 2)}`, x - BREAK_R - 4, ref);
-    g.restore();
-    g.globalAlpha = A(scrollA);
+    // The values' boxes, so the diameter can give way to them.
+    const taken = [];
+    // The circle's diameter, small and level beside it, with no leader.
+    // Where a value of the marks would run into it, it fades out instead.
+    const diameter = () => {
+      const text = `Ø ${mm(BREAK_R * 2)}`;
+      g.font = `300 ${COARSE ? 10 : 12}px "Barlow Condensed", sans-serif`;
+      const r = x - BREAK_R - 4, l = r - g.measureText(text).width, t = ref - 7, b = ref + 7;
+      const clash = taken.some((q) => l < q.r + 3 && r > q.l - 3 && t < q.b + 3 && b > q.t - 3);
+      const want = clash ? 0 : 1;
+      diaA += (want - diaA) * (1 - Math.exp(-frameDt / 0.1));
+      if (Math.abs(want - diaA) < 0.004) diaA = want;
+      else leaning = true; // keep the loop running while it fades
+      if (diaA < 0.01) return;
+      ink("measure");
+      g.save();
+      g.globalAlpha = A(scrollA * 0.85 * diaA);
+      g.textAlign = "right";
+      g.textBaseline = "middle";
+      g.fillText(text, r, ref);
+      g.restore();
+    };
     const up = ref - pageTop, down = pageEnd - ref;
     // Each value on a leader: a 45° line from a fixed point on the mark, with a
     // small arrowhead on it, out to a horizontal shelf the value sits on.
@@ -526,27 +542,38 @@
       g.textBaseline = "middle";
       g.fillText(text, sx - 4, ey);
       g.restore();
+      taken.push({ l: sx - 4 - tw, r: sx - 4, t: ey - 9, b: ey + 9 });
     };
     leaning = false;
     if (COARSE) {
       // Along the mark, on its left, at the middle of the part of each
       // segment in view, kept whole on the screen.
-      const along = (text, a, b) => {
+      // Kept whole on the screen, a value can reach the circle at either end
+      // of the page; there it steps a few px further from the rule, eased.
+      const along = (key, text, a, b) => {
         const v0 = Math.max(a, 6), v1 = Math.min(b, Hh - 6);
         if (v1 - v0 < 4) return;
         g.font = FONT;
         const tw = g.measureText(text).width;
         const my = Math.min(Hh - tw / 2 - 6, Math.max(tw / 2 + 6, (v0 + v1) / 2));
+        const near = my - tw / 2 < ref + BREAK_R + 3 && my + tw / 2 > ref - BREAK_R - 3;
+        const want = near ? BREAK_R + 6 : 0;
+        const d = (aside[key] += (want - aside[key]) * (1 - Math.exp(-frameDt / 0.12)));
+        if (Math.abs(want - d) > 0.05) leaning = true;
+        else aside[key] = want;
         ink("measure");
         g.globalAlpha = A(scrollA);
-        label(text, x - 8, my, -Math.PI / 2);
+        label(text, x - 8 - aside[key], my, -Math.PI / 2);
+        taken.push({ l: x - 15 - aside[key], r: x - 1 - aside[key], t: my - tw / 2, b: my + tw / 2 });
       };
-      along(`y = ${mm(up)}`, pageTop, ref);
-      along(`h − y = ${mm(down)}`, ref, pageEnd);
+      along("y", `y = ${mm(up)}`, pageTop, ref);
+      along("rest", `h − y = ${mm(down)}`, ref, pageEnd);
+      diameter();
       return;
     }
     put("y", `y = ${mm(up)}`, pageTop, ref, -1, PIN);
     put("rest", `h − y = ${mm(down)}`, ref, pageEnd, 1, Hh - PIN);
+    diameter();
   }
 
   /* ---- the loop: eased in fast, out a little slower; asleep when idle ---- */
