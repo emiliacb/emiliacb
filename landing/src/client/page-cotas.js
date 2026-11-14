@@ -436,6 +436,19 @@
    * comes to st/(total − clientHeight) of the screen: 0 at the start (y = 0)
    * and the screen's foot at the end (h − y = 0). Each end of the marks leaves
    * the screen once the page does, and its arrowhead with it. */
+  /** A freehand break stroke across the rule at (x, y): a slightly uneven
+   * wave, the same each time so it does not shimmer. */
+  const BREAK = 8;
+  const FREE = [[-16, 0], [-11, -2.6], [-6, 1.9], [-1, -2.2], [4, 2.4], [9, -1.6], [14, 1.5], [16, 0.6]];
+  function freehand(x, y) {
+    g.moveTo(x + FREE[0][0], y + FREE[0][1]);
+    for (let i = 1; i < FREE.length - 1; i++) {
+      const p = FREE[i], q = FREE[i + 1];
+      g.quadraticCurveTo(x + p[0], y + p[1], x + (p[0] + q[0]) / 2, y + (p[1] + q[1]) / 2);
+    }
+    const e = FREE[FREE.length - 1];
+    g.lineTo(x + e[0], y + e[1]);
+  }
   const leanNow = { y: -1, rest: 1 };
   let leaning = false, frameDt = 0;
   function drawScroll() {
@@ -457,22 +470,21 @@
     g.globalAlpha = A(scrollA * 0.85);
     g.lineWidth = 0.9;
     g.beginPath();
-    g.moveTo(x, Math.max(pageTop, -10)); g.lineTo(x, Math.min(pageEnd, Hh + 10));
+    // The rule, broken at the break: a gap of BREAK between two freehand
+    // strokes, as a drawing breaks a long part.
+    const b0 = ref - BREAK / 2, b1 = ref + BREAK / 2;
+    g.moveTo(x, Math.max(pageTop, -10)); g.lineTo(x, b0);
+    g.moveTo(x, b1); g.lineTo(x, Math.min(pageEnd, Hh + 10));
     for (const y of [pageTop, pageEnd]) if (vis(y)) { g.moveTo(x - 7, y); g.lineTo(x + 7, y); }
     if (vis(pageTop)) head(x, pageTop, 0, -1, Math.min(6, (ref - pageTop) / 2.5));
     if (vis(pageEnd)) head(x, pageEnd, 0, 1, Math.min(6, (pageEnd - ref) / 2.5));
-    head(x, ref, 0, 1, Math.min(6, (ref - pageTop) / 2.5));
-    head(x, ref, 0, -1, Math.min(6, (pageEnd - ref) / 2.5));
+    head(x, b0, 0, 1, Math.min(6, (b0 - pageTop) / 2.5));
+    head(x, b1, 0, -1, Math.min(6, (pageEnd - b1) / 2.5));
     stroke();
-    // The break, across the mark as a wavy line, drawn heavier than the rest.
-    g.globalAlpha = A(scrollA);
-    g.lineWidth = 1.3;
+    g.lineWidth = 1.1;
     g.beginPath();
-    const w0 = x - (COARSE ? 18 : 12), w1 = x + (COARSE ? 0 : 12);
-    for (let wx = w0; wx <= w1 + 0.01; wx += 1) {
-      const wy = ref + 2.2 * Math.sin(((wx - w0) / 6) * Math.PI * 2);
-      if (wx === w0) g.moveTo(wx, wy); else g.lineTo(wx, wy);
-    }
+    freehand(x, b0);
+    freehand(x, b1);
     g.stroke();
     g.globalAlpha = A(scrollA);
     const up = ref - pageTop, down = pageEnd - ref;
