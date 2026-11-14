@@ -508,7 +508,6 @@ html.ai-layout-enabled #activity-panel {
   pointer-events: auto;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 0.5rem;
   white-space: nowrap;
   padding: 0.25rem 0.5rem;

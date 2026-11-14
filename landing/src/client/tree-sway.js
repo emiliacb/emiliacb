@@ -775,19 +775,6 @@ function offerMotion(DM) {
     `<span>${es ? "Interactuar" : "Interact"}</span>`;
   pill.setAttribute("aria-label", es ? "Mover el árbol con el teléfono" : "Move the tree with your phone");
   box.appendChild(pill);
-  // The same size as the Schedule button, its twin on the page: both as wide
-  // as the wider of the two, so neither label is squeezed.
-  const twin = document.querySelector('#content a.interactive.border-black');
-  const size = () => {
-    if (!twin) return;
-    pill.style.width = twin.style.minWidth = "";
-    const w = Math.max(twin.getBoundingClientRect().width, pill.getBoundingClientRect().width);
-    pill.style.width = `${w}px`;
-    twin.style.minWidth = `${w}px`;
-    twin.style.justifyContent = "center";
-  };
-  size();
-  window.addEventListener("resize", size);
   const gone = () => {
     pill.classList.add("is-gone");
     setTimeout(() => pill.remove(), 400);
