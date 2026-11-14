@@ -379,7 +379,19 @@
   }, { passive: true });
   // Scroll events do not bubble; caught on the way down, they come from
   // whichever element scrolls.
-  addEventListener("scroll", () => { scrollHold = 0.9; kick(); }, { passive: true, capture: true });
+  // On a touch screen the marks show only while a finger is on the screen:
+  // they go as soon as it lifts, not after the page's momentum settles.
+  let touching = false;
+  addEventListener("scroll", () => {
+    if (COARSE && !touching) return;
+    scrollHold = 0.9; kick();
+  }, { passive: true, capture: true });
+  if (COARSE) {
+    addEventListener("touchstart", () => { touching = true; }, { passive: true, capture: true });
+    const lift = () => { touching = false; scrollHold = 0; kick(); };
+    addEventListener("touchend", lift, { passive: true, capture: true });
+    addEventListener("touchcancel", lift, { passive: true, capture: true });
+  }
 
   /* ---- the scrollbar, as a dimension: a rule down the right edge, ticked at
      every tenth of the page, and on it the stretch of the page in view, with
@@ -390,9 +402,9 @@
     (document.documentElement.classList.contains("ai-layout-enabled") && document.getElementById("scroll-wrapper")) ||
     document.scrollingElement;
   let scrollA = 0, scrollHold = 0, dragging = false;
-  // On a touch screen the rule sits just far enough in for its values,
-  // written along it on its right.
-  const ruleX = () => W - (COARSE ? 16 : 14);
+  // On a touch screen the rule runs down the screen's very edge, its values
+  // written along it on its left.
+  const ruleX = () => W - (COARSE ? 1 : 14);
   const strip = document.createElement("div");
   strip.setAttribute("aria-hidden", "true");
   strip.style.cssText = "position:fixed;top:0;right:0;bottom:0;width:28px;z-index:61;touch-action:none";
@@ -446,13 +458,22 @@
     g.lineWidth = 0.9;
     g.beginPath();
     g.moveTo(x, Math.max(pageTop, -10)); g.lineTo(x, Math.min(pageEnd, Hh + 10));
-    g.moveTo(x - 7, ref); g.lineTo(x + 7, ref);
     for (const y of [pageTop, pageEnd]) if (vis(y)) { g.moveTo(x - 7, y); g.lineTo(x + 7, y); }
     if (vis(pageTop)) head(x, pageTop, 0, -1, Math.min(6, (ref - pageTop) / 2.5));
     if (vis(pageEnd)) head(x, pageEnd, 0, 1, Math.min(6, (pageEnd - ref) / 2.5));
     head(x, ref, 0, 1, Math.min(6, (ref - pageTop) / 2.5));
     head(x, ref, 0, -1, Math.min(6, (pageEnd - ref) / 2.5));
     stroke();
+    // The break, across the mark as a wavy line, drawn heavier than the rest.
+    g.globalAlpha = A(scrollA);
+    g.lineWidth = 1.3;
+    g.beginPath();
+    const w0 = x - (COARSE ? 18 : 12), w1 = x + (COARSE ? 0 : 12);
+    for (let wx = w0; wx <= w1 + 0.01; wx += 1) {
+      const wy = ref + 2.2 * Math.sin(((wx - w0) / 6) * Math.PI * 2);
+      if (wx === w0) g.moveTo(wx, wy); else g.lineTo(wx, wy);
+    }
+    g.stroke();
     g.globalAlpha = A(scrollA);
     const up = ref - pageTop, down = pageEnd - ref;
     // Each value on a leader: a 45° line from a fixed point on the mark, with a
@@ -504,7 +525,7 @@
     };
     leaning = false;
     if (COARSE) {
-      // Along the mark, on its right, at the middle of the part of each
+      // Along the mark, on its left, at the middle of the part of each
       // segment in view, kept whole on the screen.
       const along = (text, a, b) => {
         const v0 = Math.max(a, 6), v1 = Math.min(b, Hh - 6);
@@ -514,7 +535,7 @@
         const my = Math.min(Hh - tw / 2 - 6, Math.max(tw / 2 + 6, (v0 + v1) / 2));
         ink("measure");
         g.globalAlpha = A(scrollA);
-        label(text, x + 8, my, -Math.PI / 2);
+        label(text, x - 8, my, -Math.PI / 2);
       };
       along(`y = ${mm(up)}`, pageTop, ref);
       along(`h − y = ${mm(down)}`, ref, pageEnd);
@@ -587,7 +608,7 @@
     scrollHold = Math.max(0, scrollHold - dt);
     const nearEdge = here && px > W - 90;
     const sw = scrollHold > 0 || dragging || nearEdge ? 1 : 0;
-    scrollA += (sw - scrollA) * (1 - Math.exp(-dt / (sw > scrollA ? 0.08 : 0.45)));
+    scrollA += (sw - scrollA) * (1 - Math.exp(-dt / (sw > scrollA ? 0.08 : COARSE ? 0.08 : 0.45)));
     if (Math.abs(sw - scrollA) < 0.004) scrollA = sw;
     const fw = here || pointerFocus > 0 ? 1 : 0;
     focus += (fw - focus) * (1 - Math.exp(-dt / (fw > focus ? 0.15 : 0.5)));
