@@ -31,6 +31,7 @@
     TONE.length = cs.getPropertyValue("--cota-length").trim();
     TONE.measure = cs.getPropertyValue("--cota-measure").trim();
     TONE.force = cs.getPropertyValue("--cota-force").trim();
+    TONE.scroll = cs.getPropertyValue("--cota-scroll").trim() || TONE.measure;
     lift = isDark() ? 1 : LIFT;
   }
   function A(x) {
@@ -481,7 +482,7 @@
     const pageTop = -st;
     const pageEnd = total - st;
     const vis = (y) => y >= -1 && y <= Hh + 1;
-    ink("measure");
+    ink("scroll");
     g.globalAlpha = A(scrollA * 0.85);
     g.lineWidth = 0.9;
     g.beginPath();
@@ -511,7 +512,7 @@
       if (Math.abs(want - diaA) < 0.004) diaA = want;
       else leaning = true; // keep the loop running while it fades
       if (diaA < 0.01) return;
-      ink("measure");
+      ink("scroll");
       g.save();
       g.globalAlpha = A(scrollA * 0.85 * diaA);
       g.textAlign = "right";
@@ -555,7 +556,7 @@
       if (Math.abs(dir - d) > 0.004) leaning = true;
       const ex = tx + 1 - LEAD, ey = ay + d * LEAD;
       const sx = ex - 8; // the landing, the value at its end
-      ink("measure");
+      ink("scroll");
       g.globalAlpha = A(scrollA * 0.85);
       g.lineWidth = 0.9;
       g.beginPath();
@@ -593,7 +594,7 @@
         const d = (aside[key] += (want - aside[key]) * (1 - Math.exp(-frameDt / 0.12)));
         if (Math.abs(want - d) > 0.05) leaning = true;
         else aside[key] = want;
-        ink("measure");
+        ink("scroll");
         g.globalAlpha = A(scrollA);
         label(text, x - 8 - aside[key], my, -Math.PI / 2);
         taken.push({ l: x - 15 - aside[key], r: x - 1 - aside[key], t: my - tw / 2, b: my + tw / 2 });

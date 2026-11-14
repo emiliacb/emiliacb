@@ -719,6 +719,13 @@ const SHAKE_SMOOTH = 0.04;
 const SPIN_SMOOTH = 0.05;
 const SPIN_GAIN = 0.02; // rad/s² of the phone's turn to a lean
 
+// iOS reports the phone's acceleration with the opposite sign to Android's
+// (and the spec's), so the same tilt would lean the tree the other way.
+const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const SIDE = IOS ? -1 : 1;
+let motionSeen = false;
+
 function onMotion(e) {
   const now = e.timeStamp || performance.now();
   const dt = device.last ? Math.min(0.1, Math.max(0.001, (now - device.last) / 1000)) : 0.016;
@@ -726,8 +733,11 @@ function onMotion(e) {
   const ig = e.accelerationIncludingGravity;
   const a = e.acceleration;
   const r = e.rotationRate;
-  if (ig && ig.x != null) device.grav += (-ig.x / 9.81 - device.grav) * (1 - Math.exp(-dt / TILT_SMOOTH));
-  if (a && a.x != null) device.shake += (-a.x / 9.81 - device.shake) * (1 - Math.exp(-dt / SHAKE_SMOOTH));
+  if (ig && ig.x != null) {
+    motionSeen = true;
+    device.grav += ((-SIDE * ig.x) / 9.81 - device.grav) * (1 - Math.exp(-dt / TILT_SMOOTH));
+  }
+  if (a && a.x != null) device.shake += ((-SIDE * a.x) / 9.81 - device.shake) * (1 - Math.exp(-dt / SHAKE_SMOOTH));
   if (r && r.alpha != null) {
     const w = (r.alpha * Math.PI) / 180;
     if (device.spinPrev != null) {
@@ -740,19 +750,41 @@ function onMotion(e) {
   device.lean = Number.isFinite(lean) ? lean : 0;
 }
 
-/** Listens to the phone's motion; where the browser asks first (iOS), the
- * first tap on the page asks. */
+/** Listens to the phone's motion. Where the browser asks first (iOS), a pill
+ * at the foot of the tree asks, on a tap: a permission prompt needs one, and
+ * a pill says what it is for, where a tap anywhere would not. */
 function listenMotion() {
   const DM = window.DeviceMotionEvent;
   if (!DM) return;
   window.addEventListener("devicemotion", onMotion, { passive: true });
   if (typeof DM.requestPermission !== "function") return;
-  const ask = () => {
-    window.removeEventListener("touchend", ask);
-    // Granted already, or another browser that never prompts: this is quiet.
-    DM.requestPermission().catch(() => {});
+  // Already granted in this visit: the events flow and no pill is needed.
+  setTimeout(() => { if (!motionSeen) offerMotion(DM); }, 700);
+}
+
+function offerMotion(DM) {
+  const es = (document.documentElement.lang || "").startsWith("es");
+  const pill = document.createElement("button");
+  pill.type = "button";
+  pill.className = "tree-motion-pill";
+  pill.textContent = es ? "Interactuar" : "Interact";
+  pill.setAttribute("aria-label", es ? "Mover el árbol con el teléfono" : "Move the tree with your phone");
+  box.appendChild(pill);
+  const gone = () => {
+    pill.classList.add("is-gone");
+    setTimeout(() => pill.remove(), 400);
   };
-  window.addEventListener("touchend", ask, { passive: true });
+  pill.addEventListener("click", () => {
+    DM.requestPermission()
+      .then((state) => {
+        if (state === "granted") gone();
+        else {
+          pill.textContent = es ? "Sin permiso" : "Not allowed";
+          setTimeout(gone, 1400);
+        }
+      })
+      .catch(gone);
+  });
 }
 
 /* ==========================================================================

@@ -496,6 +496,30 @@ html.ai-layout-enabled #activity-panel {
   }
 }
 
+/* The pill that asks for the phone's motion where the browser wants a tap
+   for it (iOS), at the foot of the tree. The tree's box lets nothing
+   through, so the pill takes the pointer back. */
+.tree-motion-pill {
+  position: absolute;
+  right: 16px;
+  bottom: 24px;
+  z-index: 5;
+  pointer-events: auto;
+  padding: 6px 16px;
+  border: 1px solid var(--tree-ink);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tree-paper) 85%, transparent);
+  color: var(--tree-ink);
+  font: 300 15px/1.2 "Barlow Condensed", sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: opacity 0.35s ease;
+}
+.tree-motion-pill.is-gone {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .tree-plate,
 .tree-floats {
   position: absolute;
@@ -913,6 +937,9 @@ dropdown-trigger[variant="prose"] a::before {
   --cota-measure: hsl(143 45% 24.5% / 0.9);
   --cota-length: hsl(143 30% 25.5% / 0.75);
   --cota-force: hsl(143 50% 24.9% / 0.85);
+  /* The scroll rule sits over anything, text and tree; darker in light mode
+     so it holds its own. */
+  --cota-scroll: hsl(143 55% 15% / 1);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -920,6 +947,7 @@ dropdown-trigger[variant="prose"] a::before {
     --cota-measure: hsl(323 45% 79% / 0.9);
     --cota-length: hsl(323 30% 80% / 0.75);
     --cota-force: hsl(323 50% 78% / 0.85);
+    --cota-scroll: hsl(323 45% 79% / 0.9);
   }
 }
 
