@@ -256,6 +256,9 @@
   function layout() {
     dpr = Math.min(2, window.devicePixelRatio || 1);
     W = innerWidth; Hh = innerHeight;
+    // Sized to the window itself, not stretched to the layout viewport.
+    canvas.style.width = `${W}px`;
+    canvas.style.height = `${Hh}px`;
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(Hh * dpr);
   }
@@ -401,6 +404,20 @@
   const scrollerOf = () =>
     (document.documentElement.classList.contains("ai-layout-enabled") && document.getElementById("scroll-wrapper")) ||
     document.scrollingElement;
+  // How far the scroller really scrolls. On a phone the page scrolls under the
+  // browser's bars, and neither the root's clientHeight nor innerHeight says
+  // for sure where it stops, shown or hidden. So the guess is the lower of the
+  // two stops, raised to wherever the page is actually seen to scroll, and
+  // forgotten once the page or the window changes size.
+  let seen = { key: "", max: 0 };
+  const maxOf = (s) => {
+    const total = s.scrollHeight;
+    if (s !== document.scrollingElement) return total - s.clientHeight;
+    const key = `${total}|${s.clientHeight}|${innerHeight}`;
+    if (seen.key !== key) seen = { key, max: total - Math.max(s.clientHeight, innerHeight) };
+    seen.max = Math.min(total, Math.max(seen.max, s.scrollTop));
+    return seen.max;
+  };
   let scrollA = 0, scrollHold = 0, dragging = false;
   // On a touch screen the rule runs down the screen's very edge, its values
   // written along it on its left.
@@ -413,7 +430,7 @@
   function scrollTo(clientY) {
     // The inverse of the break: dragging puts the break under the pointer.
     const scroller = scrollerOf();
-    const max = scroller.scrollHeight - scroller.clientHeight;
+    const max = maxOf(scroller);
     scroller.scrollTop = Math.max(0, Math.min(1, clientY / Hh)) * max;
   }
   strip.addEventListener("pointerdown", (e) => {
@@ -446,13 +463,16 @@
     if (scrollA < 0.01) return;
     const scroller = scrollerOf();
     const total = scroller.scrollHeight;
-    if (total <= scroller.clientHeight + 1) return;
+    const max = maxOf(scroller);
+    if (max <= 1) return;
+    // What is in view: the page from st on, to its end once scrolled all the way.
+    const view = total - max;
     const x = ruleX();
-    const st = scroller.scrollTop;
-    const view = scroller.clientHeight;
+    // Held within the page, so a rubber-band overscroll still reads 0.
+    const st = Math.min(max, Math.max(0, scroller.scrollTop));
     const thumbTop = (st / total) * Hh;
     const thumbBot = ((st + view) / total) * Hh;
-    const prog = Math.min(1, Math.max(0, st / (total - view)));
+    const prog = Math.min(1, Math.max(0, st / max));
     const ref = thumbTop + prog * (thumbBot - thumbTop);
     const pageTop = -st;
     const pageEnd = total - st;
@@ -495,7 +515,11 @@
       g.fillText(text, r, ref);
       g.restore();
     };
-    const up = ref - pageTop, down = pageEnd - ref;
+    // The values in the page's own terms: where on the page the break stands.
+    // At the top it is the page's start, all the way down its end, so y and
+    // h − y reach exactly 0 there whatever the screen's bars are doing.
+    const at = st + prog * view;
+    const up = at, down = Math.max(0, total - at);
     // Each value on a leader: a 45° line from a fixed point on the mark, with a
     // small arrowhead on it, out to a horizontal shelf the value sits on.
     // y stays near the top of the screen and h − y near the bottom; a leader
@@ -553,7 +577,7 @@
       const along = (key, text, a, b) => {
         // Even at nothing (the page's very top or end) the value shows, as
         // on desktop, held whole on the screen beside the circle.
-        if (b < 0 || a > Hh) return;
+        if (b < -1 || a > Hh + 1) return;
         const v0 = Math.max(a, 6), v1 = Math.max(v0, Math.min(b, Hh - 6));
         g.font = FONT;
         const tw = g.measureText(text).width;
@@ -586,6 +610,8 @@
   function kick() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(tick); } }
   function tick(now) {
     raf = 0;
+    // A phone's bars can change the window's height without a resize event.
+    if (innerHeight !== Hh || innerWidth !== W) layout();
     const dt = Math.min(0.05, (now - last) / 1000);
     frameDt = dt;
     last = now;
