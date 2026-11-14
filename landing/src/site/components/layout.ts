@@ -152,17 +152,17 @@ document.head.appendChild(o)}initApollo();</script>
         <!-- Google Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <!-- The tree's formulas (src/client/tree-sway.js) are set in a script
-             face, only on pages with the tree, with an italic for the Greek;
-             every cota, the tree's and the page's (src/client/page-cotas.js),
-             is labelled in Barlow Condensed Light. -->
         <link
-          href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900${withIlustration
-            ? "&family=EB+Garamond:ital@1&family=Petit+Formal+Script"
-            : ""}${withIlustration || withCotas ? "&family=Barlow+Condensed:wght@300" : ""}&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
           rel="stylesheet"
           crossorigin="anonymous"
         />
+        <!-- The cotas' and the tree's faces are self-hosted (see styles.css).
+             The cotas draw on a canvas, which only asks for a face once it
+             draws, so their face is fetched up front. -->
+        ${withIlustration || withCotas
+          ? html`<link rel="preload" href="/public/fonts/barlow-condensed-latin-300-normal.woff2" as="font" type="font/woff2" crossorigin />`
+          : ""}
 
         <!-- CSS -->
         <link rel="stylesheet" href="${ctx.assets.css}" />
