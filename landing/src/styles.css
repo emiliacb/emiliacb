@@ -850,7 +850,6 @@ dropdown-trigger[variant="prose"] a::before {
 :root {
   --cota-measure: hsl(143 45% 24.5% / 0.9);
   --cota-length: hsl(143 30% 25.5% / 0.75);
-  --cota-circle: hsl(143 10% 26.7% / 0.3);
   --cota-force: hsl(143 50% 24.9% / 0.85);
 }
 
@@ -858,7 +857,6 @@ dropdown-trigger[variant="prose"] a::before {
   :root {
     --cota-measure: hsl(323 45% 79% / 0.9);
     --cota-length: hsl(323 30% 80% / 0.75);
-    --cota-circle: hsl(323 10% 80% / 0.3);
     --cota-force: hsl(323 50% 78% / 0.85);
   }
 }
