@@ -508,7 +508,9 @@ html.ai-layout-enabled #activity-panel {
   pointer-events: auto;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  white-space: nowrap;
   padding: 0.25rem 0.5rem;
   border: 1px solid #000;
   background: #f5f5f4;
@@ -519,6 +521,7 @@ html.ai-layout-enabled #activity-panel {
   transition: opacity 0.35s ease;
 }
 .tree-motion-pill svg {
+  flex-shrink: 0;
   width: 16px;
   height: 16px;
 }
