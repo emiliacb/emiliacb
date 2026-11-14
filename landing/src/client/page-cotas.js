@@ -95,10 +95,22 @@
   }
 
   /* ---- drawing: the dimension line, its arrowheads and its value ---- */
+  // Arrowheads as AutoCAD draws them: closed and filled, three times as long
+  // as they are wide. head() queues one; stroke() strokes the path and then
+  // fills the queued heads in the same ink.
+  const HEADS = [];
   function head(x, y, ux, uy, len) {
-    g.moveTo(x - len * (ux * 0.9 - uy * 0.4), y - len * (uy * 0.9 + ux * 0.4));
-    g.lineTo(x, y);
-    g.lineTo(x - len * (ux * 0.9 + uy * 0.4), y - len * (uy * 0.9 - ux * 0.4));
+    const L = len * 1.5, w = L / 6, bx = x - ux * L, by = y - uy * L;
+    HEADS.push([x, y, bx - uy * w, by + ux * w, bx + uy * w, by - ux * w]);
+  }
+  function stroke() {
+    g.stroke();
+    if (!HEADS.length) return;
+    g.beginPath();
+    for (const t of HEADS) { g.moveTo(t[0], t[1]); g.lineTo(t[2], t[3]); g.lineTo(t[4], t[5]); g.closePath(); }
+    HEADS.length = 0;
+    g.fill();
+    g.beginPath();
   }
   function label(text, x, y, ang) {
     g.save();
@@ -112,7 +124,11 @@
   }
   // CSS millimetres: CSS fixes 1in = 96px, so 1px = 25.4/96 mm. True to the
   // page's own units; a physical ruler on the screen will differ by device.
-  const FONT = `300 15px "Barlow Condensed", sans-serif`;
+  // A touch screen has no hover: there a tap dimensions only the navbar's
+  // links, the values are set smaller, and the scroll marks write theirs
+  // along the rule.
+  const COARSE = matchMedia("(hover: none), (pointer: coarse)").matches;
+  const FONT = `300 ${COARSE ? 12 : 15}px "Barlow Condensed", sans-serif`;
   const mm = (px) => {
     const v = (px * 25.4) / 96;
     return `${v < 100 ? v.toFixed(1) : Math.round(v)} mm`;
@@ -131,17 +147,19 @@
     if (sy > 0 && ty + LEAD + 4 > Hh) sy = -1;
     if (sy < 0 && ty - LEAD - 18 < 0) sy = 1;
     const ex = tx + sx * LEAD, ey = ty + sy * LEAD;
-    const fx = ex + sx * (tw + 8);
+    // A short landing, the value at its end and centred on it, as in an
+    // AutoCAD multileader.
+    const fx = ex + sx * 8;
     g.globalAlpha = A(a * 0.85);
     g.lineWidth = 0.9;
     g.beginPath();
     g.moveTo(tx, ty); g.lineTo(ex, ey); g.lineTo(fx, ey);
     head(tx, ty, -sx * Math.SQRT1_2, -sy * Math.SQRT1_2, 5);
-    g.stroke();
+    stroke();
     g.globalAlpha = A(a);
-    g.textAlign = "left";
-    g.textBaseline = "alphabetic";
-    g.fillText(text, Math.min(ex, fx) + 4, ey - 4);
+    g.textAlign = sx > 0 ? "left" : "right";
+    g.textBaseline = "middle";
+    g.fillText(text, fx + sx * 4, ey);
   }
 
   /** A vertical mark at x from y0 to y1, extension lines back to ex. Its value
@@ -178,7 +196,7 @@
     const hl = Math.min(6, (y1 - y0) / 2.5);
     head(x, y0, 0, -1, hl);
     head(x, y1, 0, 1, hl);
-    g.stroke();
+    stroke();
     g.globalAlpha = A(a);
     g.save();
     g.font = FONT;
@@ -265,9 +283,7 @@
     const ux = (x1 - x0) / d, uy = (y1 - y0) / d;
     g.beginPath();
     g.moveTo(x0, y0); g.lineTo(x1, y1);
-    g.moveTo(x1 - hl * (ux * 0.9 - uy * 0.45), y1 - hl * (uy * 0.9 + ux * 0.45));
-    g.lineTo(x1, y1);
-    g.lineTo(x1 - hl * (ux * 0.9 + uy * 0.45), y1 - hl * (uy * 0.9 - ux * 0.45));
+    head(x1, y1, ux, uy, hl);
   }
   // The rule's direction and the arrow's reach, eased so the arrow glides.
   let dirX = 1, dirY = 0, reach = 0;
@@ -300,12 +316,12 @@
         const qx = x0 + ux * FULL * (k / 10), qy = y0 + uy * FULL * (k / 10);
         g.moveTo(qx, qy); g.lineTo(qx - uy * len, qy + ux * len);
       }
-      g.stroke();
+      stroke();
       if (reach > 0.01) {
         arrow(x0, y0, x0 + ux * FULL * reach, y0 + uy * FULL * reach, 6);
         g.globalAlpha = A(curAl * 0.6);
         g.lineWidth = 1;
-        g.stroke();
+        stroke();
       }
     }
     if (airA > 0.01 && peak > 0.01) {
@@ -313,7 +329,7 @@
       g.lineWidth = 0.9;
       g.beginPath();
       g.arc(x0 + ux * FULL * peak, y0 + uy * FULL * peak, 3, 0, Math.PI * 2);
-      g.stroke();
+      stroke();
     }
     // The acceleration, on a leader to the peak mark (to the contact ring
     // before there is one), leaning off the rule on its upper side.
@@ -374,11 +390,9 @@
     (document.documentElement.classList.contains("ai-layout-enabled") && document.getElementById("scroll-wrapper")) ||
     document.scrollingElement;
   let scrollA = 0, scrollHold = 0, dragging = false;
-  // A touch screen has no hover: there the scroll marks sit a little further
-  // in, their values written along them, and a tap dimensions only the
-  // navbar's links.
-  const COARSE = matchMedia("(hover: none), (pointer: coarse)").matches;
-  const ruleX = () => W - (COARSE ? 26 : 14);
+  // On a touch screen the rule sits just far enough in for its values,
+  // written along it on its right.
+  const ruleX = () => W - (COARSE ? 16 : 14);
   const strip = document.createElement("div");
   strip.setAttribute("aria-hidden", "true");
   strip.style.cssText = "position:fixed;top:0;right:0;bottom:0;width:28px;z-index:61;touch-action:none";
@@ -438,7 +452,7 @@
     if (vis(pageEnd)) head(x, pageEnd, 0, 1, Math.min(6, (pageEnd - ref) / 2.5));
     head(x, ref, 0, 1, Math.min(6, (ref - pageTop) / 2.5));
     head(x, ref, 0, -1, Math.min(6, (pageEnd - ref) / 2.5));
-    g.stroke();
+    stroke();
     g.globalAlpha = A(scrollA);
     const up = ref - pageTop, down = pageEnd - ref;
     // Each value on a leader: a 45° line from a fixed point on the mark, with a
@@ -471,7 +485,7 @@
       const d = (leanNow[key] += (dir - leanNow[key]) * (1 - Math.exp(-frameDt / 0.12)));
       if (Math.abs(dir - d) > 0.004) leaning = true;
       const ex = tx + 1 - LEAD, ey = ay + d * LEAD;
-      const sx = ex - tw - 8;
+      const sx = ex - 8; // the landing, the value at its end
       ink("measure");
       g.globalAlpha = A(scrollA * 0.85);
       g.lineWidth = 0.9;
@@ -480,12 +494,12 @@
       g.moveTo(ex, ey); g.lineTo(sx, ey);
       const hd = Math.hypot(LEAD, d * LEAD) || 1;
       head(tx, ay, LEAD / hd, (-d * LEAD) / hd, 5);
-      g.stroke();
+      stroke();
       g.globalAlpha = A(scrollA);
       g.save();
-      g.textAlign = "left";
-      g.textBaseline = "alphabetic";
-      g.fillText(text, sx + 4, ey - 4);
+      g.textAlign = "right";
+      g.textBaseline = "middle";
+      g.fillText(text, sx - 4, ey);
       g.restore();
     };
     leaning = false;
@@ -500,7 +514,7 @@
         const my = Math.min(Hh - tw / 2 - 6, Math.max(tw / 2 + 6, (v0 + v1) / 2));
         ink("measure");
         g.globalAlpha = A(scrollA);
-        label(text, x + 10, my, -Math.PI / 2);
+        label(text, x + 8, my, -Math.PI / 2);
       };
       along(`y = ${mm(up)}`, pageTop, ref);
       along(`h − y = ${mm(down)}`, ref, pageEnd);

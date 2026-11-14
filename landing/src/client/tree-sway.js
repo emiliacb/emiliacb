@@ -1376,12 +1376,22 @@ function drawCurl(p, x0, y0, tx, ty, size, u, a) {
    drawing, on a line that follows the bone on the side the rule is not on.
    ========================================================================== */
 
+// Arrowheads as AutoCAD draws them: closed and filled, three times as long
+// as they are wide. head() queues one; fillHeads() fills the queue.
+const HEADS = [];
 function head(x, y, ux, uy, len) {
-  g.moveTo(x - len * (ux * 0.9 - uy * 0.4), y - len * (uy * 0.9 + ux * 0.4));
-  g.lineTo(x, y);
-  g.lineTo(x - len * (ux * 0.9 + uy * 0.4), y - len * (uy * 0.9 - ux * 0.4));
+  const L = len * 1.5, w = L / 6, bx = x - ux * L, by = y - uy * L;
+  HEADS.push([x, y, bx - uy * w, by + ux * w, bx + uy * w, by - ux * w]);
+}
+function fillHeads() {
+  g.beginPath();
+  for (const t of HEADS) { g.moveTo(t[0], t[1]); g.lineTo(t[2], t[3]); g.lineTo(t[4], t[5]); g.closePath(); }
+  HEADS.length = 0;
+  g.fill();
 }
 
+// A touch screen sets the cotas' values smaller, as the page's do.
+const COARSE = matchMedia("(hover: none), (pointer: coarse)").matches;
 // CSS millimetres: CSS fixes 1in = 96px, so a millimetre is 96/25.4 px.
 const MM = 96 / 25.4;
 /** A length in CSS px, in CSS millimetres. */
@@ -1396,7 +1406,7 @@ function label(text, x, y, ang, u) {
   g.save();
   g.translate(x, y);
   g.rotate(ang);
-  g.font = `300 ${15 * u}px "Barlow Condensed", sans-serif`;
+  g.font = `300 ${(COARSE ? 12 : 15) * u}px "Barlow Condensed", sans-serif`;
   g.textAlign = "center";
   g.textBaseline = "middle";
   g.fillText(text, 0, 0);
@@ -1435,6 +1445,7 @@ function drawLength(l, u, a) {
   const vd = Math.hypot(vx, vy) || 1;
   head(e1x, e1y, vx / vd, vy / vd, hl);
   g.stroke();
+  fillHeads();
   const m = Math.round(n / 2);
   const mo = off(m) + 9 * u;
   const ta = Math.atan2(l.dy[m + 1] - l.dy[m - 1], l.dx[m + 1] - l.dx[m - 1]);
