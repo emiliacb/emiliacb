@@ -401,6 +401,10 @@
   const scrollerOf = () =>
     (document.documentElement.classList.contains("ai-layout-enabled") && document.getElementById("scroll-wrapper")) ||
     document.scrollingElement;
+  // What the scroller shows. On a phone the page scrolls under the browser's
+  // bars: once they hide, the window is taller than the root's clientHeight,
+  // and the page's end reaches the window's bottom, not clientHeight's.
+  const viewOf = (s) => (s === document.scrollingElement ? Math.max(s.clientHeight, innerHeight) : s.clientHeight);
   let scrollA = 0, scrollHold = 0, dragging = false;
   // On a touch screen the rule runs down the screen's very edge, its values
   // written along it on its left.
@@ -413,7 +417,7 @@
   function scrollTo(clientY) {
     // The inverse of the break: dragging puts the break under the pointer.
     const scroller = scrollerOf();
-    const max = scroller.scrollHeight - scroller.clientHeight;
+    const max = scroller.scrollHeight - viewOf(scroller);
     scroller.scrollTop = Math.max(0, Math.min(1, clientY / Hh)) * max;
   }
   strip.addEventListener("pointerdown", (e) => {
@@ -446,10 +450,11 @@
     if (scrollA < 0.01) return;
     const scroller = scrollerOf();
     const total = scroller.scrollHeight;
-    if (total <= scroller.clientHeight + 1) return;
+    const view = viewOf(scroller);
+    if (total <= view + 1) return;
     const x = ruleX();
-    const st = scroller.scrollTop;
-    const view = scroller.clientHeight;
+    // Held within the page, so a rubber-band overscroll still reads 0.
+    const st = Math.min(total - view, Math.max(0, scroller.scrollTop));
     const thumbTop = (st / total) * Hh;
     const thumbBot = ((st + view) / total) * Hh;
     const prog = Math.min(1, Math.max(0, st / (total - view)));
@@ -495,7 +500,7 @@
       g.fillText(text, r, ref);
       g.restore();
     };
-    const up = ref - pageTop, down = pageEnd - ref;
+    const up = Math.max(0, ref - pageTop), down = Math.max(0, pageEnd - ref);
     // Each value on a leader: a 45° line from a fixed point on the mark, with a
     // small arrowhead on it, out to a horizontal shelf the value sits on.
     // y stays near the top of the screen and h − y near the bottom; a leader
@@ -553,7 +558,7 @@
       const along = (key, text, a, b) => {
         // Even at nothing (the page's very top or end) the value shows, as
         // on desktop, held whole on the screen beside the circle.
-        if (b < 0 || a > Hh) return;
+        if (b < -1 || a > Hh + 1) return;
         const v0 = Math.max(a, 6), v1 = Math.max(v0, Math.min(b, Hh - 6));
         g.font = FONT;
         const tw = g.measureText(text).width;
