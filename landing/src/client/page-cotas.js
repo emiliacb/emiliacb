@@ -549,15 +549,19 @@
       // Along the mark, on its left, at the middle of the part of each
       // segment in view, kept whole on the screen.
       // Kept whole on the screen, a value can reach the circle at either end
-      // of the page; there it steps a few px further from the rule, eased.
+      // of the page; there it steps aside by the circle's radius, eased.
       const along = (key, text, a, b) => {
-        const v0 = Math.max(a, 6), v1 = Math.min(b, Hh - 6);
-        if (v1 - v0 < 4) return;
+        // Even at nothing (the page's very top or end) the value shows, as
+        // on desktop, held whole on the screen beside the circle.
+        if (b < 0 || a > Hh) return;
+        const v0 = Math.max(a, 6), v1 = Math.max(v0, Math.min(b, Hh - 6));
         g.font = FONT;
         const tw = g.measureText(text).width;
         const my = Math.min(Hh - tw / 2 - 6, Math.max(tw / 2 + 6, (v0 + v1) / 2));
         const near = my - tw / 2 < ref + BREAK_R + 3 && my + tw / 2 > ref - BREAK_R - 3;
-        const want = near ? BREAK_R + 6 : 0;
+        // Aside by the circle's radius: as close to the circle as it sits
+        // to the rule.
+        const want = near ? BREAK_R : 0;
         const d = (aside[key] += (want - aside[key]) * (1 - Math.exp(-frameDt / 0.12)));
         if (Math.abs(want - d) > 0.05) leaning = true;
         else aside[key] = want;
