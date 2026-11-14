@@ -1,7 +1,6 @@
 // The page in technical-drawing ink: whatever block the pointer touches is
-// dimensioned (its height, in CSS millimetres), the pointer's movement is
-// plotted on x and y axes from where it last stood still, with its
-// acceleration on each axis (not over a dimensioned block), and the right edge holds two
+// dimensioned (its height, in CSS millimetres), the pointer carries its
+// velocity on a rule and its acceleration (not over a dimensioned block), and the right edge holds two
 // marks at true scale, up to the start of the page and down to its end,
 // meeting at the break (where a scrollbar's thumb would be). Nothing is drawn
 // until the pointer moves; everything fades with distance from it and shortly
@@ -261,110 +260,80 @@
      dimensioned until the pointer stops and sets off again ---- */
   const V1 = 2600, RISE = 0.05, FALL = 0.2;
   let airA = 0, tNow = 0, curAl = 0, curHold = 0, airVis = 1;
-  // The direction the pointer goes (its velocity's own, never eased).
+  function arrow(x0, y0, x1, y1, hl) {
+    const d = Math.hypot(x1 - x0, y1 - y0) || 1;
+    const ux = (x1 - x0) / d, uy = (y1 - y0) / d;
+    g.beginPath();
+    g.moveTo(x0, y0); g.lineTo(x1, y1);
+    g.moveTo(x1 - hl * (ux * 0.9 - uy * 0.45), y1 - hl * (uy * 0.9 + ux * 0.45));
+    g.lineTo(x1, y1);
+    g.lineTo(x1 - hl * (ux * 0.9 + uy * 0.45), y1 - hl * (uy * 0.9 - ux * 0.45));
+  }
+  // The rule's direction and the arrow's reach, eased so the arrow glides.
   let dirX = 1, dirY = 0, reach = 0;
-  let moved = false;
-  // Where the pointer last stood still: the start of the movement that
-  // leaves it, dimensioned to where the pointer is now. And whether this
-  // movement's air was put away over a cota: once put away, it waits for the
-  // pointer to stop and set off again.
+  // The furthest the arrow reached in the current movement: a dot on the rule
+  // that stays until the next movement starts.
+  // It fades out with the rings.
+  let peak = 0, moved = false;
+  // Where the pointer last stood still: the rule's zero for the movement
+  // that leaves it. And whether this movement's air was put away over a
+  // cota: once put away, it waits for the pointer to stop and set off again.
   let stillX = -1e4, stillY = -1e4, restX = -1e4, restY = -1e4, stowed = false;
+  const FULL = 110;
   // CSS metres: 1px = 0.0254/96 m.
   const PX_M = 0.0254 / 96;
-  // The acceleration on each axis, eased (`ax`, `ay`, px/s²), and the most
-  // each reached in this movement, the values shown.
-  let ax = 0, ay = 0, prevVX = 0, prevVY = 0;
-  let peakAx = 0, peakAy = 0;
-  const AX_STEP = 11, AX_PAST = 22, AX_MIN = 40, AX_BACK = 10, AX_AMP = 28;
-  // This movement's acceleration as it went: where the pointer was and the
-  // acceleration on each axis there, for the curves along the axes.
-  const trace = [];
-  /** A smooth line through the points, by their midpoints. */
-  function curve(pts) {
-    if (pts.length < 2) return;
-    g.moveTo(pts[0][0], pts[0][1]);
-    for (let i = 1; i < pts.length - 1; i++) {
-      g.quadraticCurveTo(pts[i][0], pts[i][1], (pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2);
-    }
-    const q = pts[pts.length - 1];
-    g.lineTo(q[0], q[1]);
-  }
-  // The movement on a Cartesian plot: the origin where the pointer last
-  // stood still, an x and a y axis through it, graduated and running past
-  // the pointer, and the pointer itself as the plotted point, projected onto
-  // both axes, where each axis's peak acceleration is read off.
+  // `accel` follows the pointer; `peakAccel` is the most this movement
+  // reached, the value shown, kept like the peak mark until the next one.
+  let accel = 0, peakAccel = 0, prevVX = 0, prevVY = 0;
   function drawAir() {
-    if (NO_AIR || restX < -1e3) return;
-    const a = Math.max(curAl, airA);
-    if (a < 0.01) return;
-    const ox = restX, oy = restY;
-    const dx = px - ox, dy = py - oy;
-    if (Math.hypot(dx, dy) < 8) return;
-    // Each axis points the way the pointer went along it.
-    const sx = dx < 0 ? -1 : 1, sy = dy < 0 ? -1 : 1;
-    const lx = Math.max(AX_MIN, Math.abs(dx) + AX_PAST);
-    const ly = Math.max(AX_MIN, Math.abs(dy) + AX_PAST);
+    if (NO_AIR) return;
+    const ux = dirX, uy = dirY;
+    const x0 = restX, y0 = restY;
     ink("force");
-    g.lineWidth = 0.8;
-    g.globalAlpha = A(a * 0.5);
-    g.beginPath();
-    g.moveTo(ox - sx * AX_BACK, oy); g.lineTo(ox + sx * lx, oy);
-    g.moveTo(ox, oy - sy * AX_BACK); g.lineTo(ox, oy + sy * ly);
-    for (let k = 1; k * AX_STEP < lx - 6; k++) {
-      const t = k % 5 === 0 ? 4 : 2, x = ox + sx * AX_STEP * k;
-      g.moveTo(x, oy - t); g.lineTo(x, oy + t);
-    }
-    for (let k = 1; k * AX_STEP < ly - 6; k++) {
-      const t = k % 5 === 0 ? 4 : 2, y = oy + sy * AX_STEP * k;
-      g.moveTo(ox - t, y); g.lineTo(ox + t, y);
-    }
-    head(ox + sx * lx, oy, sx, 0, 6);
-    head(ox, oy + sy * ly, 0, sy, 6);
-    g.stroke();
-    // The axes' names at their ends, and the origin.
-    g.globalAlpha = A(a * 0.6);
-    g.font = FONT;
-    g.textBaseline = "middle";
-    g.textAlign = sx > 0 ? "left" : "right";
-    g.fillText("x", ox + sx * (lx + 5), oy);
-    g.textAlign = "center";
-    g.fillText("y", ox, oy + sy * (ly + 10));
-    g.textAlign = sx > 0 ? "right" : "left";
-    g.fillText("0", ox - sx * 5, oy - sy * 9);
-    // The point, projected onto each axis.
-    g.globalAlpha = A(a * 0.45);
-    g.setLineDash([3, 3]);
-    g.beginPath();
-    if (Math.abs(dy) >= 4) { g.moveTo(px, py); g.lineTo(px, oy); }
-    if (Math.abs(dx) >= 4) { g.moveTo(px, py); g.lineTo(ox, py); }
-    g.stroke();
-    g.setLineDash([]);
-    // The acceleration as it went, along each axis: a(x) over the x axis and
-    // a(y) beside the y one, positive (speeding up the way the pointer went)
-    // away from the point, scaled so this movement's peak reaches AX_AMP.
-    if (trace.length > 1) {
-      let mx = 1e-6, my = 1e-6;
-      for (const t of trace) { mx = Math.max(mx, Math.abs(t[2])); my = Math.max(my, Math.abs(t[3])); }
-      g.globalAlpha = A(a * 0.7);
-      g.lineWidth = 1;
+    if (curAl > 0.01) {
+      g.lineWidth = 0.7;
+      g.globalAlpha = A(curAl * 0.35);
       g.beginPath();
-      if (Math.abs(dx) >= 8) curve(trace.map((t) => [t[0], oy - sy * ((t[2] * sx) / mx) * AX_AMP]));
-      if (Math.abs(dy) >= 8) curve(trace.map((t) => [ox - sx * ((t[3] * sy) / my) * AX_AMP, t[1]]));
+      g.moveTo(x0, y0); g.lineTo(x0 + ux * FULL, y0 + uy * FULL);
+      for (let k = 0; k <= 10; k++) {
+        const len = k % 5 === 0 ? 6 : 3;
+        const qx = x0 + ux * FULL * (k / 10), qy = y0 + uy * FULL * (k / 10);
+        g.moveTo(qx, qy); g.lineTo(qx - uy * len, qy + ux * len);
+      }
+      g.stroke();
+      if (reach > 0.01) {
+        arrow(x0, y0, x0 + ux * FULL * reach, y0 + uy * FULL * reach, 6);
+        g.globalAlpha = A(curAl * 0.6);
+        g.lineWidth = 1;
+        g.stroke();
+      }
+    }
+    if (airA > 0.01 && peak > 0.01) {
+      g.globalAlpha = A(airA * 0.6);
+      g.lineWidth = 0.9;
+      g.beginPath();
+      g.arc(x0 + ux * FULL * peak, y0 + uy * FULL * peak, 3, 0, Math.PI * 2);
       g.stroke();
     }
-    if (airA < 0.01) return;
-    g.globalAlpha = A(airA * 0.6);
-    g.lineWidth = 0.9;
-    g.beginPath();
-    g.moveTo(px + 3, oy); g.arc(px, oy, 3, 0, Math.PI * 2);
-    g.moveTo(ox + 3, py); g.arc(ox, py, 3, 0, Math.PI * 2);
-    g.stroke();
-    // Each axis's acceleration off its projection, away from the point and
-    // clear of its curve.
-    g.save();
-    leader(`ax = ${(peakAx * PX_M).toFixed(2)} m/s²`, px + sx * 2, oy - sy * 2, sx, -sy, airA * 0.6, AX_AMP + 14);
-    leader(`ay = ${(peakAy * PX_M).toFixed(2)} m/s²`, ox - sx * 2, py + sy * 2, -sx, sy, airA * 0.6, AX_AMP + 14);
-    g.restore();
+    // The acceleration, on a leader to the peak mark (to the contact ring
+    // before there is one), leaning off the rule on its upper side.
+    if (airA > 0.01) {
+      let nx = -uy, ny = ux;
+      if (ny > 0) { nx = -nx; ny = -ny; }
+      const sx = nx < 0 ? -1 : 1, sy = -1;
+      let tx, ty;
+      if (peak > 0.01) {
+        tx = x0 + ux * FULL * peak + sx * 3 * Math.SQRT1_2;
+        ty = y0 + uy * FULL * peak + sy * 3 * Math.SQRT1_2;
+      } else {
+        tx = x0 + sx * 3 * Math.SQRT1_2;
+        ty = y0 + sy * 3 * Math.SQRT1_2;
+      }
+      ink("force");
+      g.save();
+      leader(`a = ${(peakAccel * PX_M).toFixed(2)} m/s²`, tx, ty, sx, sy, airA * 0.6);
+      g.restore();
+    }
   }
 
   addEventListener("pointermove", (e) => {
@@ -545,23 +514,20 @@
       vel.x *= fade; vel.y *= fade;
     }
     const speed = Math.hypot(vel.x, vel.y);
-    // dv/dt on each axis, eased so the figures can be read.
+    // |dv/dt|, eased so the figure can be read.
     if (dt > 0) {
-      const k = 1 - Math.exp(-dt / 0.15);
-      ax += ((vel.x - prevVX) / dt - ax) * k;
-      ay += ((vel.y - prevVY) / dt - ay) * k;
+      const raw = Math.hypot(vel.x - prevVX, vel.y - prevVY) / dt;
+      accel += (raw - accel) * (1 - Math.exp(-dt / 0.15));
     }
     prevVX = vel.x; prevVY = vel.y;
     tNow += (Math.min(1, speed / V1) - tNow) * (1 - Math.exp(-dt / 0.05));
     if (here && speed > 40) {
       // A new movement wipes the last one's mark.
       if (!moved) {
-        peakAx = 0; peakAy = 0; moved = true;
-        trace.length = 0;
+        peak = 0; peakAccel = 0; moved = true;
         // Before any stop seen (the pointer just came in), where it is.
         if (stillX < -1e3) { stillX = px; stillY = py; }
         restX = stillX; restY = stillY;
-        trace.push([restX, restY, 0, 0]);
         stowed = !!under;
       }
       curHold = 0.25;
@@ -574,9 +540,8 @@
       if (here && speed < 40) { stillX = px; stillY = py; }
     }
     reach += ((curHold > 0 ? tNow : 0) - reach) * (1 - Math.exp(-dt / 0.14));
-    if (moved && trace.length < 600) trace.push([px, py, ax, ay]);
-    if (moved && Math.abs(ax) > peakAx) peakAx = Math.abs(ax);
-    if (moved && Math.abs(ay) > peakAy) peakAy = Math.abs(ay);
+    if (moved && reach > peak) peak = reach;
+    if (moved && accel > peakAccel) peakAccel = accel;
     const wantCur = curHold > 0 ? 1 : 0;
     curAl += (wantCur - curAl) * (1 - Math.exp(-dt / (wantCur > curAl ? 0.1 : 0.35)));
     if (curAl < 0.004) curAl = 0;
@@ -603,12 +568,11 @@
     airVis += (wantAir - airVis) * (1 - Math.exp(-dt / (wantAir > airVis ? 0.2 : 0.1)));
     if (Math.abs(wantAir - airVis) < 0.004) airVis = wantAir;
     else live = true;
-    mask();
-    // Past the mask too: the movement's start can be far from the pointer.
     const keepA = airA, keepC = curAl;
     airA *= airVis; curAl *= airVis;
     drawAir();
     airA = keepA; curAl = keepC;
+    mask();
     // Only touched blocks are drawn, so their marks skip the focus mask: a
     // wide block (a post's card) puts its mark far from the pointer.
     blocks.forEach((b, i) => { if (b.a > 0.004) drawBlock(i, b.a); });
