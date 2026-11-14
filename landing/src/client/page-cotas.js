@@ -470,14 +470,14 @@
     g.beginPath();
     g.arc(x, ref, BREAK_R, 0, Math.PI * 2);
     g.stroke();
-    // Its diameter, on a leader pointing at its centre, leaning away from
-    // the nearer end of the screen.
-    {
-      const sy = ref < Hh / 2 ? 1 : -1;
-      g.save();
-      leader(`Ø ${mm(BREAK_R * 2)}`, x - BREAK_R * Math.SQRT1_2, ref + sy * BREAK_R * Math.SQRT1_2, -1, sy, scrollA);
-      g.restore();
-    }
+    // Its diameter, small and level beside it, with no leader.
+    g.save();
+    g.globalAlpha = A(scrollA * 0.85);
+    g.font = `300 ${COARSE ? 10 : 12}px "Barlow Condensed", sans-serif`;
+    g.textAlign = "right";
+    g.textBaseline = "middle";
+    g.fillText(`Ø ${mm(BREAK_R * 2)}`, x - BREAK_R - 4, ref);
+    g.restore();
     g.globalAlpha = A(scrollA);
     const up = ref - pageTop, down = pageEnd - ref;
     // Each value on a leader: a 45° line from a fixed point on the mark, with a
