@@ -129,8 +129,20 @@
   // along the rule.
   const COARSE = matchMedia("(hover: none), (pointer: coarse)").matches;
   const FONT = `300 ${COARSE ? 12 : 15}px "Barlow Condensed", sans-serif`;
+  // CSS pixels to the inch. CSS says 96, about right on a desktop screen; a
+  // phone draws them smaller, and by how much depends on the phone. What
+  // phones share is their glass: about 65 mm across, whatever their pixels.
+  // So a phone's narrow side in CSS px over 65 mm gives its scale (an iPhone
+  // 13 152 to the inch, a Galaxy S25 about 148, a Pixel 7 161, each within
+  // a few % of the real thing). A tablet is too wide to guess that way; 132,
+  // an iPad's, does for one.
+  const PX_IN = (() => {
+    if (!COARSE) return 96;
+    const short = Math.min(screen.width, screen.height);
+    return short > 0 && short <= 480 ? (short * 25.4) / 65 : 132;
+  })();
   const mm = (px) => {
-    const v = (px * 25.4) / 96;
+    const v = (px * 25.4) / PX_IN;
     return `${v < 100 ? v.toFixed(1) : Math.round(v)} mm`;
   };
 
@@ -300,7 +312,7 @@
   let stillX = -1e4, stillY = -1e4, restX = -1e4, restY = -1e4, stowed = false;
   const FULL = 110;
   // CSS metres: 1px = 0.0254/96 m.
-  const PX_M = 0.0254 / 96;
+  const PX_M = 0.0254 / PX_IN;
   // `accel` follows the pointer; `peakAccel` is the most this movement
   // reached, the value shown, kept like the peak mark until the next one.
   let accel = 0, peakAccel = 0, prevVX = 0, prevVY = 0;
