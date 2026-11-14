@@ -129,11 +129,18 @@
   // along the rule.
   const COARSE = matchMedia("(hover: none), (pointer: coarse)").matches;
   const FONT = `300 ${COARSE ? 12 : 15}px "Barlow Condensed", sans-serif`;
-  // CSS pixels to the inch. CSS says 96, which is about right on a desktop
-  // screen; a phone draws its CSS pixels smaller, near 160 to the inch (the
-  // Android baseline, and an iPhone's 163), so 96 would read a page half again
-  // as long as the glass it is on.
-  const PX_IN = COARSE ? 160 : 96;
+  // CSS pixels to the inch. CSS says 96, about right on a desktop screen; a
+  // phone draws them smaller, and by how much depends on the phone. What
+  // phones share is their glass: about 65 mm across, whatever their pixels.
+  // So a phone's narrow side in CSS px over 65 mm gives its scale (an iPhone
+  // 13 152 to the inch, a Galaxy S25 about 148, a Pixel 7 161, each within
+  // a few % of the real thing). A tablet is too wide to guess that way; 132,
+  // an iPad's, does for one.
+  const PX_IN = (() => {
+    if (!COARSE) return 96;
+    const short = Math.min(screen.width, screen.height);
+    return short > 0 && short <= 480 ? (short * 25.4) / 65 : 132;
+  })();
   const mm = (px) => {
     const v = (px * 25.4) / PX_IN;
     return `${v < 100 ? v.toFixed(1) : Math.round(v)} mm`;

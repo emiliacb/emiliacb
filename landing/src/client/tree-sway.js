@@ -1447,9 +1447,15 @@ function fillHeads() {
 // A touch screen sets the cotas' values smaller, as the page's do.
 const COARSE = matchMedia("(hover: none), (pointer: coarse)").matches;
 // CSS millimetres: CSS fixes 1in = 96px, so a millimetre is 96/25.4 px.
-// CSS pixels to the millimetre: CSS's 96 to the inch on a desktop, a phone's
-// near 160 (see page-cotas.js), so a length reads about what it measures.
-const MM = (COARSE ? 160 : 96) / 25.4;
+// CSS pixels to the millimetre: CSS's 96 to the inch on a desktop; on a
+// phone its narrow side over the 65 mm a phone's glass measures across, on a
+// tablet an iPad's 132 to the inch (the same guess as page-cotas.js), so a
+// length reads about what it measures.
+const MM = (() => {
+  if (!COARSE) return 96 / 25.4;
+  const short = Math.min(screen.width, screen.height);
+  return short > 0 && short <= 480 ? short / 65 : 132 / 25.4;
+})();
 /** A length in CSS px, in millimetres as seen on the screen. */
 const mm = (px) => {
   const v = px / MM;
