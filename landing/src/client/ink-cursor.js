@@ -5,7 +5,8 @@
 // --cur-role property (styles.css). Every shape is one closed outline plus up
 // to four strokes, resampled to the same number of points, so any two blend
 // point by point. Only for a fine pointer that can hover; the native cursor
-// stays until the first mouse move, and on touch.
+// stays until the first mouse move, and on touch. Being drawn, it need not sit
+// exactly on the pointer: what it touches may hold it back (tree-sway.js).
 (() => {
   if (!matchMedia("(hover: hover) and (pointer: fine)").matches) return;
   const NS = "http://www.w3.org/2000/svg";
@@ -196,4 +197,12 @@
   }, true);
   addEventListener("pointerup", (e) => { el.classList.remove("press"); setTimeout(() => roleAt(e.clientX, e.clientY)); }, true);
   root.addEventListener("mouseleave", () => el.classList.remove("on"));
+
+  // For whoever simulates what the cursor touches: whether it is on screen,
+  // and how far from the pointer to draw it, in CSS pixels. Only the drawing
+  // moves; hovering and pressing stay where the pointer is.
+  window.__inkCursor = {
+    get on() { return el.classList.contains("on"); },
+    offset(dx, dy) { el.style.translate = dx || dy ? `${dx.toFixed(2)}px ${dy.toFixed(2)}px` : ""; },
+  };
 })();

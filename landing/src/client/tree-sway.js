@@ -22,6 +22,14 @@
  * which is how brushing the crown sways the whole tree a little. A breeze
  * keeps it from ever standing dead still.
  *
+ * What is pushed pushes back. Where the page draws its own cursor
+ * (ink-cursor.js), that cursor is a body of no weight tied to the hand by a
+ * spring, and the push it gives the bark and the leaves it touches comes back
+ * on it, equal and opposite. So it falls a little behind the hand going into
+ * a branch and catches up coming out, more the faster it goes, and at rest it
+ * is exactly where the hand is. It is that body, not the hand, that touches
+ * the tree.
+ *
  * Touching a part inks its construction over it and lets the equations it
  * obeys float beside it; a moment after the pointer leaves, it is gone, and
  * everything fades with distance from the pointer. Between touches the breeze
@@ -138,6 +146,12 @@ const K1 = 5.8;
 const KL0 = 1.8;
 const KL1 = 7;
 const GAIN = 1.7;
+
+// The cursor's tie to the hand: its stiffness, in the push's own units of
+// force per unit of stretch, and the stretch past which it stiffens the way
+// the wood does. A softer tie is a heavier tree under the hand.
+const TIE = 340;
+const SLACK = 14;
 
 const TRANSMIT = 0.55; // share of a push that reaches the limbs below the part pushed
 const INERTIA = 0.7; // how hard a limb lags when the one it hangs from swings
@@ -665,7 +679,13 @@ function breeze(t, x, seed, flutter) {
    Pointer
    ========================================================================== */
 
-const pointer = { x: 0, y: 0, fromX: 0, fromY: 0, vx: 0, vy: 0, last: -1e9, tracking: false, inBox: false };
+// (x, y) is what touches the tree: the hand at (hx, hy), less how far the
+// cursor has fallen behind it, (lagX, lagY). (fromX, fromY) is where the hand
+// was at the last physics step.
+const pointer = {
+  x: 0, y: 0, hx: 0, hy: 0, fromX: 0, fromY: 0, lagX: 0, lagY: 0, vx: 0, vy: 0,
+  last: -1e9, tracking: false, inBox: false, mouse: false,
+};
 
 function track(event) {
   // A finger dragging the page scrolls it; it is not brushing the tree.
@@ -679,8 +699,8 @@ function track(event) {
   const dt = (event.timeStamp - pointer.last) / 1000;
   if (pointer.tracking && dt > 0.001 && dt < 0.12) {
     // Smoothed, or a single jittery event reads as a slap.
-    pointer.vx += ((p.x - pointer.x) / dt - pointer.vx) * 0.5;
-    pointer.vy += ((p.y - pointer.y) / dt - pointer.vy) * 0.5;
+    pointer.vx += ((p.x - pointer.hx) / dt - pointer.vx) * 0.5;
+    pointer.vy += ((p.y - pointer.hy) / dt - pointer.vy) * 0.5;
   } else {
     // A pointer coming back after a pause did not sweep across the gap.
     pointer.vx = 0;
@@ -688,10 +708,13 @@ function track(event) {
     pointer.fromX = p.x;
     pointer.fromY = p.y;
   }
-  pointer.x = p.x;
-  pointer.y = p.y;
+  pointer.hx = p.x;
+  pointer.hy = p.y;
+  pointer.x = p.x - pointer.lagX;
+  pointer.y = p.y - pointer.lagY;
   pointer.last = event.timeStamp;
   pointer.tracking = true;
+  pointer.mouse = event.pointerType === "mouse";
   // Only over the illustration's own box can it ink anything.
   const r = box.getBoundingClientRect();
   pointer.inBox =
@@ -701,6 +724,59 @@ function track(event) {
 function release() {
   pointer.tracking = false;
   pointer.inBox = false;
+  letGo();
+}
+
+/**
+ * One step of the cursor against the tree. It is tied to the hand by a spring
+ * and weighs nothing, so the spring's pull and the tree's push on it always
+ * balance; the push is the one it gives, `drag` times its own velocity, turned
+ * round. (gx, gy) is from where the cursor was to where the hand is now, and
+ * what is found is how much of that it is still short by when the step ends.
+ * Where nothing pushes back it is short by nothing: it is the hand.
+ */
+function trail(gx, gy, drag) {
+  const far = Math.hypot(gx, gy);
+  if (drag < 1e-6 || far < 1e-9) {
+    pointer.lagX = 0;
+    pointer.lagY = 0;
+    return;
+  }
+  // TIE m (1 + (m / SLACK)²) = r (far − m), for the stretch m. The left side
+  // only steepens, so Newton from a stretch that is too long (the shorter of
+  // the answers without the stiffening and without everything else) comes
+  // straight down onto it.
+  const r = drag / H;
+  let m = Math.min((r * far) / (TIE + r), Math.cbrt((r * far * SLACK * SLACK) / TIE));
+  for (let i = 0; i < 4; i++) {
+    const q = (m / SLACK) ** 2;
+    m -= (TIE * m * (1 + q) + r * (m - far)) / (TIE * (1 + 3 * q) + r);
+  }
+  pointer.lagX = (gx / far) * m;
+  pointer.lagY = (gy / far) * m;
+}
+
+// The cursor the page draws, where it does (ink-cursor.js), and how far back
+// it was last told to sit, in CSS pixels.
+let heldX = 0;
+let heldY = 0;
+
+function hold() {
+  const x = -pointer.lagX * sc;
+  const y = -pointer.lagY * sc;
+  if (x === heldX && y === heldY) return;
+  heldX = x;
+  heldY = y;
+  if (window.__inkCursor) window.__inkCursor.offset(x, y);
+}
+
+/** Gives the cursor back to the hand. */
+function letGo() {
+  pointer.lagX = 0;
+  pointer.lagY = 0;
+  pointer.x = pointer.hx;
+  pointer.y = pointer.hy;
+  hold();
 }
 
 /* ==========================================================================
@@ -796,11 +872,25 @@ function offerMotion(DM) {
    Physics
    ========================================================================== */
 
-/** How much of the pointer's push lands on a point this far from its edge. */
-function reach(gap) {
+/**
+ * How much of the pointer's push lands on a point this far from its edge: by
+ * contact, and through the air it drags along.
+ */
+function contact(gap) {
   const g = Math.max(0, gap);
-  return Math.exp((-g * g) / (2 * CONTACT * CONTACT)) + WAKE_SHARE * Math.exp((-g * g) / (2 * WAKE * WAKE));
+  return Math.exp((-g * g) / (2 * CONTACT * CONTACT));
 }
+
+function wake(gap) {
+  const g = Math.max(0, gap);
+  return WAKE_SHARE * Math.exp((-g * g) / (2 * WAKE * WAKE));
+}
+
+// How much wood and how much leaf the pointer was in contact with in the last
+// step: what its push is multiplied by, and so what pushes back on it. The
+// wake is left out: that push goes through the air, and the air is not felt.
+let gripWood = 0;
+let gripLeaf = 0;
 
 /**
  * One physics step, with the pointer at (qx, qy) pushing wood with (fx, fy)
@@ -812,6 +902,8 @@ function step(t, qx, qy, fx, fy, lx, ly) {
   const near = qx > -3 * WAKE && qx < 400 + 3 * WAKE && qy > -3 * WAKE && qy < 800 + 3 * WAKE;
   const pushing = near && (fx !== 0 || fy !== 0);
   for (const l of limbs) l.torque = 0;
+  gripWood = 0;
+  gripLeaf = 0;
 
   if (pushing) {
     // A push anywhere on a limb bends that limb, and every limb below it too.
@@ -822,7 +914,9 @@ function step(t, qx, qy, fx, fy, lx, ly) {
       for (let i = 0; i < l.n; i++) {
         const gap = Math.hypot(l.dx[i] - qx, l.dy[i] - qy) - l.half[i];
         if (gap > 3 * WAKE) continue;
-        const k = (reach(gap) * STEP) / CONTACT;
+        const c = (contact(gap) * STEP) / CONTACT;
+        const k = c + (wake(gap) * STEP) / CONTACT;
+        gripWood += c;
         w += k;
         mx += k * l.dx[i];
         my += k * l.dy[i];
@@ -845,7 +939,10 @@ function step(t, qx, qy, fx, fy, lx, ly) {
   for (const f of leaves) {
     f.torque = 0;
     if (!pushing) continue;
-    const w = LEAF_AREA * reach(Math.hypot(f.nowX - qx, f.nowY - qy) - 0.75 * f.radius);
+    const gap = Math.hypot(f.nowX - qx, f.nowY - qy) - 0.75 * f.radius;
+    const c = LEAF_AREA * contact(gap);
+    const w = c + LEAF_AREA * wake(gap);
+    gripLeaf += c;
     if (w < 1e-4) continue;
     f.torque = w * ((f.nowX - f.pivX) * ly - (f.nowY - f.pivY) * lx);
     for (let a = f.limb; a; a = a.up) {
@@ -1914,21 +2011,36 @@ function tick(now) {
     p.sum.fill(0);
     p.felt = 0;
   }
+  // Only a cursor the page draws can be held back: the system's own is
+  // wherever the hand is.
+  const held = pointer.mouse && window.__inkCursor && window.__inkCursor.on;
+  let hx = pointer.fromX;
+  let hy = pointer.fromY;
   for (let i = 0; i < steps; i++) {
     const u = (i + 1) / steps;
     clock += H;
+    const toX = pointer.fromX + (pointer.hx - pointer.fromX) * u;
+    const toY = pointer.fromY + (pointer.hy - pointer.fromY) * u;
     step(
       clock,
-      pointer.fromX + (pointer.x - pointer.fromX) * u,
-      pointer.fromY + (pointer.y - pointer.fromY) * u,
+      toX - pointer.lagX,
+      toY - pointer.lagY,
       pointer.vx * kWood,
       pointer.vy * kWood,
       pointer.vx * kLeaf,
       pointer.vy * kLeaf
     );
+    // The same push, on the cursor: the coefficient times what it touched.
+    const drag = held ? FEEL.gain * (gripWood * kWood + gripLeaf * kLeaf) : 0;
+    trail(toX - hx + pointer.lagX, toY - hy + pointer.lagY, drag);
+    hx = toX;
+    hy = toY;
   }
-  pointer.fromX = pointer.x;
-  pointer.fromY = pointer.y;
+  pointer.fromX = pointer.hx;
+  pointer.fromY = pointer.hy;
+  pointer.x = pointer.hx - pointer.lagX;
+  pointer.y = pointer.hy - pointer.lagY;
+  hold();
 
   pose();
   drawWood();
@@ -2038,6 +2150,7 @@ function stop() {
   if (frame) window.cancelAnimationFrame(frame);
   frame = 0;
   lastFrame = 0;
+  letGo();
 }
 
 function setup() {
