@@ -180,13 +180,19 @@
   }
   render();
 
+  // Where the pointer is, and how far from it the cursor is drawn.
+  let px = 0, py = 0, offX = 0, offY = 0;
+  const place = () => { el.style.transform = `translate(${(px + offX).toFixed(2)}px, ${(py + offY).toFixed(2)}px)`; };
+
   const root = document.documentElement;
   const roleOf = (t) => getComputedStyle(t && t.nodeType === 1 ? t : (t && t.parentElement) || root).getPropertyValue("--cur-role").trim() || "default";
   addEventListener("pointermove", (e) => {
     if (e.pointerType !== "mouse") return;
     root.classList.add("ink-cursor");
     el.classList.add("on");
-    el.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+    px = e.clientX;
+    py = e.clientY;
+    place();
     setRole(roleOf(e.composedPath()[0]));
   }, { passive: true, capture: true });
   const roleAt = (x, y) => setRole(roleOf(document.elementFromPoint(x, y)));
@@ -203,6 +209,6 @@
   // moves; hovering and pressing stay where the pointer is.
   window.__inkCursor = {
     get on() { return el.classList.contains("on"); },
-    offset(dx, dy) { el.style.translate = dx || dy ? `${dx.toFixed(2)}px ${dy.toFixed(2)}px` : ""; },
+    offset(dx, dy) { offX = dx; offY = dy; place(); },
   };
 })();
