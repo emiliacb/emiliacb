@@ -386,6 +386,23 @@ function segDist(px, py, x0, y0, x1, y1) {
   return Math.hypot(px - x0 - vx * t, py - y0 - vy * t);
 }
 
+/** How far apart two runs are, a to b and c to d: nothing if they cross. */
+function runDist(ax, ay, bx, by, cx, cy, dx, dy) {
+  const side = (px, py, qx, qy, rx, ry) => (qx - px) * (ry - py) - (qy - py) * (rx - px);
+  if (
+    side(ax, ay, bx, by, cx, cy) * side(ax, ay, bx, by, dx, dy) < 0 &&
+    side(cx, cy, dx, dy, ax, ay) * side(cx, cy, dx, dy, bx, by) < 0
+  ) {
+    return 0;
+  }
+  return Math.min(
+    segDist(ax, ay, cx, cy, dx, dy),
+    segDist(bx, by, cx, cy, dx, dy),
+    segDist(cx, cy, ax, ay, bx, by),
+    segDist(dx, dy, ax, ay, bx, by)
+  );
+}
+
 /** The circle through three points: centre and radius into `out`. False if they are in line. */
 function circle3(x1, y1, x2, y2, x3, y3, out) {
   const a = x2 - x1;
@@ -615,6 +632,8 @@ function build() {
     cy /= 6 * area;
     let radius = 0;
     for (const [x, y] of poly) radius += Math.hypot(x - cx, y - cy);
+    // A coarser outline, for what the cursor touches: as drawn, and as it is now.
+    const rim = poly.filter((_, k) => k % 4 === 0);
     radius /= poly.length;
 
     // The line from the pivot to the far tip: the midrib it turns about.
@@ -659,6 +678,10 @@ function build() {
         ty,
         rib,
         halfW: (Math.abs(area) / rib) * 0.6,
+        rimX: Float64Array.from(rim, (q) => q[0]),
+        rimY: Float64Array.from(rim, (q) => q[1]),
+        nowRimX: Float64Array.from(rim, (q) => q[0]),
+        nowRimY: Float64Array.from(rim, (q) => q[1]),
         tipX: tx,
         tipY: ty,
         ghost: 0, // the turn of the limb it hangs from
@@ -911,6 +934,44 @@ function skin(gap) {
   return Math.exp((-g * g) / (2 * SKIN * SKIN));
 }
 
+/**
+ * How nearly the cursor touched each part on its way from (ax, ay) to
+ * (bx, by): the whole run is measured, against the bone of each limb less its
+ * thickness and against each leaf's outline, so that neither a twig thinner
+ * than the samples along it nor a step longer than a branch is wide is missed.
+ */
+function feel(ax, ay, bx, by) {
+  const far = 3 * SKIN + 40;
+  const out =
+    Math.max(ax, bx) < -far || Math.min(ax, bx) > 400 + far || Math.max(ay, by) < -far || Math.min(ay, by) > 800 + far;
+  for (const l of limbs) {
+    let gap = 1e9;
+    if (!out) {
+      for (let i = 0; i < l.n - 1; i++) {
+        const d = runDist(ax, ay, bx, by, l.dx[i], l.dy[i], l.dx[i + 1], l.dy[i + 1]) - 0.5 * (l.half[i] + l.half[i + 1]);
+        if (d < gap) gap = d;
+      }
+    }
+    l.touch = gap < 3 * SKIN ? skin(gap) : 0;
+  }
+  for (const f of leaves) {
+    f.touch = 0;
+    if (out || segDist(f.nowX, f.nowY, ax, ay, bx, by) > 2.5 * f.radius + 3 * SKIN) continue;
+    const x = f.nowRimX;
+    const y = f.nowRimY;
+    const n = x.length;
+    // Ending inside the outline is touching it; otherwise, how near the run came to its edge.
+    let inside = false;
+    let gap = 1e9;
+    for (let k = 0, j = n - 1; k < n; j = k++) {
+      if (y[k] > by !== y[j] > by && bx < ((x[j] - x[k]) * (by - y[k])) / (y[j] - y[k]) + x[k]) inside = !inside;
+      const d = runDist(ax, ay, bx, by, x[j], y[j], x[k], y[k]);
+      if (d < gap) gap = d;
+    }
+    f.touch = inside ? 1 : gap < 3 * SKIN ? skin(gap) : 0;
+  }
+}
+
 function wake(gap) {
   const g = Math.max(0, gap);
   return WAKE_SHARE * Math.exp((-g * g) / (2 * WAKE * WAKE));
@@ -927,7 +988,6 @@ function step(t, qx, qy, fx, fy, lx, ly) {
   const near = qx > -3 * WAKE && qx < 400 + 3 * WAKE && qy > -3 * WAKE && qy < 800 + 3 * WAKE;
   const pushing = near && (fx !== 0 || fy !== 0);
   for (const l of limbs) l.torque = 0;
-  for (const p of parts) p.touch = 0;
 
   if (pushing) {
     // A push anywhere on a limb bends that limb, and every limb below it too.
@@ -939,7 +999,6 @@ function step(t, qx, qy, fx, fy, lx, ly) {
         const gap = Math.hypot(l.dx[i] - qx, l.dy[i] - qy) - l.half[i];
         if (gap > 3 * WAKE) continue;
         const k = ((contact(gap) + wake(gap)) * STEP) / CONTACT;
-        if (gap < 3 * SKIN) l.touch = Math.max(l.touch, skin(gap));
         w += k;
         mx += k * l.dx[i];
         my += k * l.dy[i];
@@ -964,7 +1023,6 @@ function step(t, qx, qy, fx, fy, lx, ly) {
     if (!pushing) continue;
     const gap = Math.hypot(f.nowX - qx, f.nowY - qy) - 0.75 * f.radius;
     const w = LEAF_AREA * (contact(gap) + wake(gap));
-    f.touch = skin(gap);
     if (w < 1e-4) continue;
     f.torque = w * ((f.nowX - f.pivX) * ly - (f.nowY - f.pivY) * lx);
     for (let a = f.limb; a; a = a.up) {
@@ -1161,6 +1219,10 @@ function drawLeaves() {
     f.m[5] = ff;
     f.tipX = a * f.tx + cc * f.ty + e;
     f.tipY = b * f.tx + dd * f.ty + ff;
+    for (let k = 0; k < f.rimX.length; k++) {
+      f.nowRimX[k] = a * f.rimX[k] + cc * f.rimY[k] + e;
+      f.nowRimY[k] = b * f.rimX[k] + dd * f.rimY[k] + ff;
+    }
     f.ghost = L.rot[j];
     f.ang = turn;
   }
@@ -2057,6 +2119,7 @@ function tick(now) {
     // lost is that share over what is kept, as drag.
     let drag = 0;
     if (held) {
+      feel(hx - pointer.lagX, hy - pointer.lagY, toX - pointer.lagX, toY - pointer.lagY);
       for (const l of limbs) drag += l.touch * along(FADE, l.worn);
       for (const f of leaves) drag += LEAF_BRAKE * f.touch * along(FADE, f.worn);
       const lost = Math.max(0, Math.min(0.98, along(BRAKE, speed)));
@@ -2064,7 +2127,10 @@ function tick(now) {
     }
     const moved = trail(toX - hx, toY - hy, drag);
     // A part wears by how far the cursor has moved through it, and mends.
-    for (const p of parts) p.worn = (p.worn + p.touch * moved) * Math.exp(-H / MEND);
+    for (const p of parts) {
+      p.worn = (p.worn + p.touch * moved) * Math.exp(-H / MEND);
+      if (!held) p.touch = 0;
+    }
     hx = toX;
     hy = toY;
   }
