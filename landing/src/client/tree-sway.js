@@ -152,19 +152,22 @@ const KL0 = 1.8;
 const KL1 = 7;
 const GAIN = 1.7;
 
-// How the tree slows the cursor. Touching a part drags on it, and it moves at
-// 1 / (1 + drag) of the hand's speed. The drag grows with the hand's speed,
-// up to BRAKE at V1 and beyond (a leaf's is LEAF_BRAKE of the wood's), so a
-// drift loses a few per cent of its speed and a flick most of it. It is felt
-// from SKIN outside the bark. A part gives as the cursor moves through it,
-// its drag falling to 1/e over GIVE tree units of travel, and is whole again
-// MEND seconds after it is left. Whatever distance the cursor has lost to the
-// hand it makes up over CATCHUP seconds, sooner once it is more than SLACK
-// behind.
-const BRAKE = 3;
+// How the tree slows the cursor, as two curves, each a list of points read
+// straight between them and level beyond the last.
+//
+// BRAKE is the share of its speed the cursor loses on first touching wood, by
+// the hand's speed in tree units a second: a drift loses little, a flick most
+// of it. FADE is how much of that is left once the cursor has moved so many
+// tree units through the part: the part gives as it is moved through.
+//
+// A leaf slows it LEAF_BRAKE as much as wood. A part is felt from SKIN outside
+// its edge, and is whole again MEND seconds after it is left. Whatever distance
+// the cursor has lost to the hand it makes up over CATCHUP seconds, sooner once
+// it is more than SLACK behind.
+const BRAKE = [[0, 0], [650, 0.43], [1300, 0.6], [2600, 0.75]];
+const FADE = [[0, 1], [15, 0.65], [35, 0.37], [70, 0.14], [120, 0.03], [160, 0]];
 const LEAF_BRAKE = 0.6;
 const SKIN = 6;
-const GIVE = 35;
 const MEND = 0.35;
 const CATCHUP = 0.12;
 const SLACK = 30;
@@ -255,6 +258,19 @@ const FRAGS = {
 /* ==========================================================================
    Geometry
    ========================================================================== */
+
+/** A curve given as points, read at x: straight between them, level beyond the ends. */
+function along(curve, x) {
+  const n = curve.length;
+  if (x <= curve[0][0]) return curve[0][1];
+  for (let i = 1; i < n; i++) {
+    if (x > curve[i][0]) continue;
+    const [x0, y0] = curve[i - 1];
+    const [x1, y1] = curve[i];
+    return y0 + ((y1 - y0) * (x - x0)) / (x1 - x0 || 1);
+  }
+  return curve[n - 1][1];
+}
 
 /** Squeezes a value into ±lim, gently: no hard stop to bounce off. */
 const soft = (v, bound) => bound * Math.tanh(v / bound);
@@ -394,7 +410,7 @@ function circle3(x1, y1, x2, y2, x3, y3, out) {
 const plateState = () => ({
   rv: 0, // how much of this part is inked, 0 to 1
   touch: 0, // how nearly the pointer was touching it in the last step, 0 to 1
-  grip: 1, // how much of its drag on the cursor is left: 1 untouched, 0 given way
+  worn: 0, // how far the cursor has moved through it since it was last whole
   gap: 1e9, // pointer to its surface, in tree units
   hold: 0,
   fresh: false,
@@ -2036,20 +2052,19 @@ function tick(now) {
       pointer.vx * kLeaf,
       pointer.vy * kLeaf
     );
-    // What it touches drags on the cursor, as much of each part as has not
-    // yet given way, and harder the faster the hand is going.
+    // What it touches drags on the cursor: by how fast the hand is going, and
+    // by how much of each part has not yet given way. A share of its speed
+    // lost is that share over what is kept, as drag.
     let drag = 0;
     if (held) {
-      for (const l of limbs) drag += l.touch * l.grip;
-      for (const f of leaves) drag += LEAF_BRAKE * f.touch * f.grip;
-      drag *= BRAKE * t;
+      for (const l of limbs) drag += l.touch * along(FADE, l.worn);
+      for (const f of leaves) drag += LEAF_BRAKE * f.touch * along(FADE, f.worn);
+      const lost = Math.max(0, Math.min(0.98, along(BRAKE, speed)));
+      drag = Math.max(0, drag) * (lost / (1 - lost));
     }
     const moved = trail(toX - hx, toY - hy, drag);
-    // A part gives by how far the cursor has moved through it, and mends.
-    for (const p of parts) {
-      p.grip *= Math.exp((-p.touch * moved) / GIVE);
-      p.grip += (1 - p.grip) * (1 - Math.exp(-H / MEND));
-    }
+    // A part wears by how far the cursor has moved through it, and mends.
+    for (const p of parts) p.worn = (p.worn + p.touch * moved) * Math.exp(-H / MEND);
     hx = toX;
     hy = toY;
   }
