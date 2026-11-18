@@ -869,8 +869,12 @@ function onMotion(e) {
   const a = e.acceleration;
   const r = e.rotationRate;
   if (ig && ig.x != null) {
-    // Motion that arrives without being asked for needs no asking.
-    if (!motionSeen && dropPill) dropPill();
+    // Motion that arrives without being asked for needs no asking, and the
+    // pill's place is free for the sound's.
+    if (!motionSeen && dropPill) {
+      dropPill();
+      offerSound();
+    }
     motionSeen = true;
     device.grav += ((-SIDE * ig.x) / 9.81 - device.grav) * (1 - Math.exp(-dt / TILT_SMOOTH));
   }
@@ -893,11 +897,15 @@ function onMotion(e) {
  * also the press that lets the sound start, as any press on the page is. */
 function listenMotion() {
   const DM = window.DeviceMotionEvent;
-  if (!DM) return;
+  if (!DM) return setTimeout(offerSound, HINT_AFTER);
   window.addEventListener("devicemotion", onMotion, { passive: true });
-  if (typeof DM.requestPermission !== "function") return;
-  // Already granted in this visit: the events flow and no pill is needed.
-  setTimeout(() => { if (!motionSeen) offerMotion(DM); }, 700);
+  if (typeof DM.requestPermission !== "function") return setTimeout(offerSound, HINT_AFTER);
+  // Already granted in this visit: the events flow and no pill is needed,
+  // and its place is free for the sound's.
+  setTimeout(() => {
+    if (!motionSeen) offerMotion(DM);
+    else offerSound();
+  }, 700);
 }
 
 function offerMotion(DM) {
@@ -961,6 +969,7 @@ try {
 function setSound(yes) {
   sound.want = yes;
   if (yes) startSound();
+  else dropHint();
 }
 
 /** Starts the sound, if it is wanted. Only does anything from inside a click, a tap or a key press. */
@@ -988,6 +997,9 @@ function startSound() {
       bus.connect(out).connect(ac.destination);
       bus.connect(echo).connect(dull).connect(back).connect(echo);
       dull.connect(wet).connect(out);
+      ac.addEventListener("statechange", () => {
+        if (ac.state === "running") dropHint();
+      });
       sound.ac = ac;
       sound.bus = bus;
     }
@@ -995,6 +1007,63 @@ function startSound() {
   } catch {
     // No sound on this browser: the tree stays as quiet as it was.
   }
+}
+
+// Where the browser is still waiting for a press before it plays, a speaker
+// on the tree itself, low on its trunk and in its colour, says there is
+// something to hear.
+// Pressing it is such a press, and so is any other: either way it goes as soon
+// as the sound runs. It only ever turns the sound on; turning it off is the
+// footer's switch. It is given a moment first, for a browser that needs no
+// press to show it, and stays away while the pill is asking for the phone's
+// motion: that tap starts the sound too.
+const HINT_AFTER = 600;
+const HINT_UP = 0.3; // how far up the trunk it sits, from the ground
+let hint = null;
+
+/** Puts the speaker on the trunk, wherever the drawing is on the page now. */
+function placeHint() {
+  if (!hint) return;
+  const trunk = limbs[0];
+  const i = Math.round((trunk.n - 1) * HINT_UP);
+  hint.style.left = `${(ox + trunk.rx[i] * sc).toFixed(1)}px`;
+  hint.style.top = `${(oy + trunk.ry[i] * sc).toFixed(1)}px`;
+  // In the wood's own colour where it sits: the drawing's gradient, read at
+  // that height. The stylesheet darkens or lightens it from there.
+  const grad = svg.querySelector("#tree-wood");
+  const stops = grad ? [...grad.querySelectorAll("stop")].map((st) => (st.getAttribute("stop-color").match(/\d+/g) || []).map(Number)) : [];
+  if (stops.length < 2 || stops.some((c) => c.length !== 3)) return;
+  const y1 = Number(grad.getAttribute("y1"));
+  const y2 = Number(grad.getAttribute("y2"));
+  const t = Math.max(0, Math.min(1, (trunk.ry[i] - y1) / (y2 - y1 || 1)));
+  const [from, to] = [stops[0], stops[stops.length - 1]];
+  hint.style.color = `rgb(${from.map((c, k) => Math.round(c + (to[k] - c) * t)).join(" ")})`;
+}
+
+function offerSound() {
+  if (hint || dropPill || !sound.want || !sound.ac || sound.ac.state === "running") return;
+  const es = (document.documentElement.lang || "").startsWith("es");
+  hint = document.createElement("button");
+  hint.type = "button";
+  hint.className = "tree-sound-hint";
+  // Lucide's "volume-2", as the footer's switch wears.
+  hint.innerHTML =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" ' +
+    'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/>' +
+    '<path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></svg>';
+  hint.setAttribute("aria-label", es ? "Activar el sonido del árbol" : "Turn the tree's sound on");
+  hint.addEventListener("click", startSound);
+  placeHint();
+  box.appendChild(hint);
+}
+
+function dropHint() {
+  if (!hint) return;
+  const el = hint;
+  hint = null;
+  el.classList.add("is-gone");
+  setTimeout(() => el.remove(), 400);
 }
 
 const FIRST_PRESS = ["pointerdown", "keydown", "touchend"];
@@ -1664,6 +1733,7 @@ function layout() {
   ox = m.e - r.left;
   oy = m.f - r.top;
   small = Math.max(0.72, Math.min(1, sc));
+  placeHint();
   floats.style.setProperty("--k", String(small));
 
   // Graduate each tip's scale as finely as the screen can show.
@@ -2443,6 +2513,11 @@ if (box && svg && woodEl && !reduced && setup()) {
 
   window.addEventListener("pointermove", track, { passive: true });
   if (COARSE) listenMotion();
+  else setTimeout(offerSound, HINT_AFTER);
+  // Where the browser already lets this page play (it was pressed on the way
+  // here from another page of the site, or its visitor allows it sound), the
+  // tree is heard at once. Everywhere else it waits for the first press.
+  startSound();
   for (const type of FIRST_PRESS) window.addEventListener(type, onFirstPress, { capture: true, passive: true });
   window.addEventListener(SOUND_KEY, (event) => setSound(!!event.detail));
   document.documentElement.addEventListener("pointerleave", release);
