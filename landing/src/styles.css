@@ -497,9 +497,7 @@ html.ai-layout-enabled #activity-panel {
 }
 
 /* The button that asks for the phone's motion where the browser wants a tap
-   for it (iOS), at the foot of the tree, and the switch for the tree's sound:
-   on any phone that can shake it, and wherever there is a mouse. Drawn as the
-   Schedule button is: a
+   for it (iOS), at the foot of the tree. Drawn as the Schedule button is: a
    hairline box in the page's ink, a Lucide icon, small text, inverted while
    pressed. The tree's box lets nothing through, so it takes the pointer back. */
 .tree-motion-pill {

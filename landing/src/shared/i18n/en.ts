@@ -23,6 +23,7 @@ export const en = {
     navigationLabel: "Footer navigation",
     contact: "Contact",
     license: "Licensed under Apache 2.0 and CC BY 4.0.",
+    sound: "Sound",
   },
 
   language: {

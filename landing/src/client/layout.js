@@ -77,3 +77,32 @@ if (
     observer.observe(sentinel);
   }
 }
+
+// The switch for the tree's sound, in the footer (footer.ts). The sound is on
+// unless this was last left off; the choice is kept here, and the tree
+// (tree-sway.js) is told of a press with an event, inside the press itself,
+// which is what lets a browser start playing.
+{
+  const SOUND_KEY = "tree-sound";
+  const toggle = document.getElementById("sound-toggle");
+  if (toggle) {
+    let on = true;
+    try {
+      on = localStorage.getItem(SOUND_KEY) !== "off";
+    } catch {
+      // No storage: on, as for a first visit.
+    }
+    toggle.setAttribute("aria-pressed", String(on));
+    toggle.addEventListener("click", () => {
+      on = !on;
+      toggle.setAttribute("aria-pressed", String(on));
+      try {
+        if (on) localStorage.removeItem(SOUND_KEY);
+        else localStorage.setItem(SOUND_KEY, "off");
+      } catch {
+        // Not remembered, then.
+      }
+      window.dispatchEvent(new CustomEvent(SOUND_KEY, { detail: on }));
+    });
+  }
+}

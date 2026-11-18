@@ -52,7 +52,7 @@
  * when the cursor first touches it and, on a phone, each time it swings back
  * after a shake, as loud as the swing was wide. A browser plays nothing until
  * the page has been pressed somewhere, so the first notes come after the first
- * click, tap or key; the switch at the tree's foot turns it off, and an off
+ * click, tap or key; the switch in the page's footer turns it off, and an off
  * is remembered.
  *
  * The tree sits behind the page, so it listens to the pointer on the window.
@@ -859,6 +859,7 @@ const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
   (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const SIDE = IOS ? -1 : 1;
 let motionSeen = false;
+let dropPill = null; // takes the pill down, while it is up
 
 function onMotion(e) {
   const now = e.timeStamp || performance.now();
@@ -868,10 +869,8 @@ function onMotion(e) {
   const a = e.acceleration;
   const r = e.rotationRate;
   if (ig && ig.x != null) {
-    // The phone's motion is coming through: the tree can be shaken, so it
-    // can be heard, and there is nothing left to ask. Its switch goes up, or
-    // takes the place of the question.
-    if (!motionSeen && (!pill || pillState === "ask")) showPill(sound.want ? "on" : "off");
+    // Motion that arrives without being asked for needs no asking.
+    if (!motionSeen && dropPill) dropPill();
     motionSeen = true;
     device.grav += ((-SIDE * ig.x) / 9.81 - device.grav) * (1 - Math.exp(-dt / TILT_SMOOTH));
   }
@@ -888,84 +887,49 @@ function onMotion(e) {
   device.lean = Number.isFinite(lean) ? lean : 0;
 }
 
-/**
- * Listens to the phone's motion. Where the browser asks first (iOS), a pill at
- * the foot of the tree asks, on a tap: a permission prompt needs one, and a
- * pill says what it is for, where a tap anywhere would not. That same tap
- * lets the sound start, and the pill stays as its switch. Where nothing has
- * to be asked, the pill comes up as the switch alone once the phone's motion
- * is seen to arrive.
- */
+/** Listens to the phone's motion. Where the browser asks first (iOS), a pill
+ * at the foot of the tree asks, on a tap: a permission prompt needs one, and
+ * a pill says what it is for, where a tap anywhere would not. That tap is
+ * also the press that lets the sound start, as any press on the page is. */
 function listenMotion() {
   const DM = window.DeviceMotionEvent;
   if (!DM) return;
   window.addEventListener("devicemotion", onMotion, { passive: true });
   if (typeof DM.requestPermission !== "function") return;
-  // Already granted in this visit: the events flow and there is nothing to ask.
-  setTimeout(() => { if (!motionSeen && !pill) showPill("ask"); }, 700);
+  // Already granted in this visit: the events flow and no pill is needed.
+  setTimeout(() => { if (!motionSeen) offerMotion(DM); }, 700);
 }
 
-// Lucide's "vibrate", "volume-2" and "volume-x", as the Schedule button beside
-// the pill wears Lucide's calendar.
-const SPEAKER =
-  '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/>';
-const PILL_ICON = {
-  ask: '<path d="m2 8 2 2-2 2 2 2-2 2"/><path d="m22 8-2 2 2 2-2 2 2 2"/><rect width="8" height="14" x="8" y="5" rx="1"/>',
-  on: SPEAKER + '<path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>',
-  off: SPEAKER + '<line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/>',
-};
-let pill = null;
-let pillState = "";
-
-/** Puts the pill up, or changes what it is: "ask" for the phone's motion, or the sound's switch, "on" or "off". */
-function showPill(state) {
+function offerMotion(DM) {
   const es = (document.documentElement.lang || "").startsWith("es");
-  if (!pill) {
-    pill = document.createElement("button");
-    pill.type = "button";
-    pill.className = "tree-motion-pill";
-    pill.addEventListener("click", pressPill);
-    box.appendChild(pill);
-  }
-  pillState = state;
-  const ask = state === "ask";
+  const pill = document.createElement("button");
+  pill.type = "button";
+  pill.className = "tree-motion-pill";
+  // Lucide's "vibrate", as the Schedule button beside it wears Lucide's calendar.
   pill.innerHTML =
     '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" ' +
     'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    `${PILL_ICON[state]}</svg><span>${ask ? (es ? "Interactuar" : "Interact") : es ? "Sonido" : "Sound"}</span>`;
-  pill.setAttribute(
-    "aria-label",
-    ask ? (es ? "Mover el árbol con el teléfono, y oírlo" : "Move the tree with your phone, and hear it")
-      : es ? "Sonido del árbol" : "The tree's sound"
-  );
-  if (ask) pill.removeAttribute("aria-pressed");
-  else pill.setAttribute("aria-pressed", String(state === "on"));
-}
-
-function pressPill() {
-  if (pillState !== "ask") {
-    setSound(pillState === "off");
-    showPill(sound.want ? "on" : "off");
-    return;
-  }
-  const es = (document.documentElement.lang || "").startsWith("es");
+    '<path d="m2 8 2 2-2 2 2 2-2 2"/><path d="m22 8-2 2 2 2-2 2 2 2"/><rect width="8" height="14" x="8" y="5" rx="1"/></svg>' +
+    `<span>${es ? "Interactuar" : "Interact"}</span>`;
+  pill.setAttribute("aria-label", es ? "Mover el árbol con el teléfono" : "Move the tree with your phone");
+  box.appendChild(pill);
   const gone = () => {
-    const el = pill;
-    el.classList.add("is-gone");
-    setTimeout(() => el.remove(), 400);
+    dropPill = null;
+    pill.classList.add("is-gone");
+    setTimeout(() => pill.remove(), 400);
   };
-  // The sound has to start inside the tap itself; the answer comes after it.
-  startSound();
-  window.DeviceMotionEvent.requestPermission()
-    .then((state) => {
-      if (state === "granted" || motionSeen) return showPill(sound.want ? "on" : "off");
-      pill.querySelector("span").textContent = es ? "Sin permiso" : "Not allowed";
-      setTimeout(gone, 1400);
-    })
-    .catch(() => {
-      if (motionSeen) return showPill(sound.want ? "on" : "off");
-      gone();
-    });
+  dropPill = gone;
+  pill.addEventListener("click", () => {
+    DM.requestPermission()
+      .then((state) => {
+        if (state === "granted") gone();
+        else {
+          pill.querySelector("span").textContent = es ? "Sin permiso" : "Not allowed";
+          setTimeout(gone, 1400);
+        }
+      })
+      .catch(gone);
+  });
 }
 
 /* ==========================================================================
@@ -980,7 +944,9 @@ const NOTE = {
   "leaf:crown": 293.66, "leaf:left": 311.13, "leaf:twig": 369.99, "leaf:stem": 440, "leaf:elbow": 466.16, "leaf:right": 587.33,
   trunk: 73.42, stem: 110, left: 146.83, right: 196, twig: 220,
 };
-// The sound is wanted from the start, unless the switch was last left off.
+// The sound is wanted from the start, unless its switch, in the page's footer
+// (footer.ts, layout.js), was last left off: the switch keeps that under
+// SOUND_KEY and says so with an event of the same name when it is pressed.
 // A browser plays nothing until the page has been clicked, tapped or typed
 // into, so it is silent until the first of those, wherever it lands.
 const SOUND_KEY = "tree-sound";
@@ -991,15 +957,9 @@ try {
   // No storage: wanted, as for a first visit.
 }
 
-/** The switch: turns the sound on or off, and remembers an off for the next visit. Called from a press, which is also what lets it start. */
+/** Turns the sound on or off. Called from a press, which is also what lets it start. */
 function setSound(yes) {
   sound.want = yes;
-  try {
-    if (yes) localStorage.removeItem(SOUND_KEY);
-    else localStorage.setItem(SOUND_KEY, "off");
-  } catch {
-    // Not remembered, then.
-  }
   if (yes) startSound();
 }
 
@@ -2482,11 +2442,9 @@ if (box && svg && woodEl && !reduced && setup()) {
   drawLeaves();
 
   window.addEventListener("pointermove", track, { passive: true });
-  // A phone gets the sound's switch once it is seen to shake the tree; with a
-  // mouse the cursor rings what it touches, so the switch is there from the start.
   if (COARSE) listenMotion();
-  else showPill(sound.want ? "on" : "off");
   for (const type of FIRST_PRESS) window.addEventListener(type, onFirstPress, { capture: true, passive: true });
+  window.addEventListener(SOUND_KEY, (event) => setSound(!!event.detail));
   document.documentElement.addEventListener("pointerleave", release);
   window.addEventListener("blur", release);
 
