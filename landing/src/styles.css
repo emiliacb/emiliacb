@@ -547,12 +547,14 @@ html.ai-layout-enabled #activity-panel {
 }
 
 /* The speaker that says the tree can be heard, while the browser still waits
-   for a press before it plays (src/client/tree-sway.js, which also puts it
-   where the trunk is). On the tree itself, and large enough to be seen there;
-   what keeps it quiet is that it is only an icon, in the page's ink and half
-   as dark, with no box round it. Full strength under the pointer, inverted
-   while pressed. */
+   for a press before it plays (src/client/tree-sway.js, which puts it where
+   the trunk is and gives it the wood's colour there). On the tree itself, and
+   large enough to be seen there; what keeps it quiet is that it is only an
+   icon, in the trunk's own colour, darker than the wood on the light page and
+   lighter than it on the dark one, where the tree is inverted and so is this.
+   Further the same way under the pointer and while pressed. */
 .tree-sound-hint {
+  --hint-light: 0.5;
   position: absolute;
   z-index: 5;
   pointer-events: auto;
@@ -563,32 +565,32 @@ html.ai-layout-enabled #activity-panel {
   height: 56px;
   margin: -28px 0 0 -28px;
   border-radius: 50%;
-  color: #1c1917;
-  opacity: 0.55;
+  color: rgb(122 195 147);
+  filter: invert(var(--tree-invert, 0)) brightness(var(--hint-light));
   animation: treeSoundHint 0.6s ease both;
-  transition: opacity 0.35s ease, background-color 0.15s, color 0.15s;
+  transition: opacity 0.35s ease, filter 0.15s;
 }
 .tree-sound-hint svg {
   width: 32px;
   height: 32px;
 }
 .tree-sound-hint:hover,
-.tree-sound-hint:focus-visible {
-  opacity: 1;
-}
 .tree-sound-hint:active,
 .tree-sound-hint:focus-visible {
-  background: #000;
-  color: #fff;
+  --hint-light: 0.32;
+}
+.tree-sound-hint:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
 }
 @media (prefers-color-scheme: dark) {
   .tree-sound-hint {
-    color: #fafaf9;
+    --hint-light: 1.9;
   }
+  .tree-sound-hint:hover,
   .tree-sound-hint:active,
   .tree-sound-hint:focus-visible {
-    background: #fff;
-    color: #000;
+    --hint-light: 2.5;
   }
 }
 .tree-sound-hint.is-gone {

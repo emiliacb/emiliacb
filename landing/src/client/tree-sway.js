@@ -1010,7 +1010,8 @@ function startSound() {
 }
 
 // Where the browser is still waiting for a press before it plays, a speaker
-// on the tree itself, low on its trunk, says there is something to hear.
+// on the tree itself, low on its trunk and in its colour, says there is
+// something to hear.
 // Pressing it is such a press, and so is any other: either way it goes as soon
 // as the sound runs. It only ever turns the sound on; turning it off is the
 // footer's switch. It is given a moment first, for a browser that needs no
@@ -1027,6 +1028,16 @@ function placeHint() {
   const i = Math.round((trunk.n - 1) * HINT_UP);
   hint.style.left = `${(ox + trunk.rx[i] * sc).toFixed(1)}px`;
   hint.style.top = `${(oy + trunk.ry[i] * sc).toFixed(1)}px`;
+  // In the wood's own colour where it sits: the drawing's gradient, read at
+  // that height. The stylesheet darkens or lightens it from there.
+  const grad = svg.querySelector("#tree-wood");
+  const stops = grad ? [...grad.querySelectorAll("stop")].map((st) => (st.getAttribute("stop-color").match(/\d+/g) || []).map(Number)) : [];
+  if (stops.length < 2 || stops.some((c) => c.length !== 3)) return;
+  const y1 = Number(grad.getAttribute("y1"));
+  const y2 = Number(grad.getAttribute("y2"));
+  const t = Math.max(0, Math.min(1, (trunk.ry[i] - y1) / (y2 - y1 || 1)));
+  const [from, to] = [stops[0], stops[stops.length - 1]];
+  hint.style.color = `rgb(${from.map((c, k) => Math.round(c + (to[k] - c) * t)).join(" ")})`;
 }
 
 function offerSound() {
