@@ -169,13 +169,13 @@ const GAIN = 1.7;
 // its edge, and is whole again MEND seconds after it is left. Whatever distance
 // the cursor has lost to the hand it makes up over CATCHUP seconds, sooner once
 // it is more than SLACK behind.
-const BRAKE = [[0, 0], [650, 0.43], [1300, 0.6], [2600, 0.75]];
-const FADE = [[0, 1], [15, 0.65], [35, 0.37], [70, 0.14], [120, 0.03], [160, 0]];
-const LEAF_BRAKE = 0.6;
-const SKIN = 6;
-const MEND = 0.35;
-const CATCHUP = 0.12;
-const SLACK = 30;
+const BRAKE = [[0, 0], [853.5, 0.395], [2212.1, 0.746], [3533.5, 0.98]];
+const FADE = [[0, 1], [25.3, 1], [25.9, 0], [74.9, 0], [117.2, 0], [160, 0]];
+const LEAF_BRAKE = 1;
+const SKIN = 0.1;
+const MEND = 0.01;
+const CATCHUP = 0.15;
+const SLACK = 50;
 
 const TRANSMIT = 0.55; // share of a push that reaches the limbs below the part pushed
 const INERTIA = 0.7; // how hard a limb lags when the one it hangs from swings
