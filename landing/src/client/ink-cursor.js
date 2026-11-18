@@ -5,7 +5,8 @@
 // --cur-role property (styles.css). Every shape is one closed outline plus up
 // to four strokes, resampled to the same number of points, so any two blend
 // point by point. Only for a fine pointer that can hover; the native cursor
-// stays until the first mouse move, and on touch.
+// stays until the first mouse move, and on touch. Being drawn, it need not sit
+// exactly on the pointer: what it touches may hold it back (tree-sway.js).
 (() => {
   if (!matchMedia("(hover: hover) and (pointer: fine)").matches) return;
   const NS = "http://www.w3.org/2000/svg";
@@ -179,13 +180,19 @@
   }
   render();
 
+  // Where the pointer is, and how far from it the cursor is drawn.
+  let px = 0, py = 0, offX = 0, offY = 0;
+  const place = () => { el.style.transform = `translate(${(px + offX).toFixed(2)}px, ${(py + offY).toFixed(2)}px)`; };
+
   const root = document.documentElement;
   const roleOf = (t) => getComputedStyle(t && t.nodeType === 1 ? t : (t && t.parentElement) || root).getPropertyValue("--cur-role").trim() || "default";
   addEventListener("pointermove", (e) => {
     if (e.pointerType !== "mouse") return;
     root.classList.add("ink-cursor");
     el.classList.add("on");
-    el.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+    px = e.clientX;
+    py = e.clientY;
+    place();
     setRole(roleOf(e.composedPath()[0]));
   }, { passive: true, capture: true });
   const roleAt = (x, y) => setRole(roleOf(document.elementFromPoint(x, y)));
@@ -196,4 +203,12 @@
   }, true);
   addEventListener("pointerup", (e) => { el.classList.remove("press"); setTimeout(() => roleAt(e.clientX, e.clientY)); }, true);
   root.addEventListener("mouseleave", () => el.classList.remove("on"));
+
+  // For whoever simulates what the cursor touches: whether it is on screen,
+  // and how far from the pointer to draw it, in CSS pixels. Only the drawing
+  // moves; hovering and pressing stay where the pointer is.
+  window.__inkCursor = {
+    get on() { return el.classList.contains("on"); },
+    offset(dx, dy) { offX = dx; offY = dy; place(); },
+  };
 })();

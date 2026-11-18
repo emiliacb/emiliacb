@@ -22,6 +22,19 @@
  * which is how brushing the crown sways the whole tree a little. A breeze
  * keeps it from ever standing dead still.
  *
+ * What is pushed pushes back. Where the page draws its own cursor
+ * (ink-cursor.js), that cursor is a body of no weight, and it is that body,
+ * not the hand, that touches the tree. The hand carries it along through a
+ * dashpot, so wherever something drags on it, it moves at a share of the
+ * hand's speed; a weak spring beside the dashpot brings it back to the hand
+ * afterwards. What drags on it is the bark and the leaves it touches, harder
+ * the faster the hand is going, so the faster it comes in the larger the
+ * share of its speed it loses. That is the first touch. As it goes on moving
+ * through a part, the part gives, and it is slowed less and less, until it
+ * moves through freely; the part recovers once it is left alone. Nothing ever
+ * holds the cursor still, and away from the tree it is exactly where the hand
+ * is.
+ *
  * Touching a part inks its construction over it and lets the equations it
  * obeys float beside it; a moment after the pointer leaves, it is gone, and
  * everything fades with distance from the pointer. Between touches the breeze
@@ -34,6 +47,11 @@
  * angle and angular speed; a protractor about each leaf's pivot; the force on
  * the part pushed; and the part's angle in radians, live. Each term of the
  * equation of motion shows as strong as it is in the sum.
+ *
+ * It can be heard, once asked: silent until a tap on the switch at its foot,
+ * and then every part has a note of its own, all from one scale, rung when
+ * the cursor first touches it and, on a phone, each time it swings back after
+ * a shake, as loud as the swing was wide.
  *
  * The tree sits behind the page, so it listens to the pointer on the window.
  * Nothing here is needed for the page to work: without it the tree is the
@@ -139,6 +157,26 @@ const KL0 = 1.8;
 const KL1 = 7;
 const GAIN = 1.7;
 
+// How the tree slows the cursor, as two curves, each a list of points read
+// straight between them and level beyond the last.
+//
+// BRAKE is the share of its speed the cursor loses on first touching wood, by
+// the hand's speed in tree units a second: a drift loses little, a flick most
+// of it. FADE is how much of that is left once the cursor has moved so many
+// tree units through the part: the part gives as it is moved through.
+//
+// A leaf slows it LEAF_BRAKE as much as wood. A part is felt from SKIN outside
+// its edge, and is whole again MEND seconds after it is left. Whatever distance
+// the cursor has lost to the hand it makes up over CATCHUP seconds, sooner once
+// it is more than SLACK behind.
+const BRAKE = [[0, 0], [853.5, 0.395], [2212.1, 0.746], [3533.5, 0.98]];
+const FADE = [[0, 1], [25.3, 1], [25.9, 0], [74.9, 0], [117.2, 0], [160, 0]];
+const LEAF_BRAKE = 1;
+const SKIN = 0.1;
+const MEND = 0.01;
+const CATCHUP = 0.15;
+const SLACK = 50;
+
 const TRANSMIT = 0.55; // share of a push that reaches the limbs below the part pushed
 const INERTIA = 0.7; // how hard a limb lags when the one it hangs from swings
 const LEAF_INERTIA = 0.85;
@@ -225,6 +263,19 @@ const FRAGS = {
 /* ==========================================================================
    Geometry
    ========================================================================== */
+
+/** A curve given as points, read at x: straight between them, level beyond the ends. */
+function along(curve, x) {
+  const n = curve.length;
+  if (x <= curve[0][0]) return curve[0][1];
+  for (let i = 1; i < n; i++) {
+    if (x > curve[i][0]) continue;
+    const [x0, y0] = curve[i - 1];
+    const [x1, y1] = curve[i];
+    return y0 + ((y1 - y0) * (x - x0)) / (x1 - x0 || 1);
+  }
+  return curve[n - 1][1];
+}
 
 /** Squeezes a value into ±lim, gently: no hard stop to bounce off. */
 const soft = (v, bound) => bound * Math.tanh(v / bound);
@@ -340,6 +391,23 @@ function segDist(px, py, x0, y0, x1, y1) {
   return Math.hypot(px - x0 - vx * t, py - y0 - vy * t);
 }
 
+/** How far apart two runs are, a to b and c to d: nothing if they cross. */
+function runDist(ax, ay, bx, by, cx, cy, dx, dy) {
+  const side = (px, py, qx, qy, rx, ry) => (qx - px) * (ry - py) - (qy - py) * (rx - px);
+  if (
+    side(ax, ay, bx, by, cx, cy) * side(ax, ay, bx, by, dx, dy) < 0 &&
+    side(cx, cy, dx, dy, ax, ay) * side(cx, cy, dx, dy, bx, by) < 0
+  ) {
+    return 0;
+  }
+  return Math.min(
+    segDist(ax, ay, cx, cy, dx, dy),
+    segDist(bx, by, cx, cy, dx, dy),
+    segDist(cx, cy, ax, ay, bx, by),
+    segDist(dx, dy, ax, ay, bx, by)
+  );
+}
+
 /** The circle through three points: centre and radius into `out`. False if they are in line. */
 function circle3(x1, y1, x2, y2, x3, y3, out) {
   const a = x2 - x1;
@@ -363,6 +431,12 @@ function circle3(x1, y1, x2, y2, x3, y3, out) {
 /** What every part, bone or leaf, carries for its anatomy. */
 const plateState = () => ({
   rv: 0, // how much of this part is inked, 0 to 1
+  touch: 0, // how nearly the pointer was touching it in the last step, 0 to 1
+  worn: 0, // how far the cursor has moved through it since it was last whole
+  met: false, // the cursor is on it, for the note it rings on first being touched
+  went: 0, // which way it was last turning, and the angle it last turned back at
+  turned: 0,
+  rang: -1, // when it last rang, on the sound's own clock
   gap: 1e9, // pointer to its surface, in tree units
   hold: 0,
   fresh: false,
@@ -567,6 +641,8 @@ function build() {
     cy /= 6 * area;
     let radius = 0;
     for (const [x, y] of poly) radius += Math.hypot(x - cx, y - cy);
+    // A coarser outline, for what the cursor touches: as drawn, and as it is now.
+    const rim = poly.filter((_, k) => k % 4 === 0);
     radius /= poly.length;
 
     // The line from the pivot to the far tip: the midrib it turns about.
@@ -611,6 +687,10 @@ function build() {
         ty,
         rib,
         halfW: (Math.abs(area) / rib) * 0.6,
+        rimX: Float64Array.from(rim, (q) => q[0]),
+        rimY: Float64Array.from(rim, (q) => q[1]),
+        nowRimX: Float64Array.from(rim, (q) => q[0]),
+        nowRimY: Float64Array.from(rim, (q) => q[1]),
         tipX: tx,
         tipY: ty,
         ghost: 0, // the turn of the limb it hangs from
@@ -665,7 +745,13 @@ function breeze(t, x, seed, flutter) {
    Pointer
    ========================================================================== */
 
-const pointer = { x: 0, y: 0, fromX: 0, fromY: 0, vx: 0, vy: 0, last: -1e9, tracking: false, inBox: false };
+// (x, y) is what touches the tree: the hand at (hx, hy), less how far the
+// cursor has fallen behind it, (lagX, lagY). (fromX, fromY) is where the hand
+// was at the last physics step.
+const pointer = {
+  x: 0, y: 0, hx: 0, hy: 0, fromX: 0, fromY: 0, lagX: 0, lagY: 0, vx: 0, vy: 0,
+  last: -1e9, tracking: false, inBox: false, mouse: false,
+};
 
 function track(event) {
   // A finger dragging the page scrolls it; it is not brushing the tree.
@@ -679,8 +765,8 @@ function track(event) {
   const dt = (event.timeStamp - pointer.last) / 1000;
   if (pointer.tracking && dt > 0.001 && dt < 0.12) {
     // Smoothed, or a single jittery event reads as a slap.
-    pointer.vx += ((p.x - pointer.x) / dt - pointer.vx) * 0.5;
-    pointer.vy += ((p.y - pointer.y) / dt - pointer.vy) * 0.5;
+    pointer.vx += ((p.x - pointer.hx) / dt - pointer.vx) * 0.5;
+    pointer.vy += ((p.y - pointer.hy) / dt - pointer.vy) * 0.5;
   } else {
     // A pointer coming back after a pause did not sweep across the gap.
     pointer.vx = 0;
@@ -688,10 +774,13 @@ function track(event) {
     pointer.fromX = p.x;
     pointer.fromY = p.y;
   }
-  pointer.x = p.x;
-  pointer.y = p.y;
+  pointer.hx = p.x;
+  pointer.hy = p.y;
+  pointer.x = p.x - pointer.lagX;
+  pointer.y = p.y - pointer.lagY;
   pointer.last = event.timeStamp;
   pointer.tracking = true;
+  pointer.mouse = event.pointerType === "mouse";
   // Only over the illustration's own box can it ink anything.
   const r = box.getBoundingClientRect();
   pointer.inBox =
@@ -701,6 +790,49 @@ function track(event) {
 function release() {
   pointer.tracking = false;
   pointer.inBox = false;
+  letGo();
+}
+
+/**
+ * One step of the cursor, the hand having moved (sx, sy). The hand carries it
+ * through a dashpot and what it touches drags on it, `drag` as a multiple of
+ * that dashpot, so of every step the hand takes it takes 1 / (1 + drag) and
+ * falls behind by the rest; the spring beside the dashpot pays what it is
+ * behind by back over CATCHUP, stiffening past SLACK. Returns how far the
+ * cursor itself moved.
+ */
+function trail(sx, sy, drag) {
+  const lx = pointer.lagX;
+  const ly = pointer.lagY;
+  const k = 1 + drag + (H / CATCHUP) * (1 + (lx * lx + ly * ly) / (SLACK * SLACK));
+  pointer.lagX = ((1 + drag) * lx + drag * sx) / k;
+  pointer.lagY = ((1 + drag) * ly + drag * sy) / k;
+  // Close enough to the hand is the hand: nothing is left to write each frame.
+  if (!drag && Math.abs(pointer.lagX) + Math.abs(pointer.lagY) < 0.02) pointer.lagX = pointer.lagY = 0;
+  return Math.hypot(sx + lx - pointer.lagX, sy + ly - pointer.lagY);
+}
+
+// The cursor the page draws, where it does (ink-cursor.js), and how far back
+// it was last told to sit, in CSS pixels.
+let heldX = 0;
+let heldY = 0;
+
+function hold() {
+  const x = -pointer.lagX * sc;
+  const y = -pointer.lagY * sc;
+  if (x === heldX && y === heldY) return;
+  heldX = x;
+  heldY = y;
+  if (window.__inkCursor) window.__inkCursor.offset(x, y);
+}
+
+/** Gives the cursor back to the hand. */
+function letGo() {
+  pointer.lagX = 0;
+  pointer.lagY = 0;
+  pointer.x = pointer.hx;
+  pointer.y = pointer.hy;
+  hold();
 }
 
 /* ==========================================================================
@@ -713,7 +845,7 @@ function release() {
  * the shake; spun in the screen's plane, it whips against the turn. All three
  * add up to one lean, as a share of each part's limit, felt like the breeze.
  */
-const device = { lean: 0, grav: 0, shake: 0, spinAcc: 0, spinPrev: null, last: 0 };
+const device = { lean: 0, grav: 0, shake: 0, spinAcc: 0, spinPrev: null, last: 0, calm: 0, stirred: -1e9 };
 const TILT_SMOOTH = 0.12; // s, low-pass on the gravity's sideways share
 const SHAKE_SMOOTH = 0.04;
 const SPIN_SMOOTH = 0.05;
@@ -734,6 +866,10 @@ function onMotion(e) {
   const a = e.acceleration;
   const r = e.rotationRate;
   if (ig && ig.x != null) {
+    // The phone's motion is coming through: the tree can be shaken, so it
+    // can be heard, and there is nothing left to ask. Its switch goes up, or
+    // takes the place of the question.
+    if (!motionSeen && (!pill || pillState === "ask")) showPill(sound.on ? "on" : "off");
     motionSeen = true;
     device.grav += ((-SIDE * ig.x) / 9.81 - device.grav) * (1 - Math.exp(-dt / TILT_SMOOTH));
   }
@@ -750,57 +886,267 @@ function onMotion(e) {
   device.lean = Number.isFinite(lean) ? lean : 0;
 }
 
-/** Listens to the phone's motion. Where the browser asks first (iOS), a pill
- * at the foot of the tree asks, on a tap: a permission prompt needs one, and
- * a pill says what it is for, where a tap anywhere would not. */
+/**
+ * Listens to the phone's motion. Where the browser asks first (iOS), a pill at
+ * the foot of the tree asks, on a tap: a permission prompt needs one, and a
+ * pill says what it is for, where a tap anywhere would not. That same tap
+ * turns the sound on, and the pill stays as its switch. Where nothing has to
+ * be asked, the pill comes up as the switch alone, off, once the phone's
+ * motion is seen to arrive.
+ */
 function listenMotion() {
   const DM = window.DeviceMotionEvent;
   if (!DM) return;
   window.addEventListener("devicemotion", onMotion, { passive: true });
   if (typeof DM.requestPermission !== "function") return;
-  // Already granted in this visit: the events flow and no pill is needed.
-  setTimeout(() => { if (!motionSeen) offerMotion(DM); }, 700);
+  // Already granted in this visit: the events flow and there is nothing to ask.
+  setTimeout(() => { if (!motionSeen && !pill) showPill("ask"); }, 700);
 }
 
-function offerMotion(DM) {
+// Lucide's "vibrate", "volume-2" and "volume-x", as the Schedule button beside
+// the pill wears Lucide's calendar.
+const SPEAKER =
+  '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/>';
+const PILL_ICON = {
+  ask: '<path d="m2 8 2 2-2 2 2 2-2 2"/><path d="m22 8-2 2 2 2-2 2 2 2"/><rect width="8" height="14" x="8" y="5" rx="1"/>',
+  on: SPEAKER + '<path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>',
+  off: SPEAKER + '<line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/>',
+};
+let pill = null;
+let pillState = "";
+
+/** Puts the pill up, or changes what it is: "ask" for the phone's motion, or the sound's switch, "on" or "off". */
+function showPill(state) {
   const es = (document.documentElement.lang || "").startsWith("es");
-  const pill = document.createElement("button");
-  pill.type = "button";
-  pill.className = "tree-motion-pill";
-  // Lucide's "vibrate", as the Schedule button beside it wears Lucide's calendar.
+  if (!pill) {
+    pill = document.createElement("button");
+    pill.type = "button";
+    pill.className = "tree-motion-pill";
+    pill.addEventListener("click", pressPill);
+    box.appendChild(pill);
+  }
+  pillState = state;
+  const ask = state === "ask";
   pill.innerHTML =
     '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" ' +
     'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    '<path d="m2 8 2 2-2 2 2 2-2 2"/><path d="m22 8-2 2 2 2-2 2 2 2"/><rect width="8" height="14" x="8" y="5" rx="1"/></svg>' +
-    `<span>${es ? "Interactuar" : "Interact"}</span>`;
-  pill.setAttribute("aria-label", es ? "Mover el árbol con el teléfono" : "Move the tree with your phone");
-  box.appendChild(pill);
+    `${PILL_ICON[state]}</svg><span>${ask ? (es ? "Interactuar" : "Interact") : es ? "Sonido" : "Sound"}</span>`;
+  pill.setAttribute(
+    "aria-label",
+    ask ? (es ? "Mover el árbol con el teléfono, y oírlo" : "Move the tree with your phone, and hear it")
+      : es ? "Sonido del árbol" : "The tree's sound"
+  );
+  if (ask) pill.removeAttribute("aria-pressed");
+  else pill.setAttribute("aria-pressed", String(state === "on"));
+}
+
+function pressPill() {
+  if (pillState !== "ask") {
+    setSound(pillState === "off");
+    showPill(sound.on ? "on" : "off");
+    return;
+  }
+  const es = (document.documentElement.lang || "").startsWith("es");
   const gone = () => {
-    pill.classList.add("is-gone");
-    setTimeout(() => pill.remove(), 400);
+    const el = pill;
+    el.classList.add("is-gone");
+    setTimeout(() => el.remove(), 400);
   };
-  pill.addEventListener("click", () => {
-    DM.requestPermission()
-      .then((state) => {
-        if (state === "granted") gone();
-        else {
-          pill.querySelector("span").textContent = es ? "Sin permiso" : "Not allowed";
-          setTimeout(gone, 1400);
-        }
-      })
-      .catch(gone);
-  });
+  // The sound has to start inside the tap itself; the answer comes after it.
+  setSound(true);
+  window.DeviceMotionEvent.requestPermission()
+    .then((state) => {
+      if (state === "granted" || motionSeen) return showPill(sound.on ? "on" : "off");
+      setSound(false);
+      pill.querySelector("span").textContent = es ? "Sin permiso" : "Not allowed";
+      setTimeout(gone, 1400);
+    })
+    .catch(() => {
+      if (motionSeen) return showPill(sound.on ? "on" : "off");
+      setSound(false);
+      gone();
+    });
+}
+
+/* ==========================================================================
+   Sound
+   ========================================================================== */
+
+// Every part's note, in hertz: a Hijaz on D (D E♭ F♯ G A B♭), with its two
+// semitones and the wide step between them. The leaves have the scale, the
+// bigger the leaf the lower; the wood holds the root, the fourth and the
+// fifth beneath them.
+const NOTE = {
+  "leaf:crown": 293.66, "leaf:left": 311.13, "leaf:twig": 369.99, "leaf:stem": 440, "leaf:elbow": 466.16, "leaf:right": 587.33,
+  trunk: 73.42, stem: 110, left: 146.83, right: 196, twig: 220,
+};
+const sound = { on: false, ac: null, bus: null };
+
+/** Turns the sound on or off. A browser only lets it start from a tap or a key, so this is called from one. */
+function setSound(yes) {
+  sound.on = false;
+  if (!yes) return;
+  try {
+    if (!sound.ac) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      const ac = new AC();
+      // Everything goes out under one soft ceiling, and part of it round an
+      // echo that loses its top each time: the air the notes hang in.
+      const bus = ac.createGain();
+      const out = ac.createBiquadFilter();
+      const echo = ac.createDelay(1);
+      const back = ac.createGain();
+      const dull = ac.createBiquadFilter();
+      const wet = ac.createGain();
+      out.type = "lowpass";
+      out.frequency.value = 5200;
+      echo.delayTime.value = 0.27;
+      back.gain.value = 0.42;
+      dull.type = "lowpass";
+      dull.frequency.value = 1800;
+      wet.gain.value = 0.5;
+      bus.connect(out).connect(ac.destination);
+      bus.connect(echo).connect(dull).connect(back).connect(echo);
+      dull.connect(wet).connect(out);
+      sound.ac = ac;
+      sound.bus = bus;
+    }
+    if (sound.ac.state === "suspended") sound.ac.resume();
+    sound.on = true;
+  } catch {
+    // No sound on this browser: the tree stays as quiet as it was.
+  }
+}
+
+/**
+ * Rings a part's note, `strength` from 0 to 1: quiet at its loudest, and a
+ * little louder the harder it was struck. A leaf is a small glass bell, a pure
+ * tone with partials out of tune with it that die away sooner; wood is rounder
+ * and shorter. Each sounds from its own side of the tree.
+ */
+function ring(p, strength) {
+  const ac = sound.ac;
+  if (!sound.on || !ac) return;
+  const t = ac.currentTime;
+  if (t - p.rang < 0.14) return;
+  p.rang = t;
+  const leaf = p.kind === "leaf";
+  const f = (NOTE[p.key] || NOTE.trunk * 4) * Math.pow(2, (Math.random() - 0.5) / 200);
+  const vol = (leaf ? 0.035 : 0.05) + (leaf ? 0.07 : 0.06) * Math.min(1, strength);
+  const long = leaf ? 1.6 : 1.1;
+  let to = sound.bus;
+  if (ac.createStereoPanner) {
+    const side = ac.createStereoPanner();
+    side.pan.value = Math.max(-0.7, Math.min(0.7, ((leaf ? p.cx : p.rx[p.n >> 1]) - 200) / 200));
+    side.connect(sound.bus);
+    to = side;
+  }
+  const voice = (mult, level, rise, fall) => {
+    const osc = ac.createOscillator();
+    const g = ac.createGain();
+    osc.frequency.value = f * mult;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(level, t + rise);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + rise + fall);
+    osc.connect(g).connect(to);
+    osc.start(t);
+    osc.stop(t + rise + fall + 0.05);
+  };
+  voice(1, vol, leaf ? 0.012 : 0.02, long);
+  voice(2, vol * 0.22, 0.012, long * 0.55);
+  if (leaf) {
+    voice(2.76, vol * 0.16, 0.006, long * 0.3);
+    voice(5.4, vol * 0.05, 0.004, long * 0.14);
+  } else {
+    voice(3, vol * 0.08, 0.02, long * 0.3);
+  }
+}
+
+// A shaken tree rings each part as it swings back, by how far it swung. Only
+// a shake counts, not a phone held at a tilt or the breeze: the lean has to
+// have changed by STIR within the last RING_FOR seconds, and the swing has to
+// be this share of the part's limit.
+const STIR = 0.25;
+const RING_FOR = 1.6;
+const SWING_LEAF = 0.2;
+const SWING_WOOD = 0.25;
+
+function chime(dt) {
+  device.calm += (device.lean - device.calm) * (1 - Math.exp(-dt / 0.5));
+  if (Math.abs(device.lean - device.calm) > STIR) device.stirred = clock;
+  const live = clock - device.stirred < RING_FOR;
+  for (const p of parts) {
+    if (p.omega * p.went < 0) {
+      const swing = Math.abs(p.theta - p.turned) / (2 * p.limit);
+      p.turned = p.theta;
+      if (live && swing > (p.kind === "leaf" ? SWING_LEAF : SWING_WOOD)) ring(p, swing * 0.6);
+    }
+    if (p.omega) p.went = p.omega;
+  }
 }
 
 /* ==========================================================================
    Physics
    ========================================================================== */
 
-/** How much of the pointer's push lands on a point this far from its edge. */
-function reach(gap) {
+/**
+ * How much of the pointer's push lands on a point this far from its edge: by
+ * contact, and through the air it drags along.
+ */
+function contact(gap) {
   const g = Math.max(0, gap);
-  return Math.exp((-g * g) / (2 * CONTACT * CONTACT)) + WAKE_SHARE * Math.exp((-g * g) / (2 * WAKE * WAKE));
+  return Math.exp((-g * g) / (2 * CONTACT * CONTACT));
 }
+
+/** How nearly the cursor is touching something this far from its edge. */
+function skin(gap) {
+  const g = Math.max(0, gap);
+  return Math.exp((-g * g) / (2 * SKIN * SKIN));
+}
+
+/**
+ * How nearly the cursor touched each part on its way from (ax, ay) to
+ * (bx, by): the whole run is measured, against the bone of each limb less its
+ * thickness and against each leaf's outline, so that neither a twig thinner
+ * than the samples along it nor a step longer than a branch is wide is missed.
+ */
+function feel(ax, ay, bx, by) {
+  const far = 3 * SKIN + 40;
+  const out =
+    Math.max(ax, bx) < -far || Math.min(ax, bx) > 400 + far || Math.max(ay, by) < -far || Math.min(ay, by) > 800 + far;
+  for (const l of limbs) {
+    let gap = 1e9;
+    if (!out) {
+      for (let i = 0; i < l.n - 1; i++) {
+        const d = runDist(ax, ay, bx, by, l.dx[i], l.dy[i], l.dx[i + 1], l.dy[i + 1]) - 0.5 * (l.half[i] + l.half[i + 1]);
+        if (d < gap) gap = d;
+      }
+    }
+    l.touch = gap < 3 * SKIN ? skin(gap) : 0;
+  }
+  for (const f of leaves) {
+    f.touch = 0;
+    if (out || segDist(f.nowX, f.nowY, ax, ay, bx, by) > 2.5 * f.radius + 3 * SKIN) continue;
+    const x = f.nowRimX;
+    const y = f.nowRimY;
+    const n = x.length;
+    // Ending inside the outline is touching it; otherwise, how near the run came to its edge.
+    let inside = false;
+    let gap = 1e9;
+    for (let k = 0, j = n - 1; k < n; j = k++) {
+      if (y[k] > by !== y[j] > by && bx < ((x[j] - x[k]) * (by - y[k])) / (y[j] - y[k]) + x[k]) inside = !inside;
+      const d = runDist(ax, ay, bx, by, x[j], y[j], x[k], y[k]);
+      if (d < gap) gap = d;
+    }
+    f.touch = inside ? 1 : gap < 3 * SKIN ? skin(gap) : 0;
+  }
+}
+
+function wake(gap) {
+  const g = Math.max(0, gap);
+  return WAKE_SHARE * Math.exp((-g * g) / (2 * WAKE * WAKE));
+}
+
 
 /**
  * One physics step, with the pointer at (qx, qy) pushing wood with (fx, fy)
@@ -822,7 +1168,7 @@ function step(t, qx, qy, fx, fy, lx, ly) {
       for (let i = 0; i < l.n; i++) {
         const gap = Math.hypot(l.dx[i] - qx, l.dy[i] - qy) - l.half[i];
         if (gap > 3 * WAKE) continue;
-        const k = (reach(gap) * STEP) / CONTACT;
+        const k = ((contact(gap) + wake(gap)) * STEP) / CONTACT;
         w += k;
         mx += k * l.dx[i];
         my += k * l.dy[i];
@@ -845,7 +1191,8 @@ function step(t, qx, qy, fx, fy, lx, ly) {
   for (const f of leaves) {
     f.torque = 0;
     if (!pushing) continue;
-    const w = LEAF_AREA * reach(Math.hypot(f.nowX - qx, f.nowY - qy) - 0.75 * f.radius);
+    const gap = Math.hypot(f.nowX - qx, f.nowY - qy) - 0.75 * f.radius;
+    const w = LEAF_AREA * (contact(gap) + wake(gap));
     if (w < 1e-4) continue;
     f.torque = w * ((f.nowX - f.pivX) * ly - (f.nowY - f.pivY) * lx);
     for (let a = f.limb; a; a = a.up) {
@@ -1042,6 +1389,10 @@ function drawLeaves() {
     f.m[5] = ff;
     f.tipX = a * f.tx + cc * f.ty + e;
     f.tipY = b * f.tx + dd * f.ty + ff;
+    for (let k = 0; k < f.rimX.length; k++) {
+      f.nowRimX[k] = a * f.rimX[k] + cc * f.rimY[k] + e;
+      f.nowRimY[k] = b * f.rimX[k] + dd * f.rimY[k] + ff;
+    }
     f.ghost = L.rot[j];
     f.ang = turn;
   }
@@ -1914,21 +2265,55 @@ function tick(now) {
     p.sum.fill(0);
     p.felt = 0;
   }
+  // Only a cursor the page draws can be held back: the system's own is
+  // wherever the hand is.
+  const held = pointer.mouse && window.__inkCursor && window.__inkCursor.on;
+  let hx = pointer.fromX;
+  let hy = pointer.fromY;
   for (let i = 0; i < steps; i++) {
     const u = (i + 1) / steps;
     clock += H;
+    const toX = pointer.fromX + (pointer.hx - pointer.fromX) * u;
+    const toY = pointer.fromY + (pointer.hy - pointer.fromY) * u;
     step(
       clock,
-      pointer.fromX + (pointer.x - pointer.fromX) * u,
-      pointer.fromY + (pointer.y - pointer.fromY) * u,
+      toX - pointer.lagX,
+      toY - pointer.lagY,
       pointer.vx * kWood,
       pointer.vy * kWood,
       pointer.vx * kLeaf,
       pointer.vy * kLeaf
     );
+    // What it touches drags on the cursor: by how fast the hand is going, and
+    // by how much of each part has not yet given way. A share of its speed
+    // lost is that share over what is kept, as drag.
+    let drag = 0;
+    if (held) {
+      feel(hx - pointer.lagX, hy - pointer.lagY, toX - pointer.lagX, toY - pointer.lagY);
+      for (const l of limbs) drag += l.touch * along(FADE, l.worn);
+      for (const f of leaves) drag += LEAF_BRAKE * f.touch * along(FADE, f.worn);
+      const lost = Math.max(0, Math.min(0.98, along(BRAKE, speed)));
+      drag = Math.max(0, drag) * (lost / (1 - lost));
+    }
+    const moved = trail(toX - hx, toY - hy, drag);
+    // A part wears by how far the cursor has moved through it, and mends.
+    for (const p of parts) {
+      p.worn = (p.worn + p.touch * moved) * Math.exp(-H / MEND);
+      if (!held) p.touch = 0;
+      // Its note, on first being touched, by the share of its speed the cursor loses.
+      const on = p.touch > 0.5;
+      if (on && !p.met && drag > 0.02) ring(p, drag / (1 + drag));
+      p.met = on;
+    }
+    hx = toX;
+    hy = toY;
   }
-  pointer.fromX = pointer.x;
-  pointer.fromY = pointer.y;
+  chime(dt);
+  pointer.fromX = pointer.hx;
+  pointer.fromY = pointer.hy;
+  pointer.x = pointer.hx - pointer.lagX;
+  pointer.y = pointer.hy - pointer.lagY;
+  hold();
 
   pose();
   drawWood();
@@ -2038,6 +2423,7 @@ function stop() {
   if (frame) window.cancelAnimationFrame(frame);
   frame = 0;
   lastFrame = 0;
+  letGo();
 }
 
 function setup() {
