@@ -1009,15 +1009,25 @@ function startSound() {
   }
 }
 
-// Where the browser is still waiting for a press before it plays, a small
-// speaker at the foot of the tree says there is something to hear. Pressing
-// it is such a press, and so is any other: either way it goes as soon as the
-// sound runs. It only ever turns the sound on; turning it off is the footer's
-// switch. It is given a moment first, for a browser that needs no press to
-// show it, and stays away while the pill that asks for the phone's motion has
-// the same corner: that tap starts the sound too.
+// Where the browser is still waiting for a press before it plays, a speaker
+// on the tree itself, low on its trunk, says there is something to hear.
+// Pressing it is such a press, and so is any other: either way it goes as soon
+// as the sound runs. It only ever turns the sound on; turning it off is the
+// footer's switch. It is given a moment first, for a browser that needs no
+// press to show it, and stays away while the pill is asking for the phone's
+// motion: that tap starts the sound too.
 const HINT_AFTER = 600;
+const HINT_UP = 0.3; // how far up the trunk it sits, from the ground
 let hint = null;
+
+/** Puts the speaker on the trunk, wherever the drawing is on the page now. */
+function placeHint() {
+  if (!hint) return;
+  const trunk = limbs[0];
+  const i = Math.round((trunk.n - 1) * HINT_UP);
+  hint.style.left = `${(ox + trunk.rx[i] * sc).toFixed(1)}px`;
+  hint.style.top = `${(oy + trunk.ry[i] * sc).toFixed(1)}px`;
+}
 
 function offerSound() {
   if (hint || dropPill || !sound.want || !sound.ac || sound.ac.state === "running") return;
@@ -1033,6 +1043,7 @@ function offerSound() {
     '<path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></svg>';
   hint.setAttribute("aria-label", es ? "Activar el sonido del árbol" : "Turn the tree's sound on");
   hint.addEventListener("click", startSound);
+  placeHint();
   box.appendChild(hint);
 }
 
@@ -1711,6 +1722,7 @@ function layout() {
   ox = m.e - r.left;
   oy = m.f - r.top;
   small = Math.max(0.72, Math.min(1, sc));
+  placeHint();
   floats.style.setProperty("--k", String(small));
 
   // Graduate each tip's scale as finely as the screen can show.
