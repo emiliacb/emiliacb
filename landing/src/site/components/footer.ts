@@ -1,5 +1,5 @@
 import { html, raw } from "hono/html";
-import { Languages } from "lucide-static";
+import { Languages, Volume2, VolumeX } from "lucide-static";
 import { FOOTER_NAV, PAGES, SITE_TITLE } from "../../shared/site";
 import type { RenderCtx } from "../context";
 import contact from "./contacts";
@@ -27,12 +27,31 @@ function footerContent(ctx: RenderCtx) {
           <p class="text-sm pr-6 lg:pr-24 text-pretty">
             ${footer.tagline}
           </p>
-          <dropdown-trigger class="mt-2 relative w-fit z-10 py-[0.2rem]" variant="small" label="${language.label}">
-              <span slot="icon" class="scale-[0.7] -ml-1 mr-1 mt-[2px]">${raw(Languages)}</span>
-              <div class="flex flex-col m-auto p-[0.2rem] bg-black dark:bg-white shadow-lg w-fit">
-                ${languageLinks(ctx)}
-              </div>
-          </dropdown-trigger>
+          <div class="mt-2 flex items-start gap-2">
+            <dropdown-trigger class="relative w-fit z-10 py-[0.2rem]" variant="small" label="${language.label}">
+                <span slot="icon" class="scale-[0.7] -ml-1 mr-1 mt-[2px]">${raw(Languages)}</span>
+                <div class="flex flex-col m-auto p-[0.2rem] bg-black dark:bg-white shadow-lg w-fit">
+                  ${languageLinks(ctx)}
+                </div>
+            </dropdown-trigger>
+            <!-- The tree's sound (src/client/tree-sway.js): on unless switched
+                 off here, which src/client/layout.js remembers. An icon and
+                 nothing else, as the activity panel's button is: no ground of
+                 its own, inverted on hover. -->
+            <button
+              id="sound-toggle"
+              type="button"
+              aria-pressed="true"
+              aria-label="${footer.sound}"
+              class="group flex items-center justify-center size-7
+                hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black
+                focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+                focus-visible:outline-current transition-colors [&_svg]:w-4 [&_svg]:h-4"
+            >
+              <span class="group-aria-[pressed=false]:hidden">${raw(Volume2)}</span>
+              <span class="hidden group-aria-[pressed=false]:block">${raw(VolumeX)}</span>
+            </button>
+          </div>
         </div>
 
         <!-- Column 2: Navigation links -->

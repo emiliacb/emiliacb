@@ -22,6 +22,7 @@ export const es: Dict = {
     navigationLabel: "Navegación del pie de página",
     contact: "Contacto",
     license: "Licensed under Apache 2.0 and CC BY 4.0.",
+    sound: "Sonido",
   },
 
   language: {
