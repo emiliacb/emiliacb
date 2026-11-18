@@ -2443,6 +2443,10 @@ if (box && svg && woodEl && !reduced && setup()) {
 
   window.addEventListener("pointermove", track, { passive: true });
   if (COARSE) listenMotion();
+  // Where the browser already lets this page play (it was pressed on the way
+  // here from another page of the site, or its visitor allows it sound), the
+  // tree is heard at once. Everywhere else it waits for the first press.
+  startSound();
   for (const type of FIRST_PRESS) window.addEventListener(type, onFirstPress, { capture: true, passive: true });
   window.addEventListener(SOUND_KEY, (event) => setSound(!!event.detail));
   document.documentElement.addEventListener("pointerleave", release);
