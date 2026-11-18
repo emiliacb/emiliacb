@@ -48,6 +48,11 @@
  * the part pushed; and the part's angle in radians, live. Each term of the
  * equation of motion shows as strong as it is in the sum.
  *
+ * It can be heard, once asked: silent until a tap on the switch at its foot,
+ * and then every part has a note of its own, all from one scale, rung when
+ * the cursor first touches it and, on a phone, each time it swings back after
+ * a shake, as loud as the swing was wide.
+ *
  * The tree sits behind the page, so it listens to the pointer on the window.
  * Nothing here is needed for the page to work: without it the tree is the
  * same SVG, standing still, and with reduced motion that is all there is.
@@ -428,6 +433,10 @@ const plateState = () => ({
   rv: 0, // how much of this part is inked, 0 to 1
   touch: 0, // how nearly the pointer was touching it in the last step, 0 to 1
   worn: 0, // how far the cursor has moved through it since it was last whole
+  met: false, // the cursor is on it, for the note it rings on first being touched
+  went: 0, // which way it was last turning, and the angle it last turned back at
+  turned: 0,
+  rang: -1, // when it last rang, on the sound's own clock
   gap: 1e9, // pointer to its surface, in tree units
   hold: 0,
   fresh: false,
@@ -836,7 +845,7 @@ function letGo() {
  * the shake; spun in the screen's plane, it whips against the turn. All three
  * add up to one lean, as a share of each part's limit, felt like the breeze.
  */
-const device = { lean: 0, grav: 0, shake: 0, spinAcc: 0, spinPrev: null, last: 0 };
+const device = { lean: 0, grav: 0, shake: 0, spinAcc: 0, spinPrev: null, last: 0, calm: 0, stirred: -1e9 };
 const TILT_SMOOTH = 0.12; // s, low-pass on the gravity's sideways share
 const SHAKE_SMOOTH = 0.04;
 const SPIN_SMOOTH = 0.05;
@@ -857,6 +866,10 @@ function onMotion(e) {
   const a = e.acceleration;
   const r = e.rotationRate;
   if (ig && ig.x != null) {
+    // The phone's motion is coming through: the tree can be shaken, so it
+    // can be heard, and there is nothing left to ask. Its switch goes up, or
+    // takes the place of the question.
+    if (!motionSeen && (!pill || pillState === "ask")) showPill(sound.on ? "on" : "off");
     motionSeen = true;
     device.grav += ((-SIDE * ig.x) / 9.81 - device.grav) * (1 - Math.exp(-dt / TILT_SMOOTH));
   }
@@ -873,46 +886,203 @@ function onMotion(e) {
   device.lean = Number.isFinite(lean) ? lean : 0;
 }
 
-/** Listens to the phone's motion. Where the browser asks first (iOS), a pill
- * at the foot of the tree asks, on a tap: a permission prompt needs one, and
- * a pill says what it is for, where a tap anywhere would not. */
+/**
+ * Listens to the phone's motion. Where the browser asks first (iOS), a pill at
+ * the foot of the tree asks, on a tap: a permission prompt needs one, and a
+ * pill says what it is for, where a tap anywhere would not. That same tap
+ * turns the sound on, and the pill stays as its switch. Where nothing has to
+ * be asked, the pill comes up as the switch alone, off, once the phone's
+ * motion is seen to arrive.
+ */
 function listenMotion() {
   const DM = window.DeviceMotionEvent;
   if (!DM) return;
   window.addEventListener("devicemotion", onMotion, { passive: true });
   if (typeof DM.requestPermission !== "function") return;
-  // Already granted in this visit: the events flow and no pill is needed.
-  setTimeout(() => { if (!motionSeen) offerMotion(DM); }, 700);
+  // Already granted in this visit: the events flow and there is nothing to ask.
+  setTimeout(() => { if (!motionSeen && !pill) showPill("ask"); }, 700);
 }
 
-function offerMotion(DM) {
+// Lucide's "vibrate", "volume-2" and "volume-x", as the Schedule button beside
+// the pill wears Lucide's calendar.
+const SPEAKER =
+  '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/>';
+const PILL_ICON = {
+  ask: '<path d="m2 8 2 2-2 2 2 2-2 2"/><path d="m22 8-2 2 2 2-2 2 2 2"/><rect width="8" height="14" x="8" y="5" rx="1"/>',
+  on: SPEAKER + '<path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>',
+  off: SPEAKER + '<line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/>',
+};
+let pill = null;
+let pillState = "";
+
+/** Puts the pill up, or changes what it is: "ask" for the phone's motion, or the sound's switch, "on" or "off". */
+function showPill(state) {
   const es = (document.documentElement.lang || "").startsWith("es");
-  const pill = document.createElement("button");
-  pill.type = "button";
-  pill.className = "tree-motion-pill";
-  // Lucide's "vibrate", as the Schedule button beside it wears Lucide's calendar.
+  if (!pill) {
+    pill = document.createElement("button");
+    pill.type = "button";
+    pill.className = "tree-motion-pill";
+    pill.addEventListener("click", pressPill);
+    box.appendChild(pill);
+  }
+  pillState = state;
+  const ask = state === "ask";
   pill.innerHTML =
     '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" ' +
     'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    '<path d="m2 8 2 2-2 2 2 2-2 2"/><path d="m22 8-2 2 2 2-2 2 2 2"/><rect width="8" height="14" x="8" y="5" rx="1"/></svg>' +
-    `<span>${es ? "Interactuar" : "Interact"}</span>`;
-  pill.setAttribute("aria-label", es ? "Mover el árbol con el teléfono" : "Move the tree with your phone");
-  box.appendChild(pill);
+    `${PILL_ICON[state]}</svg><span>${ask ? (es ? "Interactuar" : "Interact") : es ? "Sonido" : "Sound"}</span>`;
+  pill.setAttribute(
+    "aria-label",
+    ask ? (es ? "Mover el árbol con el teléfono, y oírlo" : "Move the tree with your phone, and hear it")
+      : es ? "Sonido del árbol" : "The tree's sound"
+  );
+  if (ask) pill.removeAttribute("aria-pressed");
+  else pill.setAttribute("aria-pressed", String(state === "on"));
+}
+
+function pressPill() {
+  if (pillState !== "ask") {
+    setSound(pillState === "off");
+    showPill(sound.on ? "on" : "off");
+    return;
+  }
+  const es = (document.documentElement.lang || "").startsWith("es");
   const gone = () => {
-    pill.classList.add("is-gone");
-    setTimeout(() => pill.remove(), 400);
+    const el = pill;
+    el.classList.add("is-gone");
+    setTimeout(() => el.remove(), 400);
   };
-  pill.addEventListener("click", () => {
-    DM.requestPermission()
-      .then((state) => {
-        if (state === "granted") gone();
-        else {
-          pill.querySelector("span").textContent = es ? "Sin permiso" : "Not allowed";
-          setTimeout(gone, 1400);
-        }
-      })
-      .catch(gone);
-  });
+  // The sound has to start inside the tap itself; the answer comes after it.
+  setSound(true);
+  window.DeviceMotionEvent.requestPermission()
+    .then((state) => {
+      if (state === "granted" || motionSeen) return showPill(sound.on ? "on" : "off");
+      setSound(false);
+      pill.querySelector("span").textContent = es ? "Sin permiso" : "Not allowed";
+      setTimeout(gone, 1400);
+    })
+    .catch(() => {
+      if (motionSeen) return showPill(sound.on ? "on" : "off");
+      setSound(false);
+      gone();
+    });
+}
+
+/* ==========================================================================
+   Sound
+   ========================================================================== */
+
+// Every part's note, in hertz: a Hijaz on D (D E♭ F♯ G A B♭), with its two
+// semitones and the wide step between them. The leaves have the scale, the
+// bigger the leaf the lower; the wood holds the root, the fourth and the
+// fifth beneath them.
+const NOTE = {
+  "leaf:crown": 293.66, "leaf:left": 311.13, "leaf:twig": 369.99, "leaf:stem": 440, "leaf:elbow": 466.16, "leaf:right": 587.33,
+  trunk: 73.42, stem: 110, left: 146.83, right: 196, twig: 220,
+};
+const sound = { on: false, ac: null, bus: null };
+
+/** Turns the sound on or off. A browser only lets it start from a tap or a key, so this is called from one. */
+function setSound(yes) {
+  sound.on = false;
+  if (!yes) return;
+  try {
+    if (!sound.ac) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      const ac = new AC();
+      // Everything goes out under one soft ceiling, and part of it round an
+      // echo that loses its top each time: the air the notes hang in.
+      const bus = ac.createGain();
+      const out = ac.createBiquadFilter();
+      const echo = ac.createDelay(1);
+      const back = ac.createGain();
+      const dull = ac.createBiquadFilter();
+      const wet = ac.createGain();
+      out.type = "lowpass";
+      out.frequency.value = 5200;
+      echo.delayTime.value = 0.27;
+      back.gain.value = 0.42;
+      dull.type = "lowpass";
+      dull.frequency.value = 1800;
+      wet.gain.value = 0.5;
+      bus.connect(out).connect(ac.destination);
+      bus.connect(echo).connect(dull).connect(back).connect(echo);
+      dull.connect(wet).connect(out);
+      sound.ac = ac;
+      sound.bus = bus;
+    }
+    if (sound.ac.state === "suspended") sound.ac.resume();
+    sound.on = true;
+  } catch {
+    // No sound on this browser: the tree stays as quiet as it was.
+  }
+}
+
+/**
+ * Rings a part's note, `strength` from 0 to 1: quiet at its loudest, and a
+ * little louder the harder it was struck. A leaf is a small glass bell, a pure
+ * tone with partials out of tune with it that die away sooner; wood is rounder
+ * and shorter. Each sounds from its own side of the tree.
+ */
+function ring(p, strength) {
+  const ac = sound.ac;
+  if (!sound.on || !ac) return;
+  const t = ac.currentTime;
+  if (t - p.rang < 0.14) return;
+  p.rang = t;
+  const leaf = p.kind === "leaf";
+  const f = (NOTE[p.key] || NOTE.trunk * 4) * Math.pow(2, (Math.random() - 0.5) / 200);
+  const vol = (leaf ? 0.035 : 0.05) + (leaf ? 0.07 : 0.06) * Math.min(1, strength);
+  const long = leaf ? 1.6 : 1.1;
+  let to = sound.bus;
+  if (ac.createStereoPanner) {
+    const side = ac.createStereoPanner();
+    side.pan.value = Math.max(-0.7, Math.min(0.7, ((leaf ? p.cx : p.rx[p.n >> 1]) - 200) / 200));
+    side.connect(sound.bus);
+    to = side;
+  }
+  const voice = (mult, level, rise, fall) => {
+    const osc = ac.createOscillator();
+    const g = ac.createGain();
+    osc.frequency.value = f * mult;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(level, t + rise);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + rise + fall);
+    osc.connect(g).connect(to);
+    osc.start(t);
+    osc.stop(t + rise + fall + 0.05);
+  };
+  voice(1, vol, leaf ? 0.012 : 0.02, long);
+  voice(2, vol * 0.22, 0.012, long * 0.55);
+  if (leaf) {
+    voice(2.76, vol * 0.16, 0.006, long * 0.3);
+    voice(5.4, vol * 0.05, 0.004, long * 0.14);
+  } else {
+    voice(3, vol * 0.08, 0.02, long * 0.3);
+  }
+}
+
+// A shaken tree rings each part as it swings back, by how far it swung. Only
+// a shake counts, not a phone held at a tilt or the breeze: the lean has to
+// have changed by STIR within the last RING_FOR seconds, and the swing has to
+// be this share of the part's limit.
+const STIR = 0.25;
+const RING_FOR = 1.6;
+const SWING_LEAF = 0.2;
+const SWING_WOOD = 0.25;
+
+function chime(dt) {
+  device.calm += (device.lean - device.calm) * (1 - Math.exp(-dt / 0.5));
+  if (Math.abs(device.lean - device.calm) > STIR) device.stirred = clock;
+  const live = clock - device.stirred < RING_FOR;
+  for (const p of parts) {
+    if (p.omega * p.went < 0) {
+      const swing = Math.abs(p.theta - p.turned) / (2 * p.limit);
+      p.turned = p.theta;
+      if (live && swing > (p.kind === "leaf" ? SWING_LEAF : SWING_WOOD)) ring(p, swing * 0.6);
+    }
+    if (p.omega) p.went = p.omega;
+  }
 }
 
 /* ==========================================================================
@@ -2130,10 +2300,15 @@ function tick(now) {
     for (const p of parts) {
       p.worn = (p.worn + p.touch * moved) * Math.exp(-H / MEND);
       if (!held) p.touch = 0;
+      // Its note, on first being touched, by the share of its speed the cursor loses.
+      const on = p.touch > 0.5;
+      if (on && !p.met && drag > 0.02) ring(p, drag / (1 + drag));
+      p.met = on;
     }
     hx = toX;
     hy = toY;
   }
+  chime(dt);
   pointer.fromX = pointer.hx;
   pointer.fromY = pointer.hy;
   pointer.x = pointer.hx - pointer.lagX;
