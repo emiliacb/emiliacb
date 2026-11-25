@@ -107,8 +107,7 @@
     return { left: l, top: t, right: r, bottom: b };
   }
   /** How far the block is turned on the screen, in radians: its own turn and
-   * its ancestors' (the page leans, and the home's content swings about the
-   * tree; see styles.css and tree-turn.js). */
+   * its ancestors' (the page leans, see styles.css). */
   function turnOf(el) {
     let a = 0;
     for (let n = el; n && n !== document.body; n = n.parentElement) {
