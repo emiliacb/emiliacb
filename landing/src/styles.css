@@ -165,9 +165,12 @@ html {
    #content is, see layout.ts), so it has to look the same on every page or it
    jumps on each navigation. The content leans only on the pages with the tree,
    where it fits the viewport: turned about its top on a long page it would
-   drift sideways, about 26px for every 1000px down. There it also twirls about
-   the tree's foot as the pointer nears the tree, through an SVG filter set by
-   src/client/tree-warp.js. */
+   drift sideways, about 26px for every 1000px down. There, as the pointer
+   nears the tree, src/client/tree-warp.js turns it about the tree's foot
+   (--tree-turn, the foot at --tree-x/--tree-y from its top-left), and past the
+   text bends it, drawing the bent copy on a canvas inside #content and hiding
+   the live children (.tree-warping) while it stands in for them; they keep
+   their pointer events. */
 :root {
   --page-lean: -1.5deg;
 }
@@ -185,9 +188,30 @@ html {
   }
 
   #overlay-content:has(#tree-illustration) #content {
-    transform: rotate(var(--page-lean));
+    position: relative;
     transform-origin: 0 0;
+    transform: translate(var(--tree-x, 0px), var(--tree-y, 0px))
+      rotate(var(--tree-turn, 0deg))
+      translate(calc(-1 * var(--tree-x, 0px)), calc(-1 * var(--tree-y, 0px)))
+      rotate(var(--page-lean));
   }
+}
+
+.tree-warp {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+#content.tree-warping > .tree-warp {
+  display: block;
+}
+
+#content.tree-warping > :not(.tree-warp) {
+  opacity: 0;
 }
 
 #overlay-content.scrolled {
