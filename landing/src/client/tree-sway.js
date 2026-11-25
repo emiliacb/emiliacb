@@ -1110,6 +1110,8 @@ function ring(p, strength) {
     osc.start(t);
     osc.stop(t + rise + fall + 0.05);
   };
+  // How many notes sound at once is what bends the page (tree-warp.js).
+  window.dispatchEvent(new CustomEvent("tree-note", { detail: { seconds: (leaf ? 0.012 : 0.02) + long } }));
   voice(1, vol, leaf ? 0.012 : 0.02, long);
   voice(2, vol * 0.22, 0.012, long * 0.55);
   if (leaf) {

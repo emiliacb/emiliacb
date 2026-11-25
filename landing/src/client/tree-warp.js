@@ -1,20 +1,19 @@
-// The home's content answers the pointer on a scale set by the page itself:
-// 0 with the pointer at the letter nearest the tree, 1 with it at the foot of
-// the trunk (C). With d the pointer's distance from the foot and d0 the
-// letter's,
+// The home's content answers the tree's sound: how many of its notes are
+// sounding at once (tree-sway.js says so with a "tree-note" event per note,
+// with how long it lasts). Silent, the page is at rest. One note turns the
+// content, rigidly, about the foot of the trunk (C) by THETA: tilted, not
+// bent, the bottom of the scale. From one note to FULL the content also bends,
+// by s, from 0 to 1; near FULL the colours come apart, on the content and on
+// the navbar: a glitch. With n the notes sounding, eased,
 //
-//   s = smoothstep(clamp(1 - d / d0, 0, 1))
+//   turn = THETA * min(1, n),   s = smoothstep(clamp((n - 1) / (FULL - 1), 0, 1))
 //
-// Up to 0, while the pointer comes over the text towards the tree, the content
-// only turns, rigidly, about the foot, up to THETA when the pointer reaches
-// that last letter: tilted, not bent. That turn is CSS (--tree-turn in
-// styles.css), on the live page, so its links and hovers keep working.
-//
-// From 0 to 1, from the last letter to the foot, the content also bends, by s.
-// Two grids are fused: the page's own, and the polar one about the foot, where
-// each level line is bent all the way round onto the circle at its height. For
-// a point P at u across and v above the foot, at distance r and angle
-// phi = atan2(u, v) from straight up, the polar grid shows the page at
+// The turn is CSS (--tree-turn in styles.css), on the live page, so its links
+// and hovers keep working. The bend fuses two grids: the page's own, and the
+// polar one about the foot, where each level line is bent all the way round
+// onto the circle at its height. For a point P at u across and v above the
+// foot, at distance r and angle phi = atan2(u, v) from straight up, the polar
+// grid shows the page at
 //
 //   Q = (Cx + r * phi, Cy - r)
 //
@@ -24,19 +23,18 @@
 //   page(P + s * w(r) * (Q - P))
 //
 // near the foot the lines curl round it, further out they only curve, less and
-// less. High on the scale the colours come apart along the bend, red one way
-// and blue the other, and thin bands jump sideways now and then: a glitch. The
-// tree is not part of #content, so it never bends.
+// less. The glitch splits red one way and blue the other along the bend and
+// makes thin bands jump; on the navbar, which is not part of #content, the
+// same in CSS (.tree-glitching). The tree is not part of #content, so it never
+// bends.
 //
 // The bend is drawn by WebGL from a copy of #content (html-to-image), on a
 // canvas inside #content, so it leans and turns with it and the view
-// transition captures it as drawn. The copy stands in only past the last
-// letter, where the pointer is over no text. It is taken once the fonts are
-// in, and again on a resize.
+// transition captures it as drawn. The copy stands in only while the page
+// bends. It is taken once the fonts are in, and again on a resize.
 //
-// Only #content moves: it is the element the view transition animates, so it
-// may leave the page turned or bent and arrive straight, where the navbar,
-// which is not animated, has to look the same on every page.
+// Only #content bends: it is the element the view transition animates, so it
+// may leave the page turned or bent and arrive straight.
 //
 // With reduced motion, on touch screens and below md, this does nothing;
 // without WebGL the content still turns but does not bend.
@@ -49,11 +47,12 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
   const content = document.getElementById("content");
   if (!tree || !content) return;
 
-  const THETA = 2; // degrees of turn at 0 on the scale: tilted, not bent
-  const APPROACH = 500; // px beyond the last letter where the turn starts
+  const THETA = 2; // degrees of turn with one note: tilted, not bent
+  const FULL = 6; // notes at once for the whole bend
   const R = 350; // px from the foot where the polar grid's weight is half
   const GLITCH = 0.7; // s, above which the colours start to come apart
-  const EASE = 0.08; // of the way to the target each frame
+  const RISE = 0.25, FALL = 0.05; // of the way to the count each frame
+  const nav = document.querySelector("#page-shell > nav");
 
   /* ---- the bend: WebGL over a copy of #content ---- */
   const canvas = document.createElement("canvas");
@@ -152,43 +151,13 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
     return true;
   }
 
-  /* ---- measuring: the foot, and the letter nearest it ---- */
+  /* ---- measuring: the foot ---- */
   // The foot of the trunk as drawn, where the sound hint sits, a tenth of the
-  // drawing above its bottom edge. In viewport coordinates for the pointer,
-  // read again on scroll; in #content's own (before its lean and turn) for the
-  // turn's pivot and the bend.
-  let fx = 0, fy = 0, d0 = 0;
-  function footOnScreen() {
-    const r = tree.getBoundingClientRect();
-    return { x: r.left + r.width * 0.49, y: r.top + r.height * 0.9 };
-  }
-  function measureFoot() {
-    const f = footOnScreen();
-    fx = f.x;
-    fy = f.y;
-  }
-  /** From the foot to the nearest letter, every line of text in #content
-   * measured in its own coordinates. */
-  function nearestLetter(toLocal, foot) {
-    const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT);
-    const range = document.createRange();
-    let best = Infinity;
-    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-      if (!n.textContent.trim()) continue;
-      range.selectNodeContents(n);
-      for (const q of range.getClientRects()) {
-        if (q.width < 1 || q.height < 1) continue;
-        const pts = [[q.left, q.top], [q.right, q.top], [q.left, q.bottom], [q.right, q.bottom]].map(([x, y]) => toLocal(x, y));
-        const l = Math.min(...pts.map((p) => p.x)), r = Math.max(...pts.map((p) => p.x));
-        const t = Math.min(...pts.map((p) => p.y)), b = Math.max(...pts.map((p) => p.y));
-        best = Math.min(best, Math.hypot(Math.max(l - foot.x, 0, foot.x - r), Math.max(t - foot.y, 0, foot.y - b)));
-      }
-    }
-    return Math.max(40, best);
-  }
+  // drawing above its bottom edge, in #content's own coordinates (before its
+  // lean and turn): the turn's pivot and the bend's centre.
   let local = { x: 0, y: 0 };
   function measure() {
-    measureFoot();
+    const r = tree.getBoundingClientRect();
     // #content turns about its top-left; a point in its own coordinates is
     // the point's offset from there, turned back.
     const inv = new DOMMatrix(getComputedStyle(content).transform).inverse();
@@ -196,9 +165,7 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
     content.style.transform = "none";
     const c = content.getBoundingClientRect();
     content.style.transform = was;
-    const toLocal = (x, y) => inv.transformPoint(new DOMPoint(x - c.left, y - c.top));
-    local = toLocal(fx, fy);
-    d0 = nearestLetter(toLocal, local);
+    local = inv.transformPoint(new DOMPoint(r.left + r.width * 0.49 - c.left, r.top + r.height * 0.9 - c.top));
     content.style.setProperty("--tree-x", `${local.x.toFixed(1)}px`);
     content.style.setProperty("--tree-y", `${local.y.toFixed(1)}px`);
   }
@@ -246,22 +213,19 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
     content.classList.toggle("tree-warping", on);
   }
 
-  /* ---- the pointer ---- */
+  /* ---- the notes ---- */
   const smooth = (x) => x * x * (3 - 2 * x);
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
-  let px = null, py = null, turn = 0, s = 0, raf = 0;
+  const ends = []; // when each sounding note falls silent, on performance.now()
+  let n = 0, raf = 0, tick = -1;
   function frame(now) {
     raf = 0;
-    let tTurn = 0, tS = 0;
-    if (px !== null) {
-      const d = Math.hypot(px - fx, py - fy);
-      tTurn = smooth(clamp01((d0 + APPROACH - d) / APPROACH));
-      tS = smooth(clamp01(1 - d / d0));
-    }
-    turn += (tTurn - turn) * EASE;
-    s += (tS - s) * EASE;
-    if (Math.abs(tTurn - turn) < 1e-3) turn = tTurn;
-    if (Math.abs(tS - s) < 1e-3) s = tS;
+    while (ends.length && ends[0] <= now) ends.shift();
+    const count = ends.length;
+    n += (count - n) * (count > n ? RISE : FALL);
+    if (Math.abs(count - n) < 1e-3) n = count;
+    const turn = Math.min(1, n);
+    const s = smooth(clamp01((n - 1) / (FULL - 1)));
     // Anticlockwise, the far side of the content dropping, as the bend
     // carries it.
     content.style.setProperty("--tree-turn", `${(-THETA * turn).toFixed(3)}deg`);
@@ -274,9 +238,37 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
       gl.uniform1f(U.uTime, now / 1000);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
-    if (turn !== tTurn || s !== tS || (on && glitch > 0)) raf = requestAnimationFrame(frame);
+    glitchNav(glitch, now);
+    if (n !== count || count > 0 || glitch > 0) raf = requestAnimationFrame(frame);
   }
   function kick() { if (!raf) raf = requestAnimationFrame(frame); }
+
+  // The navbar's glitch: its colours split (--glitch, in styles.css) and, a
+  // few times a second, it jumps a little sideways.
+  function glitchNav(glitch, now) {
+    if (!nav) return;
+    if (glitch <= 0) {
+      if (nav.classList.contains("tree-glitching")) {
+        nav.classList.remove("tree-glitching");
+        nav.style.translate = "";
+      }
+      return;
+    }
+    nav.classList.add("tree-glitching");
+    nav.style.setProperty("--glitch", glitch.toFixed(3));
+    const t = Math.floor(now / 70);
+    if (t !== tick) {
+      tick = t;
+      nav.style.translate = Math.random() < 0.35 ? `${((Math.random() - 0.5) * 10 * glitch).toFixed(1)}px 0` : "";
+    }
+  }
+
+  addEventListener("tree-note", (e) => {
+    const seconds = (e.detail && e.detail.seconds) || 1;
+    ends.push(performance.now() + seconds * 1000);
+    ends.sort((x, y) => x - y);
+    kick();
+  });
 
   measure();
   const start = () => (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { measure(); take(); });
@@ -289,14 +281,4 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
     show(false);
     resizing = setTimeout(() => { measure(); take(); }, 200);
   }, { passive: true });
-  addEventListener("scroll", () => { measureFoot(); kick(); }, { passive: true });
-  addEventListener("pointermove", (e) => {
-    if (e.pointerType !== "mouse") return;
-    px = e.clientX;
-    py = e.clientY;
-    kick();
-  }, { passive: true });
-  const leave = () => { px = null; kick(); };
-  document.documentElement.addEventListener("pointerleave", leave);
-  addEventListener("blur", leave);
 })();
