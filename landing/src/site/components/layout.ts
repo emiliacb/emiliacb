@@ -77,6 +77,42 @@ export default function layout({
             }
           })();
         </script>
+        <script>
+          // The navbar leans on the pages with the tree, on desktop, and is
+          // upright on the others (styles.css). Between one of each, it is
+          // named for the view transition, which then turns it upright or
+          // leans it as the page changes. Only then: a named element is
+          // captured, and answers no clicks until the transition is over, so
+          // on every other navigation it is left out and stays live. Both
+          // pages have to name it: the old one as it leaves (pageswap), the
+          // new one before its first frame (pagereveal), here in the head.
+          (function () {
+            var desktop = matchMedia("(min-width: 768px) and (hover: hover) and (pointer: fine)");
+            function withTree(url) {
+              return /^\\/(en|es)(\\/labs\\/distortion-bg)?\\/?$/.test(new URL(url).pathname);
+            }
+            function name(transition) {
+              var root = document.documentElement;
+              root.classList.add("nav-in-transition");
+              transition.finished.finally(function () {
+                root.classList.remove("nav-in-transition");
+              });
+            }
+            addEventListener("pageswap", function (event) {
+              if (!event.viewTransition || !event.activation || !event.activation.entry || !desktop.matches) return;
+              if (withTree(location.href) !== withTree(event.activation.entry.url)) name(event.viewTransition);
+            });
+            addEventListener("pagereveal", function (event) {
+              var from = window.navigation && navigation.activation && navigation.activation.from;
+              if (!event.viewTransition || !from || !desktop.matches) return;
+              if (withTree(from.url) !== withTree(location.href)) name(event.viewTransition);
+            });
+            // Back from the cache: whatever the leaving page was named as is over.
+            addEventListener("pageshow", function () {
+              document.documentElement.classList.remove("nav-in-transition");
+            });
+          })();
+        </script>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link
