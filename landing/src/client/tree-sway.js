@@ -1927,7 +1927,7 @@ function label(text, x, y, ang, u) {
   g.save();
   g.translate(x, y);
   g.rotate(ang);
-  g.font = `300 ${(COARSE ? 12 : 15) * u}px "Barlow Condensed", sans-serif`;
+  g.font = `300 ${(COARSE ? 12 : 13) * u}px "Barlow Condensed", sans-serif`;
   g.textAlign = "center";
   g.textBaseline = "middle";
   g.fillText(text, 0, 0);
@@ -2547,7 +2547,7 @@ if (box && svg && woodEl && !reduced && setup()) {
   // The formulas' faces arrive after the first layout; measure them again.
   if (document.fonts) {
     // The cotas' face is used only on the canvas, so ask for it outright.
-    document.fonts.load(`300 15px "Barlow Condensed"`).catch(() => {});
+    document.fonts.load(`300 13px "Barlow Condensed"`).catch(() => {});
     document.fonts.ready.then(measure);
     document.fonts.addEventListener("loadingdone", measure);
   }

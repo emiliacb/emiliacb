@@ -154,7 +154,7 @@
   // links, the values are set smaller, and the scroll marks write theirs
   // along the rule.
   const COARSE = matchMedia("(hover: none), (pointer: coarse)").matches;
-  const FONT = `300 ${COARSE ? 12 : 15}px "Barlow Condensed", sans-serif`;
+  const FONT = `300 ${COARSE ? 12 : 13}px "Barlow Condensed", sans-serif`;
   // CSS pixels to the inch. CSS says 96, about right on a desktop screen; a
   // phone draws them smaller, and by how much depends on the phone. What
   // phones share is their glass: about 65 mm across, whatever their pixels.
@@ -536,7 +536,7 @@
     // out instead.
     const diameter = () => {
       const text = `Ø ${mm(BREAK_R * 2)}`;
-      g.font = `300 ${COARSE ? 10 : 12}px "Barlow Condensed", sans-serif`;
+      g.font = `300 ${COARSE ? 10 : 11}px "Barlow Condensed", sans-serif`;
       const r = x - BREAK_R - 4, l = r - g.measureText(text).width, t = ref - 7, b = ref + 7;
       const clash = taken.some((q) => l < q.r + 3 && r > q.l - 3 && t < q.b + 3 && b > q.t - 3);
       const cut = t < 2 || b > Hh - 2;
