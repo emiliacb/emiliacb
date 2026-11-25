@@ -158,8 +158,10 @@ html {
   transform: translateZ(0);
 }
 
-/* The page leans. From md up the column sits left of centre, leaving the
-   right-hand side to the tree, and leans 1.5° anticlockwise.
+/* The page leans, on desktop only: from md up, with a mouse (tablets and
+   phones keep the centred, upright page). The column sits left of centre,
+   leaving the right-hand side to the tree, and leans 1.5° anticlockwise. The
+   query matches the one src/client/tree-warp.js runs under.
 
    The navbar leans on every page: it is not part of the view transition (only
    #content is, see layout.ts), so it has to look the same on every page or it
@@ -175,7 +177,7 @@ html {
   --page-lean: -1.5deg;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
   #page-shell > nav,
   #content {
     margin-left: clamp(1rem, 8vw, 9rem);
