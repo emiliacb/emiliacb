@@ -159,14 +159,15 @@ html {
 }
 
 /* The page leans, on desktop only: from md up, with a mouse (tablets and
-   phones keep the centred, upright page). The column sits left of centre,
-   leaving the right-hand side to the tree, and on the pages with the tree the
-   navbar and the content lean 1.5° anticlockwise. The query matches the one
-   src/client/tree-warp.js runs under.
+   phones keep the centred, upright page). On the pages with the tree the
+   column sits left of centre, leaving the right-hand side to the tree, and the
+   navbar and the content lean 1.5° anticlockwise; every other page keeps the
+   centred, upright column. The query matches the one src/client/tree-warp.js
+   runs under.
 
    The content leans only where it fits the viewport: turned about its top on
    a long page it would drift sideways, about 26px for every 1000px down. The
-   navbar comes back upright on the other pages, and the change is animated by
+   navbar comes back centred and upright on the other pages, and the change is animated by
    the view transition: between a page with the tree and one without, the
    layout names it (html.nav-in-transition, see layout.ts), and only then, so
    on any other navigation it is not captured and answers clicks at once.
@@ -182,8 +183,8 @@ html {
 }
 
 @media (min-width: 768px) and (hover: hover) and (pointer: fine) {
-  #page-shell > nav,
-  #content {
+  #overlay-content:has(#tree-illustration) #page-shell > nav,
+  #overlay-content:has(#tree-illustration) #content {
     margin-left: clamp(1rem, 8vw, 9rem);
     margin-right: auto;
   }
