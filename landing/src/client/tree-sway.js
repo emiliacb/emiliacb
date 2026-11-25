@@ -178,6 +178,9 @@ const SKIN = 0.1;
 const MEND = 0.01;
 const CATCHUP = 0.15;
 const SLACK = 50;
+// Whether the tree does hold the cursor back. Off for now: what it touches is
+// still felt, for its note, but the cursor goes where the hand goes.
+const BRAKE_CURSOR = false;
 
 const TRANSMIT = 0.55; // share of a push that reaches the limbs below the part pushed
 const INERTIA = 0.7; // how hard a limb lags when the one it hangs from swings
@@ -994,6 +997,13 @@ function startSound() {
       dull.type = "lowpass";
       dull.frequency.value = 1800;
       wet.gain.value = 0.5;
+      // An ear on what goes out, echo and all, for the page to listen to
+      // (tree-warp.js): it bends as loud as the tree sounds.
+      const ear = ac.createAnalyser();
+      ear.fftSize = 2048;
+      ear.smoothingTimeConstant = 0;
+      out.connect(ear);
+      window.__treeEar = ear;
       bus.connect(out).connect(ac.destination);
       bus.connect(echo).connect(dull).connect(back).connect(echo);
       dull.connect(wet).connect(out);
@@ -1110,8 +1120,8 @@ function ring(p, strength) {
     osc.start(t);
     osc.stop(t + rise + fall + 0.05);
   };
-  // How many notes sound at once is what bends the page (tree-warp.js).
-  window.dispatchEvent(new CustomEvent("tree-note", { detail: { seconds: (leaf ? 0.012 : 0.02) + long } }));
+  // Wakes the page to listen (tree-warp.js); it hears the note through the ear.
+  window.dispatchEvent(new Event("tree-note"));
   voice(1, vol, leaf ? 0.012 : 0.02, long);
   voice(2, vol * 0.22, 0.012, long * 0.55);
   if (leaf) {
@@ -2356,7 +2366,7 @@ function tick(now) {
       const lost = Math.max(0, Math.min(0.98, along(BRAKE, speed)));
       drag = Math.max(0, drag) * (lost / (1 - lost));
     }
-    const moved = trail(toX - hx, toY - hy, drag);
+    const moved = trail(toX - hx, toY - hy, BRAKE_CURSOR ? drag : 0);
     // A part wears by how far the cursor has moved through it, and mends.
     for (const p of parts) {
       p.worn = (p.worn + p.touch * moved) * Math.exp(-H / MEND);
