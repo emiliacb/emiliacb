@@ -158,6 +158,42 @@ html {
   transform: translateZ(0);
 }
 
+/* The page leans. From md up the column sits left of centre, leaving the
+   right-hand side to the tree, and leans 1.5° anticlockwise.
+
+   The navbar leans on every page: it is not part of the view transition (only
+   #content is, see layout.ts), so it has to look the same on every page or it
+   jumps on each navigation. The content leans only on the pages with the tree,
+   where it fits the viewport: turned about its top on a long page it would
+   drift sideways, about 26px for every 1000px down. There it also turns about
+   the tree, by --tree-turn with the tree's middle at --tree-x/--tree-y from the
+   content's top-left, all set by src/client/tree-turn.js (0 until it runs, and
+   with reduced motion). */
+:root {
+  --page-lean: -1.5deg;
+}
+
+@media (min-width: 768px) {
+  #page-shell > nav,
+  #content {
+    margin-left: clamp(1rem, 8vw, 9rem);
+    margin-right: auto;
+  }
+
+  #page-shell > nav {
+    transform: rotate(var(--page-lean));
+    transform-origin: 0 0;
+  }
+
+  #overlay-content:has(#tree-illustration) #content {
+    transform-origin: 0 0;
+    transform: translate(var(--tree-x, 0px), var(--tree-y, 0px))
+      rotate(var(--tree-turn, 0deg))
+      translate(calc(-1 * var(--tree-x, 0px)), calc(-1 * var(--tree-y, 0px)))
+      rotate(var(--page-lean));
+  }
+}
+
 #overlay-content.scrolled {
   border-bottom-left-radius: var(--overlay-radius);
   border-bottom-right-radius: var(--overlay-radius);
