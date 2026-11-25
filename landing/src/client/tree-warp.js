@@ -1,12 +1,12 @@
-// The home's content answers the tree's sound: how many of its notes are
-// sounding at once (tree-sway.js says so with a "tree-note" event per note,
-// with how long it lasts). Silent, the page is at rest. One note turns the
-// content, rigidly, about the foot of the trunk (C) by THETA: tilted, not
-// bent, the bottom of the scale. From one note to FULL the content also bends,
-// by s, from 0 to 1; near FULL the colours come apart, on the content and on
-// the navbar: a glitch. With n the notes sounding, eased,
-//
-//   turn = THETA * min(1, n),   s = smoothstep(clamp((n - 1) / (FULL - 1), 0, 1))
+// The home's content answers the tree's sound, listened to as a visualiser
+// listens (see "listening" below): its loudness, followed with a meter's
+// ballistics, moves the page note by note and echo by echo, and how many notes
+// have been struck lately, from the spectral flux, sets how far that loudness
+// reaches along the scale. Silent, the page is at rest. A little sound turns
+// the content, rigidly, about the foot of the trunk (C), by up to THETA:
+// tilted, not bent, the bottom of the scale. More sound also bends it, by s,
+// from 0 to 1; near the top the colours come apart, on the content and on the
+// navbar, flashing on each hit: a glitch.
 //
 // The turn is CSS (--tree-turn in styles.css), on the live page, so its links
 // and hovers keep working. The bend fuses two grids: the page's own, and the
@@ -47,11 +47,9 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
   const content = document.getElementById("content");
   if (!tree || !content) return;
 
-  const THETA = 2; // degrees of turn with one note: tilted, not bent
-  const FULL = 6; // notes at once for the whole bend
+  const THETA = 2; // degrees of turn, at its most: tilted, not bent
   const R = 350; // px from the foot where the polar grid's weight is half
   const GLITCH = 0.7; // s, above which the colours start to come apart
-  const RISE = 0.25, FALL = 0.05; // of the way to the count each frame
   const nav = document.querySelector("#page-shell > nav");
 
   /* ---- the bend: WebGL over a copy of #content ---- */
@@ -213,25 +211,110 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
     content.classList.toggle("tree-warping", on);
   }
 
-  /* ---- the notes ---- */
+  /* ---- listening ---- */
+  // tree-sway.js puts an AnalyserNode on what the tree sends out, echo and
+  // all (window.__treeEar). Each frame this reads it the way a sound
+  // visualiser does:
+  //
+  // Loudness. The RMS of the waveform, in dBFS, mapped from FLOOR (0) to CEIL
+  // (1), and followed with a meter's ballistics: it rises in ATTACK and falls
+  // in RELEASE (time constants, seconds). That is env, and the page moves with
+  // it, note by note and echo by echo.
+  //
+  // Novelty. The spectral flux: how far each bin of the magnitude spectrum
+  // stands above where it has lately been (a copy of it that follows it over
+  // REF seconds), summed over the bins that rose (half-wave rectified), so a
+  // new note shows even while others ring at the same loudness. Measured
+  // against a reference with its own time constant rather than the frame
+  // before, and integrated over time, it comes to the same at 10 frames a
+  // second as at 60. Its integral charges `drive`, which leaks away over
+  // DRIVE_LEAK: the more notes struck lately, and the harder, the more of the
+  // scale the loudness reaches.
+  //
+  // Onsets. Where the flux stands above an adaptive threshold (FLUX_K times
+  // its own recent mean, and never below FLUX_MIN) it is an onset, of strength
+  // o from 0 to 1. An attack spans a few frames (the FFT window is 43 ms), so
+  // the frames within ONSET_WINDOW of the first are one onset, as strong as
+  // the strongest of them. Each sets `punch`, which falls in PUNCH_FALL: a
+  // flash on every hit.
+  //
+  //   turn = THETA * smoothstep(min(1, env / TURN_AT))
+  //   s    = smoothstep(clamp(env * (BASE + (1 - BASE) * drive) + PUNCH * punch))
+  //   glitch = clamp((s - GLITCH) / (1 - GLITCH)) * (0.35 + 0.65 * punch)
+  const FLOOR = -56, CEIL = -26;
+  const ATTACK = 0.012, RELEASE = 0.22;
+  const REF = 0.15;
+  const FLUX_K = 1.6, FLUX_MIN = 0.005, FLUX_ROOM = 4; // o is 0 at the threshold and 1 at FLUX_ROOM thresholds past it
+  const LO_HZ = 60, HI_HZ = 6000;
+  const ONSET_WINDOW = 0.06;
+  const FLUX_GAIN = 60, DRIVE_LEAK = 1.4, BASE = 0.15;
+  const PUNCH = 0.12, PUNCH_FALL = 0.12;
+  const TURN_AT = 0.5;
   const smooth = (x) => x * x * (3 - 2 * x);
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
-  const ends = []; // when each sounding note falls silent, on performance.now()
-  let n = 0, raf = 0, tick = -1;
+
+  let wave, spec, ref, lo = 0, hi = 0;
+  let env = 0, drive = 0, punch = 0, fluxMean = 0, onsetAt = -1e9, onsetPeak = 0;
+  let raf = 0, tick = -1, last = 0;
+  window.__warp = {}; // for a look from the console
+
+  function hear(ear, dt, now, gone) {
+    if (!wave) {
+      wave = new Float32Array(ear.fftSize);
+      spec = new Float32Array(ear.frequencyBinCount);
+      ref = new Float32Array(ear.frequencyBinCount);
+      const hz = ear.context.sampleRate / ear.fftSize;
+      lo = Math.max(1, Math.floor(LO_HZ / hz));
+      hi = Math.min(spec.length, Math.ceil(HI_HZ / hz));
+    }
+    ear.getFloatTimeDomainData(wave);
+    let sum = 0;
+    for (let i = 0; i < wave.length; i++) sum += wave[i] * wave[i];
+    const db = 10 * Math.log10(sum / wave.length + 1e-12);
+    const level = clamp01((db - FLOOR) / (CEIL - FLOOR));
+    env += (level - env) * (1 - Math.exp(-dt / (level > env ? ATTACK : RELEASE)));
+
+    ear.getFloatFrequencyData(spec);
+    let flux = 0;
+    const follow = 1 - Math.exp(-dt / REF);
+    for (let i = lo; i < hi; i++) {
+      const m = Math.pow(10, spec[i] / 20); // dB to magnitude
+      if (m > ref[i]) flux += m - ref[i];
+      ref[i] += (m - ref[i]) * follow;
+    }
+    const thresh = Math.max(FLUX_MIN, fluxMean * FLUX_K);
+    const o = flux > thresh ? clamp01((flux - thresh) / (thresh * FLUX_ROOM)) : 0;
+    fluxMean += (flux - fluxMean) * (1 - Math.exp(-dt / 0.5));
+    if (o > 0 && now - onsetAt > ONSET_WINDOW * 1000) {
+      onsetAt = now;
+      onsetPeak = 0;
+    }
+    if (o > onsetPeak) {
+      punch = Math.max(punch, o);
+      onsetPeak = o;
+    }
+    drive = clamp01(drive + FLUX_GAIN * flux * dt);
+    drive *= Math.exp(-gone / DRIVE_LEAK); // over all the time since, if it slept
+    punch *= Math.exp(-dt / PUNCH_FALL);
+    Object.assign(window.__warp, { db, env, flux, o, drive, punch });
+    return db;
+  }
+
   function frame(now) {
     raf = 0;
-    while (ends.length && ends[0] <= now) ends.shift();
-    const count = ends.length;
-    n += (count - n) * (count > n ? RISE : FALL);
-    if (Math.abs(count - n) < 1e-3) n = count;
-    const turn = Math.min(1, n);
-    const s = smooth(clamp01((n - 1) / (FULL - 1)));
+    const gone = last ? (now - last) / 1000 : 1 / 60;
+    const dt = Math.min(0.1, gone);
+    last = now;
+    const ear = window.__treeEar;
+    const db = ear ? hear(ear, dt, now, gone) : -120;
+    const turn = smooth(Math.min(1, env / TURN_AT));
+    const s = smooth(clamp01(env * (BASE + (1 - BASE) * drive) + PUNCH * punch));
     // Anticlockwise, the far side of the content dropping, as the bend
     // carries it.
     content.style.setProperty("--tree-turn", `${(-THETA * turn).toFixed(3)}deg`);
     const on = ready && s > 0.002;
     show(on);
-    const glitch = clamp01((s - GLITCH) / (1 - GLITCH));
+    const glitch = clamp01((s - GLITCH) / (1 - GLITCH)) * (0.35 + 0.65 * punch);
     if (on) {
       gl.uniform1f(U.uS, s);
       gl.uniform1f(U.uGlitch, glitch);
@@ -239,7 +322,15 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
     glitchNav(glitch, now);
-    if (n !== count || count > 0 || glitch > 0) raf = requestAnimationFrame(frame);
+    window.__warp.s = s;
+    // Listens until the tree has gone quiet and the page has come to rest.
+    if (db > FLOOR - 6 || env > 1e-3 || punch > 1e-3) raf = requestAnimationFrame(frame);
+    else {
+      env = punch = 0;
+      content.style.setProperty("--tree-turn", "0deg");
+      show(false);
+      glitchNav(0, now);
+    }
   }
   function kick() { if (!raf) raf = requestAnimationFrame(frame); }
 
@@ -263,12 +354,8 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
     }
   }
 
-  addEventListener("tree-note", (e) => {
-    const seconds = (e.detail && e.detail.seconds) || 1;
-    ends.push(performance.now() + seconds * 1000);
-    ends.sort((x, y) => x - y);
-    kick();
-  });
+  // A note wakes it; from there it listens to the ear until all is quiet.
+  addEventListener("tree-note", kick);
 
   measure();
   const start = () => (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { measure(); take(); });
