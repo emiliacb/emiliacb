@@ -76,23 +76,48 @@
   const range = document.createRange();
   // A link is measured by its own box, the one its hover fills; anything else
   // by its text.
-  function inkBox(el) {
+  function inkRects(el) {
     if (el.matches("a, dropdown-trigger")) {
       // The dropdown's trigger is a button inside its shadow root.
-      const q = ((el.shadowRoot && el.shadowRoot.querySelector("button")) || el).getBoundingClientRect();
-      return { left: q.left, top: q.top, right: q.right, bottom: q.bottom };
+      return [((el.shadowRoot && el.shadowRoot.querySelector("button")) || el).getBoundingClientRect()];
     }
     range.selectNodeContents(el);
+    const rects = [...range.getClientRects()].filter((q) => q.width >= 0.5 && q.height >= 0.5);
+    return rects.length ? rects : [el.getBoundingClientRect()];
+  }
+  /** The ink's box, upright on the screen, or with `ang` in the frame of a
+   * block turned by that much: screen coordinates turned back by `ang` about
+   * the viewport's corner. The browser gives each box of a turned block as
+   * the upright bounds of the turned one; its own size is solved back out of
+   * those bounds and its centre turned back. */
+  function inkBox(el, ang = 0) {
+    return unturn(inkRects(el), ang);
+  }
+  function unturn(rects, ang) {
+    const c = Math.cos(ang), s = Math.sin(ang), as = Math.abs(s), k = c * c - s * s;
     let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
-    for (const q of range.getClientRects()) {
-      if (q.width < 0.5 || q.height < 0.5) continue;
-      l = Math.min(l, q.left); t = Math.min(t, q.top); r = Math.max(r, q.right); b = Math.max(b, q.bottom);
-    }
-    if (l === Infinity) {
-      const q = el.getBoundingClientRect();
-      return { left: q.left, top: q.top, right: q.right, bottom: q.bottom };
+    for (const q of rects) {
+      const bw = q.right - q.left, bh = q.bottom - q.top;
+      const w = Math.max(0, (bw * c - bh * as) / k), h = Math.max(0, (bh * c - bw * as) / k);
+      const mx = (q.left + q.right) / 2, my = (q.top + q.bottom) / 2;
+      const ux = mx * c + my * s, uy = my * c - mx * s;
+      l = Math.min(l, ux - w / 2); t = Math.min(t, uy - h / 2);
+      r = Math.max(r, ux + w / 2); b = Math.max(b, uy + h / 2);
     }
     return { left: l, top: t, right: r, bottom: b };
+  }
+  /** How far the block is turned on the screen, in radians: its own turn and
+   * its ancestors' (the page leans, see styles.css). */
+  function turnOf(el) {
+    let a = 0;
+    for (let n = el; n && n !== document.body; n = n.parentElement) {
+      const t = getComputedStyle(n).transform;
+      if (t && t !== "none") {
+        const m = new DOMMatrixReadOnly(t);
+        a += Math.atan2(m.b, m.a);
+      }
+    }
+    return a;
   }
 
   /* ---- drawing: the dimension line, its arrowheads and its value ---- */
@@ -251,8 +276,11 @@
 
   function drawBlock(i, a) {
     const el = blocks[i].el;
-    const box = inkBox(el);
-    if (box.bottom < -40 || box.top > Hh + 40) return;
+    const up = inkBox(el);
+    if (up.bottom < -40 || up.top > Hh + 40) return;
+    // A turned block is dimensioned in its own frame, the canvas turned with it.
+    const ang = turnOf(el);
+    const box = ang ? inkBox(el, ang) : up;
     const h = box.bottom - box.top;
     if (h < 1 || box.right - box.left < 1) return; // hidden at this width
     // Left of the text, clear of a list's bullet.
@@ -261,9 +289,11 @@
     // 45° leaders, their shelves under the row: under the navbar's rule when
     // the row is drawn on one ("rule"), else under the links themselves.
     const row = el.closest("[data-cota-row]");
+    if (ang) { g.save(); g.rotate(ang); }
     vMark(box.top, box.bottom, hx, box.left - (el.tagName === "LI" ? 20 : 0), mm(h), "measure", a, -1,
       { x: box.right + 12, ex: box.right + 2, lead: !!row,
-        below: !row ? 0 : row.dataset.cotaRow === "rule" ? row.getBoundingClientRect().bottom : box.bottom });
+        below: !row ? 0 : row.dataset.cotaRow === "rule" ? unturn([row.getBoundingClientRect()], ang).bottom : box.bottom });
+    if (ang) g.restore();
   }
 
   function layout() {

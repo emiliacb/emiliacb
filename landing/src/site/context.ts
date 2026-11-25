@@ -20,7 +20,8 @@ export type ClientEntry =
   | "page-cotas"
   | "posthog"
   | "pretext"
-  | "tree-sway";
+  | "tree-sway"
+  | "tree-warp";
 
 export type Assets = {
   /** Hashed URL of a client bundle, e.g. "/assets/layout-3HX2K.js". */

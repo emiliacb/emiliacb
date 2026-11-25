@@ -90,5 +90,6 @@ export default function tree(ctx: RenderCtx) {
       </svg>
     </div>
     <script src="${ctx.assets.script("tree-sway")}" defer></script>
+    <script src="${ctx.assets.script("tree-warp")}" defer></script>
   `;
 }
