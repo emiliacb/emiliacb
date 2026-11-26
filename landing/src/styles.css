@@ -634,9 +634,9 @@ html.ai-layout-enabled #activity-panel {
   --ask-ink: #292524;
   --ask-bar: linear-gradient(90deg, rgb(255 176 0), rgb(102 198 169));
   --ask-bar-ink: #1c1917;
-  /* The window's edge: the highlighter's yellow on the light page (yellow-300,
-     as the "Who I Am" button), where ink was too heavy; ink on the dark one. */
-  --ask-line: #fde047;
+  /* The window's edge: the navbar's own hairline (stone-400), in both themes.
+     Full ink was too heavy around the bar's colour. */
+  --ask-line: #a8a29e;
   position: absolute;
   z-index: 5;
   pointer-events: auto;
@@ -659,7 +659,6 @@ html.ai-layout-enabled #activity-panel {
     --ask-ink: #f5f5f4;
     --ask-bar: linear-gradient(90deg, rgb(0 79 255), rgb(153 57 86));
     --ask-bar-ink: #fff;
-    --ask-line: var(--ask-ink);
   }
 }
 .tree-sound-ask-bar {
@@ -717,15 +716,17 @@ html.ai-layout-enabled #activity-panel {
 }
 .tree-sound-ask-buttons button {
   height: 26px;
-  border: 1px solid var(--ask-ink);
+  border: 1px solid var(--ask-line);
   background: transparent;
   color: var(--ask-ink);
   font: inherit;
   font-size: 0.75rem;
   transition: transform 0.12s ease-out;
 }
+/* Allow is the one in full ink; Ignore only has the window's hairline. */
 .tree-sound-ask-buttons button:hover,
 .tree-sound-ask-buttons .is-default {
+  border-color: var(--ask-ink);
   background: var(--ask-ink);
   color: var(--ask-page);
 }
