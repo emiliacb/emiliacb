@@ -46,6 +46,7 @@ const FRAG = `
 precision highp float;
 varying vec2 vUv;
 uniform vec2 uRes;      // the square, in CSS px
+uniform vec2 uH;        // the hole in it, which may drift from its middle
 uniform float uRs;      // r_s, in CSS px
 uniform float uL;       // half the square
 uniform float uLc;      // how far round the hole the page is bent, in px
@@ -99,7 +100,7 @@ float profile(float d, vec4 st, vec4 al) {
 
 // Where the sheets' matter now at q came from: further out, and wound back.
 vec2 source(vec2 q) {
-  vec2 rel = q - uRes * 0.5;
+  vec2 rel = q - uH;
   float r = length(rel);
   float r0 = sqrt(r * r + uFlow);
   float th = atan(rel.y, rel.x);
@@ -107,7 +108,7 @@ vec2 source(vec2 q) {
   float rag = uTear * (noise(vec3(r0 * 0.018, cos(th) * 1.7, sin(th) * 1.7 + uTime * 0.2)) - 0.5);
   th -= wind + rag * 2.2;
   r0 *= 1.0 + rag * 0.25;
-  return uRes * 0.5 + r0 * vec2(cos(th), sin(th));
+  return uH + r0 * vec2(cos(th), sin(th));
 }
 
 // The sheets, back to front, premultiplied.
@@ -133,7 +134,7 @@ vec4 material(vec2 q) {
 // has gone into the disc, so the hole sweeps its neighbourhood clean.
 vec4 sheets(vec2 q) {
   float reach = DISC * max(uRs, 1e-3);
-  return material(q) * smoothstep(0.8, 1.15, length(q - uRes * 0.5) / reach);
+  return material(q) * smoothstep(0.8, 1.15, length(q - uH) / reach);
 }
 
 vec3 page(vec2 q) {
@@ -149,7 +150,10 @@ mat2 rot(float a) { float c = cos(a), s = sin(a); return mat2(c, s, -s, c); }
 
 void main() {
   vec2 frag = vUv * uRes;                // y down
-  vec2 rel = frag - uRes * 0.5;
+  vec2 rel = frag - uH;
+  // The square's own edge, where it fades out.
+  vec2 sq = frag - uRes * 0.5;
+  float fade = 1.0 - smoothstep(0.86 * uL, 0.99 * uL, max(abs(sq.x), abs(sq.y)));
   float rp = length(rel);
   // Away from the hole the bending eases off, and the copy of the page with
   // it: a copy is never quite the page (its text sits a pixel or so off), so
@@ -159,7 +163,7 @@ void main() {
   float copyA = uLens * (1.0 - smoothstep(0.62 * uLc, uLc, rp));
   if (uRs < 0.25) {
     gl_FragColor = (vec4(page(frag), 1.0) * copyA + sheets(frag) * (1.0 - copyA))
-      * (1.0 - smoothstep(0.86 * uL, 0.99 * uL, max(abs(rel.x), abs(rel.y))));
+      * fade;
     return;
   }
   vec2 b = rot(uRoll) * vec2(rel.x, -rel.y) / uRs;
@@ -193,7 +197,7 @@ void main() {
         // colour of the sheet it came from. It shines with what it gave up
         // falling, the energy GM m (1/r − 1/r0): nothing yet where nothing
         // has fallen, most deep in, and the more matter, the more light.
-        vec2 p2 = uRes * 0.5 + rr * uRs * vec2(cos(ph), sin(ph));
+        vec2 p2 = uH + rr * uRs * vec2(cos(ph), sin(ph));
         vec4 m = material(p2);
         // Once in, it spreads round the orbit (it circularises): the more
         // turns there have been, the more the disc is the matter averaged
@@ -202,7 +206,7 @@ void main() {
           vec4 avg = vec4(0.0);
           for (int j = 0; j < 8; j++) {
             float aj = 0.785398 * float(j) + 0.3;
-            avg += material(uRes * 0.5 + rr * uRs * vec2(cos(aj), sin(aj)));
+            avg += material(uH + rr * uRs * vec2(cos(aj), sin(aj)));
           }
           m = mix(m, avg / 8.0, uCirc);
         }
@@ -237,7 +241,7 @@ void main() {
     if (v.z < 0.0) hit = p.xy - v.xy * ((p.z + D) / v.z);
     else hit = p.xy + normalize(v).xy * 60.0;
     vec2 q = rot(-uRoll) * hit * uRs;
-    q = vec2(q.x, -q.y) + uRes * 0.5;
+    q = vec2(q.x, -q.y) + uH;
     q = mix(q, frag, edge);
     // A glow of the disc's light, scattered close round the hole.
     float glow = uFed * uDisc * 0.35 * exp(-max(0.0, near - 2.6) / 2.2) * (1.0 - edge);
@@ -254,7 +258,7 @@ void main() {
   o = mix(o, vec4(1.0), clamp(f, 0.0, 1.0));
   // And the square fades out over its last stretch, where the sheets reach
   // nearly nothing anyway.
-  o *= 1.0 - smoothstep(0.86 * uL, 0.99 * uL, max(abs(rel.x), abs(rel.y)));
+  o *= fade;
   gl_FragColor = o;
 }`;
 
@@ -294,7 +298,7 @@ export function makeLens(host) {
   gl.enableVertexAttribArray(aPos);
   gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
   const U = {};
-  for (const n of ["uRes", "uRs", "uL", "uLc", "uLens", "uTex", "uTexOff", "uTexSize", "uBg", "uSh", "uShC", "uShS", "uShP",
+  for (const n of ["uRes", "uH", "uRs", "uL", "uLc", "uLens", "uTex", "uTexOff", "uTexSize", "uBg", "uSh", "uShC", "uShS", "uShP",
     "uFed", "uCirc", "uFlow", "uWind", "uWindR", "uTear", "uCloud", "uTime", "uDisc", "uFlash", "uHot", "uMid", "uOut", "uCore", "uTilt", "uRoll"]) U[n] = gl.getUniformLocation(prog, n);
   const tex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -361,6 +365,19 @@ export function makeLens(host) {
     // All of each face's formats: asked for woff2 alone, Chrome draws the
     // copy in a fallback face.
     if (fontCSS === undefined) fontCSS = await getFontEmbedCSS(shell).catch(() => null);
+    // html-to-image copies each element's style and its ::before and
+    // ::after, but not a list item's ::marker, whose bullet would come out in
+    // the text's colour. Each item is marked for the copy with its bullet's
+    // own colour, which goes in with the copy's stylesheet.
+    const items = shell.querySelectorAll("li");
+    const tones = [];
+    items.forEach((li) => {
+      const c = getComputedStyle(li, "::marker").color;
+      let k = tones.indexOf(c);
+      if (k < 0) { k = tones.length; tones.push(c); }
+      li.dataset.bhMarker = String(k);
+    });
+    const markers = tones.map((c, k) => `[data-bh-marker="${k}"]::marker{color:${c}}`).join("");
     let img;
     try {
       // Only those rows are drawn: the shell moved up out of a frame that
@@ -371,10 +388,12 @@ export function makeLens(host) {
         pixelRatio: dpr,
         style: { transform: `translateY(${-top}px)`, margin: "0", height: `${shell.offsetHeight}px` },
         filter: (node) => !(node instanceof HTMLCanvasElement),
-        ...(fontCSS ? { fontEmbedCSS: fontCSS } : { skipFonts: true }),
+        fontEmbedCSS: (fontCSS || "") + markers,
       });
     } catch {
       return;
+    } finally {
+      items.forEach((li) => { delete li.dataset.bhMarker; });
     }
     if (mine !== ticket) return;
     gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -388,8 +407,9 @@ export function makeLens(host) {
   /** One frame: r_s in px, how much of the copy shows, the disc's light and
    * its colours (hot, mid, out), the flash, the sheets (centre in the square,
    * radius, opacity, colour, profile) and how far they have been eaten. */
-  function draw({ rs, fed = 0, circ = 0, lens, disc, flash, time, sheets, hot, mid, out, flow, wind, windR, tear, cloud }) {
+  function draw({ hx = half, hy = half, rs, fed = 0, circ = 0, lens, disc, flash, time, sheets, hot, mid, out, flow, wind, windR, tear, cloud }) {
     if (canvas.style.display) canvas.style.display = "";
+    gl.uniform2f(U.uH, hx, hy);
     gl.uniform1f(U.uRs, rs);
     gl.uniform1f(U.uLens, ready ? lens : 0);
     gl.uniform1f(U.uDisc, disc);

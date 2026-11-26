@@ -155,7 +155,8 @@ import { makeSound, note } from "./gradient/sound.js";
   let phase = "calm", since = 0, clock = 0, eaten = 0;
   // The hole: its centre in the box and in the host, r_s, and the square
   // the lens draws, half of its side.
-  const at = { x: 0, y: 0, hx: 0, hy: 0, rs: 0, half: 0, reach: 0 };
+  // x0, y0 and hx0, hy0 are where it was born; it drifts from there.
+  const at = { x: 0, y: 0, x0: 0, y0: 0, hx: 0, hy: 0, hx0: 0, hy0: 0, rs: 0, half: 0, reach: 0, drift: 0 };
   const now_ = { rs: 0, disc: 0, flash: 0, lens: 0 };
   const cursor = () => window.__inkCursor;
   const GATHER = 1.2; // the most the copy is waited for, in s
@@ -220,11 +221,14 @@ import { makeSound, note } from "./gradient/sound.js";
     at.y = core.ay;
     at.hx = box.left + at.x - hostBox.left;
     at.hy = box.top + at.y - hostBox.top;
+    at.x0 = at.x; at.y0 = at.y; at.hx0 = at.hx; at.hy0 = at.hy;
+    // While it forms it drifts a little to the left, in off the page's edge.
+    at.drift = Math.min(0.1 * R, 120);
     at.rs = rs;
     // The square holds all the sheets, which it draws while they are eaten,
     // and the bending round the hole.
     at.reach = Math.hypot(at.x - W, at.y - H / 2); // from the hole to the sheets' centre
-    at.half = Math.round(Math.max(16 * rs, at.reach + 0.31 * R));
+    at.half = Math.round(Math.max(16 * rs + at.drift, at.reach + 0.31 * R));
     if (lens) lens.open(at.hx, at.hy, at.half, 12 * rs);
     Object.assign(orbit, { on: false, catch: 0, rho: 0, th: 0, w: 0, tear: 0, gone: false, shattered: false, back: null });
     Object.assign(now_, { rs: 0, disc: 0, flash: 0, lens: 0 });
@@ -376,7 +380,7 @@ import { makeSound, note } from "./gradient/sound.js";
     if (shaken >= 0) {
       shaken += dt;
       if (shaken < 2.6) ripple.draw(shaken);
-      else { ripple.stop(); shaken = -1; }
+      else { ripple.stop(); shaken = -1; lockScroll(false); }
     }
 
     const moving = hand.seen && Math.hypot(hand.vx, hand.vy) > 1;
@@ -405,6 +409,9 @@ import { makeSound, note } from "./gradient/sound.js";
       // in and light the disc (gradient/lens.js works out how much), and
       // after that the cursor is caught.
       const born = since - COLLAPSE;
+      const move = at.drift * smooth(since / (COLLAPSE + GROW));
+      at.x = at.x0 - move;
+      at.hx = at.hx0 - move;
       eaten = Math.max(0, born);
       now_.rs = born < 0 ? 0 : at.rs * Math.min(1, Math.max(0.08, (Math.exp(born / GROW_TAU) - 1) / (Math.exp(GROW / GROW_TAU) - 1)));
       now_.disc = 1;
@@ -419,6 +426,8 @@ import { makeSound, note } from "./gradient/sound.js";
       sink = 1;
       if (since > BIG_BANG) {
         phase = "boom"; since = 0;
+        // From the blast until the page has stopped shaking, it stays put.
+        lockScroll(true);
         // The drone gives way to the pressure building (gradient/sound.js),
         // which goes off as the flash peaks.
         if (drone) { drone.stop(0.12); drone = null; }
@@ -445,7 +454,7 @@ import { makeSound, note } from "./gradient/sound.js";
 
     if (lens && (phase === "fall" || phase === "hold" || phase === "boom")) {
       now_.lens += ((lens.ready ? 1 : 0) - now_.lens) * (1 - Math.exp(-dt / 0.2));
-      const ox = at.x - at.half, oy = at.y - at.half; // the square, in the box
+      const ox = at.x0 - at.half, oy = at.y0 - at.half; // the square, in the box
       const ga = rgbOf("--g-a"), gb = rgbOf("--g-b");
       const dark = matchMedia("(prefers-color-scheme: dark)").matches;
       // The disc is lit in the gradient's own colours, brighter: the inner
@@ -457,7 +466,7 @@ import { makeSound, note } from "./gradient/sound.js";
       // stops once the sheets are all in: what reached the disc stays there.
       const flow = Math.min((0.05 * R) ** 2 * e * e * e, Math.max(at.reach, 0.12 * R) ** 2);
       lens.draw({
-        rs: now_.rs, fed: 1 - Math.exp(-flow / (0.08 * R) ** 2), circ: smooth((e - 0.6) / 2.4), lens: now_.lens, disc: now_.disc, flash: now_.flash, time: clock,
+        hx: at.x - ox, hy: at.y - oy, rs: now_.rs, fed: 1 - Math.exp(-flow / (0.08 * R) ** 2), circ: smooth((e - 0.6) / 2.4), lens: now_.lens, disc: now_.disc, flash: now_.flash, time: clock,
         hot: lit(ga, dark ? 0.75 : 0.7), mid: lit(ga, dark ? 0.35 : 0.05), out: lit(gb, dark ? 0.35 : 0),
         flow,
         wind: 2.4 * e, windR: 6 * at.rs,
@@ -607,6 +616,43 @@ import { makeSound, note } from "./gradient/sound.js";
     c.fade(sc);
   }
 
+  // Held still: the wheel, a finger and the scrolling keys do nothing, and
+  // anything else that scrolls (the scrollbar) is put back at once. Without
+  // touching overflow, which would take the scrollbar away and shift the
+  // page sideways.
+  let locked = null;
+  const KEYS = new Set([" ", "PageUp", "PageDown", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End"]);
+  const stopIt = (e) => e.preventDefault();
+  const stopKey = (e) => { if (KEYS.has(e.key)) e.preventDefault(); };
+  const putBack = (e) => {
+    if (!locked) return;
+    const t = e.target;
+    if (t === document || t === document.documentElement || t === window) {
+      if (scrollX !== locked.x || scrollY !== locked.y) scrollTo(locked.x, locked.y);
+    } else if (t instanceof Element) {
+      if (!locked.el.has(t)) locked.el.set(t, [t.scrollLeft, t.scrollTop]);
+      const [l, tp] = locked.el.get(t);
+      if (t.scrollLeft !== l || t.scrollTop !== tp) { t.scrollLeft = l; t.scrollTop = tp; }
+    }
+  };
+  function lockScroll(on) {
+    if (on && !locked) {
+      locked = { x: scrollX, y: scrollY, el: new Map() };
+      const sw = document.getElementById("scroll-wrapper");
+      if (sw) locked.el.set(sw, [sw.scrollLeft, sw.scrollTop]);
+      addEventListener("wheel", stopIt, { passive: false, capture: true });
+      addEventListener("touchmove", stopIt, { passive: false, capture: true });
+      addEventListener("keydown", stopKey, { capture: true });
+      document.addEventListener("scroll", putBack, { capture: true });
+    } else if (!on && locked) {
+      locked = null;
+      removeEventListener("wheel", stopIt, { capture: true });
+      removeEventListener("touchmove", stopIt, { capture: true });
+      removeEventListener("keydown", stopKey, { capture: true });
+      document.removeEventListener("scroll", putBack, { capture: true });
+    }
+  }
+
   function finish() {
     phase = "calm";
     since = 0;
@@ -619,6 +665,8 @@ import { makeSound, note } from "./gradient/sound.js";
     if (chirp) { chirp.stop(); chirp = null; }
     if (drone) { drone.stop(); drone = null; }
     if (lens) lens.close();
+    // Held until the page has stopped shaking, if it is shaking.
+    if (shaken < 0) lockScroll(false);
   }
 
   /* ==== a word before it happens ==== */
@@ -677,6 +725,7 @@ import { makeSound, note } from "./gradient/sound.js";
     if (phase !== "calm") finish();
     if (ripple) ripple.stop();
     shaken = -1;
+    lockScroll(false);
     hideHint();
     stack.classList.remove("live");
     stack.style.perspectiveOrigin = "";
