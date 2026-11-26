@@ -182,11 +182,27 @@ html {
   --page-lean: -1.5deg;
 }
 
+/* Off the tree's pages, the column sits 1rem left of centre wherever the
+   screen's margin is wide enough for it, and only as far as there is margin
+   where it is not: never past the left edge. */
+@media (min-width: 768px) {
+  #overlay-content:not(:has(#tree-illustration)) #page-shell > nav,
+  #overlay-content:not(:has(#tree-illustration)) #content {
+    margin-left: max(0px, calc((100% - 60rem) / 2 - 1rem));
+    margin-right: auto;
+  }
+}
+
 @media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+  /* Moved right by the margin, the column gives up that much of its width,
+     so it never runs past the right edge (it was the full width plus the
+     margin: the navbar's end was cut off below 1044px). */
   #overlay-content:has(#tree-illustration) #page-shell > nav,
   #overlay-content:has(#tree-illustration) #content {
-    margin-left: clamp(1rem, 8vw, 9rem);
+    --lean-left: clamp(1rem, 8vw, 9rem);
+    margin-left: var(--lean-left);
     margin-right: auto;
+    width: calc(100% - var(--lean-left));
   }
 
   #overlay-content:has(#tree-illustration) #page-shell > nav {
@@ -618,61 +634,270 @@ html.ai-layout-enabled #activity-panel {
   pointer-events: none;
 }
 
-/* The speaker that says the tree can be heard, while the browser still waits
-   for a press before it plays (src/client/tree-sway.js, which puts it where
-   the trunk is and gives it the wood's colour there). On the tree itself, and
-   large enough to be seen there; what keeps it quiet is that it is only an
-   icon, in the trunk's own colour, darker than the wood on the light page and
-   lighter than it on the dark one, where the tree is inverted and so is this.
-   Further the same way under the pointer and while pressed. */
-.tree-sound-hint {
-  --hint-light: 0.5;
-  position: absolute;
-  z-index: 5;
-  pointer-events: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  margin: -28px 0 0 -28px;
-  border-radius: 50%;
-  color: rgb(122 195 147);
-  filter: invert(var(--tree-invert, 0)) brightness(var(--hint-light));
-  animation: treeSoundHint 0.6s ease both;
-  transition: opacity 0.35s ease, filter 0.15s;
-}
-.tree-sound-hint svg {
-  width: 32px;
-  height: 32px;
-}
-.tree-sound-hint:hover,
-.tree-sound-hint:active,
-.tree-sound-hint:focus-visible {
-  --hint-light: 0.32;
-}
-.tree-sound-hint:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 2px;
+/* The window that asks to play the tree's sound, while the browser still
+   waits for a press before it plays (src/client/tree-sway.js, which sets it on
+   the trunk and lets it be dragged by its bar). A browser's permission prompt
+   drawn as a Windows 95 window in the site's ink: a hairline, no shadow, the
+   title bar in the tree's own gradient, inverted on the dark page as the tree
+   is. It sits on the page's body, fixed to the screen and over everything
+   (under the ink cursor alone), so it can be dragged anywhere. It comes in
+   out of focus and settles, and then its name grows its marks. */
+.tree-sound-ask {
+  --ask-page: #f5f5f4;
+  --ask-ink: #292524;
+  --ask-bar: linear-gradient(90deg, rgb(255 176 0), rgb(102 198 169));
+  --ask-bar-ink: #1c1917;
+  /* The window's edge: the navbar's own hairline (stone-400), in both themes.
+     Full ink was too heavy around the bar's colour. */
+  --ask-line: #a8a29e;
+  --ask-close-line: #78716c;
+  /* Allow under the pointer: the site's highlight, yellow on the light page
+     and blue on the dark one, as its highlighted cards and links. */
+  --ask-hover: #fde047;
+  --ask-hover-ink: #292524;
+  position: fixed;
+  z-index: 100000000;
+  width: 256px;
+  border: 1px solid var(--ask-line);
+  background: var(--ask-page);
+  color: var(--ask-ink);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  animation: treeSoundAsk 0.34s cubic-bezier(0.23, 1, 0.32, 1) both;
+  transition:
+    opacity 0.15s cubic-bezier(0.23, 1, 0.32, 1),
+    scale 0.15s cubic-bezier(0.23, 1, 0.32, 1),
+    filter 0.15s cubic-bezier(0.23, 1, 0.32, 1);
 }
 @media (prefers-color-scheme: dark) {
-  .tree-sound-hint {
-    --hint-light: 1.9;
-  }
-  .tree-sound-hint:hover,
-  .tree-sound-hint:active,
-  .tree-sound-hint:focus-visible {
-    --hint-light: 2.5;
+  .tree-sound-ask {
+    --ask-page: #292524;
+    --ask-ink: #f5f5f4;
+    --ask-bar: linear-gradient(90deg, rgb(0 79 255), rgb(153 57 86));
+    --ask-bar-ink: #fff;
+    --ask-close-line: currentColor;
+    --ask-hover: #1e3a8a;
+    --ask-hover-ink: #fff;
   }
 }
-.tree-sound-hint.is-gone {
+.tree-sound-ask-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  height: 22px;
+  padding: 0 3px 0 6px;
+  border-bottom: 1px solid var(--ask-line);
+  background: var(--ask-bar);
+  color: var(--ask-bar-ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.tree-sound-ask-bar span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tree-sound-ask-close {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  /* Greyed, cross and edge, as the window's own edge: not in full ink. */
+  border: 1px solid currentColor;
+  background: transparent;
+  color: var(--ask-close-line);
+}
+.tree-sound-ask-close svg {
+  width: 9px;
+  height: 9px;
+}
+.tree-sound-ask-close:hover {
+  background: var(--ask-bar-ink);
+  color: var(--ask-page);
+}
+.tree-sound-ask p {
+  margin: 0;
+  padding: 14px 12px 12px;
+  text-align: center;
+  /* Never a word left alone on its line. */
+  text-wrap: balance;
+}
+/* The tree's garbled name: its marks are given no room of their own and
+   spill over everything, bar, buttons and the tree behind, drawn on top. */
+.tree-sound-ask-name {
+  position: relative;
+  z-index: 1;
+}
+.tree-sound-ask-letter {
+  position: relative;
+}
+/* Each mark a step further from its letter than the last (tree-sway.js),
+   grown out from the letter once the window has settled, the furthest last. */
+.tree-sound-ask-mark {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  translate: -50% calc(var(--at) * 0.2em);
+  white-space: pre;
+  pointer-events: none;
+  animation: treeSoundAskMark 0.5s cubic-bezier(0.23, 1, 0.32, 1) both;
+  animation-delay: calc(0.2s + var(--n, 0) * 0.025s);
+}
+@keyframes treeSoundAskMark {
+  from {
+    opacity: 0;
+    translate: -50% 0;
+  }
+}
+.tree-sound-ask-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 0 12px 12px;
+}
+.tree-sound-ask-buttons button {
+  height: 26px;
+  border: 1px solid var(--ask-line);
+  background: transparent;
+  color: var(--ask-ink);
+  font: inherit;
+  font-size: 0.75rem;
+  transition: transform 0.12s ease-out;
+}
+/* Allow is the one in full ink; Ignore only has the window's hairline. */
+.tree-sound-ask-buttons button:hover,
+.tree-sound-ask-buttons .is-default {
+  border-color: var(--ask-ink);
+  background: var(--ask-ink);
+  color: var(--ask-page);
+}
+.tree-sound-ask-buttons .is-default:hover,
+.tree-sound-ask-buttons .is-default.is-pressed {
+  border-color: var(--ask-hover);
+  background: var(--ask-hover);
+  color: var(--ask-hover-ink);
+}
+.tree-sound-ask-buttons button:active {
+  transform: scale(0.97);
+}
+.tree-sound-ask button:focus-visible {
+  outline: 1px dotted currentColor;
+  outline-offset: 2px;
+}
+/* On a phone it takes less of the screen: narrower, its type and spacing a
+   step smaller, the buttons still wide enough for a thumb. */
+@media (max-width: 767px) {
+  .tree-sound-ask {
+    width: 200px;
+    font-size: 0.6875rem;
+  }
+  .tree-sound-ask-bar {
+    height: 20px;
+    font-size: 0.6875rem;
+  }
+  .tree-sound-ask-close {
+    width: 15px;
+    height: 15px;
+  }
+  .tree-sound-ask p {
+    padding: 10px 10px 9px;
+  }
+  .tree-sound-ask-buttons {
+    gap: 5px;
+    padding: 0 10px 10px;
+  }
+  .tree-sound-ask-buttons button {
+    height: 24px;
+    font-size: 0.6875rem;
+  }
+}
+.tree-sound-ask.is-gone {
   opacity: 0;
+  scale: 0.96;
+  filter: blur(2px);
   pointer-events: none;
 }
-@keyframes treeSoundHint {
+@keyframes treeSoundAsk {
+  from {
+    opacity: 0;
+    scale: 0.92;
+    translate: 0 10px;
+    filter: blur(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tree-sound-ask {
+    animation-name: treeSoundAskFade;
+  }
+  .tree-sound-ask-mark {
+    animation: none;
+  }
+  .tree-sound-ask.is-gone {
+    scale: none;
+    filter: none;
+  }
+}
+@keyframes treeSoundAskFade {
   from {
     opacity: 0;
   }
+}
+
+/* The ghost of the cursor that answers the tree's window when the page was
+   pressed somewhere else (src/client/tree-sway.js): the ink cursor's own
+   arrow and hand, drawn the same way, fainter, under the real one. */
+.tree-sound-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 2147483646;
+  pointer-events: none;
+  opacity: 0.45;
+  animation: treeSoundGhost 0.2s ease-out both;
+  transition: opacity 0.25s ease-out;
+}
+.tree-sound-ghost.is-gone {
+  opacity: 0;
+}
+.tree-sound-ghost svg {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  overflow: visible;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.12s ease-out;
+}
+.tree-sound-ghost.press svg {
+  transform: scale(0.88);
+}
+.tree-sound-ghost .ic-halo {
+  stroke: var(--ic-halo);
+  stroke-width: 3.4;
+}
+.tree-sound-ghost .ic-fill {
+  fill: var(--ic-fill);
+}
+.tree-sound-ghost .ic-ink {
+  stroke: var(--ic-ink);
+  stroke-width: 1.5;
+}
+@keyframes treeSoundGhost {
+  from {
+    opacity: 0;
+  }
+}
+/* Allow, pressed by the ghost: as under a real pointer and press. */
+.tree-sound-ask-buttons .is-default.is-pressed {
+  transform: scale(0.97);
 }
 
 .tree-plate,
@@ -865,9 +1090,7 @@ html.ai-layout-enabled #activity-panel {
   }
 
   .radial-maroon-gradient,
-  .radial-green-gradient,
-  .radial-maroon-gradient-right,
-  .radial-green-gradient-right {
+  .radial-green-gradient {
     user-select: none;
 
   }
@@ -902,40 +1125,6 @@ html.ai-layout-enabled #activity-panel {
     @media (prefers-reduced-motion: no-preference) {
       animation: gradientAppear 1.2s ease-out forwards;
       transform-origin: bottom left;
-      will-change: transform, opacity;
-    }
-  }
-
-  .radial-maroon-gradient-right {
-    background-image: radial-gradient(
-      circle at center right,
-      rgba(118, 51, 75, 0.3) 10%,
-      rgba(118, 51, 75, 0.1) 11%,
-      rgba(0, 68, 165, 0.3) 20%,
-      rgba(0, 68, 165, 0.1) 21%,
-      transparent 30%
-    );
-
-    @media (prefers-reduced-motion: no-preference) {
-      animation: pulse 2s ease-in-out infinite alternate;
-      transform-origin: bottom right;
-      will-change: transform, opacity;
-    }
-  }
-
-  .radial-green-gradient-right {
-    background-image: radial-gradient(
-      circle at center right,
-      rgba(252, 190, 80, 0.3) 10%,
-      rgba(252, 190, 80, 0.1) 11%,
-      rgba(135, 207, 183, 0.3) 20%,
-      rgba(135, 207, 183, 0.1) 21%,
-      transparent 30%
-    );
-
-    @media (prefers-reduced-motion: no-preference) {
-      animation: pulse 2s ease-in-out infinite alternate;
-      transform-origin: bottom right;
       will-change: transform, opacity;
     }
   }
@@ -1211,3 +1400,155 @@ html.ink-cursor #ink-cursor.on {
     transition: none;
   }
 }
+
+/* ---- The gradient on pages without the tree (src/client/gradient-layers.js) ----
+   Concentric sheets, each its own element at its own depth, instead of one
+   gradient with rings. Their sizes keep the old ring radii: fractions (--k) of
+   the distance from the circle's centre (the right edge, halfway down the
+   box) to the box's farthest corner, hypot(50vw, 75vh). Still, they are the
+   old picture; on a desktop the script hangs them in depth and lets them sway
+   like leaves. The first width is for browsers without hypot(). */
+#gradient-bg.grad-stack {
+  --g-a: 252 190 80;
+  --g-b: 135 207 183;
+  perspective: 1200px;
+  user-select: none;
+  pointer-events: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  #gradient-bg.grad-stack {
+    --g-a: 118 51 75;
+    --g-b: 0 68 165;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #gradient-bg.grad-stack:not(.live) {
+    animation: pulse 2s ease-in-out infinite alternate;
+    transform-origin: bottom right;
+  }
+}
+
+.grad-layer {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  width: calc(var(--k) * 220vh);
+  width: calc(2 * var(--k) * hypot(50vw, 75vh));
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  backface-visibility: hidden;
+}
+
+/* Each sheet's share of the old gradient (an amber disc to 10%, amber
+   shading into mint to 20%, a mint halo fading out by 30%), in its own
+   radius, so that the five over one another make it again at rest. The same
+   stops are in gradient-layers.js (PROFILE), for the hole to draw them. */
+.grad-layer.g0 {
+  background: radial-gradient(closest-side, rgb(var(--c) / 0) 50%, rgb(var(--c) / 0.1) 66%, rgb(var(--c) / 0.1) 70%, rgb(var(--c) / 0) 100%);
+}
+
+.grad-layer.g1 {
+  background: radial-gradient(closest-side, rgb(var(--c) / 0) 52%, rgb(var(--c) / 0.222) 95%, rgb(var(--c) / 0.222) 96.5%, rgb(var(--c) / 0) 100%);
+}
+
+.grad-layer.g2 {
+  background: radial-gradient(closest-side, rgb(var(--c) / 0.1) 55%, rgb(var(--c) / 0) 100%);
+}
+
+.grad-layer.g3 {
+  background: radial-gradient(closest-side, rgb(var(--c) / 0.118) 90%, rgb(var(--c) / 0) 100%);
+}
+
+.grad-layer.g4 {
+  background: radial-gradient(closest-side, rgb(var(--c) / 0.118) 92%, rgb(var(--c) / 0) 100%);
+}
+
+/* While the hole eats them, the sheets are drawn by it (gradient/lens.js). */
+#gradient-bg.grad-stack.eaten .grad-layer {
+  visibility: hidden;
+}
+
+/* The black hole a click makes of it (src/client/gradient/lens.js): a WebGL
+   square over the page, which it stands in for while it is drawn. */
+.bh-lens {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* The blast's shock through the page (src/client/gradient/ripple.js): the
+   page's copy, over it, while the page itself is hidden. */
+.bh-ripple {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* A word before it happens (src/client/gradient-layers.js): by the
+   gradient's core, a pointing hand pressing, struck through. In the cotas'
+   ink, sketched in line by line, once. */
+.grad-hint {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+
+.grad-hint.on {
+  opacity: 1;
+}
+
+.grad-hint svg {
+  display: block;
+  overflow: visible;
+}
+
+.grad-hint path,
+.grad-hint circle {
+  fill: none;
+  stroke: var(--cota-measure);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.grad-hint .no {
+  stroke: var(--cota-force);
+  stroke-width: 2;
+}
+
+.grad-hint .ring {
+  stroke: var(--cota-length);
+}
+
+/* The hand is drawn larger than its strokes should read: keep them fine. */
+.grad-hint g path {
+  stroke-width: 0.75;
+}
+
+.grad-hint.on path,
+.grad-hint.on circle {
+  animation: grad-hint-draw 0.7s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+.grad-hint.on .hand { animation-delay: 0.35s; }
+.grad-hint.on .ring { animation: grad-hint-draw 0.4s ease forwards 0.8s, grad-hint-press 1.1s ease-in-out infinite 1.2s; }
+.grad-hint.on .r2 { animation-delay: 0.95s, 1.35s; }
+.grad-hint.on circle.no { animation-delay: 1.1s; }
+.grad-hint.on path.no { animation-delay: 1.5s; animation-duration: 0.35s; }
+
+@keyframes grad-hint-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes grad-hint-press {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+

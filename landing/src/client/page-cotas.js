@@ -9,7 +9,8 @@
 (() => {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   // data-air="off" on the script tag leaves the pointer's rule and
-  // acceleration out, for the pages whose tree draws its own.
+  // acceleration out. Every page has it off for now: the pointer's air is
+  // the home's alone, where the tree draws its own.
   const NO_AIR = !!(document.currentScript && document.currentScript.dataset.air === "off");
   const canvas = document.createElement("canvas");
   canvas.className = "page-cotas-plate";
@@ -398,19 +399,24 @@
     }
   }
 
-  addEventListener("pointermove", (e) => {
-    if (e.pointerType === "touch") return; // a finger scrolls the page
-    const dt = (e.timeStamp - vel.last) / 1000;
+  function feed(x, y, stamp) {
+    const dt = (stamp - vel.last) / 1000;
     if (here && dt > 0.001 && dt < 0.12) {
-      vel.x += ((e.clientX - px) / dt - vel.x) * 0.5;
-      vel.y += ((e.clientY - py) / dt - vel.y) * 0.5;
+      vel.x += ((x - px) / dt - vel.x) * 0.5;
+      vel.y += ((y - py) / dt - vel.y) * 0.5;
     } else {
       vel.x = vel.y = 0;
     }
-    vel.last = e.timeStamp;
+    vel.last = stamp;
     vel.lastNow = performance.now();
-    px = e.clientX; py = e.clientY; here = true;
+    px = x; py = y; here = true;
     kick();
+  }
+  addEventListener("pointermove", (e) => {
+    if (e.pointerType === "touch") return; // a finger scrolls the page
+    // A mouse the page holds (gradient-layers.js) has no place of its own.
+    if (document.pointerLockElement || document.documentElement.hasAttribute("data-pointer-held")) return;
+    feed(e.clientX, e.clientY, e.timeStamp);
   }, { passive: true });
   document.addEventListener("pointerleave", () => { here = false; kick(); });
   addEventListener("blur", () => { here = false; kick(); });

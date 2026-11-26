@@ -24,7 +24,8 @@ type LayoutProps = {
   withMarkdown?: boolean;
   /**
    * Dimension the page in ink (src/client/page-cotas.js). On every page by
-   * default; with the tree, without the pointer's rings, which it draws itself.
+   * default, without the pointer's air: that is the home's alone, where the
+   * tree draws it.
    */
   withCotas?: boolean;
 
@@ -332,14 +333,24 @@ document.head.appendChild(o)}initApollo();</script>
             take that with it. Without the paint classes this is an empty box
             that textures to nothing, and putting them back is the whole undo.
           -->
-          <div
-            id="gradient-bg"
-            class="absolute -z-10 top-[25vh] h-[150vh] ${
-              withIlustration
-                ? "left-0 w-[130vw]"
-                : "radial-green-gradient-right dark:radial-maroon-gradient-right right-0 w-[50vw]"
-            }"
-          ></div>
+          <!--
+            Without the tree the gradient is a stack of sheets, back to front
+            and largest to smallest (styles.css, .grad-layer), which
+            src/client/gradient-layers.js sways on a desktop.
+          -->
+          ${withIlustration
+            ? html`<div id="gradient-bg" class="absolute -z-10 top-[25vh] h-[150vh] left-0 w-[130vw]"></div>`
+            : html`<div
+                id="gradient-bg"
+                class="grad-stack absolute -z-10 top-[25vh] h-[150vh] right-0 w-[50vw]"
+                aria-hidden="true"
+              >
+                <div class="grad-layer g0" style="--k:0.3;--c:var(--g-b)"></div>
+                <div class="grad-layer g1" style="--k:0.21;--c:var(--g-b)"></div>
+                <div class="grad-layer g2" style="--k:0.2;--c:var(--g-a)"></div>
+                <div class="grad-layer g3" style="--k:0.11;--c:var(--g-a)"></div>
+                <div class="grad-layer g4" style="--k:0.1;--c:var(--g-a)"></div>
+              </div>`}
           ${withIlustration
             ? html`
                 <div
@@ -373,8 +384,11 @@ document.head.appendChild(o)}initApollo();</script>
         <script src="${ctx.assets.script("layout")}" defer></script>
         <script src="${ctx.assets.script("navigation")}" defer></script>
         ${withCotas
-          ? html`<script src="${ctx.assets.script("page-cotas")}" data-air="${withIlustration ? "off" : "on"}" defer></script>`
+          ? html`<script src="${ctx.assets.script("page-cotas")}" data-air="off" defer></script>`
           : null}
+        ${withIlustration
+          ? null
+          : html`<script src="${ctx.assets.script("gradient-layers")}" defer></script>`}
         <!-- The ink cursor, on every page (src/client/ink-cursor.js). -->
         <script src="${ctx.assets.script("ink-cursor")}" defer></script>
         ${AI_FEATURE_ENABLED

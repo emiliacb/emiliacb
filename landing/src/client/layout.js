@@ -104,5 +104,11 @@ if (
       }
       window.dispatchEvent(new CustomEvent(SOUND_KEY, { detail: on }));
     });
+    // The tree's own window can turn the sound off too (tree-sway.js), with the
+    // same event, for this visit only: the switch shows it and keeps nothing.
+    window.addEventListener(SOUND_KEY, (event) => {
+      on = !!event.detail;
+      toggle.setAttribute("aria-pressed", String(on));
+    });
   }
 }
