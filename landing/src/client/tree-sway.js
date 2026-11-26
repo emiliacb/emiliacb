@@ -1021,7 +1021,7 @@ function startSound() {
 
 // Where the browser is still waiting for a press before it plays, a small
 // window on the tree's trunk asks for it the way a browser asks for the
-// microphone, under the site's own name: "tree" wants to be heard, Ignore
+// microphone, under the site's own name: tree wants to be heard, Ignore
 // or Allow. Allowing is that press. Ignoring (or its close box, or Escape)
 // leaves the tree quiet for this visit, as the footer's switch would, without
 // keeping it: the switch shows it and can turn the sound back on. Any other
@@ -1120,7 +1120,7 @@ function offerSound() {
   hint = document.createElement("div");
   hint.className = "tree-sound-ask";
   hint.setAttribute("role", "dialog");
-  hint.setAttribute("aria-label", `“${t.name}” ${t.wants}`);
+  hint.setAttribute("aria-label", `${t.name} ${t.wants}`);
   hint.innerHTML =
     `<div class="tree-sound-ask-bar"><span>${t.title}</span>` +
     `<button type="button" class="tree-sound-ask-close" data-act="ignore" aria-label="${t.close}">` +
@@ -1128,8 +1128,8 @@ function offerSound() {
     "</button></div>" +
     // Its name comes through garbled, the way a voice does from far off;
     // a screen reader is given it whole.
-    `<p><span aria-hidden="true">“<span class="tree-sound-ask-name">${curse(t.spell)}</span>” ${t.wants}</span>` +
-    `<span class="sr-only">“${t.name}” ${t.wants}</span></p>` +
+    `<p><span aria-hidden="true"><span class="tree-sound-ask-name">${curse(t.spell)}</span> ${t.wants}</span>` +
+    `<span class="sr-only">${t.name} ${t.wants}</span></p>` +
     '<div class="tree-sound-ask-buttons">' +
     `<button type="button" data-act="ignore">${t.ignore}</button>` +
     `<button type="button" data-act="allow" class="is-default">${t.allow}</button>` +
