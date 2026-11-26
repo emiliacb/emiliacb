@@ -159,6 +159,16 @@ import { makeSound, note } from "./gradient/sound.js";
   const now_ = { rs: 0, disc: 0, flash: 0, lens: 0 };
   const cursor = () => window.__inkCursor;
   const GATHER = 1.2; // the most the copy is waited for, in s
+  const COLLAPSE = 0.8; // s for the inner circle to close to a point
+  const GROW = 1.5; // s for the singularity to grow to the shadow's size
+  const GROW_TAU = 0.36; // its growth's time constant: slow, then fast
+  // How much of its radius the inner circle keeps, s into the fall: all of
+  // it, then less and less, faster and faster, to nothing at COLLAPSE.
+  const collapse = (s) => {
+    if (s >= COLLAPSE) return 0;
+    const k = 0.22;
+    return 1 - (Math.exp(Math.max(0, s) / k) - 1) / (Math.exp(COLLAPSE / k) - 1);
+  };
   const BIG_BANG = 1.2; // how long the hole stays once it has eaten, in s
   let drone = null, chirp = null;
 
@@ -200,24 +210,20 @@ import { makeSound, note } from "./gradient/sound.js";
   function swallow(box) {
     if (lens === undefined) lens = makeLens(host);
     if (ripple === undefined) ripple = lens ? makeRipple(host) : null;
-    // The hole's size goes with the gradient's.
+    // The hole's size goes with the gradient's. It is born where the
+    // gradient's inner circle collapses: at that circle's centre, as it
+    // shows now, wherever that is on the page.
     const rs = clamp(0.017 * R, 10, 18);
-    // Where the circle's centre is, brought into the view far enough for the
-    // disc to show.
-    const m = 10.5 * rs;
-    const cx = box.left + W, cy = box.top + H / 2;
-    const vw = root.clientWidth, vh = innerHeight;
-    const hx = clamp(cx, Math.max(box.left, 0) + m, vw - m);
-    const hy = clamp(cy, Math.min(m, vh / 2), Math.max(vh - m, vh / 2));
+    const core = leaves[leaves.length - 1];
     const hostBox = host.getBoundingClientRect();
-    at.x = hx - box.left;
-    at.y = hy - box.top;
-    at.hx = hx - hostBox.left;
-    at.hy = hy - hostBox.top;
+    at.x = core.ax;
+    at.y = core.ay;
+    at.hx = box.left + at.x - hostBox.left;
+    at.hy = box.top + at.y - hostBox.top;
     at.rs = rs;
     // The square holds all the sheets, which it draws while they are eaten,
     // and the bending round the hole.
-    at.reach = Math.hypot(hx - cx, hy - cy); // from the hole to the sheets' centre
+    at.reach = Math.hypot(at.x - W, at.y - H / 2); // from the hole to the sheets' centre
     at.half = Math.round(Math.max(16 * rs, at.reach + 0.31 * R));
     if (lens) lens.open(at.hx, at.hy, at.half, 12 * rs);
     Object.assign(orbit, { on: false, catch: 0, rho: 0, th: 0, w: 0, tear: 0, gone: false, shattered: false, back: null });
@@ -391,14 +397,18 @@ import { makeSound, note } from "./gradient/sound.js";
         if (lens) stack.classList.add("eaten");
       }
     } else if (phase === "fall") {
-      eaten = since;
-      // First the shadow; the disc then lights only as the sheets' matter
-      // reaches it (gradient/lens.js works out how much); then the cursor is
-      // caught.
-      now_.rs = at.rs * smooth(since / 0.6);
+      // The inner circle collapses on itself (collapse(), drawn by the
+      // lens), faster and faster; where it closes the singularity is born,
+      // a dot that grows slowly and then faster and faster, exponentially,
+      // to the shadow's size. Only then does the sheets' matter start to fall
+      // in and light the disc (gradient/lens.js works out how much), and
+      // after that the cursor is caught.
+      const born = since - COLLAPSE;
+      eaten = Math.max(0, born);
+      now_.rs = born < 0 ? 0 : at.rs * Math.min(1, Math.max(0.08, (Math.exp(born / GROW_TAU) - 1) / (Math.exp(GROW / GROW_TAU) - 1)));
       now_.disc = 1;
       sink = smooth(since / 4);
-      if (since > 1.1) fall(dt, hx, hy);
+      if (born > GROW * 0.8) fall(dt, hx, hy);
       if (orbit.gone) { phase = "hold"; since = 0; }
     } else if (phase === "hold") {
       // A gulp as it eats.
@@ -451,9 +461,19 @@ import { makeSound, note } from "./gradient/sound.js";
         flow,
         wind: 2.4 * e, windR: 6 * at.rs,
         tear: smooth(e / 1.4), cloud: smooth((e - 0.2) / 1.2),
-        sheets: leaves.map((l) => ({
-          x: l.ax - ox, y: l.ay - oy, r: l.ar, o: l.ao, c: l.b ? gb : ga, stops: l.stops, alphas: l.alphas,
-        })),
+        sheets: leaves.map((l, i) => {
+          // The inner circle (the two front sheets) closes on itself, its
+          // matter denser as it does; the one round it goes some way in.
+          const c = phase === "fall" ? collapse(since) : 0;
+          const k = i >= leaves.length - 2 ? c : i === leaves.length - 3 ? 1 - 0.5 * (1 - c) : 1;
+          const dense = k > 0 ? Math.min(7, 1 / (k * k)) : 0;
+          // And it closes on the point the singularity is born at.
+          const m = i >= leaves.length - 3 ? k : 1;
+          return {
+            x: at.x + (l.ax - at.x) * m - ox, y: at.y + (l.ay - at.y) * m - oy, r: l.ar * k, o: Math.min(1, l.ao * (i >= leaves.length - 3 ? dense : 1)),
+            c: l.b ? gb : ga, stops: l.stops, alphas: l.alphas,
+          };
+        }),
       });
     }
   }
