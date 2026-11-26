@@ -398,19 +398,22 @@
     }
   }
 
-  addEventListener("pointermove", (e) => {
-    if (e.pointerType === "touch") return; // a finger scrolls the page
-    const dt = (e.timeStamp - vel.last) / 1000;
+  function feed(x, y, stamp) {
+    const dt = (stamp - vel.last) / 1000;
     if (here && dt > 0.001 && dt < 0.12) {
-      vel.x += ((e.clientX - px) / dt - vel.x) * 0.5;
-      vel.y += ((e.clientY - py) / dt - vel.y) * 0.5;
+      vel.x += ((x - px) / dt - vel.x) * 0.5;
+      vel.y += ((y - py) / dt - vel.y) * 0.5;
     } else {
       vel.x = vel.y = 0;
     }
-    vel.last = e.timeStamp;
+    vel.last = stamp;
     vel.lastNow = performance.now();
-    px = e.clientX; py = e.clientY; here = true;
+    px = x; py = y; here = true;
     kick();
+  }
+  addEventListener("pointermove", (e) => {
+    if (e.pointerType === "touch") return; // a finger scrolls the page
+    feed(e.clientX, e.clientY, e.timeStamp);
   }, { passive: true });
   document.addEventListener("pointerleave", () => { here = false; kick(); });
   addEventListener("blur", () => { here = false; kick(); });
@@ -719,7 +722,10 @@
     g.clearRect(0, 0, W, Hh);
     // Over something dimensioned the pointer's air steps aside for its cota.
     if (under) stowed = true;
-    const wantAir = stowed ? 0 : 1;
+    // Where something else carries the pointer's air (the gradient's sheets
+    // and their black hole, gradient-layers.js), this one steps aside.
+    const held = document.documentElement.hasAttribute("data-air-held");
+    const wantAir = stowed || held ? 0 : 1;
     airVis += (wantAir - airVis) * (1 - Math.exp(-dt / (wantAir > airVis ? 0.2 : 0.1)));
     if (Math.abs(wantAir - airVis) < 0.004) airVis = wantAir;
     else live = true;

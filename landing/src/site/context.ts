@@ -13,6 +13,7 @@ export type ClientEntry =
   | "dropdown"
   | "email-link"
   | "gradient-distortion"
+  | "gradient-layers"
   | "ink-cursor"
   | "layout"
   | "mascot-bot"
