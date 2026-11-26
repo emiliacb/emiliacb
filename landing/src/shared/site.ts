@@ -34,6 +34,13 @@ export const PAGES: readonly PageDef[] = [
   { id: "labs-distortion-bg", path: "/labs/distortion-bg" },
 ];
 
+/** Path of a page by id, after the language prefix. Throws on an id missing from PAGES. */
+export function pagePath(id: PageId): string {
+  const def = PAGES.find((page) => page.id === id);
+  if (!def) throw new Error(`PAGES has no page "${id}"`);
+  return def.path;
+}
+
 /** Pages linked from the footer navigation, in order. */
 export const FOOTER_NAV: readonly PageId[] = ["home", "about", "blog", "services"];
 

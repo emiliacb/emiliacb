@@ -117,7 +117,7 @@
   const FORMS = {};
   for (const r of ROLES) {
     const s = SHAPES[r];
-    let out = sample(s.outline, N_OUT, s.hot, true);
+    const out = sample(s.outline, N_OUT, s.hot, true);
     if (area(out) < 0) out.reverse();
     const strokes = [];
     for (let k = 0; k < SLOTS; k++) {

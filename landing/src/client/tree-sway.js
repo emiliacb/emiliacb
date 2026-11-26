@@ -554,7 +554,7 @@ function tipAt(l, th, out) {
   out[1] = l.gy[i] + (l.gy[i + 1] - l.gy[i]) * f;
 }
 
-let wood = [];
+const wood = [];
 let anchors = [];
 let leaves = [];
 let parts = [];

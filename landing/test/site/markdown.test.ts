@@ -1,4 +1,4 @@
-import { fileURLToPath } from "url";
+import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
@@ -20,6 +20,12 @@ async function setup() {
   return { content, ctxFor, files, byPath };
 }
 
+function mustGet(map: Map<string, string>, key: string): string {
+  const value = map.get(key);
+  if (value === undefined) throw new Error(`no markdown file at ${key}`);
+  return value;
+}
+
 describe("renderSiteMarkdown", () => {
   it("writes a .md version of every page and post in both languages", async () => {
     const { content, byPath } = await setup();
@@ -33,7 +39,7 @@ describe("renderSiteMarkdown", () => {
 
   it("turns the table of contents into a Markdown list in the page language", async () => {
     const { byPath } = await setup();
-    const es = byPath.get("/es/services.md")!;
+    const es = mustGet(byPath, "/es/services.md");
     expect(es).not.toContain("%table-of-contents%");
     expect(es).toContain("**Tabla de Contenidos**");
     expect(es).toContain("- [Mentoría](#mentoría)");
@@ -52,7 +58,7 @@ describe("renderSiteMarkdown", () => {
 
   it("drops the inline HTML of the home", async () => {
     const { byPath } = await setup();
-    const home = byPath.get("/es.md")!;
+    const home = mustGet(byPath, "/es.md");
     expect(home).not.toMatch(/<br|<a /);
     expect(home).toContain("mailto:");
   });
@@ -60,7 +66,7 @@ describe("renderSiteMarkdown", () => {
   it("puts the post's description and date under its title", async () => {
     const { content, byPath } = await setup();
     const post = content.posts[0];
-    const md = byPath.get(`/en/blog/${post.slug}.md`)!;
+    const md = mustGet(byPath, `/en/blog/${post.slug}.md`);
     expect(md.startsWith("# ")).toBe(true);
     expect(md).toContain(post.description);
     expect(md).not.toContain("draft:");
@@ -68,7 +74,7 @@ describe("renderSiteMarkdown", () => {
 
   it("lists the posts in the blog index", async () => {
     const { content, byPath } = await setup();
-    const index = byPath.get("/es/blog.md")!;
+    const index = mustGet(byPath, "/es/blog.md");
     for (const post of content.posts) expect(index).toContain(`${SITE_URL}/es/blog/${post.slug}.md`);
   });
 });

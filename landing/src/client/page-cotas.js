@@ -322,7 +322,7 @@
   /* ---- the pointer's air: its velocity on a rule whose zero is where the
      pointer last stood still, and its acceleration; put away over something
      dimensioned until the pointer stops and sets off again ---- */
-  const V1 = 2600, RISE = 0.05, FALL = 0.2;
+  const V1 = 2600;
   let airA = 0, tNow = 0, curAl = 0, curHold = 0, airVis = 1;
   function arrow(x0, y0, x1, y1, hl) {
     const d = Math.hypot(x1 - x0, y1 - y0) || 1;
@@ -746,6 +746,8 @@
   new MutationObserver(() => { readTheme(); kick(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   // Nothing in the page's CSS uses the cotas' face, so the browser would not
   // fetch it for a canvas: ask for it, and redraw once it is in.
-  document.fonts && document.fonts.load(FONT).then(kick, () => {});
-  document.fonts && document.fonts.ready.then(kick);
+  if (document.fonts) {
+    document.fonts.load(FONT).then(kick, () => {});
+    document.fonts.ready.then(kick);
+  }
 })();

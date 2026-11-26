@@ -1,0 +1,164 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import", "promise", "node", "vitest"],
+  "env": {
+    "browser": true,
+    "es2024": true
+  },
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error"
+  },
+  // posthog.js is the vendor's minified snippet, pasted as-is.
+  "ignorePatterns": ["dist/**", "public/**", "test/worker/fixtures/**", ".wrangler/**", "src/client/posthog.js"],
+  "rules": {
+    // Complexity budget: keeps functions small enough for an agent (or a
+    // human) to read, change and test in one pass.
+    "eslint/complexity": ["error", { "max": 10 }],
+    "eslint/max-depth": ["error", { "max": 3 }],
+    "eslint/max-nested-callbacks": ["error", { "max": 3 }],
+    "eslint/max-params": ["error", { "max": 4 }],
+    "eslint/max-statements": ["error", { "max": 25 }],
+    "eslint/max-lines-per-function": ["error", { "max": 80, "skipBlankLines": true, "skipComments": true }],
+    "eslint/max-lines": ["error", { "max": 400, "skipBlankLines": true, "skipComments": true }],
+    "eslint/no-nested-ternary": "error",
+    "import/max-dependencies": ["error", { "max": 15 }],
+    "import/no-cycle": "error",
+
+    // Shortcuts agents tend to take to silence the compiler.
+    "typescript/no-explicit-any": "error",
+    "typescript/no-non-null-assertion": "error",
+    "typescript/ban-ts-comment": ["error", { "ts-expect-error": "allow-with-description" }],
+    "typescript/no-unsafe-type-assertion": "error",
+    "eslint/no-empty": "error",
+    "eslint/no-useless-catch": "error",
+    "eslint/no-console": ["error", { "allow": ["warn", "error"] }],
+    "eslint/no-warning-comments": ["warn", { "terms": ["todo", "fixme", "xxx", "hack"] }],
+
+    // Type-aware (needs --type-aware / oxlint-tsgolint).
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/await-thenable": "error",
+    "typescript/require-await": "error",
+    "typescript/return-await": ["error", "in-try-catch"],
+    "typescript/switch-exhaustiveness-check": "error",
+    "typescript/no-unnecessary-condition": "error",
+    "typescript/no-unnecessary-type-assertion": "error",
+    "typescript/no-unsafe-argument": "error",
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-call": "error",
+    "typescript/no-unsafe-member-access": "error",
+    "typescript/no-unsafe-return": "error",
+    "typescript/prefer-nullish-coalescing": "error",
+    "typescript/prefer-optional-chain": "error",
+    "typescript/restrict-template-expressions": "error",
+    "typescript/only-throw-error": "error",
+
+    // Clarity.
+    "eslint/eqeqeq": ["error", "always", { "null": "ignore" }],
+    "eslint/no-var": "error",
+    "eslint/prefer-const": "error",
+    "eslint/no-param-reassign": "error",
+    "typescript/consistent-type-imports": "error",
+    "import/no-duplicates": "error",
+    "unicorn/prefer-node-protocol": "error",
+
+    // Noise without a bug behind it.
+    "eslint/no-underscore-dangle": "off",
+    "unicorn/consistent-function-scoping": "off",
+    // TypeScript's return types already check this, and the rule misreads exhaustive switches.
+    "typescript/consistent-return": "off",
+    // Side-effect-only then() callbacks are fine.
+    "promise/always-return": "off",
+    // Vitest's expect takes an optional message as the second argument.
+    "vitest/valid-expect": ["error", { "maxArgs": 2 }]
+  },
+  "overrides": [
+    {
+      // Plain JS has no type information, so type-aware rules would only
+      // report "error"-typed values.
+      "files": ["**/*.js", "**/*.cjs", "**/*.mjs"],
+      "rules": {
+        "typescript/no-floating-promises": "off",
+        "typescript/no-misused-promises": "off",
+        "typescript/await-thenable": "off",
+        "typescript/require-await": "off",
+        "typescript/return-await": "off",
+        "typescript/switch-exhaustiveness-check": "off",
+        "typescript/no-unnecessary-condition": "off",
+        "typescript/no-unnecessary-type-assertion": "off",
+        "typescript/no-unsafe-argument": "off",
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-call": "off",
+        "typescript/no-unsafe-member-access": "off",
+        "typescript/no-unsafe-return": "off",
+        "typescript/no-unsafe-type-assertion": "off",
+        "typescript/prefer-nullish-coalescing": "off",
+        "typescript/prefer-optional-chain": "off",
+        "typescript/restrict-template-expressions": "off",
+        "typescript/only-throw-error": "off",
+        "typescript/no-base-to-string": "off"
+      }
+    },
+    {
+      // Build-time code (the static site generator): steps run in order on
+      // purpose, and speed is not a concern.
+      "files": ["scripts/**", "src/site/**"],
+      "rules": { "eslint/no-await-in-loop": "off" }
+    },
+    {
+      // Shipped to browsers as-is (esbuild targets es2020, no polyfills), so
+      // no Array#toSorted.
+      "files": ["src/client/**"],
+      "rules": { "unicorn/no-array-sort": "off" }
+    },
+    {
+      // LEGACY: files that predate this config and break its structural
+      // rules. Ratchet, not a whitelist: never add a file here; remove one as
+      // soon as it is refactored to pass.
+      "files": [
+        "src/client/activity-logger.js",
+        "src/client/activity-panel.js",
+        "src/client/distortion.js",
+        "src/client/dropdown.js",
+        "src/client/gradient-distortion.js",
+        "src/client/ink-cursor.js",
+        "src/client/layout.js",
+        "src/client/mascot-bot.js",
+        "src/client/navigation.js",
+        "src/client/page-cotas.js",
+        "src/client/tree-sway.js",
+        "src/client/tree-warp.js",
+        "src/site/components/layout.ts"
+      ],
+      "rules": {
+        "eslint/complexity": "off",
+        "eslint/max-depth": "off",
+        "eslint/max-lines": "off",
+        "eslint/max-lines-per-function": "off",
+        "eslint/max-params": "off",
+        "eslint/max-statements": "off",
+        "eslint/no-nested-ternary": "off",
+        "eslint/no-param-reassign": "off",
+        "eslint/no-shadow": "off",
+        "eslint/no-var": "off",
+        "oxc/no-map-spread": "off"
+      }
+    },
+    {
+      "files": ["scripts/**", "test/**", "vitest.config.ts", "tailwind.config.cjs"],
+      "env": { "node": true, "browser": false },
+      "rules": { "eslint/no-console": "off" }
+    },
+    {
+      // Tests read better as long, flat blocks of assertions.
+      "files": ["test/**"],
+      "rules": {
+        "eslint/max-lines-per-function": "off",
+        "eslint/max-statements": "off",
+        "eslint/max-nested-callbacks": ["error", { "max": 5 }]
+      }
+    }
+  ]
+}

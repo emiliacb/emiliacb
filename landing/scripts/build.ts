@@ -74,7 +74,6 @@ const { metafile } = await esbuild.build({
   metafile: true,
   logLevel: "warning",
 });
-if (!metafile) throw new Error("esbuild returned no metafile");
 
 // Entry name ("layout") → public URL ("/assets/layout-ABC123.js").
 const scriptUrls = new Map<string, string>();
@@ -103,7 +102,7 @@ const cssUrl = `/assets/styles-${sha256(cssBytes)}.css`;
 await fs.writeFile(path.join(dist, cssUrl), cssBytes);
 
 // 5. buildId: changes whenever any bundle or the stylesheet changes.
-const buildId = sha256([...scriptUrls.values(), cssUrl].sort().join("\n"));
+const buildId = sha256([...scriptUrls.values(), cssUrl].toSorted().join("\n"));
 
 // 6. Render.
 function script(name: ClientEntry): string {
