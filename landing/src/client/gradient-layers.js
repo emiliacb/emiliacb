@@ -10,8 +10,8 @@
  * the pointer moves, and lets each sway like a leaf: a damped spring on its
  * place and on its tilt, pushed by a breeze that passes from the back sheet to
  * the front one and by the pointer brushing through it. The small front
- * sheets are the light leaves, quicker and easier to move, and like the
- * tree's leaves each rings its note when the hand brushes through its edge.
+ * sheets are the light leaves, quicker and easier to move. Brushed through
+ * their edge they give an electric zap, not the tree's glass.
  *
  * A click on the gradient makes a black hole of it, out of its own matter
  * (gradient/lens.js, light traced past it the way Interstellar's was). The
@@ -25,7 +25,8 @@
  * decaying as a radiating pair's does, ρ⁴ falling linearly); inside the tidal
  * radius it comes apart, stretched along the orbit and sheared by it into a
  * thread, and is gone at the shadow. After a moment the hole evaporates in a
- * flash and gives back the sheets and the cursor. Only the drawing is taken:
+ * flash and gives back the sheets and the cursor, and the blast goes through
+ * the page as through a shaken cloth (gradient/ripple.js). Only the drawing is taken:
  * the pointer itself stays where the hand is. All of it is heard
  * (gradient/sound.js).
  *
@@ -33,6 +34,7 @@
  * with reduced motion; everywhere else the sheets stay as they are drawn.
  */
 import { makeLens } from "./gradient/lens.js";
+import { makeRipple } from "./gradient/ripple.js";
 import { makeSound, note } from "./gradient/sound.js";
 
 (() => {
@@ -63,7 +65,7 @@ import { makeSound, note } from "./gradient/sound.js";
   //   give   how much of the hand's motion it takes up
   //   wind   how far the breeze moves it, in px
   //   tilt   how far the breeze tips it, in radians
-  //   tone   its note: the biggest lowest, in the tree's scale
+  //   tone   its note, the biggest lowest
   const KIND = [
     { z: -320, f: 0.42, zeta: 0.3, give: 0.18, wind: 9, tilt: 0.04, tone: note(0) },
     { z: -210, f: 0.58, zeta: 0.22, give: 0.32, wind: 12, tilt: 0.07, tone: note(3) },
@@ -93,7 +95,7 @@ import { makeSound, note } from "./gradient/sound.js";
       bx: 0, by: 0, bvx: 0, bvy: 0, // how far it still is from coming back out of the hole
       grow: 1, vgrow: 0, // its size, as it comes back out
       ax: 0, ay: 0, ar: 0, ao: 1, // where it shows, in the box: centre, radius, opacity
-      inside: false, rang: -1, // the hand inside it, and when it last rang
+      inside: false, rang: -1, // the hand inside it, and when it last sounded
       out: false,
     };
   });
@@ -146,15 +148,27 @@ import { makeSound, note } from "./gradient/sound.js";
   /* ==== the hole ==== */
 
   let lens; // made on the first click (gradient/lens.js); null without WebGL
+  let ripple; // the blast's shock through the page (gradient/ripple.js)
+  let shaken = -1; // s since the blast, while the page still shakes
   // calm → gather (the sheets tremble while the page is copied) → fall (they
   // are eaten, the cursor is caught) → hold → boom → back.
   let phase = "calm", since = 0, clock = 0, eaten = 0;
   // The hole: its centre in the box and in the host, r_s, and the square
   // the lens draws, half of its side.
-  const at = { x: 0, y: 0, hx: 0, hy: 0, rs: 0, half: 0 };
+  const at = { x: 0, y: 0, hx: 0, hy: 0, rs: 0, half: 0, reach: 0 };
   const now_ = { rs: 0, disc: 0, flash: 0, lens: 0 };
   const cursor = () => window.__inkCursor;
   const GATHER = 1.2; // the most the copy is waited for, in s
+  const COLLAPSE = 0.8; // s for the inner circle to close to a point
+  const GROW = 1.5; // s for the singularity to grow to the shadow's size
+  const GROW_TAU = 0.36; // its growth's time constant: slow, then fast
+  // How much of its radius the inner circle keeps, s into the fall: all of
+  // it, then less and less, faster and faster, to nothing at COLLAPSE.
+  const collapse = (s) => {
+    if (s >= COLLAPSE) return 0;
+    const k = 0.22;
+    return 1 - (Math.exp(Math.max(0, s) / k) - 1) / (Math.exp(COLLAPSE / k) - 1);
+  };
   const BIG_BANG = 1.2; // how long the hole stays once it has eaten, in s
   let drone = null, chirp = null;
 
@@ -195,24 +209,22 @@ import { makeSound, note } from "./gradient/sound.js";
 
   function swallow(box) {
     if (lens === undefined) lens = makeLens(host);
-    // The hole's size goes with the gradient's.
+    if (ripple === undefined) ripple = lens ? makeRipple(host) : null;
+    // The hole's size goes with the gradient's. It is born where the
+    // gradient's inner circle collapses: at that circle's centre, as it
+    // shows now, wherever that is on the page.
     const rs = clamp(0.017 * R, 10, 18);
-    // Where the circle's centre is, brought into the view far enough for the
-    // disc to show.
-    const m = 10.5 * rs;
-    const cx = box.left + W, cy = box.top + H / 2;
-    const vw = root.clientWidth, vh = innerHeight;
-    const hx = clamp(cx, Math.max(box.left, 0) + m, vw - m);
-    const hy = clamp(cy, Math.min(m, vh / 2), Math.max(vh - m, vh / 2));
+    const core = leaves[leaves.length - 1];
     const hostBox = host.getBoundingClientRect();
-    at.x = hx - box.left;
-    at.y = hy - box.top;
-    at.hx = hx - hostBox.left;
-    at.hy = hy - hostBox.top;
+    at.x = core.ax;
+    at.y = core.ay;
+    at.hx = box.left + at.x - hostBox.left;
+    at.hy = box.top + at.y - hostBox.top;
     at.rs = rs;
     // The square holds all the sheets, which it draws while they are eaten,
     // and the bending round the hole.
-    at.half = Math.round(Math.max(16 * rs, Math.hypot(hx - cx, hy - cy) + 0.31 * R));
+    at.reach = Math.hypot(at.x - W, at.y - H / 2); // from the hole to the sheets' centre
+    at.half = Math.round(Math.max(16 * rs, at.reach + 0.31 * R));
     if (lens) lens.open(at.hx, at.hy, at.half, 12 * rs);
     Object.assign(orbit, { on: false, catch: 0, rho: 0, th: 0, w: 0, tear: 0, gone: false, shattered: false, back: null });
     Object.assign(now_, { rs: 0, disc: 0, flash: 0, lens: 0 });
@@ -271,19 +283,19 @@ import { makeSound, note } from "./gradient/sound.js";
     }
   }
 
-  // The hand brushing through a sheet takes it along a little, and tips it;
-  // crossing its edge with some speed, it rings.
+  // The hand brushing through a sheet takes it along a little, and tips it.
   function brush(l, hx, hy, vx, vy, dt) {
     const r = l.k * R * l.grow;
     const cx = W + l.x + l.bx, cy = H / 2 + l.y + l.by;
     const d = Math.hypot(hx - cx, hy - cy);
     const inside = hand.seen && d < r;
     const speed = Math.hypot(vx, vy);
+    // Crossing its edge with some speed, it gives its zap.
     if (inside !== l.inside) {
       l.inside = inside;
       if (speed > 180 && t - l.rang > 0.14) {
         l.rang = t;
-        sound.bell(l.tone, Math.min(1, speed / 2200), clamp((hand.x / innerWidth) * 2 - 1, -1, 1) * 0.7);
+        sound.zap(l.tone, Math.min(1, speed / 2200), clamp((hand.x / innerWidth) * 2 - 1, -1, 1) * 0.7);
       }
     }
     if (!inside) return;
@@ -360,9 +372,14 @@ import { makeSound, note } from "./gradient/sound.js";
     const eatenNow = phase === "fall" || phase === "hold" || (phase === "boom" && !leaves[0].out);
     if (!eatenNow) for (const l of leaves) place(l);
     if (phase !== "calm") hole(dt);
+    if (shaken >= 0) {
+      shaken += dt;
+      if (shaken < 2.6) ripple.draw(shaken);
+      else { ripple.stop(); shaken = -1; }
+    }
 
     const moving = hand.seen && Math.hypot(hand.vx, hand.vy) > 1;
-    if (visible || phase !== "calm" || moving) raf = requestAnimationFrame(frame);
+    if (visible || phase !== "calm" || moving || shaken >= 0) raf = requestAnimationFrame(frame);
   }
 
   function hole(dt) {
@@ -380,11 +397,18 @@ import { makeSound, note } from "./gradient/sound.js";
         if (lens) stack.classList.add("eaten");
       }
     } else if (phase === "fall") {
-      eaten = since;
-      now_.rs = at.rs * smooth((since - 0.1) / 1.2);
-      now_.disc = smooth((since - 0.35) / 1.4);
+      // The inner circle collapses on itself (collapse(), drawn by the
+      // lens), faster and faster; where it closes the singularity is born,
+      // a dot that grows slowly and then faster and faster, exponentially,
+      // to the shadow's size. Only then does the sheets' matter start to fall
+      // in and light the disc (gradient/lens.js works out how much), and
+      // after that the cursor is caught.
+      const born = since - COLLAPSE;
+      eaten = Math.max(0, born);
+      now_.rs = born < 0 ? 0 : at.rs * Math.min(1, Math.max(0.08, (Math.exp(born / GROW_TAU) - 1) / (Math.exp(GROW / GROW_TAU) - 1)));
+      now_.disc = 1;
       sink = smooth(since / 4);
-      if (since > 0.6) fall(dt, hx, hy);
+      if (born > GROW * 0.8) fall(dt, hx, hy);
       if (orbit.gone) { phase = "hold"; since = 0; }
     } else if (phase === "hold") {
       // A gulp as it eats.
@@ -394,8 +418,10 @@ import { makeSound, note } from "./gradient/sound.js";
       sink = 1;
       if (since > BIG_BANG) {
         phase = "boom"; since = 0;
-        if (drone) { drone.stop(0.5); drone = null; }
-        sound.evaporate();
+        // The drone gives way to the pressure building (gradient/sound.js),
+        // which goes off as the flash peaks.
+        if (drone) { drone.stop(0.12); drone = null; }
+        sound.evaporate(0.62);
       }
     } else if (phase === "boom") {
       // It evaporates: it shrinks, its disc burns bright, and it is gone in
@@ -404,7 +430,11 @@ import { makeSound, note } from "./gradient/sound.js";
       now_.rs = at.rs * (1 - smooth(u) ** 1.4);
       now_.disc = (1 + 1.4 * Math.sin(Math.PI * u)) * (1 - smooth((since - 0.5) / 0.25));
       now_.flash = Math.sin(Math.PI * clamp01((since - 0.45) / 0.45));
-      if (since >= 0.62 && !leaves[0].out) giveBack(hx, hy);
+      if (since >= 0.62 && !leaves[0].out) {
+        giveBack(hx, hy);
+        // The blast shakes the page, as a cloth.
+        if (ripple && lens && ripple.start(lens.shot, at.hx, at.hy)) shaken = 0;
+      }
       if (since >= 0.95) { phase = "back"; since = 0; if (lens) lens.close(); }
     } else if (phase === "back") {
       comeBack(dt, hx, hy);
@@ -421,16 +451,29 @@ import { makeSound, note } from "./gradient/sound.js";
       // sheets' at its hot middle, the outer ones' at its edge.
       const lit = (c, k) => c.map((v) => v + (1 - v) * k);
       const e = Math.max(0, eaten);
+      // Its matter flows in faster and faster, and winds round as it comes.
+      // The flow starts as the shadow does, so nothing has fallen before, and
+      // stops once the sheets are all in: what reached the disc stays there.
+      const flow = Math.min((0.05 * R) ** 2 * e * e * e, Math.max(at.reach, 0.12 * R) ** 2);
       lens.draw({
-        rs: now_.rs, lens: now_.lens, disc: now_.disc, flash: now_.flash, time: clock,
+        rs: now_.rs, fed: 1 - Math.exp(-flow / (0.08 * R) ** 2), circ: smooth((e - 0.6) / 2.4), lens: now_.lens, disc: now_.disc, flash: now_.flash, time: clock,
         hot: lit(ga, dark ? 0.75 : 0.7), mid: lit(ga, dark ? 0.35 : 0.05), out: lit(gb, dark ? 0.35 : 0),
-        // Its matter flows in faster and faster, and winds round as it comes.
-        flow: (0.05 * R) ** 2 * e * e * e,
+        flow,
         wind: 2.4 * e, windR: 6 * at.rs,
         tear: smooth(e / 1.4), cloud: smooth((e - 0.2) / 1.2),
-        sheets: leaves.map((l) => ({
-          x: l.ax - ox, y: l.ay - oy, r: l.ar, o: l.ao, c: l.b ? gb : ga, stops: l.stops, alphas: l.alphas,
-        })),
+        sheets: leaves.map((l, i) => {
+          // The inner circle (the two front sheets) closes on itself, its
+          // matter denser as it does; the one round it goes some way in.
+          const c = phase === "fall" ? collapse(since) : 0;
+          const k = i >= leaves.length - 2 ? c : i === leaves.length - 3 ? 1 - 0.5 * (1 - c) : 1;
+          const dense = k > 0 ? Math.min(7, 1 / (k * k)) : 0;
+          // And it closes on the point the singularity is born at.
+          const m = i >= leaves.length - 3 ? k : 1;
+          return {
+            x: at.x + (l.ax - at.x) * m - ox, y: at.y + (l.ay - at.y) * m - oy, r: l.ar * k, o: Math.min(1, l.ao * (i >= leaves.length - 3 ? dense : 1)),
+            c: l.b ? gb : ga, stops: l.stops, alphas: l.alphas,
+          };
+        }),
       });
     }
   }
@@ -491,7 +534,7 @@ import { makeSound, note } from "./gradient/sound.js";
       c.bend(null, 0);
       c.offset(0, 0);
       if (chirp) { chirp.stop(); chirp = null; }
-      sound.wood(note(0, -1), 1, clamp((hx / innerWidth) * 2 - 1, -1, 1) * 0.6);
+      sound.thud(1);
     }
   }
 
@@ -582,6 +625,8 @@ import { makeSound, note } from "./gradient/sound.js";
   // Back to the drawing as it is, when the page stops being a desktop one.
   function rest() {
     if (phase !== "calm") finish();
+    if (ripple) ripple.stop();
+    shaken = -1;
     stack.classList.remove("live");
     stack.style.perspectiveOrigin = "";
     for (const l of leaves) { l.el.style.transform = ""; l.el.style.opacity = ""; }

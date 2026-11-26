@@ -65,6 +65,8 @@ uniform float uTear;    // how ragged the arms are
 uniform float uCloud;   // how far the halo has come apart into points
 uniform float uTime;
 uniform float uDisc;    // the disc's light, 0 to 1, more as it evaporates
+uniform float uFed;     // how much has fallen in so far, 0 to 1, for the glow
+uniform float uCirc;    // how far what fell in has spread round its orbit
 uniform float uFlash;
 uniform vec3 uHot, uMid, uOut, uCore;
 uniform float uTilt, uRoll;
@@ -109,7 +111,7 @@ vec2 source(vec2 q) {
 }
 
 // The sheets, back to front, premultiplied.
-vec4 sheets(vec2 q) {
+vec4 material(vec2 q) {
   vec2 q0 = source(q);
   vec4 o = vec4(0.0);
   for (int i = 0; i < 5; i++) {
@@ -125,6 +127,13 @@ vec4 sheets(vec2 q) {
     o = o * (1.0 - a) + vec4(uShC[i] * a, a);
   }
   return o;
+}
+
+// The sheets as they lie on the page: their matter within the disc's reach
+// has gone into the disc, so the hole sweeps its neighbourhood clean.
+vec4 sheets(vec2 q) {
+  float reach = DISC * max(uRs, 1e-3);
+  return material(q) * smoothstep(0.8, 1.15, length(q - uRes * 0.5) / reach);
 }
 
 vec3 page(vec2 q) {
@@ -178,16 +187,39 @@ void main() {
       float rr = length(x);
       if (rr > 2.9 && rr < DISC) {
         float ph = atan(dot(x, e2), dot(x, e1));
+        // The disc is the sheets' matter, come in. What orbits at rr now
+        // came from r0, where r0² = r² + flow, carried round by the same
+        // winding (material() follows it back), and it has the density and
+        // colour of the sheet it came from. It shines with what it gave up
+        // falling, the energy GM m (1/r − 1/r0): nothing yet where nothing
+        // has fallen, most deep in, and the more matter, the more light.
+        vec2 p2 = uRes * 0.5 + rr * uRs * vec2(cos(ph), sin(ph));
+        vec4 m = material(p2);
+        // Once in, it spreads round the orbit (it circularises): the more
+        // turns there have been, the more the disc is the matter averaged
+        // round each orbit rather than the stream that brought it.
+        if (uCirc > 0.0) {
+          vec4 avg = vec4(0.0);
+          for (int j = 0; j < 8; j++) {
+            float aj = 0.785398 * float(j) + 0.3;
+            avg += material(uRes * 0.5 + rr * uRs * vec2(cos(aj), sin(aj)));
+          }
+          m = mix(m, avg / 8.0, uCirc);
+        }
+        float r0 = sqrt(rr * rr * uRs * uRs + uFlow) / uRs;
+        float fell = max(0.0, 1.0 / rr - 1.0 / r0);
         float a = ph - uTime * 0.9 * pow(3.0 / rr, 1.5);
         vec3 ring = vec3(cos(a), sin(a), 0.0);
         float n = 0.6 * noise(vec3(ring.xy * 2.5, rr * 1.4)) + 0.4 * noise(vec3(ring.xy * 7.0, rr * 4.0 + 3.0));
-        float prof = pow(3.0 / rr, 2.0) * smoothstep(2.9, 3.4, rr) * (1.0 - smoothstep(DISC * 0.5, DISC, rr));
+        float E = m.a * fell * 26.0 * (0.55 + 0.9 * n) * smoothstep(2.9, 3.4, rr);
         vec3 tang = normalize(cross(N, x));
         float beta = sqrt(0.5 / (rr - 1.0));
         vec3 k = -normalize(v);
         float g = sqrt(1.0 - beta * beta) / (1.0 - beta * dot(tang, k));
-        float I = prof * (0.45 + 1.0 * n) * mix(1.0, g * g * g, 0.5) * sqrt(1.0 - 1.0 / rr) * uDisc;
-        vec3 col = rr < 4.6 ? mix(uHot, uMid, (rr - 2.9) / 1.7) : mix(uMid, uOut, clamp((rr - 4.6) / (DISC - 4.6), 0.0, 1.0));
+        float I = E * mix(1.0, g * g * g, 0.5) * sqrt(1.0 - 1.0 / rr) * uDisc;
+        // Its own colour, lightened, heated toward white the more it gave up.
+        vec3 own = m.rgb / max(m.a, 1e-3);
+        vec3 col = mix(mix(own, vec3(1.0), 0.3), uHot, smoothstep(0.2, 1.4, E));
         float al = clamp(I * 1.5, 0.0, 0.96);
         acc.rgb += (1.0 - acc.a) * al * min(col * max(1.0, I * 0.8), vec3(1.0));
         acc.a += (1.0 - acc.a) * al;
@@ -208,7 +240,7 @@ void main() {
     q = vec2(q.x, -q.y) + uRes * 0.5;
     q = mix(q, frag, edge);
     // A glow of the disc's light, scattered close round the hole.
-    float glow = uDisc * 0.35 * exp(-max(0.0, near - 2.6) / 2.2) * (1.0 - edge);
+    float glow = uFed * uDisc * 0.35 * exp(-max(0.0, near - 2.6) / 2.2) * (1.0 - edge);
     // Before the copy is in, only the sheets are drawn, and the page shows
     // through round them, unbent.
     bg = vec4(mix(page(q), uMid, glow * 0.6), 1.0) * copyA + sheets(q) * (1.0 - copyA);
@@ -263,7 +295,7 @@ export function makeLens(host) {
   gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
   const U = {};
   for (const n of ["uRes", "uRs", "uL", "uLc", "uLens", "uTex", "uTexOff", "uTexSize", "uBg", "uSh", "uShC", "uShS", "uShP",
-    "uFlow", "uWind", "uWindR", "uTear", "uCloud", "uTime", "uDisc", "uFlash", "uHot", "uMid", "uOut", "uCore", "uTilt", "uRoll"]) U[n] = gl.getUniformLocation(prog, n);
+    "uFed", "uCirc", "uFlow", "uWind", "uWindR", "uTear", "uCloud", "uTime", "uDisc", "uFlash", "uHot", "uMid", "uOut", "uCore", "uTilt", "uRoll"]) U[n] = gl.getUniformLocation(prog, n);
   const tex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, tex);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -311,26 +343,33 @@ export function makeLens(host) {
     copy(x0, y0);
   }
 
+  // The last copy, for whoever else bends the page (gradient/ripple.js): the
+  // image, and where it sits in the host (its top left) and how big it is.
+  let shot = null;
+
   async function copy(x0, y0) {
     if (!shell) return;
     const mine = ++ticket;
     const hostBox = host.getBoundingClientRect(), shellBox = shell.getBoundingClientRect();
-    const sx = x0 - (shellBox.left - hostBox.left), sy = y0 - (shellBox.top - hostBox.top);
+    const shellX = shellBox.left - hostBox.left, shellY = shellBox.top - hostBox.top;
+    const sx = x0 - shellX, sy = y0 - shellY;
     const w = shell.offsetWidth;
+    // The rows of the square and of the screen, in the shell's own.
+    const view = -shellBox.top;
+    const top = Math.max(0, Math.floor(Math.min(sy, view)));
+    const bottom = Math.min(shell.offsetHeight, Math.ceil(Math.max(sy + size, view + innerHeight)));
     // All of each face's formats: asked for woff2 alone, Chrome draws the
     // copy in a fallback face.
     if (fontCSS === undefined) fontCSS = await getFontEmbedCSS(shell).catch(() => null);
     let img;
     try {
-      // Only the rows of the square are drawn: the shell moved up out of a
-      // frame that tall. Its width stays its own, so nothing reflows.
+      // Only those rows are drawn: the shell moved up out of a frame that
+      // tall. It keeps its own width and height, so nothing reflows.
       img = await toCanvas(shell, {
         width: w,
-        height: size,
+        height: bottom - top,
         pixelRatio: dpr,
-        // The frame is the square's height; the shell keeps its own, so its
-        // layout is as on the page.
-        style: { transform: `translateY(${-sy}px)`, margin: "0", height: `${shell.offsetHeight}px` },
+        style: { transform: `translateY(${-top}px)`, margin: "0", height: `${shell.offsetHeight}px` },
         filter: (node) => !(node instanceof HTMLCanvasElement),
         ...(fontCSS ? { fontEmbedCSS: fontCSS } : { skipFonts: true }),
       });
@@ -340,19 +379,22 @@ export function makeLens(host) {
     if (mine !== ticket) return;
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-    gl.uniform2f(U.uTexOff, sx, 0);
-    gl.uniform2f(U.uTexSize, w, size);
+    gl.uniform2f(U.uTexOff, sx, sy - top);
+    gl.uniform2f(U.uTexSize, w, bottom - top);
+    shot = { img, x: shellX, y: shellY + top, w, h: bottom - top };
     ready = true;
   }
 
   /** One frame: r_s in px, how much of the copy shows, the disc's light and
    * its colours (hot, mid, out), the flash, the sheets (centre in the square,
    * radius, opacity, colour, profile) and how far they have been eaten. */
-  function draw({ rs, lens, disc, flash, time, sheets, hot, mid, out, flow, wind, windR, tear, cloud }) {
+  function draw({ rs, fed = 0, circ = 0, lens, disc, flash, time, sheets, hot, mid, out, flow, wind, windR, tear, cloud }) {
     if (canvas.style.display) canvas.style.display = "";
     gl.uniform1f(U.uRs, rs);
     gl.uniform1f(U.uLens, ready ? lens : 0);
     gl.uniform1f(U.uDisc, disc);
+    gl.uniform1f(U.uFed, fed);
+    gl.uniform1f(U.uCirc, circ);
     gl.uniform1f(U.uFlash, flash);
     gl.uniform1f(U.uTime, time);
     gl.uniform3fv(U.uHot, hot);
@@ -387,6 +429,7 @@ export function makeLens(host) {
   return {
     open, draw, close,
     get ready() { return ready; },
+    get shot() { return shot; },
     get half() { return half; },
   };
 }

@@ -1,16 +1,17 @@
 /**
- * The gradient's sound, made as the tree's is (tree-sway.js): notes of a
- * Hijaz on D (D E♭ F♯ G A B♭), glass bells and rounder wood, under one soft
- * ceiling with an echo that loses its top each time. It is on unless the
+ * The gradient's sound, on the tree's engine (tree-sway.js): one soft
+ * ceiling with an echo that loses its top each time, and its scale, a Hijaz
+ * on D, where anything is pitched. It is on unless the
  * footer's switch was last left off (the same "tree-sound" setting and
  * event), and, as a browser wants, starts on the first press on the page.
  *
- * The sheets ring like the tree's leaves when the hand brushes through their
- * edge, the biggest lowest. The hole has its own: a low drone that sinks as
- * it forms; the cursor's orbit as a tone that rises with its turning, the way
- * two stars spiralling together chirp; a scatter of bells when the tide takes
- * the cursor apart; a deep knock as it is swallowed; and the evaporation as a
- * run up the scale.
+ * The sheets' own voice is electric and magnetic, not the tree's glass, and
+ * not a note: a gritty buzz with sparks when the hand brushes through a
+ * sheet's edge. The hole has a low drone that sinks as it forms; the cursor's
+ * orbit as a tone that rises with its turning, the way two stars spiralling
+ * together chirp; a crackle of discharges over a sagging minor chord when
+ * the tide takes the cursor apart; a dull thud as it is swallowed; and an explosion when it goes: the
+ * pressure building, a deep boom, a blast of air, debris, a long tail.
  */
 const SOUND_KEY = "tree-sound";
 const FIRST_PRESS = ["pointerdown", "keydown", "touchend"];
@@ -202,32 +203,177 @@ export function makeSound() {
     };
   }
 
-  /** The cursor coming apart: bells high in the scale, scattered. */
+  // Noise, filtered and shaped: one call for every rush, rumble and crackle.
+  function noise(at, dur, type, f0, f1, level, rise = 0.01, q = 0.7, to = bus) {
+    const n = ac.createBufferSource();
+    n.buffer = noiseBuf;
+    n.loop = true;
+    const f = ac.createBiquadFilter();
+    f.type = type;
+    f.Q.value = q;
+    f.frequency.setValueAtTime(f0, at);
+    f.frequency.exponentialRampToValueAtTime(f1, at + dur);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(level, at + rise);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    n.connect(f).connect(g).connect(to);
+    n.start(at, Math.random() * 1.5);
+    n.stop(at + dur + 0.05);
+  }
+  // Sparks: a few spits of high noise at random within `span` s.
+  function sparks(at, span, count, level, to = bus) {
+    for (let k = 0; k < count; k++) {
+      const tk = at + Math.random() * span;
+      noise(tk, 0.012 + Math.random() * 0.02, "highpass", 2500 + Math.random() * 3000, 4000, level * (0.4 + Math.random() * 0.6), 0.002, 0.7, to);
+    }
+  }
+  // Grit: a soft clip, for the buzz.
+  let grit = null;
+  function gritCurve() {
+    if (grit) return grit;
+    grit = new Float32Array(1024);
+    for (let i = 0; i < 1024; i++) { const x = (i / 1023) * 2 - 1; grit[i] = Math.tanh(x * 3.5); }
+    return grit;
+  }
+
+  /** The cursor coming apart: a burst of crackling discharges over a minor
+   * chord, sad, that sags a little flat as it dies away. D minor (D F A),
+   * with the F natural the scale's F♯ would have made major. */
   function shatter() {
-    for (let i = 0; i < 6; i++) {
-      bell(note(Math.floor(Math.random() * 6), 2 + (Math.random() < 0.4 ? 1 : 0)), 0.35 + Math.random() * 0.3, Math.random() * 1.4 - 0.7, i * 0.05 + Math.random() * 0.06);
+    if (!live()) return;
+    for (let i = 0; i < 6; i++) zap(D * (0.4 + Math.random() * 0.8), 0.5 + Math.random() * 0.4, Math.random() * 1.4 - 0.7, i * 0.05 + Math.random() * 0.05, 0.6);
+    sparks(ac.currentTime, 0.5, 14, 0.05);
+    minor();
+  }
+  function minor() {
+    const at = ac.currentTime, long = 2.8;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.05, at + 0.18);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + long);
+    const soft = ac.createBiquadFilter();
+    soft.type = "lowpass";
+    soft.frequency.setValueAtTime(2200, at);
+    soft.frequency.exponentialRampToValueAtTime(500, at + long);
+    soft.connect(g).connect(bus);
+    // D3 F3 A3 D4, and D2 under them for weight.
+    [[D / 2, 0.6], [D, 1], [D * Math.pow(2, 3 / 12), 0.9], [D * Math.pow(2, 7 / 12), 0.8], [D * 2, 0.5]].forEach(([f, l], i) => {
+      for (const det of [-6, 6]) {
+        const o = ac.createOscillator(), og = ac.createGain();
+        o.type = "triangle";
+        o.frequency.value = f;
+        o.detune.setValueAtTime(det, at);
+        o.detune.linearRampToValueAtTime(det - 45, at + long);
+        og.gain.value = l * 0.5;
+        o.connect(og).connect(soft);
+        o.start(at + i * 0.025);
+        o.stop(at + long + 0.05);
+      }
+    });
+  }
+
+  /** The sheets' own voice: electric and magnetic, not a note. A gritty buzz,
+   * low like mains hum (a sawtooth and a square a hair apart, beating),
+   * through a narrow resonant band that sweeps down as a discharge does, with
+   * a crackle of sparks. `f` only sets how low it hums. */
+  function zap(f, strength = 0.5, pan = 0, delay = 0, short = 1) {
+    if (!live()) return;
+    const at = ac.currentTime + delay;
+    const to = panned(pan);
+    const s = Math.min(1, strength);
+    const dur = (0.16 + 0.14 * s) * short;
+    const hum = f / 2.5;
+    const out = ac.createGain();
+    out.gain.setValueAtTime(0.0001, at);
+    out.gain.exponentialRampToValueAtTime(0.03 + 0.05 * s, at + 0.004);
+    out.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    out.connect(to);
+    const band = ac.createBiquadFilter();
+    band.type = "bandpass";
+    band.Q.value = 5;
+    band.frequency.setValueAtTime(2600 + 1400 * s, at);
+    band.frequency.exponentialRampToValueAtTime(420, at + dur);
+    const shape = ac.createWaveShaper();
+    shape.curve = gritCurve();
+    shape.connect(band).connect(out);
+    const saw = ac.createOscillator(), sq = ac.createOscillator(), sg = ac.createGain();
+    saw.type = "sawtooth";
+    sq.type = "square";
+    saw.frequency.value = hum;
+    sq.frequency.value = hum * 1.013;
+    sg.gain.value = 0.6;
+    saw.connect(shape);
+    sq.connect(sg).connect(shape);
+    // A jitter on the hum, as a field that will not settle.
+    const jit = ac.createOscillator(), jg = ac.createGain();
+    jit.type = "square";
+    jit.frequency.value = 23 + Math.random() * 17;
+    jg.gain.value = hum * 0.08;
+    jit.connect(jg);
+    jg.connect(saw.frequency);
+    jg.connect(sq.frequency);
+    for (const o of [saw, sq, jit]) { o.start(at); o.stop(at + dur + 0.05); }
+    sparks(at, dur * 0.8, 3 + Math.round(4 * s), 0.04 + 0.05 * s, to);
+  }
+
+  /** A dull thud, the cursor swallowed: a low drop with the overtones small
+   * speakers can play, and no note in it. */
+  function thud(strength = 1) {
+    if (!live()) return;
+    const at = ac.currentTime;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.09 * strength, at + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.45);
+    g.connect(bus);
+    [[1, 1], [2.1, 0.5], [3.3, 0.25]].forEach(([m, l]) => {
+      const o = ac.createOscillator(), og = ac.createGain();
+      o.frequency.setValueAtTime(80 * m, at);
+      o.frequency.exponentialRampToValueAtTime(34 * m, at + 0.3);
+      og.gain.value = l;
+      o.connect(og).connect(g);
+      o.start(at);
+      o.stop(at + 0.5);
+    });
+    noise(at, 0.25, "lowpass", 900, 120, 0.04, 0.004);
+  }
+
+  /** The hole going off. First the pressure builds over `build` s, a rush of
+   * noise rising in pitch over a swelling rumble, the drone's last; then the
+   * explosion: a deep boom that drops (its overtones for small speakers), a
+   * blast of air that darkens as it spreads, debris crackling down, and a
+   * long low tail. */
+  function evaporate(build = 0.6) {
+    if (!live()) return;
+    const t = ac.currentTime, end = t + build;
+    // The build: rising, then cut dead at the blast.
+    noise(t, build, "bandpass", 300, 4500, 0.05, build * 0.9, 1.4);
+    noise(t, build, "lowpass", 60, 160, 0.06, build * 0.9, 0.9);
+    // The boom.
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, end);
+    g.gain.exponentialRampToValueAtTime(0.16, end + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, end + 1.6);
+    g.connect(bus);
+    [[1, 1], [2, 0.55], [3, 0.3], [4.2, 0.15]].forEach(([m, l]) => {
+      const o = ac.createOscillator(), og = ac.createGain();
+      o.frequency.setValueAtTime(70 * m, end);
+      o.frequency.exponentialRampToValueAtTime(26 * m, end + 0.9);
+      og.gain.value = l;
+      o.connect(og).connect(g);
+      o.start(end);
+      o.stop(end + 1.7);
+    });
+    // The blast of air, bright at first, darkening; and a long low tail.
+    noise(end, 1.4, "lowpass", 6000, 180, 0.12, 0.006, 0.6);
+    noise(end, 3.2, "lowpass", 300, 50, 0.07, 0.05, 0.8);
+    // Debris: crackles thinning out.
+    for (let k = 0; k < 22; k++) {
+      const tk = end + 0.08 + Math.pow(Math.random(), 1.8) * 1.6;
+      noise(tk, 0.02 + Math.random() * 0.05, "bandpass", 800 + Math.random() * 2500, 600, 0.02 + Math.random() * 0.03, 0.003, 2);
     }
   }
 
-  /** The hole evaporating: a run up the scale, and a hiss. */
-  function evaporate() {
-    if (!live()) return;
-    const run = [0, 2, 4, 6, 8, 10, 12, 14];
-    run.forEach((s, i) => bell(note(s, 1), 0.5 + i * 0.05, (i / run.length) * 1.2 - 0.6, i * 0.045));
-    const t = ac.currentTime;
-    const n = ac.createBufferSource();
-    n.buffer = noiseBuf;
-    const f = ac.createBiquadFilter();
-    f.type = "highpass";
-    f.frequency.value = 3000;
-    const g = ac.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.035, t + 0.05);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
-    n.connect(f).connect(g).connect(bus);
-    n.start(t);
-    n.stop(t + 0.8);
-  }
-
-  return { start, bell, wood, drone, chirp, shatter, evaporate, live };
+  return { start, bell, wood, zap, thud, drone, chirp, shatter, evaporate, live };
 }
