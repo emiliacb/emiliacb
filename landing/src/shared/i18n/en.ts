@@ -44,6 +44,26 @@ export const en = {
     scheduleFull: "Schedule a Meeting",
   },
 
+  github: {
+    title: "GitHub",
+    description: "what I've been shipping lately",
+    close: "Close",
+    prsMerged: "pull requests merged in the last 30 days",
+    prsNote: "Including the ones I delegated to coding agents.",
+    commitsYear: "commits in the last year",
+    commits30d: "commits in the last 30 days",
+    publicRepos: "public repositories",
+    stars: "stars on public repositories",
+    weeklyTitle: "Commits per week",
+    weekLabel: "Week of {date}: {count} commits",
+    chartSummary: "{total} commits in the last year, one bar per week. The busiest week had {max}.",
+    yearAgo: "a year ago",
+    thisWeek: "this week",
+    languages: "Languages in public repositories",
+    updated: "Updated",
+    viewOnGithub: "View on GitHub",
+  },
+
   emailLink: {
     copy: "Copy email",
     copied: "Copied!",

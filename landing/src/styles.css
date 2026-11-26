@@ -1552,3 +1552,102 @@ html.ink-cursor #ink-cursor.on {
   50% { opacity: 0.25; }
 }
 
+
+/* ---- The GitHub sidebar (src/site/components/github-sidebar.ts) ----
+   ui-sdk's drawer positions and moves the sheet (its translate) and fades the
+   backdrop (its opacity); these rules give it a size, a surface and edges. A
+   sidebar from the right on a desktop, a bottom sheet on a phone: the client
+   sets `side`, and the sheet's data-side says which edge it came from. */
+/* A manual popover: the UA sizes those to their content, which for an empty
+   backdrop is nothing. */
+.gh-backdrop {
+  @apply fixed inset-0 m-0 p-0 border-0 w-screen h-dvh max-w-none max-h-none bg-black/30 dark:bg-black/50;
+}
+
+.gh-sheet {
+  @apply flex flex-col bg-stone-100 dark:bg-stone-800 shadow-lg outline-none;
+  font-family: Montserrat, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.gh-sheet[data-side="right"] {
+  @apply h-dvh border-l border-stone-400;
+  width: min(26rem, 100vw);
+}
+
+.gh-sheet[data-side="bottom"] {
+  @apply w-full border-t border-stone-400;
+  max-height: calc(100dvh - 3rem);
+  border-top-left-radius: var(--overlay-radius);
+  border-top-right-radius: var(--overlay-radius);
+}
+
+/* Covers the gap under a bottom sheet pulled past its rest. */
+.gh-sheet[data-side="bottom"]::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 50vh;
+  background: inherit;
+}
+
+.gh-grip {
+  display: none;
+}
+
+.gh-sheet[data-side="bottom"] .gh-grip {
+  @apply block mx-auto mt-3 h-1 w-10 rounded-full bg-stone-400;
+}
+
+.gh-sheet[data-side="bottom"] header {
+  @apply pt-3;
+}
+
+/* The long part scrolls; the header and the button stay. A downward drag on a
+   phone scrolls it first, then moves the sheet once it is at the top. */
+.gh-scroll {
+  @apply min-h-0 flex-1 overflow-y-auto overscroll-contain;
+}
+
+.gh-actions {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* The numbers in the cotas' face, the way the page's dimensions are drawn. */
+.gh-number {
+  font-family: "Barlow Condensed", "Montserrat", sans-serif;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  @apply text-4xl leading-none;
+}
+
+.gh-number-big {
+  @apply text-7xl;
+}
+
+.gh-bar {
+  @apply fill-stone-800 dark:fill-stone-100;
+}
+
+.gh-bar-now {
+  @apply fill-green-400 dark:fill-blue-600;
+}
+
+.gh-lang-bar {
+  @apply block h-2 bg-yellow-300 dark:bg-blue-900;
+  width: var(--w);
+}
+
+/* The ink cursor is drawn in the page, under the top layer the sheet opens in,
+   so over the sheet and its backdrop the system's cursor comes back. */
+html.ink-cursor ui-drawer-viewport,
+html.ink-cursor ui-drawer-viewport *,
+html.ink-cursor .gh-backdrop {
+  cursor: auto !important;
+}
+
+html.ink-cursor ui-drawer-viewport :is(a, button),
+html.ink-cursor ui-drawer-viewport :is(a, button) * {
+  cursor: pointer !important;
+}

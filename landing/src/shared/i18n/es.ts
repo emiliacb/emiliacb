@@ -43,6 +43,26 @@ export const es: Dict = {
     scheduleFull: "Agendar una consulta",
   },
 
+  github: {
+    title: "GitHub",
+    description: "lo que vengo publicando",
+    close: "Cerrar",
+    prsMerged: "pull requests mergeados en los últimos 30 días",
+    prsNote: "Incluye los que delegué a agentes de código.",
+    commitsYear: "commits en el último año",
+    commits30d: "commits en los últimos 30 días",
+    publicRepos: "repositorios públicos",
+    stars: "estrellas en repositorios públicos",
+    weeklyTitle: "Commits por semana",
+    weekLabel: "Semana del {date}: {count} commits",
+    chartSummary: "{total} commits en el último año, una barra por semana. La semana con más tuvo {max}.",
+    yearAgo: "hace un año",
+    thisWeek: "esta semana",
+    languages: "Lenguajes en repositorios públicos",
+    updated: "Actualizado el",
+    viewOnGithub: "Ver en GitHub",
+  },
+
   emailLink: {
     copy: "Copiar email",
     copied: "¡Copiado!",

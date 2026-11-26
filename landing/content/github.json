@@ -1,0 +1,90 @@
+{
+  "user": "emiliacb",
+  "updatedAt": "2026-11-26",
+  "prsMerged30d": {
+    "own": 284,
+    "requested": 178
+  },
+  "commits": {
+    "year": 1055,
+    "last30d": 298,
+    "weekly": [
+      2,
+      6,
+      4,
+      10,
+      4,
+      40,
+      24,
+      54,
+      5,
+      2,
+      2,
+      4,
+      6,
+      3,
+      1,
+      13,
+      11,
+      13,
+      0,
+      1,
+      33,
+      3,
+      16,
+      1,
+      3,
+      0,
+      4,
+      4,
+      4,
+      2,
+      26,
+      67,
+      28,
+      12,
+      32,
+      7,
+      5,
+      9,
+      7,
+      16,
+      4,
+      23,
+      87,
+      40,
+      7,
+      40,
+      39,
+      62,
+      108,
+      47,
+      72,
+      42
+    ]
+  },
+  "publicRepos": 22,
+  "stars": 16,
+  "languages": [
+    {
+      "name": "JavaScript",
+      "repos": 9
+    },
+    {
+      "name": "CSS",
+      "repos": 3
+    },
+    {
+      "name": "HTML",
+      "repos": 3
+    },
+    {
+      "name": "Python",
+      "repos": 2
+    },
+    {
+      "name": "TypeScript",
+      "repos": 2
+    }
+  ]
+}
