@@ -1335,6 +1335,15 @@ function answerHint() {
 
 const FIRST_PRESS = ["pointerdown", "keydown", "touchend"];
 
+/** Where a press landed on the screen, or null for a key. */
+function pressedAt(event) {
+  const touch = event.changedTouches && event.changedTouches[0];
+  if (touch) return [touch.clientX, touch.clientY];
+  if (event.type === "keydown" || event.clientX == null) return null;
+  return [event.clientX, event.clientY];
+}
+const middle = () => [document.documentElement.clientWidth / 2, document.documentElement.clientHeight / 2];
+
 /** Any first press on the page is what lets the sound start; once it is running
  * there is nothing left to wait for. Not one on the window that asks for it:
  * that one is answered by its own buttons. Nor one on a link: the page is
@@ -1344,11 +1353,10 @@ const FIRST_PRESS = ["pointerdown", "keydown", "touchend"];
 function onFirstPress(event) {
   if (hint && hint.contains(event.target)) return;
   if (event.target instanceof Element && event.target.closest("a[href], dropdown-trigger")) return;
-  if (hint) {
-    ghostFrom = event.clientX != null && event.type !== "keydown"
-      ? [event.clientX, event.clientY]
-      : [document.documentElement.clientWidth / 2, document.documentElement.clientHeight / 2];
-  }
+  // Where the ghost leaves from: where the finger or the pointer came down.
+  // A touch's end carries its place in its touches, not on itself, and a key
+  // has none: then the place already known stands, or the screen's middle.
+  if (hint) ghostFrom = pressedAt(event) || ghostFrom || middle();
   startSound();
   if (sound.ac && sound.ac.state === "running") {
     for (const type of FIRST_PRESS) window.removeEventListener(type, onFirstPress, true);
