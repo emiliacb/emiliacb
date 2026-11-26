@@ -332,14 +332,24 @@ document.head.appendChild(o)}initApollo();</script>
             take that with it. Without the paint classes this is an empty box
             that textures to nothing, and putting them back is the whole undo.
           -->
-          <div
-            id="gradient-bg"
-            class="absolute -z-10 top-[25vh] h-[150vh] ${
-              withIlustration
-                ? "left-0 w-[130vw]"
-                : "radial-green-gradient-right dark:radial-maroon-gradient-right right-0 w-[50vw]"
-            }"
-          ></div>
+          <!--
+            Without the tree the gradient is a stack of sheets, back to front
+            and largest to smallest (styles.css, .grad-layer), which
+            src/client/gradient-layers.js sways on a desktop.
+          -->
+          ${withIlustration
+            ? html`<div id="gradient-bg" class="absolute -z-10 top-[25vh] h-[150vh] left-0 w-[130vw]"></div>`
+            : html`<div
+                id="gradient-bg"
+                class="grad-stack absolute -z-10 top-[25vh] h-[150vh] right-0 w-[50vw]"
+                aria-hidden="true"
+              >
+                <div class="grad-layer halo" style="--k:0.3;--c:var(--g-b);--a0:0.12"></div>
+                <div class="grad-layer" style="--k:0.205;--c:var(--g-b);--a0:0.05;--a1:0.24"></div>
+                <div class="grad-layer" style="--k:0.155;--c:var(--g-a);--a0:0.03;--a1:0.12"></div>
+                <div class="grad-layer" style="--k:0.105;--c:var(--g-a);--a0:0.08;--a1:0.26"></div>
+                <div class="grad-layer" style="--k:0.055;--c:var(--g-a);--a0:0.1;--a1:0.2"></div>
+              </div>`}
           ${withIlustration
             ? html`
                 <div
@@ -375,6 +385,9 @@ document.head.appendChild(o)}initApollo();</script>
         ${withCotas
           ? html`<script src="${ctx.assets.script("page-cotas")}" data-air="${withIlustration ? "off" : "on"}" defer></script>`
           : null}
+        ${withIlustration
+          ? null
+          : html`<script src="${ctx.assets.script("gradient-layers")}" defer></script>`}
         <!-- The ink cursor, on every page (src/client/ink-cursor.js). -->
         <script src="${ctx.assets.script("ink-cursor")}" defer></script>
         ${AI_FEATURE_ENABLED

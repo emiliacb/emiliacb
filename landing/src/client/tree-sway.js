@@ -1122,13 +1122,23 @@ function ring(p, strength) {
   };
   // Wakes the page to listen (tree-warp.js); it hears the note through the ear.
   window.dispatchEvent(new Event("tree-note"));
-  voice(1, vol, leaf ? 0.012 : 0.02, long);
-  voice(2, vol * 0.22, 0.012, long * 0.55);
   if (leaf) {
+    voice(1, vol, 0.012, long);
+    voice(2, vol * 0.22, 0.012, long * 0.55);
     voice(2.76, vol * 0.16, 0.006, long * 0.3);
     voice(5.4, vol * 0.05, 0.004, long * 0.14);
   } else {
-    voice(3, vol * 0.08, 0.02, long * 0.3);
+    // A laptop's speakers give almost nothing below about 150 Hz, where the
+    // trunk's D (73 Hz) and the stem's A sit. The lower the note, the more of
+    // it goes to its overtones, which they do play: given the series, the ear
+    // hears the fundamental the speaker leaves out, and the note keeps its
+    // pitch. Only up to the fourth, so the wood stays round, in the low
+    // register tree-warp.js listens to it in.
+    const low = Math.max(0, Math.min(1, (200 - f) / 130));
+    voice(1, vol * (1 + 0.3 * low), 0.02, long);
+    voice(2, vol * (0.22 + 0.6 * low), 0.014, long * 0.55);
+    voice(3, vol * (0.08 + 0.42 * low), 0.016, long * 0.38);
+    if (low > 0) voice(4, vol * 0.22 * low, 0.016, long * 0.24);
   }
 }
 

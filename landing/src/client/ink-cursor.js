@@ -151,14 +151,36 @@
   const [halo, fill, ink] = el.querySelectorAll("path");
 
   const poly = (pts, close) => "M" + pts.map((p) => p[0].toFixed(2) + " " + p[1].toFixed(2)).join("L") + (close ? "Z" : "");
+  // Something may bend the drawing point by point (the black hole,
+  // gradient-layers.js): `bendFn` maps each point, about the hotspot, and
+  // `broken` (0 to 1) breaks the outline into pieces that drift apart, open
+  // and unfilled.
+  let bendFn = null, broken = 0;
+  const bendPts = (pts) => (bendFn ? pts.map((p) => bendFn(p[0], p[1])) : pts);
+  function pieces(pts) {
+    const k = 3 + Math.floor(broken * 5), n = pts.length, gap = Math.floor(broken * 0.45 * (n / k));
+    const out = [];
+    for (let j = 0; j < k; j++) {
+      const a = Math.floor((j * n) / k), b = Math.floor(((j + 1) * n) / k) - gap;
+      if (b - a < 2) continue;
+      const seg = [];
+      for (let i = a; i <= b; i++) seg.push(pts[i % n]);
+      // Each piece drifts off from the rest, out along its own middle.
+      const m = seg[seg.length >> 1], c = centroid(pts), dx = m[0] - c[0], dy = m[1] - c[1], d = Math.hypot(dx, dy) || 1;
+      const push = broken * broken * 7;
+      out.push(seg.map((p) => [p[0] + (dx / d) * push, p[1] + (dy / d) * push]));
+    }
+    return out;
+  }
   function render() {
     // A stroke shrunk to (nearly) a point is left out: its round caps would
     // leave a dot.
     const span = (pts) => Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]) +
       Math.hypot(pts[0][0] - pts[pts.length >> 1][0], pts[0][1] - pts[pts.length >> 1][1]);
-    const strokes = shown.strokes.filter((s) => span(s) > 0.6).map((s) => poly(s, false)).join("");
-    const outline = poly(shown.out, true);
-    fill.setAttribute("d", outline);
+    const strokes = shown.strokes.filter((s) => span(s) > 0.6).map((s) => poly(bendPts(s), false)).join("");
+    const out = bendPts(shown.out);
+    const outline = broken > 0.02 ? pieces(out).map((s) => poly(s, false)).join("") : poly(out, true);
+    fill.setAttribute("d", broken > 0.25 ? "" : poly(out, true));
     halo.setAttribute("d", outline + strokes);
     ink.setAttribute("d", outline + strokes);
   }
@@ -169,7 +191,11 @@
     render();
     raf = u < 1 ? requestAnimationFrame(frame) : 0;
   }
-  function setRole(r) {
+  // A shape something holds the cursor to (the black hole keeps the arrow,
+  // whatever is under the hand), or null to follow what is under it.
+  let held = null, wanted = ROLES[0];
+  function setRole(r, force) {
+    if (!force) { wanted = r; if (held) return; }
     if (!FORMS[r] || r === role) return;
     role = r;
     from = copy(shown);
@@ -181,8 +207,17 @@
   render();
 
   // Where the pointer is, and how far from it the cursor is drawn.
-  let px = 0, py = 0, offX = 0, offY = 0;
-  const place = () => { el.style.transform = `translate(${(px + offX).toFixed(2)}px, ${(py + offY).toFixed(2)}px)`; };
+  // And how it is stretched: along the angle `ang`, by `along` that way and
+  // `across` the other, about the hotspot.
+  let px = 0, py = 0, offX = 0, offY = 0, ang = 0, along = 1, across = 1;
+  const place = () => {
+    let t = `translate(${(px + offX).toFixed(2)}px, ${(py + offY).toFixed(2)}px)`;
+    if (along !== 1 || across !== 1) {
+      const a = ((ang * 180) / Math.PI).toFixed(2);
+      t += ` rotate(${a}deg) scale(${along.toFixed(3)}, ${across.toFixed(3)}) rotate(${-a}deg)`;
+    }
+    el.style.transform = t;
+  };
 
   const root = document.documentElement;
   const roleOf = (t) => getComputedStyle(t && t.nodeType === 1 ? t : (t && t.parentElement) || root).getPropertyValue("--cur-role").trim() || "default";
@@ -205,10 +240,17 @@
   root.addEventListener("mouseleave", () => el.classList.remove("on"));
 
   // For whoever simulates what the cursor touches: whether it is on screen,
-  // and how far from the pointer to draw it, in CSS pixels. Only the drawing
+  // where the pointer is, how far from it to draw the cursor, in CSS pixels,
+  // and how to stretch and fade it (null puts it back). Only the drawing
   // moves; hovering and pressing stay where the pointer is.
   window.__inkCursor = {
     get on() { return el.classList.contains("on"); },
+    get x() { return px; },
+    get y() { return py; },
     offset(dx, dy) { offX = dx; offY = dy; place(); },
+    stretch(angle, by, thin) { ang = angle; along = by; across = thin; place(); },
+    fade(alpha) { el.style.opacity = alpha == null ? "" : String(alpha); },
+    bend(fn, apart = 0) { bendFn = fn; broken = apart; render(); },
+    hold(r) { held = r; setRole(r || wanted, true); },
   };
 })();

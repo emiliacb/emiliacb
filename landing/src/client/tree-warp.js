@@ -194,7 +194,9 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
     show(false);
     const w = content.offsetWidth, h = content.offsetHeight;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    if (fontCSS === undefined) fontCSS = await getFontEmbedCSS(content, { preferredFontFormat: "woff2" }).catch(() => null);
+    // All of each face's formats: asked for woff2 alone, Chrome draws the
+    // copy in a fallback face.
+    if (fontCSS === undefined) fontCSS = await getFontEmbedCSS(content).catch(() => null);
     let copy;
     try {
       copy = await toCanvas(content, {
