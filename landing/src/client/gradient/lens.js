@@ -65,6 +65,8 @@ uniform float uTear;    // how ragged the arms are
 uniform float uCloud;   // how far the halo has come apart into points
 uniform float uTime;
 uniform float uDisc;    // the disc's light, 0 to 1, more as it evaporates
+uniform float uFront;   // how far in the disc has formed, in r_s: it forms
+                        // from its outside in, a ring that fills inward
 uniform float uFlash;
 uniform vec3 uHot, uMid, uOut, uCore;
 uniform float uTilt, uRoll;
@@ -182,6 +184,10 @@ void main() {
         vec3 ring = vec3(cos(a), sin(a), 0.0);
         float n = 0.6 * noise(vec3(ring.xy * 2.5, rr * 1.4)) + 0.4 * noise(vec3(ring.xy * 7.0, rr * 4.0 + 3.0));
         float prof = pow(3.0 / rr, 2.0) * smoothstep(2.9, 3.4, rr) * (1.0 - smoothstep(DISC * 0.5, DISC, rr));
+        // Only out from the front, which itself burns brighter while there
+        // is further in to go.
+        float front = exp(-pow((rr - uFront) / 0.8, 2.0)) * 0.55 * clamp((uFront - 2.9) / 1.5, 0.0, 1.0);
+        prof = prof * smoothstep(uFront - 0.5, uFront + 0.5, rr) + front;
         vec3 tang = normalize(cross(N, x));
         float beta = sqrt(0.5 / (rr - 1.0));
         vec3 k = -normalize(v);
@@ -263,7 +269,7 @@ export function makeLens(host) {
   gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
   const U = {};
   for (const n of ["uRes", "uRs", "uL", "uLc", "uLens", "uTex", "uTexOff", "uTexSize", "uBg", "uSh", "uShC", "uShS", "uShP",
-    "uFlow", "uWind", "uWindR", "uTear", "uCloud", "uTime", "uDisc", "uFlash", "uHot", "uMid", "uOut", "uCore", "uTilt", "uRoll"]) U[n] = gl.getUniformLocation(prog, n);
+    "uFront", "uFlow", "uWind", "uWindR", "uTear", "uCloud", "uTime", "uDisc", "uFlash", "uHot", "uMid", "uOut", "uCore", "uTilt", "uRoll"]) U[n] = gl.getUniformLocation(prog, n);
   const tex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, tex);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -348,11 +354,12 @@ export function makeLens(host) {
   /** One frame: r_s in px, how much of the copy shows, the disc's light and
    * its colours (hot, mid, out), the flash, the sheets (centre in the square,
    * radius, opacity, colour, profile) and how far they have been eaten. */
-  function draw({ rs, lens, disc, flash, time, sheets, hot, mid, out, flow, wind, windR, tear, cloud }) {
+  function draw({ rs, front = 2.6, lens, disc, flash, time, sheets, hot, mid, out, flow, wind, windR, tear, cloud }) {
     if (canvas.style.display) canvas.style.display = "";
     gl.uniform1f(U.uRs, rs);
     gl.uniform1f(U.uLens, ready ? lens : 0);
     gl.uniform1f(U.uDisc, disc);
+    gl.uniform1f(U.uFront, front);
     gl.uniform1f(U.uFlash, flash);
     gl.uniform1f(U.uTime, time);
     gl.uniform3fv(U.uHot, hot);

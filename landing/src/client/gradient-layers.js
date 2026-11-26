@@ -10,8 +10,8 @@
  * the pointer moves, and lets each sway like a leaf: a damped spring on its
  * place and on its tilt, pushed by a breeze that passes from the back sheet to
  * the front one and by the pointer brushing through it. The small front
- * sheets are the light leaves, quicker and easier to move, and like the
- * tree's leaves each rings its note when the hand brushes through its edge.
+ * sheets are the light leaves, quicker and easier to move. Brushed through
+ * their edge they give an electric zap, not the tree's glass.
  *
  * A click on the gradient makes a black hole of it, out of its own matter
  * (gradient/lens.js, light traced past it the way Interstellar's was). The
@@ -63,7 +63,7 @@ import { makeSound, note } from "./gradient/sound.js";
   //   give   how much of the hand's motion it takes up
   //   wind   how far the breeze moves it, in px
   //   tilt   how far the breeze tips it, in radians
-  //   tone   its note: the biggest lowest, in the tree's scale
+  //   tone   its note, the biggest lowest
   const KIND = [
     { z: -320, f: 0.42, zeta: 0.3, give: 0.18, wind: 9, tilt: 0.04, tone: note(0) },
     { z: -210, f: 0.58, zeta: 0.22, give: 0.32, wind: 12, tilt: 0.07, tone: note(3) },
@@ -93,7 +93,7 @@ import { makeSound, note } from "./gradient/sound.js";
       bx: 0, by: 0, bvx: 0, bvy: 0, // how far it still is from coming back out of the hole
       grow: 1, vgrow: 0, // its size, as it comes back out
       ax: 0, ay: 0, ar: 0, ao: 1, // where it shows, in the box: centre, radius, opacity
-      inside: false, rang: -1, // the hand inside it, and when it last rang
+      inside: false, rang: -1, // the hand inside it, and when it last sounded
       out: false,
     };
   });
@@ -152,7 +152,7 @@ import { makeSound, note } from "./gradient/sound.js";
   // The hole: its centre in the box and in the host, r_s, and the square
   // the lens draws, half of its side.
   const at = { x: 0, y: 0, hx: 0, hy: 0, rs: 0, half: 0 };
-  const now_ = { rs: 0, disc: 0, flash: 0, lens: 0 };
+  const now_ = { rs: 0, disc: 0, flash: 0, lens: 0, front: 7 };
   const cursor = () => window.__inkCursor;
   const GATHER = 1.2; // the most the copy is waited for, in s
   const BIG_BANG = 1.2; // how long the hole stays once it has eaten, in s
@@ -215,7 +215,7 @@ import { makeSound, note } from "./gradient/sound.js";
     at.half = Math.round(Math.max(16 * rs, Math.hypot(hx - cx, hy - cy) + 0.31 * R));
     if (lens) lens.open(at.hx, at.hy, at.half, 12 * rs);
     Object.assign(orbit, { on: false, catch: 0, rho: 0, th: 0, w: 0, tear: 0, gone: false, shattered: false, back: null });
-    Object.assign(now_, { rs: 0, disc: 0, flash: 0, lens: 0 });
+    Object.assign(now_, { rs: 0, disc: 0, flash: 0, lens: 0, front: 7 });
     eaten = 0;
     phase = "gather";
     since = 0;
@@ -271,19 +271,19 @@ import { makeSound, note } from "./gradient/sound.js";
     }
   }
 
-  // The hand brushing through a sheet takes it along a little, and tips it;
-  // crossing its edge with some speed, it rings.
+  // The hand brushing through a sheet takes it along a little, and tips it.
   function brush(l, hx, hy, vx, vy, dt) {
     const r = l.k * R * l.grow;
     const cx = W + l.x + l.bx, cy = H / 2 + l.y + l.by;
     const d = Math.hypot(hx - cx, hy - cy);
     const inside = hand.seen && d < r;
     const speed = Math.hypot(vx, vy);
+    // Crossing its edge with some speed, it gives its zap.
     if (inside !== l.inside) {
       l.inside = inside;
       if (speed > 180 && t - l.rang > 0.14) {
         l.rang = t;
-        sound.bell(l.tone, Math.min(1, speed / 2200), clamp((hand.x / innerWidth) * 2 - 1, -1, 1) * 0.7);
+        sound.zap(l.tone, Math.min(1, speed / 2200), clamp((hand.x / innerWidth) * 2 - 1, -1, 1) * 0.7);
       }
     }
     if (!inside) return;
@@ -381,10 +381,14 @@ import { makeSound, note } from "./gradient/sound.js";
       }
     } else if (phase === "fall") {
       eaten = since;
-      now_.rs = at.rs * smooth((since - 0.1) / 1.2);
-      now_.disc = smooth((since - 0.35) / 1.4);
+      // First the shadow; then the disc, a ring at its outside filling
+      // inward to the innermost stable orbit as the matter comes in; then the
+      // cursor is caught.
+      now_.rs = at.rs * smooth(since / 0.6);
+      now_.disc = smooth((since - 0.6) / 0.5);
+      now_.front = 7 - 4.4 * smooth((since - 0.7) / 1.7);
       sink = smooth(since / 4);
-      if (since > 0.6) fall(dt, hx, hy);
+      if (since > 1.1) fall(dt, hx, hy);
       if (orbit.gone) { phase = "hold"; since = 0; }
     } else if (phase === "hold") {
       // A gulp as it eats.
@@ -394,8 +398,10 @@ import { makeSound, note } from "./gradient/sound.js";
       sink = 1;
       if (since > BIG_BANG) {
         phase = "boom"; since = 0;
-        if (drone) { drone.stop(0.5); drone = null; }
-        sound.evaporate();
+        // The drone gives way to the climb (gradient/sound.js), which ends in
+        // its burst as the flash peaks.
+        if (drone) { drone.stop(0.12); drone = null; }
+        sound.evaporate(0.62);
       }
     } else if (phase === "boom") {
       // It evaporates: it shrinks, its disc burns bright, and it is gone in
@@ -422,7 +428,7 @@ import { makeSound, note } from "./gradient/sound.js";
       const lit = (c, k) => c.map((v) => v + (1 - v) * k);
       const e = Math.max(0, eaten);
       lens.draw({
-        rs: now_.rs, lens: now_.lens, disc: now_.disc, flash: now_.flash, time: clock,
+        rs: now_.rs, front: now_.front, lens: now_.lens, disc: now_.disc, flash: now_.flash, time: clock,
         hot: lit(ga, dark ? 0.75 : 0.7), mid: lit(ga, dark ? 0.35 : 0.05), out: lit(gb, dark ? 0.35 : 0),
         // Its matter flows in faster and faster, and winds round as it comes.
         flow: (0.05 * R) ** 2 * e * e * e,
@@ -526,6 +532,7 @@ import { makeSound, note } from "./gradient/sound.js";
   // The sheets come back out of the hole, each from its centre, and grow.
   function giveBack(hx, hy) {
     stack.classList.remove("eaten");
+    sound.reform(leaves.map((l) => l.tone).reverse());
     leaves.forEach((l, i) => {
       l.out = true;
       l.bx = at.x - W - l.x;
