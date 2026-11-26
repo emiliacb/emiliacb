@@ -443,13 +443,16 @@ import { makeLens } from "./gradient/lens.js";
       orbit.w = w0 * Math.pow(RHO0 / orbit.rho, 1.5);
     }
     orbit.th -= orbit.w * dt;
-    orbit.tear = smooth((RHO_TIDE - orbit.rho) / (RHO_TIDE - RHO_END));
+    // Caught from close in, it is first thrown out onto the orbit: the tide
+    // and the shadow wait until it is on it.
+    const onOrbit = orbit.catch >= CATCH;
+    orbit.tear = onOrbit ? smooth((RHO_TIDE - orbit.rho) / (RHO_TIDE - RHO_END)) : 0;
     const ox = hx + Math.cos(orbit.th) * orbit.rho * rs;
     const oy = hy + Math.sin(orbit.th) * orbit.rho * rs;
     orbit.x = ox; orbit.y = oy;
     c.offset(ox - c.x, oy - c.y);
     shred(c, ox, oy, hx, hy, rs);
-    if (orbit.rho <= RHO_END * 1.01) {
+    if (onOrbit && orbit.rho <= RHO_END * 1.01) {
       orbit.gone = true;
       c.fade(0);
       c.bend(null, 0);
@@ -482,7 +485,7 @@ import { makeLens } from "./gradient/lens.js";
       const wx = hx + (Math.cos(orbit.th - phi) * rad), wy = hy + (Math.sin(orbit.th - phi) * rad);
       return [wx - ox, wy - oy];
     }, clamp01(q * 1.3));
-    const toShadow = (orbit.rho - RHO_END) / (RHO_TIDE - RHO_END);
+    const toShadow = orbit.catch < CATCH ? 1 : (orbit.rho - RHO_END) / (RHO_TIDE - RHO_END);
     c.fade(0.15 + 0.85 * smooth(toShadow * 1.6));
   }
 
