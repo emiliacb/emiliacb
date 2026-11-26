@@ -213,8 +213,8 @@
   const place = () => {
     let t = `translate(${(px + offX).toFixed(2)}px, ${(py + offY).toFixed(2)}px)`;
     if (along !== 1 || across !== 1) {
-      const a = ((ang * 180) / Math.PI).toFixed(2);
-      t += ` rotate(${a}deg) scale(${along.toFixed(3)}, ${across.toFixed(3)}) rotate(${-a}deg)`;
+      const deg = (ang * 180) / Math.PI;
+      t += ` rotate(${deg.toFixed(2)}deg) scale(${along.toFixed(3)}, ${across.toFixed(3)}) rotate(${(-deg).toFixed(2)}deg)`;
     }
     el.style.transform = t;
   };

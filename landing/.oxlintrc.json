@@ -11,7 +11,7 @@
     "perf": "error"
   },
   // posthog.js is the vendor's minified snippet, pasted as-is.
-  "ignorePatterns": ["dist/**", "public/**", "test/worker/fixtures/**", ".wrangler/**", "src/client/posthog.js"],
+  "ignorePatterns": ["dist/**", "public/**", "test/worker/fixtures/**", "test/site/fixtures/**", ".wrangler/**", "src/client/posthog.js"],
   "rules": {
     // Complexity budget: keeps functions small enough for an agent (or a
     // human) to read, change and test in one pass.
@@ -123,6 +123,10 @@
         "src/client/distortion.js",
         "src/client/dropdown.js",
         "src/client/gradient-distortion.js",
+        "src/client/gradient-layers.js",
+        "src/client/gradient/lens.js",
+        "src/client/gradient/ripple.js",
+        "src/client/gradient/sound.js",
         "src/client/ink-cursor.js",
         "src/client/layout.js",
         "src/client/mascot-bot.js",

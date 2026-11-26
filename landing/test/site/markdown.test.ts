@@ -7,7 +7,7 @@ import { CONTACT, PAGES, SITE_URL } from "../../src/shared/site";
 import { dictionaries } from "../../src/shared/i18n";
 import { loadContent } from "../../src/site/content";
 import type { RenderCtx } from "../../src/site/context";
-import { renderLlmsTxt, renderSiteMarkdown } from "../../src/site/markdown";
+import { renderLlmsTxt, renderSiteMarkdown, toServedMarkdown } from "../../src/site/markdown";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 
@@ -103,5 +103,21 @@ describe("renderLlmsTxt", () => {
     expect(withoutDomain).not.toMatch(/cabral/i);
     expect(txt).not.toContain(CONTACT.email);
     expect(txt).not.toContain("mailto:");
+  });
+});
+
+describe("toServedMarkdown links", () => {
+  const known = new Set(["/en/about"]);
+
+  it.each([
+    ["/en/about", `${SITE_URL}/en/about.md`],
+    ["/en/about/", `${SITE_URL}/en/about.md`],
+    ["/en/about?ref=x#team", `${SITE_URL}/en/about.md?ref=x#team`],
+    ["/en/about#a?b", `${SITE_URL}/en/about.md#a?b`],
+    ["/public/agent.jpg?v=2", `${SITE_URL}/public/agent.jpg?v=2`],
+    ["//cdn.example.com/x.png", "//cdn.example.com/x.png"],
+  ])("%s -> %s", async (href, expected) => {
+    const { ctxFor } = await setup();
+    expect(toServedMarkdown(`[link](${href})`, ctxFor("en"), known)).toBe(`[link](${expected})\n`);
   });
 });
