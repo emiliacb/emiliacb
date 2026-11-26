@@ -155,8 +155,8 @@ import { makeSound, note } from "./gradient/sound.js";
   let phase = "calm", since = 0, clock = 0, eaten = 0;
   // The hole: its centre in the box and in the host, r_s, and the square
   // the lens draws, half of its side.
-  const at = { x: 0, y: 0, hx: 0, hy: 0, rs: 0, half: 0 };
-  const now_ = { rs: 0, disc: 0, flash: 0, lens: 0, front: 7 };
+  const at = { x: 0, y: 0, hx: 0, hy: 0, rs: 0, half: 0, reach: 0 };
+  const now_ = { rs: 0, disc: 0, flash: 0, lens: 0 };
   const cursor = () => window.__inkCursor;
   const GATHER = 1.2; // the most the copy is waited for, in s
   const BIG_BANG = 1.2; // how long the hole stays once it has eaten, in s
@@ -217,10 +217,11 @@ import { makeSound, note } from "./gradient/sound.js";
     at.rs = rs;
     // The square holds all the sheets, which it draws while they are eaten,
     // and the bending round the hole.
-    at.half = Math.round(Math.max(16 * rs, Math.hypot(hx - cx, hy - cy) + 0.31 * R));
+    at.reach = Math.hypot(hx - cx, hy - cy); // from the hole to the sheets' centre
+    at.half = Math.round(Math.max(16 * rs, at.reach + 0.31 * R));
     if (lens) lens.open(at.hx, at.hy, at.half, 12 * rs);
     Object.assign(orbit, { on: false, catch: 0, rho: 0, th: 0, w: 0, tear: 0, gone: false, shattered: false, back: null });
-    Object.assign(now_, { rs: 0, disc: 0, flash: 0, lens: 0, front: 7 });
+    Object.assign(now_, { rs: 0, disc: 0, flash: 0, lens: 0 });
     eaten = 0;
     phase = "gather";
     since = 0;
@@ -391,12 +392,11 @@ import { makeSound, note } from "./gradient/sound.js";
       }
     } else if (phase === "fall") {
       eaten = since;
-      // First the shadow; then the disc, a ring at its outside filling
-      // inward to the innermost stable orbit as the matter comes in; then the
-      // cursor is caught.
+      // First the shadow; the disc then lights only as the sheets' matter
+      // reaches it (gradient/lens.js works out how much); then the cursor is
+      // caught.
       now_.rs = at.rs * smooth(since / 0.6);
-      now_.disc = smooth((since - 0.6) / 0.5);
-      now_.front = 7 - 4.4 * smooth((since - 0.7) / 1.7);
+      now_.disc = 1;
       sink = smooth(since / 4);
       if (since > 1.1) fall(dt, hx, hy);
       if (orbit.gone) { phase = "hold"; since = 0; }
@@ -441,11 +441,14 @@ import { makeSound, note } from "./gradient/sound.js";
       // sheets' at its hot middle, the outer ones' at its edge.
       const lit = (c, k) => c.map((v) => v + (1 - v) * k);
       const e = Math.max(0, eaten);
+      // Its matter flows in faster and faster, and winds round as it comes.
+      // The flow starts as the shadow does, so nothing has fallen before, and
+      // stops once the sheets are all in: what reached the disc stays there.
+      const flow = Math.min((0.05 * R) ** 2 * e * e * e, Math.max(at.reach, 0.12 * R) ** 2);
       lens.draw({
-        rs: now_.rs, front: now_.front, lens: now_.lens, disc: now_.disc, flash: now_.flash, time: clock,
+        rs: now_.rs, fed: 1 - Math.exp(-flow / (0.08 * R) ** 2), circ: smooth((e - 0.6) / 2.4), lens: now_.lens, disc: now_.disc, flash: now_.flash, time: clock,
         hot: lit(ga, dark ? 0.75 : 0.7), mid: lit(ga, dark ? 0.35 : 0.05), out: lit(gb, dark ? 0.35 : 0),
-        // Its matter flows in faster and faster, and winds round as it comes.
-        flow: (0.05 * R) ** 2 * e * e * e,
+        flow,
         wind: 2.4 * e, windR: 6 * at.rs,
         tear: smooth(e / 1.4), cloud: smooth((e - 0.2) / 1.2),
         sheets: leaves.map((l) => ({
