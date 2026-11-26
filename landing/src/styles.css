@@ -1266,8 +1266,8 @@ html.ink-cursor #ink-cursor.on {
    gradient's core, a pointing hand pressing, struck through. In the cotas'
    ink, sketched in line by line, once. */
 .grad-hint {
-  position: fixed;
-  z-index: 55;
+  position: absolute;
+  z-index: 2;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.45s ease;
