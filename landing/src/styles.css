@@ -815,6 +815,58 @@ html.ai-layout-enabled #activity-panel {
   }
 }
 
+/* The ghost of the cursor that answers the tree's window when the page was
+   pressed somewhere else (src/client/tree-sway.js): the ink cursor's own
+   arrow and hand, drawn the same way, fainter, under the real one. */
+.tree-sound-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 2147483646;
+  pointer-events: none;
+  opacity: 0.45;
+  animation: treeSoundGhost 0.2s ease-out both;
+  transition: opacity 0.25s ease-out;
+}
+.tree-sound-ghost.is-gone {
+  opacity: 0;
+}
+.tree-sound-ghost svg {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  overflow: visible;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.12s ease-out;
+}
+.tree-sound-ghost.press svg {
+  transform: scale(0.88);
+}
+.tree-sound-ghost .ic-halo {
+  stroke: var(--ic-halo);
+  stroke-width: 3.4;
+}
+.tree-sound-ghost .ic-fill {
+  fill: var(--ic-fill);
+}
+.tree-sound-ghost .ic-ink {
+  stroke: var(--ic-ink);
+  stroke-width: 1.5;
+}
+@keyframes treeSoundGhost {
+  from {
+    opacity: 0;
+  }
+}
+/* Allow, pressed by the ghost: as under a real press. */
+.tree-sound-ask-buttons .is-default.is-pressed {
+  transform: scale(0.97);
+  background: transparent;
+  color: var(--ask-ink);
+}
+
 .tree-plate,
 .tree-floats {
   position: absolute;
