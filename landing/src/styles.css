@@ -637,6 +637,7 @@ html.ai-layout-enabled #activity-panel {
   /* The window's edge: the navbar's own hairline (stone-400), in both themes.
      Full ink was too heavy around the bar's colour. */
   --ask-line: #a8a29e;
+  --ask-close-line: #78716c;
   position: absolute;
   z-index: 5;
   pointer-events: auto;
@@ -659,6 +660,7 @@ html.ai-layout-enabled #activity-panel {
     --ask-ink: #f5f5f4;
     --ask-bar: linear-gradient(90deg, rgb(0 79 255), rgb(153 57 86));
     --ask-bar-ink: #fff;
+    --ask-close-line: currentColor;
   }
 }
 .tree-sound-ask-bar {
@@ -689,7 +691,8 @@ html.ai-layout-enabled #activity-panel {
   width: 16px;
   height: 16px;
   padding: 0;
-  border: 1px solid currentColor;
+  /* Greyed as the window's own edge, not in full ink. */
+  border: 1px solid var(--ask-close-line);
   background: transparent;
   color: inherit;
 }
@@ -713,6 +716,18 @@ html.ai-layout-enabled #activity-panel {
 .tree-sound-ask-name {
   position: relative;
   z-index: 1;
+}
+.tree-sound-ask-letter {
+  position: relative;
+}
+/* Each mark a step further from its letter than the last (tree-sway.js). */
+.tree-sound-ask-mark {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  translate: -50% calc(var(--at) * 0.34em);
+  white-space: pre;
+  pointer-events: none;
 }
 .tree-sound-ask-buttons {
   display: grid;

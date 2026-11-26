@@ -1049,6 +1049,36 @@ function placeHint() {
   hint.style.top = `${(y - h).toFixed(1)}px`;
 }
 
+// The combining marks the tree's name is written with (U+0300 to U+036F), by
+// where each sits on its letter: through it, under it, or (all the rest) over it.
+const MARK = /[̀-ͯ]/;
+const THROUGH = /[̴-̸]/;
+const UNDER = /[̖-̙̜-̳̹-̼͇ͅ-͉͍͎͓-͖͙͚͜͟͢]/;
+
+/** The tree's garbled name, with its marks taken off their letters and stacked
+ * by hand, each one a step further out than the last, over and under the
+ * window and whatever is near: left to the browser, they may all be drawn in
+ * one place, piled on the letter. Each sits on a no-break space of its own. */
+function curse(text) {
+  let html = "";
+  let open = false;
+  let up = 0;
+  let down = 0;
+  for (const ch of text) {
+    if (open && MARK.test(ch)) {
+      if (ch === "͏") continue; // the grapheme joiner, which draws nothing
+      const at = THROUGH.test(ch) ? 0 : UNDER.test(ch) ? down++ : -up++;
+      html += `<span class="tree-sound-ask-mark" style="--at:${at}"> ${ch}</span>`;
+    } else {
+      html += `${open ? "</span>" : ""}<span class="tree-sound-ask-letter">${ch}`;
+      open = true;
+      up = 0;
+      down = 0;
+    }
+  }
+  return open ? `${html}</span>` : html;
+}
+
 /** Leaves the tree quiet for this visit: told as the footer's switch tells it, so the switch shows it too. */
 function ignoreSound() {
   window.dispatchEvent(new CustomEvent(SOUND_KEY, { detail: false }));
@@ -1098,7 +1128,7 @@ function offerSound() {
     "</button></div>" +
     // Its name comes through garbled, the way a voice does from far off;
     // a screen reader is given it whole.
-    `<p><span aria-hidden="true">“<span class="tree-sound-ask-name">${t.spell}</span>” ${t.wants}</span>` +
+    `<p><span aria-hidden="true">“<span class="tree-sound-ask-name">${curse(t.spell)}</span>” ${t.wants}</span>` +
     `<span class="sr-only">“${t.name}” ${t.wants}</span></p>` +
     '<div class="tree-sound-ask-buttons">' +
     `<button type="button" data-act="ignore">${t.ignore}</button>` +
