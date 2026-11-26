@@ -708,6 +708,12 @@ html.ai-layout-enabled #activity-panel {
   /* Never a word left alone on its line. */
   text-wrap: balance;
 }
+/* The tree's garbled name: its marks are given no room of their own and
+   spill over everything, bar, buttons and the tree behind, drawn on top. */
+.tree-sound-ask-name {
+  position: relative;
+  z-index: 1;
+}
 .tree-sound-ask-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;

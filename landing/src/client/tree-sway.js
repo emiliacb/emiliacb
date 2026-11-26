@@ -1085,18 +1085,21 @@ function offerSound() {
   if (hint || dropPill || !sound.want || !sound.ac || sound.ac.state === "running") return;
   const es = (document.documentElement.lang || "").startsWith("es");
   const t = es
-    ? { title: location.hostname, ask: "“árbol” quiere ser escuchado", ignore: "Ignorar", allow: "Permitir", close: "Cerrar" }
-    : { title: location.hostname, ask: "“tree” wants to be heard", ignore: "Ignore", allow: "Allow", close: "Close" };
+    ? { title: location.hostname, name: "árbol", spell: "ą̨̙͔͙͖̜̟̩̹̗̏̀̐̑̂͞r͇̘̳̀̔̆b͚̟̘͈͖̹̬̙͔̱̾̑̋ͩ͋ͣ̌̍͛͑͐o̸̶̡̩̘̘ͤͬͦ͋̒̏̀̒͛̏ͮl̡͚͍̹̭͓͈̠̇͑̈̍̆ͩ̂ͨ̔̓̓͢͝", wants: "quiere ser escuchado", ignore: "Ignorar", allow: "Permitir", close: "Cerrar" }
+    : { title: location.hostname, name: "tree", spell: "ț̙̹̹͖͌̒̋̃͋̅̒ͪ̎͑͊̄͗r̶̛̻̜̟̟̫̄̅̑̿̀ͥ̇ͧ̃̉̏e̴̛̮͓͇ͫ̂̿ͮ̓ͦe̷̷̛̗̠̳͙͓̱̝̹̔ͧ͒̃͑", wants: "wants to be heard", ignore: "Ignore", allow: "Allow", close: "Close" };
   hint = document.createElement("div");
   hint.className = "tree-sound-ask";
   hint.setAttribute("role", "dialog");
-  hint.setAttribute("aria-label", t.ask);
+  hint.setAttribute("aria-label", `“${t.name}” ${t.wants}`);
   hint.innerHTML =
     `<div class="tree-sound-ask-bar"><span>${t.title}</span>` +
     `<button type="button" class="tree-sound-ask-close" data-act="ignore" aria-label="${t.close}">` +
     '<svg viewBox="0 0 9 9" aria-hidden="true"><path d="M1 1l7 7M8 1L1 8" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>' +
     "</button></div>" +
-    `<p>${t.ask}</p>` +
+    // Its name comes through garbled, the way a voice does from far off;
+    // a screen reader is given it whole.
+    `<p><span aria-hidden="true">“<span class="tree-sound-ask-name">${t.spell}</span>” ${t.wants}</span>` +
+    `<span class="sr-only">“${t.name}” ${t.wants}</span></p>` +
     '<div class="tree-sound-ask-buttons">' +
     `<button type="button" data-act="ignore">${t.ignore}</button>` +
     `<button type="button" data-act="allow" class="is-default">${t.allow}</button>` +
