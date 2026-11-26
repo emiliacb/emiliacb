@@ -383,6 +383,33 @@ export function makeLens(host) {
     // follow each element's own colour (as it does on the page).
     const markers = "li,li *{-webkit-text-fill-color:currentcolor!important}" +
       tones.map((c, k) => `[data-bh-marker="${k}"]::marker{color:${c}}`).join("");
+    // Not every browser reports a box's automatic margins as what they come
+    // to (a centred column can come out at the left, and wider). Where the
+    // style says other than where the box is on the screen, the copy is told
+    // where it is: its margins and its width, as measured.
+    const boxes = [];
+    const fixes = [];
+    shell.querySelectorAll("*").forEach((el) => {
+      const cs = getComputedStyle(el);
+      if (!/^(block|flex|grid|list-item|flow-root)$/.test(cs.display) || cs.position === "absolute" || cs.position === "fixed") return;
+      const par = el.parentElement;
+      if (!par) return;
+      const pc = getComputedStyle(par);
+      // Only where margins place a box across its parent: in a block, or a
+      // column of flex items.
+      if (/grid/.test(pc.display) || (/flex/.test(pc.display) && !/column/.test(pc.flexDirection))) return;
+      const r = el.getBoundingClientRect(), pr = par.getBoundingClientRect();
+      if (r.width < 1) return;
+      const inL = pr.left + par.clientLeft + parseFloat(pc.paddingLeft);
+      const inR = pr.left + par.clientLeft + par.clientWidth - parseFloat(pc.paddingRight);
+      const ml = r.left - inL, mr = inR - r.right;
+      const said = (v, want) => Math.abs(parseFloat(v) - want) < 0.5; // NaN for "auto": not as said
+      if (said(cs.marginLeft, ml) && said(cs.marginRight, mr) && said(cs.width, cs.boxSizing === "border-box" ? r.width : el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight))) return;
+      const k = boxes.length;
+      boxes.push(el);
+      el.dataset.bhBox = String(k);
+      fixes.push(`[data-bh-box="${k}"]{margin-left:${ml.toFixed(2)}px!important;margin-right:${mr.toFixed(2)}px!important;width:${r.width.toFixed(2)}px!important;max-width:none!important}`);
+    });
     let img;
     try {
       // Only those rows are drawn: the shell moved up out of a frame that
@@ -393,12 +420,13 @@ export function makeLens(host) {
         pixelRatio: dpr,
         style: { transform: `translateY(${-top}px)`, margin: "0", height: `${shell.offsetHeight}px` },
         filter: (node) => !(node instanceof HTMLCanvasElement),
-        fontEmbedCSS: (fontCSS || "") + markers,
+        fontEmbedCSS: (fontCSS || "") + markers + fixes.join(""),
       });
     } catch {
       return;
     } finally {
       items.forEach((li) => { delete li.dataset.bhMarker; });
+      boxes.forEach((el) => { delete el.dataset.bhBox; });
     }
     if (mine !== ticket) return;
     gl.bindTexture(gl.TEXTURE_2D, tex);
