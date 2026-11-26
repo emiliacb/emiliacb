@@ -1068,24 +1068,62 @@ function onScreen(el, x, y) {
   ];
 }
 
-/** Centres the window on the trunk, wherever the drawing is on the screen now;
- * once it has been moved, only keeps it on screen. It lives on the page's
- * body, over everything, so it can be put anywhere. */
+// What the window must leave uncovered when it is put down: whatever can be
+// pressed on the page, with a little air around it.
+const PRESSABLE = 'a[href], button, [role="button"], input, select, textarea, dropdown-trigger';
+const HINT_AIR = 6; // px kept clear around each of them
+const HINT_STEP = 12; // px between the places tried
+
+/** The nearest place to (x, y), on screen, where the window covers nothing
+ * that can be pressed. Moving along the trunk (up or down) costs half what
+ * moving off it does. Where there is no such place, (x, y) itself. */
+function clearOf(x, y) {
+  const w = hint.offsetWidth;
+  const h = hint.offsetHeight;
+  const html = document.documentElement;
+  const rects = [...document.querySelectorAll(PRESSABLE)]
+    .filter((el) => !hint.contains(el))
+    .map((el) => el.getBoundingClientRect())
+    .filter((r) => r.width && r.height && r.bottom > 0 && r.top < html.clientHeight && r.right > 0 && r.left < html.clientWidth);
+  const covers = (px, py) => rects.some((r) =>
+    px < r.right + HINT_AIR && px + w > r.left - HINT_AIR && py < r.bottom + HINT_AIR && py + h > r.top - HINT_AIR);
+  let best = null;
+  let cost = Infinity;
+  const reachY = html.clientHeight;
+  const reachX = html.clientWidth / 2;
+  for (let dy = -reachY; dy <= reachY; dy += HINT_STEP) {
+    for (let dx = -reachX; dx <= reachX; dx += HINT_STEP) {
+      const c = Math.abs(dy) + 2 * Math.abs(dx);
+      if (c >= cost) continue;
+      const [px, py] = onScreen(hint, x + dx, y + dy);
+      if (!covers(px, py)) {
+        best = [px, py];
+        cost = c;
+      }
+    }
+  }
+  return best || onScreen(hint, x, y);
+}
+
+/** Centres the window on the trunk, wherever the drawing is on the screen now,
+ * or as near it as it can be without covering a link or a button; once it
+ * has been moved, only keeps it on screen. It lives on the page's body, over
+ * everything, so it can be put anywhere. */
 function placeHint() {
   if (!hint) return;
   let x;
   let y;
   if (hintMoved) {
-    x = hint.offsetLeft;
-    y = hint.offsetTop;
+    [x, y] = onScreen(hint, hint.offsetLeft, hint.offsetTop);
   } else {
     const trunk = limbs[0];
     const i = Math.round((trunk.n - 1) * HINT_UP);
     const r = box.getBoundingClientRect();
-    x = r.left + ox + trunk.rx[i] * sc - hint.offsetWidth / 2;
-    y = r.top + oy + trunk.ry[i] * sc - hint.offsetHeight / 2;
+    [x, y] = clearOf(
+      r.left + ox + trunk.rx[i] * sc - hint.offsetWidth / 2,
+      r.top + oy + trunk.ry[i] * sc - hint.offsetHeight / 2,
+    );
   }
-  [x, y] = onScreen(hint, x, y);
   hint.style.left = `${x.toFixed(1)}px`;
   hint.style.top = `${y.toFixed(1)}px`;
 }
@@ -1301,10 +1339,11 @@ const FIRST_PRESS = ["pointerdown", "keydown", "touchend"];
  * there is nothing left to wait for. Not one on the window that asks for it:
  * that one is answered by its own buttons. Nor one on a link: the page is
  * being left, and the next one should still ask with its window, not find
- * the tree already playing. */
+ * the tree already playing. Nor one on a dropdown (the navbar's About, the
+ * language menu): it only opens a menu, and its own links lead away. */
 function onFirstPress(event) {
   if (hint && hint.contains(event.target)) return;
-  if (event.target instanceof Element && event.target.closest("a[href]")) return;
+  if (event.target instanceof Element && event.target.closest("a[href], dropdown-trigger")) return;
   if (hint) {
     ghostFrom = event.clientX != null && event.type !== "keydown"
       ? [event.clientX, event.clientY]
