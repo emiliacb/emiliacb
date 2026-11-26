@@ -651,6 +651,10 @@ html.ai-layout-enabled #activity-panel {
      Full ink was too heavy around the bar's colour. */
   --ask-line: #a8a29e;
   --ask-close-line: #78716c;
+  /* Allow under the pointer: the site's highlight, yellow on the light page
+     and blue on the dark one, as its highlighted cards and links. */
+  --ask-hover: #fde047;
+  --ask-hover-ink: #292524;
   position: fixed;
   z-index: 100000000;
   width: 256px;
@@ -673,6 +677,8 @@ html.ai-layout-enabled #activity-panel {
     --ask-bar: linear-gradient(90deg, rgb(0 79 255), rgb(153 57 86));
     --ask-bar-ink: #fff;
     --ask-close-line: currentColor;
+    --ask-hover: #1e3a8a;
+    --ask-hover-ink: #fff;
   }
 }
 .tree-sound-ask-bar {
@@ -772,9 +778,11 @@ html.ai-layout-enabled #activity-panel {
   background: var(--ask-ink);
   color: var(--ask-page);
 }
-.tree-sound-ask-buttons .is-default:hover {
-  background: transparent;
-  color: var(--ask-ink);
+.tree-sound-ask-buttons .is-default:hover,
+.tree-sound-ask-buttons .is-default.is-pressed {
+  border-color: var(--ask-hover);
+  background: var(--ask-hover);
+  color: var(--ask-hover-ink);
 }
 .tree-sound-ask-buttons button:active {
   transform: scale(0.97);
@@ -860,11 +868,9 @@ html.ai-layout-enabled #activity-panel {
     opacity: 0;
   }
 }
-/* Allow, pressed by the ghost: as under a real press. */
+/* Allow, pressed by the ghost: as under a real pointer and press. */
 .tree-sound-ask-buttons .is-default.is-pressed {
   transform: scale(0.97);
-  background: transparent;
-  color: var(--ask-ink);
 }
 
 .tree-plate,
