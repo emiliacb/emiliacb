@@ -1262,22 +1262,15 @@ html.ink-cursor #ink-cursor.on {
   pointer-events: none;
 }
 
-/* A word before it happens (src/client/gradient-layers.js): a speech bubble
-   by the gradient's core, a pointing hand pressing, struck through. In the
-   cotas' ink on the paper's colour, sketched in line by line, once. */
+/* A word before it happens (src/client/gradient-layers.js): by the
+   gradient's core, a pointing hand pressing, struck through. In the cotas'
+   ink, sketched in line by line, once. */
 .grad-hint {
-  --hint-paper: #f5f5f4;
   position: fixed;
   z-index: 55;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.45s ease;
-}
-
-@media (prefers-color-scheme: dark) {
-  .grad-hint {
-    --hint-paper: #292524;
-  }
 }
 
 .grad-hint.on {
@@ -1298,11 +1291,6 @@ html.ink-cursor #ink-cursor.on {
   stroke-linejoin: round;
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-}
-
-.grad-hint .bubble {
-  fill: var(--hint-paper);
-  fill-opacity: 0.92;
 }
 
 .grad-hint .no {

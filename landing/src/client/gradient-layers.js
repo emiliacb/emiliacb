@@ -623,10 +623,10 @@ import { makeSound, note } from "./gradient/sound.js";
 
   /* ==== a word before it happens ==== */
 
-  // Once, a moment after the page opens, a speech bubble by the gradient's
-  // core with a sign on it: a pointing hand pressing, struck through. Drawn
-  // in the cotas' ink, as if being sketched, on the paper's colour; it stays
-  // a few seconds and goes, or goes at once when the hole is made.
+  // Once, a moment after the page opens, a sign by the gradient's core: a
+  // pointing hand pressing, struck through. Drawn in the cotas' ink, as if
+  // being sketched; it stays a few seconds and goes, or goes at once when the
+  // hole is made.
   const HINT_AFTER = 3000, HINT_FOR = 4200;
   let hint = null;
   function showHint() {
@@ -635,19 +635,19 @@ import { makeSound, note } from "./gradient/sound.js";
     const core = leaves[leaves.length - 1];
     const vw = root.clientWidth, vh = innerHeight;
     const cx = box0.left + core.ax, cy = box0.top + core.ay;
-    // The core must show for the bubble to point at it.
+    // The core must show for the sign to point at it.
     if (cx < 0 || cy < 60 || cy > vh + 40) return;
     const ax = Math.min(cx - 40, vw - 60), ay = clamp(cy - 30, 180, vh - 50);
     const NS = "http://www.w3.org/2000/svg";
     const el = document.createElement("div");
     el.className = "grad-hint";
     el.setAttribute("aria-hidden", "true");
-    // The tail's tip is at (170, 124) in the drawing, (174, 128) on the page.
-    el.style.left = `${Math.round(ax - 174)}px`;
-    el.style.top = `${Math.round(ay - 128)}px`;
+    // Up and to the left of the core, clear of it: the sign's centre is at
+    // (75, 48) in the drawing, (79, 52) on the page.
+    el.style.left = `${Math.round(ax - 79 - 60)}px`;
+    el.style.top = `${Math.round(ay - 52 - 60)}px`;
     el.innerHTML = `
       <svg viewBox="-4 -4 182 136" width="182" height="136" xmlns="${NS}">
-        <path class="bubble" pathLength="1" d="M10 0H140A10 10 0 0 1 150 10V86A10 10 0 0 1 140 96H128L170 124L108 96H10A10 10 0 0 1 0 86V10A10 10 0 0 1 10 0Z"/>
         <g transform="translate(53 23) scale(1.6)">
           <path class="ring r1" pathLength="1" d="M8.5 5.5A3.5 3.5 0 0 1 15.5 5.5"/>
           <path class="ring r2" pathLength="1" d="M6 5.5A6 6 0 0 1 18 5.5"/>
