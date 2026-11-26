@@ -154,7 +154,7 @@
   // links, the values are set smaller, and the scroll marks write theirs
   // along the rule.
   const COARSE = matchMedia("(hover: none), (pointer: coarse)").matches;
-  const FONT = `300 ${COARSE ? 12 : 15}px "Barlow Condensed", sans-serif`;
+  const FONT = `300 ${COARSE ? 12 : 13}px "Barlow Condensed", sans-serif`;
   // CSS pixels to the inch. CSS says 96, about right on a desktop screen; a
   // phone draws them smaller, and by how much depends on the phone. What
   // phones share is their glass: about 65 mm across, whatever their pixels.
@@ -531,13 +531,16 @@
     // The values' boxes, so the diameter can give way to them.
     const taken = [];
     // The circle's diameter, small and level beside it, with no leader.
-    // Where a value of the marks would run into it, it fades out instead.
+    // Where a value of the marks would run into it, or it would not fit
+    // whole on the screen (the break at the page's very top or end), it fades
+    // out instead.
     const diameter = () => {
       const text = `Ø ${mm(BREAK_R * 2)}`;
-      g.font = `300 ${COARSE ? 10 : 12}px "Barlow Condensed", sans-serif`;
+      g.font = `300 ${COARSE ? 10 : 11}px "Barlow Condensed", sans-serif`;
       const r = x - BREAK_R - 4, l = r - g.measureText(text).width, t = ref - 7, b = ref + 7;
       const clash = taken.some((q) => l < q.r + 3 && r > q.l - 3 && t < q.b + 3 && b > q.t - 3);
-      const want = clash ? 0 : 1;
+      const cut = t < 2 || b > Hh - 2;
+      const want = clash || cut ? 0 : 1;
       diaA += (want - diaA) * (1 - Math.exp(-frameDt / 0.1));
       if (Math.abs(want - diaA) < 0.004) diaA = want;
       else leaning = true; // keep the loop running while it fades
