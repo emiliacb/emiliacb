@@ -530,8 +530,7 @@ html.ai-layout-enabled #activity-panel {
    .cover-tree, not in it, so its dark-mode invert does not reach them; they
    take the dark ink from here instead. The paper is the page behind the tree,
    which the touched wood is thinned back to. */
-#tree-illustration,
-.grad-floats {
+#tree-illustration {
   /* The ink is the inverse of the dark one, as the tree's own colours are:
      hue turned half way round, lightness flipped. Each kind of mark has its
      own saturation and opacity; spirals and angles lead, at full saturation.
@@ -553,8 +552,7 @@ html.ai-layout-enabled #activity-panel {
 }
 
 @media (prefers-color-scheme: dark) {
-  #tree-illustration,
-  .grad-floats {
+  #tree-illustration {
     --tree-ink: #f2a8d6;
     --tree-paper: #292524;
     --tree-ink-bone: hsl(323 45% 80% / 1);
@@ -1072,8 +1070,7 @@ dropdown-trigger[variant="prose"] a::before {
   }
 }
 
-.page-cotas-plate,
-.grad-cotas {
+.page-cotas-plate {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -1217,21 +1214,36 @@ html.ink-cursor #ink-cursor.on {
   aspect-ratio: 1;
   translate: -50% -50%;
   border-radius: 50%;
-  background: radial-gradient(
-    closest-side,
-    rgb(var(--c) / var(--a0)),
-    rgb(var(--c) / var(--a1)) 95%,
-    rgb(var(--c) / 0) 100%
-  );
   backface-visibility: hidden;
 }
 
-.grad-layer.halo {
-  background: radial-gradient(
-    closest-side,
-    rgb(var(--c) / var(--a0)) 60%,
-    rgb(var(--c) / 0) 100%
-  );
+/* Each sheet's share of the old gradient (an amber disc to 10%, amber
+   shading into mint to 20%, a mint halo fading out by 30%), in its own
+   radius, so that the five over one another make it again at rest. The same
+   stops are in gradient-layers.js (PROFILE), for the hole to draw them. */
+.grad-layer.g0 {
+  background: radial-gradient(closest-side, rgb(var(--c) / 0) 50%, rgb(var(--c) / 0.1) 66%, rgb(var(--c) / 0.1) 70%, rgb(var(--c) / 0) 100%);
+}
+
+.grad-layer.g1 {
+  background: radial-gradient(closest-side, rgb(var(--c) / 0) 52%, rgb(var(--c) / 0.222) 95%, rgb(var(--c) / 0.222) 96.5%, rgb(var(--c) / 0) 100%);
+}
+
+.grad-layer.g2 {
+  background: radial-gradient(closest-side, rgb(var(--c) / 0.1) 55%, rgb(var(--c) / 0) 100%);
+}
+
+.grad-layer.g3 {
+  background: radial-gradient(closest-side, rgb(var(--c) / 0.118) 90%, rgb(var(--c) / 0) 100%);
+}
+
+.grad-layer.g4 {
+  background: radial-gradient(closest-side, rgb(var(--c) / 0.118) 92%, rgb(var(--c) / 0) 100%);
+}
+
+/* While the hole eats them, the sheets are drawn by it (gradient/lens.js). */
+#gradient-bg.grad-stack.eaten .grad-layer {
+  visibility: hidden;
 }
 
 /* The black hole a click makes of it (src/client/gradient/lens.js): a WebGL
@@ -1240,11 +1252,4 @@ html.ink-cursor #ink-cursor.on {
   position: absolute;
   z-index: 1;
   pointer-events: none;
-}
-
-/* The gradient's formulas, set as the tree's (.tree-floats), over the page
-   with the cotas, in the tree's inks. */
-.grad-floats {
-  position: fixed;
-  z-index: 60;
 }
