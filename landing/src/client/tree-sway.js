@@ -1008,7 +1008,7 @@ function startSound() {
       bus.connect(echo).connect(dull).connect(back).connect(echo);
       dull.connect(wet).connect(out);
       ac.addEventListener("statechange", () => {
-        if (ac.state === "running") dropHint();
+        if (ac.state === "running") answerHint();
       });
       sound.ac = ac;
       sound.bus = bus;
@@ -1032,33 +1032,52 @@ function startSound() {
 // that tap starts the sound too.
 const HINT_AFTER = 600;
 const HINT_UP = 0.5; // how far up the trunk its centre sits, from the ground
-const HINT_EDGE = 8; // px kept clear of the tree's box, which clips it
+const HINT_EDGE = 8; // px kept clear of the screen's edges
 let hint = null;
 let hintMoved = false; // once dragged, it stays where it was put
 
-/** Centres the window on the trunk, wherever the drawing is on the page now, inside the tree's box. */
+/** Keeps a window position on screen: its top-left corner, for its size. */
+function onScreen(el, x, y) {
+  const html = document.documentElement;
+  return [
+    Math.max(HINT_EDGE, Math.min(html.clientWidth - el.offsetWidth - HINT_EDGE, x)),
+    Math.max(HINT_EDGE, Math.min(html.clientHeight - el.offsetHeight - HINT_EDGE, y)),
+  ];
+}
+
+/** Centres the window on the trunk, wherever the drawing is on the screen now;
+ * once it has been moved, only keeps it on screen. It lives on the page's
+ * body, over everything, so it can be put anywhere. */
 function placeHint() {
-  if (!hint || hintMoved) return;
-  const trunk = limbs[0];
-  const i = Math.round((trunk.n - 1) * HINT_UP);
-  const w = hint.offsetWidth / 2;
-  const h = hint.offsetHeight / 2;
-  const x = Math.max(w + HINT_EDGE, Math.min(box.clientWidth - w - HINT_EDGE, ox + trunk.rx[i] * sc));
-  const y = Math.max(h + HINT_EDGE, Math.min(box.clientHeight - h - HINT_EDGE, oy + trunk.ry[i] * sc));
-  hint.style.left = `${(x - w).toFixed(1)}px`;
-  hint.style.top = `${(y - h).toFixed(1)}px`;
+  if (!hint) return;
+  let x;
+  let y;
+  if (hintMoved) {
+    x = hint.offsetLeft;
+    y = hint.offsetTop;
+  } else {
+    const trunk = limbs[0];
+    const i = Math.round((trunk.n - 1) * HINT_UP);
+    const r = box.getBoundingClientRect();
+    x = r.left + ox + trunk.rx[i] * sc - hint.offsetWidth / 2;
+    y = r.top + oy + trunk.ry[i] * sc - hint.offsetHeight / 2;
+  }
+  [x, y] = onScreen(hint, x, y);
+  hint.style.left = `${x.toFixed(1)}px`;
+  hint.style.top = `${y.toFixed(1)}px`;
 }
 
 // The combining marks the tree's name is written with (U+0300 to U+036F), by
 // where each sits on its letter: through it, under it, or (all the rest) over it.
-const MARK = /[̀-ͯ]/;
-const THROUGH = /[̴-̸]/;
-const UNDER = /[̖-̙̜-̳̹-̼͇ͅ-͉͍͎͓-͖͙͚͜͟͢]/;
+const MARK = /[\u0300-\u036f]/;
+const THROUGH = /[\u0334-\u0338]/;
+const UNDER = /[\u0316-\u0319\u031c-\u0333\u0339-\u033c\u0345\u0347-\u0349\u034d\u034e\u0353-\u0356\u0359\u035a\u035c\u035f\u0362]/;
 
 /** The tree's garbled name, with its marks taken off their letters and stacked
  * by hand, each one a step further out than the last, over and under the
  * window and whatever is near: left to the browser, they may all be drawn in
- * one place, piled on the letter. Each sits on a no-break space of its own. */
+ * one place, piled on the letter. Each sits on a no-break space of its own,
+ * and grows out after the window has come in, the furthest last (--n). */
 function curse(text) {
   let html = "";
   let open = false;
@@ -1066,9 +1085,9 @@ function curse(text) {
   let down = 0;
   for (const ch of text) {
     if (open && MARK.test(ch)) {
-      if (ch === "͏") continue; // the grapheme joiner, which draws nothing
+      if (ch === "\u034f") continue; // the grapheme joiner, which draws nothing
       const at = THROUGH.test(ch) ? 0 : UNDER.test(ch) ? down++ : -up++;
-      html += `<span class="tree-sound-ask-mark" style="--at:${at}"> ${ch}</span>`;
+      html += `<span class="tree-sound-ask-mark" style="--at:${at};--n:${Math.abs(at)}">\u00a0${ch}</span>`;
     } else {
       html += `${open ? "</span>" : ""}<span class="tree-sound-ask-letter">${ch}`;
       open = true;
@@ -1085,7 +1104,7 @@ function ignoreSound() {
   dropHint();
 }
 
-/** Drags the window by its title bar, held inside the tree's box. */
+/** Drags the window by its title bar, anywhere on the screen. */
 function dragHint(event) {
   if (event.button !== 0 || event.target.closest("button")) return;
   const el = hint;
@@ -1094,12 +1113,11 @@ function dragHint(event) {
   bar.setPointerCapture(event.pointerId);
   const dx = event.clientX - el.offsetLeft;
   const dy = event.clientY - el.offsetTop;
-  const maxX = box.clientWidth - el.offsetWidth - HINT_EDGE;
-  const maxY = box.clientHeight - el.offsetHeight - HINT_EDGE;
   const move = (e) => {
     hintMoved = true;
-    el.style.left = `${Math.max(HINT_EDGE, Math.min(maxX, e.clientX - dx))}px`;
-    el.style.top = `${Math.max(HINT_EDGE, Math.min(maxY, e.clientY - dy))}px`;
+    const [x, y] = onScreen(el, e.clientX - dx, e.clientY - dy);
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
   };
   const end = () => {
     bar.removeEventListener("pointermove", move);
@@ -1147,7 +1165,7 @@ function offerSound() {
     if (event.key === "Escape") ignoreSound();
   });
   hintMoved = false;
-  box.appendChild(hint);
+  document.body.appendChild(hint);
   placeHint();
 }
 
@@ -1159,6 +1177,101 @@ function dropHint() {
   setTimeout(() => el.remove(), 400);
 }
 
+// Pressed anywhere else, the page starts the sound all the same (that press is
+// what the browser was waiting for), but the window is not just taken away: a
+// ghost of the cursor, the same arrow fainter, leaves from where the press
+// landed, flies to Allow, turns into the hand over it and presses it, and only
+// then does the window go. Where motion is reduced, the window simply goes.
+const GHOST = {
+  arrow: { hot: [4, 3], d: "M4 3L4 24L9.5 18.5L13 27L16.5 25.5L13 17L20.5 17Z" },
+  hand: {
+    hot: [12, 4],
+    d: "M10.5 5.5A1.5 1.5 0 0 1 13.5 5.5V13A1.5 1.5 0 0 1 16.5 13V14A1.5 1.5 0 0 1 19.5 14V15A1.5 1.5 0 0 1 22.5 15V21C22.5 25 20.5 28 17 28H14C11.5 28 10 26.5 8.5 24.5L5.2 19.6A1.6 1.6 0 0 1 7.8 17.6L10.5 20Z" +
+      "M13.5 13V17M16.5 14V17M19.5 15V17",
+  },
+};
+let ghostFrom = null; // where the press that started the sound landed
+let ghosting = false;
+
+/** The sound runs: the window is answered, by the ghost if a press elsewhere started it. */
+function answerHint() {
+  if (!hint || ghosting) return;
+  if (!ghostFrom || reduced) return dropHint();
+  ghosting = true;
+  const [x0, y0] = ghostFrom;
+  ghostFrom = null;
+  const NS = "http://www.w3.org/2000/svg";
+  const ghost = document.createElement("div");
+  ghost.className = "tree-sound-ghost";
+  ghost.setAttribute("aria-hidden", "true");
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 32 32");
+  const paths = ["ic-halo", "ic-fill", "ic-ink"].map((c) => {
+    const path = document.createElementNS(NS, "path");
+    path.setAttribute("class", c);
+    svg.appendChild(path);
+    return path;
+  });
+  ghost.appendChild(svg);
+  const wear = (shape) => {
+    for (const path of paths) path.setAttribute("d", shape.d);
+    svg.style.left = `${-shape.hot[0]}px`;
+    svg.style.top = `${-shape.hot[1]}px`;
+    svg.style.transformOrigin = `${shape.hot[0]}px ${shape.hot[1]}px`;
+  };
+  wear(GHOST.arrow);
+  ghost.style.transform = `translate(${x0}px, ${y0}px)`;
+  document.body.appendChild(ghost);
+
+  const button = () => hint && hint.querySelector('[data-act="allow"]');
+  const target = () => {
+    const r = button().getBoundingClientRect();
+    return [r.left + r.width * 0.55, r.top + r.height * 0.55];
+  };
+  const [x1, y1] = target();
+  const far = Math.hypot(x1 - x0, y1 - y0);
+  const dur = Math.max(650, Math.min(1200, 450 + far * 0.6)); // ms
+  // A curve, not a rule: bowed a fifth of the way out, up over the way.
+  const bow = 0.2;
+  const leave = () => {
+    ghost.classList.add("is-gone");
+    setTimeout(() => ghost.remove(), 300);
+    ghosting = false;
+  };
+  const t0 = performance.now();
+  let hand = false;
+  const fly = (now) => {
+    if (!button()) return leave(); // answered meanwhile
+    const u = Math.min(1, (now - t0) / dur);
+    const k = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+    const [tx, ty] = target(); // the window may be dragged meanwhile
+    const side = tx >= x0 ? 1 : -1; // so the bow is always upward
+    const cx = (x0 + tx) / 2 + (ty - y0) * bow * side;
+    const cy = (y0 + ty) / 2 - (tx - x0) * bow * side;
+    const x = (1 - k) * (1 - k) * x0 + 2 * (1 - k) * k * cx + k * k * tx;
+    const y = (1 - k) * (1 - k) * y0 + 2 * (1 - k) * k * cy + k * k * ty;
+    ghost.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+    if (!hand && u > 0.85) {
+      hand = true;
+      wear(GHOST.hand);
+    }
+    if (u < 1) return requestAnimationFrame(fly);
+    // There: it presses, holds a moment, lets go, and the window goes.
+    const b = button();
+    ghost.classList.add("press");
+    b.classList.add("is-pressed");
+    setTimeout(() => {
+      ghost.classList.remove("press");
+      b.classList.remove("is-pressed");
+      setTimeout(() => {
+        dropHint();
+        leave();
+      }, 120);
+    }, 160);
+  };
+  requestAnimationFrame(fly);
+}
+
 const FIRST_PRESS = ["pointerdown", "keydown", "touchend"];
 
 /** Any first press on the page is what lets the sound start; once it is running
@@ -1166,6 +1279,11 @@ const FIRST_PRESS = ["pointerdown", "keydown", "touchend"];
  * that one is answered by its own buttons. */
 function onFirstPress(event) {
   if (hint && hint.contains(event.target)) return;
+  if (hint) {
+    ghostFrom = event.clientX != null && event.type !== "keydown"
+      ? [event.clientX, event.clientY]
+      : [document.documentElement.clientWidth / 2, document.documentElement.clientHeight / 2];
+  }
   startSound();
   if (sound.ac && sound.ac.state === "running") {
     for (const type of FIRST_PRESS) window.removeEventListener(type, onFirstPress, true);
