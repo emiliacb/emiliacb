@@ -252,7 +252,12 @@
     get y() { return py; },
     offset(dx, dy) { offX = dx; offY = dy; place(); },
     stretch(angle, by, thin) { ang = angle; along = by; across = thin; place(); },
-    fade(alpha) { el.style.opacity = alpha == null ? "" : String(alpha); },
+    // Faded by whoever calls it, frame by frame: at once, without the
+    // transition that shows and hides it.
+    fade(alpha) {
+      el.style.transition = alpha == null ? "" : "none";
+      el.style.opacity = alpha == null ? "" : String(alpha);
+    },
     bend(fn, apart = 0) { bendFn = fn; broken = apart; render(); },
     hold(r) { held = r; setRole(r || wanted, true); },
   };

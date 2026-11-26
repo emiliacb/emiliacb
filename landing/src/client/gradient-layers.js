@@ -554,10 +554,10 @@ import { makeSound, note } from "./gradient/sound.js";
     if (chirp) chirp.set(110 * (orbit.w / w0) * (0.5 + 0.5 * e), e * (0.5 + 0.5 * orbit.tear), orbit.th);
     if (orbit.tear > 0.3 && !orbit.shattered) { orbit.shattered = true; sound.shatter(); }
     if (onOrbit && orbit.rho <= RHO_END * 1.01) {
+      // Gone where it went in: hidden at once, and left as it was (whole
+      // again or back at the hand, it would show for a moment).
       orbit.gone = true;
       c.fade(0);
-      c.bend(null, 0);
-      c.offset(0, 0);
       if (chirp) { chirp.stop(); chirp = null; }
       sound.thud(1);
     }
