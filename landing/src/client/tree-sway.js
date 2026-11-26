@@ -1021,7 +1021,7 @@ function startSound() {
 
 // Where the browser is still waiting for a press before it plays, a small
 // window on the tree's trunk asks for it the way a browser asks for the
-// microphone, under the site's own name: tree wants to be heard, Ignore
+// microphone, titled Choice: tree wants to be heard, Ignore
 // or Allow. Allowing is that press. Ignoring (or its close box, or Escape)
 // leaves the tree quiet for this visit, as the footer's switch would, without
 // keeping it: the switch shows it and can turn the sound back on. Any other
@@ -1115,8 +1115,8 @@ function offerSound() {
   if (hint || dropPill || !sound.want || !sound.ac || sound.ac.state === "running") return;
   const es = (document.documentElement.lang || "").startsWith("es");
   const t = es
-    ? { title: location.hostname, name: "árbol", spell: "ą̨̙͔͙͖̜̟̩̹̗̏̀̐̑̂͞r͇̘̳̀̔̆b͚̟̘͈͖̹̬̙͔̱̾̑̋ͩ͋ͣ̌̍͛͑͐o̸̶̡̩̘̘ͤͬͦ͋̒̏̀̒͛̏ͮl̡͚͍̹̭͓͈̠̇͑̈̍̆ͩ̂ͨ̔̓̓͢͝", wants: "quiere ser escuchado", ignore: "Ignorar", allow: "Permitir", close: "Cerrar" }
-    : { title: location.hostname, name: "tree", spell: "ț̙̹̹͖͌̒̋̃͋̅̒ͪ̎͑͊̄͗r̶̛̻̜̟̟̫̄̅̑̿̀ͥ̇ͧ̃̉̏e̴̛̮͓͇ͫ̂̿ͮ̓ͦe̷̷̛̗̠̳͙͓̱̝̹̔ͧ͒̃͑", wants: "wants to be heard", ignore: "Ignore", allow: "Allow", close: "Close" };
+    ? { title: "Decisión", name: "árbol", spell: "ą̨̙͔͙͖̜̟̩̹̗̏̀̐̑̂͞r͇̘̳̀̔̆b͚̟̘͈͖̹̬̙͔̱̾̑̋ͩ͋ͣ̌̍͛͑͐o̸̶̡̩̘̘ͤͬͦ͋̒̏̀̒͛̏ͮl̡͚͍̹̭͓͈̠̇͑̈̍̆ͩ̂ͨ̔̓̓͢͝", wants: "quiere ser escuchado", ignore: "Ignorar", allow: "Permitir", close: "Cerrar" }
+    : { title: "Choice", name: "tree", spell: "ț̙̹̹͖͌̒̋̃͋̅̒ͪ̎͑͊̄͗r̶̛̻̜̟̟̫̄̅̑̿̀ͥ̇ͧ̃̉̏e̴̛̮͓͇ͫ̂̿ͮ̓ͦe̷̷̛̗̠̳͙͓̱̝̹̔ͧ͒̃͑", wants: "wants to be heard", ignore: "Ignore", allow: "Allow", close: "Close" };
   hint = document.createElement("div");
   hint.className = "tree-sound-ask";
   hint.setAttribute("role", "dialog");
