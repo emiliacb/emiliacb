@@ -183,10 +183,15 @@ html {
 }
 
 @media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+  /* Moved right by the margin, the column gives up that much of its width,
+     so it never runs past the right edge (it was the full width plus the
+     margin: the navbar's end was cut off below 1044px). */
   #overlay-content:has(#tree-illustration) #page-shell > nav,
   #overlay-content:has(#tree-illustration) #content {
-    margin-left: clamp(1rem, 8vw, 9rem);
+    --lean-left: clamp(1rem, 8vw, 9rem);
+    margin-left: var(--lean-left);
     margin-right: auto;
+    width: calc(100% - var(--lean-left));
   }
 
   #overlay-content:has(#tree-illustration) #page-shell > nav {
