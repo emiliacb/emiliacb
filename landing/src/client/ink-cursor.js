@@ -223,6 +223,9 @@
   const roleOf = (t) => getComputedStyle(t && t.nodeType === 1 ? t : (t && t.parentElement) || root).getPropertyValue("--cur-role").trim() || "default";
   addEventListener("pointermove", (e) => {
     if (e.pointerType !== "mouse") return;
+    // While the page has the mouse (pointer lock), a move says nothing of
+    // where it is: whoever locked it draws the cursor (gradient-layers.js).
+    if (document.pointerLockElement || root.hasAttribute("data-pointer-held")) return;
     root.classList.add("ink-cursor");
     el.classList.add("on");
     px = e.clientX;
