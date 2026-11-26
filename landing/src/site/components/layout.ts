@@ -344,11 +344,11 @@ document.head.appendChild(o)}initApollo();</script>
                 class="grad-stack absolute -z-10 top-[25vh] h-[150vh] right-0 w-[50vw]"
                 aria-hidden="true"
               >
-                <div class="grad-layer halo" style="--k:0.3;--c:var(--g-b);--a0:0.12"></div>
-                <div class="grad-layer" style="--k:0.205;--c:var(--g-b);--a0:0.05;--a1:0.24"></div>
-                <div class="grad-layer" style="--k:0.155;--c:var(--g-a);--a0:0.03;--a1:0.12"></div>
-                <div class="grad-layer" style="--k:0.105;--c:var(--g-a);--a0:0.08;--a1:0.26"></div>
-                <div class="grad-layer" style="--k:0.055;--c:var(--g-a);--a0:0.1;--a1:0.2"></div>
+                <div class="grad-layer g0" style="--k:0.3;--c:var(--g-b)"></div>
+                <div class="grad-layer g1" style="--k:0.21;--c:var(--g-b)"></div>
+                <div class="grad-layer g2" style="--k:0.2;--c:var(--g-a)"></div>
+                <div class="grad-layer g3" style="--k:0.11;--c:var(--g-a)"></div>
+                <div class="grad-layer g4" style="--k:0.1;--c:var(--g-a)"></div>
               </div>`}
           ${withIlustration
             ? html`
