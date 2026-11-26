@@ -1058,10 +1058,22 @@ function clearOf(x, y) {
   const w = hint.offsetWidth;
   const h = hint.offsetHeight;
   const html = document.documentElement;
+  // Only what can be seen: a closed menu, a hidden copy of a link or one
+  // under something else still takes up room, and is nothing to cover.
+  const seen = (el, r) => {
+    if (el.checkVisibility && !el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) return false;
+    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return !!top && (top === el || el.contains(top) || top.contains(el));
+  };
+  // The window itself, wherever it is now, is looked through.
+  hint.style.pointerEvents = "none";
   const rects = [...document.querySelectorAll(PRESSABLE)]
     .filter((el) => !hint.contains(el))
-    .map((el) => el.getBoundingClientRect())
-    .filter((r) => r.width && r.height && r.bottom > 0 && r.top < html.clientHeight && r.right > 0 && r.left < html.clientWidth);
+    .map((el) => [el, el.getBoundingClientRect()])
+    .filter(([, r]) => r.width && r.height && r.bottom > 0 && r.top < html.clientHeight && r.right > 0 && r.left < html.clientWidth)
+    .filter(([el, r]) => seen(el, r))
+    .map(([, r]) => r);
+  hint.style.pointerEvents = "";
   const covers = (px, py) => rects.some((r) =>
     px < r.right + HINT_AIR && px + w > r.left - HINT_AIR && py < r.bottom + HINT_AIR && py + h > r.top - HINT_AIR);
   let best = null;
