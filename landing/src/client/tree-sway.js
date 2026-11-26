@@ -967,6 +967,26 @@ try {
 } catch {
   // No storage: wanted, as for a first visit.
 }
+// Whether the tree has been heard in this visit to the site, on any of its
+// pages. Until it has, the tree asks for it with its window, even where the
+// browser would already let it play (pressing a link on the way here is
+// enough for that): the window is the way in. After, it is heard at once.
+const HEARD_KEY = "tree-sound-heard";
+const heard = () => {
+  try {
+    return sessionStorage.getItem(HEARD_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+function nowHeard() {
+  try {
+    sessionStorage.setItem(HEARD_KEY, "1");
+  } catch {
+    // Not kept: it asks again on the next page.
+  }
+  answerHint();
+}
 
 /** Turns the sound on or off. Called from a press, which is also what lets it start. */
 function setSound(yes) {
@@ -1008,10 +1028,13 @@ function startSound() {
       bus.connect(echo).connect(dull).connect(back).connect(echo);
       dull.connect(wet).connect(out);
       ac.addEventListener("statechange", () => {
-        if (ac.state === "running") answerHint();
+        if (ac.state === "running") nowHeard();
       });
       sound.ac = ac;
       sound.bus = bus;
+      // Made already running (the browser lets this page play), it changes
+      // no state, and says nothing.
+      if (ac.state === "running") nowHeard();
     }
     if (sound.ac.state === "suspended") sound.ac.resume();
   } catch {
@@ -1045,24 +1068,62 @@ function onScreen(el, x, y) {
   ];
 }
 
-/** Centres the window on the trunk, wherever the drawing is on the screen now;
- * once it has been moved, only keeps it on screen. It lives on the page's
- * body, over everything, so it can be put anywhere. */
+// What the window must leave uncovered when it is put down: whatever can be
+// pressed on the page, with a little air around it.
+const PRESSABLE = 'a[href], button, [role="button"], input, select, textarea, dropdown-trigger';
+const HINT_AIR = 6; // px kept clear around each of them
+const HINT_STEP = 12; // px between the places tried
+
+/** The nearest place to (x, y), on screen, where the window covers nothing
+ * that can be pressed. Moving along the trunk (up or down) costs half what
+ * moving off it does. Where there is no such place, (x, y) itself. */
+function clearOf(x, y) {
+  const w = hint.offsetWidth;
+  const h = hint.offsetHeight;
+  const html = document.documentElement;
+  const rects = [...document.querySelectorAll(PRESSABLE)]
+    .filter((el) => !hint.contains(el))
+    .map((el) => el.getBoundingClientRect())
+    .filter((r) => r.width && r.height && r.bottom > 0 && r.top < html.clientHeight && r.right > 0 && r.left < html.clientWidth);
+  const covers = (px, py) => rects.some((r) =>
+    px < r.right + HINT_AIR && px + w > r.left - HINT_AIR && py < r.bottom + HINT_AIR && py + h > r.top - HINT_AIR);
+  let best = null;
+  let cost = Infinity;
+  const reachY = html.clientHeight;
+  const reachX = html.clientWidth / 2;
+  for (let dy = -reachY; dy <= reachY; dy += HINT_STEP) {
+    for (let dx = -reachX; dx <= reachX; dx += HINT_STEP) {
+      const c = Math.abs(dy) + 2 * Math.abs(dx);
+      if (c >= cost) continue;
+      const [px, py] = onScreen(hint, x + dx, y + dy);
+      if (!covers(px, py)) {
+        best = [px, py];
+        cost = c;
+      }
+    }
+  }
+  return best || onScreen(hint, x, y);
+}
+
+/** Centres the window on the trunk, wherever the drawing is on the screen now,
+ * or as near it as it can be without covering a link or a button; once it
+ * has been moved, only keeps it on screen. It lives on the page's body, over
+ * everything, so it can be put anywhere. */
 function placeHint() {
   if (!hint) return;
   let x;
   let y;
   if (hintMoved) {
-    x = hint.offsetLeft;
-    y = hint.offsetTop;
+    [x, y] = onScreen(hint, hint.offsetLeft, hint.offsetTop);
   } else {
     const trunk = limbs[0];
     const i = Math.round((trunk.n - 1) * HINT_UP);
     const r = box.getBoundingClientRect();
-    x = r.left + ox + trunk.rx[i] * sc - hint.offsetWidth / 2;
-    y = r.top + oy + trunk.ry[i] * sc - hint.offsetHeight / 2;
+    [x, y] = clearOf(
+      r.left + ox + trunk.rx[i] * sc - hint.offsetWidth / 2,
+      r.top + oy + trunk.ry[i] * sc - hint.offsetHeight / 2,
+    );
   }
-  [x, y] = onScreen(hint, x, y);
   hint.style.left = `${x.toFixed(1)}px`;
   hint.style.top = `${y.toFixed(1)}px`;
 }
@@ -1130,7 +1191,7 @@ function dragHint(event) {
 }
 
 function offerSound() {
-  if (hint || dropPill || !sound.want || !sound.ac || sound.ac.state === "running") return;
+  if (hint || dropPill || !sound.want || heard() || (sound.ac && sound.ac.state === "running")) return;
   const es = (document.documentElement.lang || "").startsWith("es");
   const t = es
     ? { title: "Decisión", name: "árbol", spell: "ą̨̙͔͙͖̜̟̩̹̗̏̀̐̑̂͞r͇̘̳̀̔̆b͚̟̘͈͖̹̬̙͔̱̾̑̋ͩ͋ͣ̌̍͛͑͐o̸̶̡̩̘̘ͤͬͦ͋̒̏̀̒͛̏ͮl̡͚͍̹̭͓͈̠̇͑̈̍̆ͩ̂ͨ̔̓̓͢͝", wants: "quiere ser escuchado", ignore: "Ignorar", allow: "Permitir", close: "Cerrar" }
@@ -1274,16 +1335,28 @@ function answerHint() {
 
 const FIRST_PRESS = ["pointerdown", "keydown", "touchend"];
 
+/** Where a press landed on the screen, or null for a key. */
+function pressedAt(event) {
+  const touch = event.changedTouches && event.changedTouches[0];
+  if (touch) return [touch.clientX, touch.clientY];
+  if (event.type === "keydown" || event.clientX == null) return null;
+  return [event.clientX, event.clientY];
+}
+const middle = () => [document.documentElement.clientWidth / 2, document.documentElement.clientHeight / 2];
+
 /** Any first press on the page is what lets the sound start; once it is running
  * there is nothing left to wait for. Not one on the window that asks for it:
- * that one is answered by its own buttons. */
+ * that one is answered by its own buttons. Nor one on a link: the page is
+ * being left, and the next one should still ask with its window, not find
+ * the tree already playing. Nor one on a dropdown (the navbar's About, the
+ * language menu): it only opens a menu, and its own links lead away. */
 function onFirstPress(event) {
   if (hint && hint.contains(event.target)) return;
-  if (hint) {
-    ghostFrom = event.clientX != null && event.type !== "keydown"
-      ? [event.clientX, event.clientY]
-      : [document.documentElement.clientWidth / 2, document.documentElement.clientHeight / 2];
-  }
+  if (event.target instanceof Element && event.target.closest("a[href], dropdown-trigger")) return;
+  // Where the ghost leaves from: where the finger or the pointer came down.
+  // A touch's end carries its place in its touches, not on itself, and a key
+  // has none: then the place already known stands, or the screen's middle.
+  if (hint) ghostFrom = pressedAt(event) || ghostFrom || middle();
   startSound();
   if (sound.ac && sound.ac.state === "running") {
     for (const type of FIRST_PRESS) window.removeEventListener(type, onFirstPress, true);
@@ -2740,10 +2813,10 @@ if (box && svg && woodEl && !reduced && setup()) {
   window.addEventListener("pointermove", track, { passive: true });
   if (COARSE) listenMotion();
   else setTimeout(offerSound, HINT_AFTER);
-  // Where the browser already lets this page play (it was pressed on the way
-  // here from another page of the site, or its visitor allows it sound), the
-  // tree is heard at once. Everywhere else it waits for the first press.
-  startSound();
+  // Heard already in this visit, the tree is heard at once wherever the
+  // browser lets this page play (it was pressed on the way here from another
+  // page of the site). Otherwise it asks first, with its window, and waits.
+  if (heard()) startSound();
   for (const type of FIRST_PRESS) window.addEventListener(type, onFirstPress, { capture: true, passive: true });
   window.addEventListener(SOUND_KEY, (event) => setSound(!!event.detail));
   document.documentElement.addEventListener("pointerleave", release);

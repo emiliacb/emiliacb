@@ -651,6 +651,10 @@ html.ai-layout-enabled #activity-panel {
      Full ink was too heavy around the bar's colour. */
   --ask-line: #a8a29e;
   --ask-close-line: #78716c;
+  /* Allow under the pointer: the site's highlight, yellow on the light page
+     and blue on the dark one, as its highlighted cards and links. */
+  --ask-hover: #fde047;
+  --ask-hover-ink: #292524;
   position: fixed;
   z-index: 100000000;
   width: 256px;
@@ -673,6 +677,8 @@ html.ai-layout-enabled #activity-panel {
     --ask-bar: linear-gradient(90deg, rgb(0 79 255), rgb(153 57 86));
     --ask-bar-ink: #fff;
     --ask-close-line: currentColor;
+    --ask-hover: #1e3a8a;
+    --ask-hover-ink: #fff;
   }
 }
 .tree-sound-ask-bar {
@@ -772,9 +778,11 @@ html.ai-layout-enabled #activity-panel {
   background: var(--ask-ink);
   color: var(--ask-page);
 }
-.tree-sound-ask-buttons .is-default:hover {
-  background: transparent;
-  color: var(--ask-ink);
+.tree-sound-ask-buttons .is-default:hover,
+.tree-sound-ask-buttons .is-default.is-pressed {
+  border-color: var(--ask-hover);
+  background: var(--ask-hover);
+  color: var(--ask-hover-ink);
 }
 .tree-sound-ask-buttons button:active {
   transform: scale(0.97);
@@ -782,6 +790,33 @@ html.ai-layout-enabled #activity-panel {
 .tree-sound-ask button:focus-visible {
   outline: 1px dotted currentColor;
   outline-offset: 2px;
+}
+/* On a phone it takes less of the screen: narrower, its type and spacing a
+   step smaller, the buttons still wide enough for a thumb. */
+@media (max-width: 767px) {
+  .tree-sound-ask {
+    width: 200px;
+    font-size: 0.6875rem;
+  }
+  .tree-sound-ask-bar {
+    height: 20px;
+    font-size: 0.6875rem;
+  }
+  .tree-sound-ask-close {
+    width: 15px;
+    height: 15px;
+  }
+  .tree-sound-ask p {
+    padding: 10px 10px 9px;
+  }
+  .tree-sound-ask-buttons {
+    gap: 5px;
+    padding: 0 10px 10px;
+  }
+  .tree-sound-ask-buttons button {
+    height: 24px;
+    font-size: 0.6875rem;
+  }
 }
 .tree-sound-ask.is-gone {
   opacity: 0;
@@ -860,11 +895,9 @@ html.ai-layout-enabled #activity-panel {
     opacity: 0;
   }
 }
-/* Allow, pressed by the ghost: as under a real press. */
+/* Allow, pressed by the ghost: as under a real pointer and press. */
 .tree-sound-ask-buttons .is-default.is-pressed {
   transform: scale(0.97);
-  background: transparent;
-  color: var(--ask-ink);
 }
 
 .tree-plate,
