@@ -218,6 +218,8 @@ import { makeLens } from "./gradient/lens.js";
     phase = "fall";
     since = 0;
     root.setAttribute("data-air-held", "");
+    // What falls in, and comes back out, is the arrow.
+    cursor()?.hold("default");
     wake();
   }
 
@@ -535,7 +537,7 @@ import { makeLens } from "./gradient/lens.js";
     orbit.on = false;
     for (const l of leaves) l.out = false;
     const c = cursor();
-    if (c) { c.offset(0, 0); c.stretch(0, 1, 1); c.bend(null, 0); c.fade(null); }
+    if (c) { c.offset(0, 0); c.stretch(0, 1, 1); c.bend(null, 0); c.fade(null); c.hold(null); }
     if (lens) lens.close();
   }
 

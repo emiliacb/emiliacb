@@ -191,7 +191,11 @@
     render();
     raf = u < 1 ? requestAnimationFrame(frame) : 0;
   }
-  function setRole(r) {
+  // A shape something holds the cursor to (the black hole keeps the arrow,
+  // whatever is under the hand), or null to follow what is under it.
+  let held = null, wanted = ROLES[0];
+  function setRole(r, force) {
+    if (!force) { wanted = r; if (held) return; }
     if (!FORMS[r] || r === role) return;
     role = r;
     from = copy(shown);
@@ -247,5 +251,6 @@
     stretch(angle, by, thin) { ang = angle; along = by; across = thin; place(); },
     fade(alpha) { el.style.opacity = alpha == null ? "" : String(alpha); },
     bend(fn, apart = 0) { bendFn = fn; broken = apart; render(); },
+    hold(r) { held = r; setRole(r || wanted, true); },
   };
 })();
