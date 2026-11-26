@@ -634,11 +634,14 @@ html.ai-layout-enabled #activity-panel {
   --ask-ink: #292524;
   --ask-bar: linear-gradient(90deg, rgb(255 176 0), rgb(102 198 169));
   --ask-bar-ink: #1c1917;
+  /* The window's edge: the navbar's green on the light page, where ink was
+     too heavy; ink on the dark one. */
+  --ask-line: #86efac;
   position: absolute;
   z-index: 5;
   pointer-events: auto;
   width: 256px;
-  border: 1px solid var(--ask-ink);
+  border: 1px solid var(--ask-line);
   background: var(--ask-page);
   color: var(--ask-ink);
   font-family: inherit;
@@ -656,6 +659,7 @@ html.ai-layout-enabled #activity-panel {
     --ask-ink: #f5f5f4;
     --ask-bar: linear-gradient(90deg, rgb(0 79 255), rgb(153 57 86));
     --ask-bar-ink: #fff;
+    --ask-line: var(--ask-ink);
   }
 }
 .tree-sound-ask-bar {
@@ -665,7 +669,7 @@ html.ai-layout-enabled #activity-panel {
   gap: 6px;
   height: 22px;
   padding: 0 3px 0 6px;
-  border-bottom: 1px solid var(--ask-ink);
+  border-bottom: 1px solid var(--ask-line);
   background: var(--ask-bar);
   color: var(--ask-bar-ink);
   font-size: 0.75rem;
