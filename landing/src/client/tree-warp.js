@@ -51,7 +51,7 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
 
   const THETA = 2; // degrees of turn, at its most: tilted, not bent
   const R = 350; // px from the foot where the polar grid's weight is half
-  const BEND = 0.65; // the bend at the top of the scale, as a share of the full polar grid
+  const BEND = 0.8; // the bend at the top of the scale, as a share of the full polar grid
   const nav = document.querySelector("#page-shell > nav");
 
   /* ---- the bend: WebGL over a copy of #content ---- */
@@ -109,12 +109,12 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
         // more of them and further the more there is.
         float tick = floor(uTime * 14.0);
         float row = floor(p.y / 7.0);
-        float jump = step(0.93 - 0.06 * uJump, hash(vec2(row, tick))) * (hash(vec2(tick, row)) - 0.5) * 20.0 * uJump;
+        float jump = step(0.92 - 0.1 * uJump, hash(vec2(row, tick))) * (hash(vec2(tick, row)) - 0.5) * 32.0 * uJump;
         vec2 at = p + d + vec2(jump, 0.0);
         // The split: red one way and blue the other, along the bend where
-        // there is one, at most 4px apart so the text stays readable.
+        // there is one, at most 6px each way.
         float len = length(d);
-        vec2 split = ((len > 0.0 ? d / len : vec2(1.0, 0.0)) * min(len * 0.05, 1.5) + vec2(2.5, 0.0)) * uRGB;
+        vec2 split = ((len > 0.0 ? d / len : vec2(1.0, 0.0)) * min(len * 0.06, 2.0) + vec2(4.0, 0.0)) * uRGB;
         vec4 cg = page(at);
         vec4 cr = page(at + split);
         vec4 cb = page(at - split);
@@ -265,8 +265,8 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
   //
   //   turn = THETA * smoothstep(min(1, env / TURN_AT))
   //   bend = BEND * smoothstep(clamp(x_low + 0.35 x_mid + 0.15 x_high + PUNCH punch_low))
-  //   rgb  = smoothstep(clamp((y_high + 0.25 y_mid) / 0.5)) * (0.5 + 0.5 punch_high)
-  //   jump = smoothstep(clamp(y_mid / 0.5)) * (0.4 + 0.6 punch_mid)
+  //   rgb  = smoothstep(clamp((y_high + 0.25 y_mid) / 0.3)) * (0.6 + 0.4 punch_high)
+  //   jump = smoothstep(clamp(y_mid / 0.3)) * (0.5 + 0.5 punch_mid)
   const FLOOR = -56, CEIL = -26;
   const BAND_FLOOR = -50, BAND_CEIL = -30;
   const BANDS = [[60, 250], [250, 450], [450, 6000]]; // Hz: low, middle, high
@@ -348,8 +348,8 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
     const yMid = mid.env * light, yHi = hi.env * light;
     const turn = smooth(Math.min(1, env / TURN_AT));
     const bend = BEND * smooth(clamp01(xLo + 0.35 * xMid + 0.15 * xHi + PUNCH * lo.punch));
-    const rgb = smooth(clamp01((yHi + 0.25 * yMid) / 0.5)) * (0.5 + 0.5 * hi.punch);
-    const jump = smooth(clamp01(yMid / 0.5)) * (0.4 + 0.6 * mid.punch);
+    const rgb = smooth(clamp01((yHi + 0.25 * yMid) / 0.3)) * (0.6 + 0.4 * hi.punch);
+    const jump = smooth(clamp01(yMid / 0.3)) * (0.5 + 0.5 * mid.punch);
     // Anticlockwise, the far side of the content dropping, as the bend
     // carries it.
     content.style.setProperty("--tree-turn", `${(-THETA * turn).toFixed(3)}deg`);
@@ -395,7 +395,7 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
     const t = Math.floor(now / 70);
     if (t !== tick) {
       tick = t;
-      nav.style.translate = Math.random() < 0.4 * jump ? `${((Math.random() - 0.5) * 10 * jump).toFixed(1)}px 0` : "";
+      nav.style.translate = Math.random() < 0.5 * jump ? `${((Math.random() - 0.5) * 16 * jump).toFixed(1)}px 0` : "";
     }
   }
 

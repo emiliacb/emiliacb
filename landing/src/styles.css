@@ -209,8 +209,8 @@ html.nav-in-transition:not(.ai-layout-enabled) #page-shell > nav {
 }
 
 #page-shell > nav.tree-glitching > * {
-  filter: drop-shadow(calc(var(--glitch, 0) * 3px) 0 rgb(255 0 64 / 0.8))
-    drop-shadow(calc(var(--glitch, 0) * -3px) 0 rgb(0 102 255 / 0.8));
+  filter: drop-shadow(calc(var(--glitch, 0) * 5px) 0 rgb(255 0 64 / 0.85))
+    drop-shadow(calc(var(--glitch, 0) * -5px) 0 rgb(0 102 255 / 0.85));
 }
 
 .tree-warp {
