@@ -1045,57 +1045,14 @@ function onScreen(el, x, y) {
   ];
 }
 
-// What the window must leave uncovered when it is put down: whatever can be
-// pressed on the page, with a little air around it.
-const PRESSABLE = 'a[href], button, [role="button"], input, select, textarea, dropdown-trigger';
-const HINT_AIR = 6; // px kept clear around each of them
-const HINT_STEP = 12; // px between the places tried
+// On a phone the trunk runs down behind the contact links at the foot of the
+// home (contacts.ts): there the window sits on the trunk just above them,
+// never on them.
+const PHONE = window.matchMedia("(max-width: 767px)");
+const HINT_GAP = 12; // px between the window and the links under it
 
-/** The nearest place to (x, y), on screen, where the window covers nothing
- * that can be pressed. Moving along the trunk (up or down) costs half what
- * moving off it does. Where there is no such place, (x, y) itself. */
-function clearOf(x, y) {
-  const w = hint.offsetWidth;
-  const h = hint.offsetHeight;
-  const html = document.documentElement;
-  // Only what can be seen: a closed menu, a hidden copy of a link or one
-  // under something else still takes up room, and is nothing to cover.
-  const seen = (el, r) => {
-    if (el.checkVisibility && !el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) return false;
-    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-    return !!top && (top === el || el.contains(top) || top.contains(el));
-  };
-  // The window itself, wherever it is now, is looked through.
-  hint.style.pointerEvents = "none";
-  const rects = [...document.querySelectorAll(PRESSABLE)]
-    .filter((el) => !hint.contains(el))
-    .map((el) => [el, el.getBoundingClientRect()])
-    .filter(([, r]) => r.width && r.height && r.bottom > 0 && r.top < html.clientHeight && r.right > 0 && r.left < html.clientWidth)
-    .filter(([el, r]) => seen(el, r))
-    .map(([, r]) => r);
-  hint.style.pointerEvents = "";
-  const covers = (px, py) => rects.some((r) =>
-    px < r.right + HINT_AIR && px + w > r.left - HINT_AIR && py < r.bottom + HINT_AIR && py + h > r.top - HINT_AIR);
-  let best = null;
-  let cost = Infinity;
-  const reachY = html.clientHeight;
-  const reachX = html.clientWidth / 2;
-  for (let dy = -reachY; dy <= reachY; dy += HINT_STEP) {
-    for (let dx = -reachX; dx <= reachX; dx += HINT_STEP) {
-      const c = Math.abs(dy) + 2 * Math.abs(dx);
-      if (c >= cost) continue;
-      const [px, py] = onScreen(hint, x + dx, y + dy);
-      if (!covers(px, py)) {
-        best = [px, py];
-        cost = c;
-      }
-    }
-  }
-  return best || onScreen(hint, x, y);
-}
-
-/** Centres the window on the trunk, wherever the drawing is on the screen now,
- * or as near it as it can be without covering a link or a button; once it
+/** Centres the window on the trunk, wherever the drawing is on the screen now
+ * (on a phone, above the contact links if the trunk runs behind them); once it
  * has been moved, only keeps it on screen. It lives on the page's body, over
  * everything, so it can be put anywhere. */
 function placeHint() {
@@ -1103,16 +1060,18 @@ function placeHint() {
   let x;
   let y;
   if (hintMoved) {
-    [x, y] = onScreen(hint, hint.offsetLeft, hint.offsetTop);
+    x = hint.offsetLeft;
+    y = hint.offsetTop;
   } else {
     const trunk = limbs[0];
     const i = Math.round((trunk.n - 1) * HINT_UP);
     const r = box.getBoundingClientRect();
-    [x, y] = clearOf(
-      r.left + ox + trunk.rx[i] * sc - hint.offsetWidth / 2,
-      r.top + oy + trunk.ry[i] * sc - hint.offsetHeight / 2,
-    );
+    x = r.left + ox + trunk.rx[i] * sc - hint.offsetWidth / 2;
+    y = r.top + oy + trunk.ry[i] * sc - hint.offsetHeight / 2;
+    const links = PHONE.matches && document.querySelector("#content footer");
+    if (links) y = Math.min(y, links.getBoundingClientRect().top - HINT_GAP - hint.offsetHeight);
   }
+  [x, y] = onScreen(hint, x, y);
   hint.style.left = `${x.toFixed(1)}px`;
   hint.style.top = `${y.toFixed(1)}px`;
 }
