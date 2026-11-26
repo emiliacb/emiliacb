@@ -26,8 +26,9 @@
  * radius it comes apart, stretched along the orbit and sheared by it into a
  * thread, and is gone at the shadow. After a moment the hole evaporates in a
  * flash and gives back the sheets and the cursor, and the blast goes through
- * the page as through a shaken cloth (gradient/ripple.js). Only the drawing is taken:
- * the pointer itself stays where the hand is. All of it is heard
+ * the page as through a shaken cloth (gradient/ripple.js). The mouse itself
+ * is caught too: hidden and held still where it clicked (Pointer Lock) until
+ * the cursor is given back. All of it is heard
  * (gradient/sound.js).
  *
  * Desktop only, (min-width: 768px) and a fine pointer that can hover, and not
@@ -238,6 +239,10 @@ import { makeSound, note } from "./gradient/sound.js";
     hideHint();
     // What falls in, and comes back out, is the arrow.
     cursor()?.hold("default");
+    // And the mouse itself is caught: hidden and held where it clicked, so
+    // the cursor the hole takes is the only one (the Pointer Lock API, which
+    // the click allows; the browser says Esc lets it go, and it does).
+    capture(true);
     sound.start();
     drone = sound.drone();
     wake();
@@ -653,7 +658,22 @@ import { makeSound, note } from "./gradient/sound.js";
     }
   }
 
+  function capture(on) {
+    try {
+      if (on) {
+        const r = host.requestPointerLock && host.requestPointerLock();
+        if (r && r.catch) r.catch(() => {});
+      } else if (document.pointerLockElement === host) {
+        document.exitPointerLock();
+      }
+    } catch {
+      // No pointer lock here: the cursor is still drawn falling in.
+    }
+  }
+
   function finish() {
+    // The mouse is let go where it was caught, as the cursor comes back to it.
+    capture(false);
     phase = "calm";
     since = 0;
     orbit.back = null;
