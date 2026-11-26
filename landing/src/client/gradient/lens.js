@@ -317,26 +317,33 @@ export function makeLens(host) {
     copy(x0, y0);
   }
 
+  // The last copy, for whoever else bends the page (gradient/ripple.js): the
+  // image, and where it sits in the host (its top left) and how big it is.
+  let shot = null;
+
   async function copy(x0, y0) {
     if (!shell) return;
     const mine = ++ticket;
     const hostBox = host.getBoundingClientRect(), shellBox = shell.getBoundingClientRect();
-    const sx = x0 - (shellBox.left - hostBox.left), sy = y0 - (shellBox.top - hostBox.top);
+    const shellX = shellBox.left - hostBox.left, shellY = shellBox.top - hostBox.top;
+    const sx = x0 - shellX, sy = y0 - shellY;
     const w = shell.offsetWidth;
+    // The rows of the square and of the screen, in the shell's own.
+    const view = -shellBox.top;
+    const top = Math.max(0, Math.floor(Math.min(sy, view)));
+    const bottom = Math.min(shell.offsetHeight, Math.ceil(Math.max(sy + size, view + innerHeight)));
     // All of each face's formats: asked for woff2 alone, Chrome draws the
     // copy in a fallback face.
     if (fontCSS === undefined) fontCSS = await getFontEmbedCSS(shell).catch(() => null);
     let img;
     try {
-      // Only the rows of the square are drawn: the shell moved up out of a
-      // frame that tall. Its width stays its own, so nothing reflows.
+      // Only those rows are drawn: the shell moved up out of a frame that
+      // tall. It keeps its own width and height, so nothing reflows.
       img = await toCanvas(shell, {
         width: w,
-        height: size,
+        height: bottom - top,
         pixelRatio: dpr,
-        // The frame is the square's height; the shell keeps its own, so its
-        // layout is as on the page.
-        style: { transform: `translateY(${-sy}px)`, margin: "0", height: `${shell.offsetHeight}px` },
+        style: { transform: `translateY(${-top}px)`, margin: "0", height: `${shell.offsetHeight}px` },
         filter: (node) => !(node instanceof HTMLCanvasElement),
         ...(fontCSS ? { fontEmbedCSS: fontCSS } : { skipFonts: true }),
       });
@@ -346,8 +353,9 @@ export function makeLens(host) {
     if (mine !== ticket) return;
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-    gl.uniform2f(U.uTexOff, sx, 0);
-    gl.uniform2f(U.uTexSize, w, size);
+    gl.uniform2f(U.uTexOff, sx, sy - top);
+    gl.uniform2f(U.uTexSize, w, bottom - top);
+    shot = { img, x: shellX, y: shellY + top, w, h: bottom - top };
     ready = true;
   }
 
@@ -394,6 +402,7 @@ export function makeLens(host) {
   return {
     open, draw, close,
     get ready() { return ready; },
+    get shot() { return shot; },
     get half() { return half; },
   };
 }

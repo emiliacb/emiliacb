@@ -1253,3 +1253,11 @@ html.ink-cursor #ink-cursor.on {
   z-index: 1;
   pointer-events: none;
 }
+
+/* The blast's shock through the page (src/client/gradient/ripple.js): the
+   page's copy, over it, while the page itself is hidden. */
+.bh-ripple {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}

@@ -1,17 +1,17 @@
 /**
- * The gradient's sound, made as the tree's is (tree-sway.js): notes of a
- * Hijaz on D (D E♭ F♯ G A B♭), glass bells and rounder wood, under one soft
- * ceiling with an echo that loses its top each time. It is on unless the
+ * The gradient's sound, on the tree's engine (tree-sway.js): one soft
+ * ceiling with an echo that loses its top each time, and its scale, a Hijaz
+ * on D, where anything is pitched. It is on unless the
  * footer's switch was last left off (the same "tree-sound" setting and
  * event), and, as a browser wants, starts on the first press on the page.
  *
- * The sheets' own voice is electric, not the tree's glass: an FM zap with a
- * crackle, when the hand brushes through a sheet's edge. The hole has a low
- * drone that sinks as it forms; the cursor's orbit as a tone that rises with
- * its turning, the way two stars spiralling together chirp; a scatter of
- * sparks when the tide takes the cursor apart; a deep knock as it is swallowed; the evaporation as its
- * tone climbing faster and faster to a burst; and the sheets' own notes as
- * they come back out.
+ * The sheets' own voice is electric and magnetic, not the tree's glass, and
+ * not a note: a gritty buzz with sparks when the hand brushes through a
+ * sheet's edge. The hole has a low drone that sinks as it forms; the cursor's
+ * orbit as a tone that rises with its turning, the way two stars spiralling
+ * together chirp; a crackle of discharges over a sagging minor chord when
+ * the tide takes the cursor apart; a dull thud as it is swallowed; and an explosion when it goes: the
+ * pressure building, a deep boom, a blast of air, debris, a long tail.
  */
 const SOUND_KEY = "tree-sound";
 const FIRST_PRESS = ["pointerdown", "keydown", "touchend"];
@@ -203,140 +203,177 @@ export function makeSound() {
     };
   }
 
-  /** The cursor coming apart: bells high in the scale, scattered. */
-  function shatter() {
-    for (let i = 0; i < 7; i++) {
-      zap(note(Math.floor(Math.random() * 6), 1 + (Math.random() < 0.5 ? 1 : 0)), 0.4 + Math.random() * 0.4, Math.random() * 1.4 - 0.7, i * 0.045 + Math.random() * 0.05, 0.35);
+  // Noise, filtered and shaped: one call for every rush, rumble and crackle.
+  function noise(at, dur, type, f0, f1, level, rise = 0.01, q = 0.7, to = bus) {
+    const n = ac.createBufferSource();
+    n.buffer = noiseBuf;
+    n.loop = true;
+    const f = ac.createBiquadFilter();
+    f.type = type;
+    f.Q.value = q;
+    f.frequency.setValueAtTime(f0, at);
+    f.frequency.exponentialRampToValueAtTime(f1, at + dur);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(level, at + rise);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    n.connect(f).connect(g).connect(to);
+    n.start(at, Math.random() * 1.5);
+    n.stop(at + dur + 0.05);
+  }
+  // Sparks: a few spits of high noise at random within `span` s.
+  function sparks(at, span, count, level, to = bus) {
+    for (let k = 0; k < count; k++) {
+      const tk = at + Math.random() * span;
+      noise(tk, 0.012 + Math.random() * 0.02, "highpass", 2500 + Math.random() * 3000, 4000, level * (0.4 + Math.random() * 0.6), 0.002, 0.7, to);
     }
   }
+  // Grit: a soft clip, for the buzz.
+  let grit = null;
+  function gritCurve() {
+    if (grit) return grit;
+    grit = new Float32Array(1024);
+    for (let i = 0; i < 1024; i++) { const x = (i / 1023) * 2 - 1; grit[i] = Math.tanh(x * 3.5); }
+    return grit;
+  }
 
-  /** The sheets' own voice, electric rather than glass: a carrier frequency-
-   * modulated at an unharmonic ratio, its modulation dying away fast (a metal
-   * zap that settles toward a pure tone), bent a little down as a field
-   * collapsing would, through a narrow wobbling filter, with a crackle of
-   * sparks on top. `short` shortens it. Its pitch's overtones carry it on
-   * small speakers. */
+  /** The cursor coming apart: a burst of crackling discharges over a minor
+   * chord, sad, that sags a little flat as it dies away. D minor (D F A),
+   * with the F natural the scale's F♯ would have made major. */
+  function shatter() {
+    if (!live()) return;
+    for (let i = 0; i < 6; i++) zap(D * (0.4 + Math.random() * 0.8), 0.5 + Math.random() * 0.4, Math.random() * 1.4 - 0.7, i * 0.05 + Math.random() * 0.05, 0.6);
+    sparks(ac.currentTime, 0.5, 14, 0.05);
+    minor();
+  }
+  function minor() {
+    const at = ac.currentTime, long = 2.8;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.05, at + 0.18);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + long);
+    const soft = ac.createBiquadFilter();
+    soft.type = "lowpass";
+    soft.frequency.setValueAtTime(2200, at);
+    soft.frequency.exponentialRampToValueAtTime(500, at + long);
+    soft.connect(g).connect(bus);
+    // D3 F3 A3 D4, and D2 under them for weight.
+    [[D / 2, 0.6], [D, 1], [D * Math.pow(2, 3 / 12), 0.9], [D * Math.pow(2, 7 / 12), 0.8], [D * 2, 0.5]].forEach(([f, l], i) => {
+      for (const det of [-6, 6]) {
+        const o = ac.createOscillator(), og = ac.createGain();
+        o.type = "triangle";
+        o.frequency.value = f;
+        o.detune.setValueAtTime(det, at);
+        o.detune.linearRampToValueAtTime(det - 45, at + long);
+        og.gain.value = l * 0.5;
+        o.connect(og).connect(soft);
+        o.start(at + i * 0.025);
+        o.stop(at + long + 0.05);
+      }
+    });
+  }
+
+  /** The sheets' own voice: electric and magnetic, not a note. A gritty buzz,
+   * low like mains hum (a sawtooth and a square a hair apart, beating),
+   * through a narrow resonant band that sweeps down as a discharge does, with
+   * a crackle of sparks. `f` only sets how low it hums. */
   function zap(f, strength = 0.5, pan = 0, delay = 0, short = 1) {
     if (!live()) return;
     const at = ac.currentTime + delay;
     const to = panned(pan);
     const s = Math.min(1, strength);
-    const long = (0.55 + 0.35 * s) * short;
+    const dur = (0.16 + 0.14 * s) * short;
+    const hum = f / 2.5;
     const out = ac.createGain();
     out.gain.setValueAtTime(0.0001, at);
-    out.gain.exponentialRampToValueAtTime(0.03 + 0.05 * s, at + 0.006);
-    out.gain.exponentialRampToValueAtTime(0.0001, at + long);
-    // A narrow band that wanders, as a field through a coil.
+    out.gain.exponentialRampToValueAtTime(0.03 + 0.05 * s, at + 0.004);
+    out.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    out.connect(to);
     const band = ac.createBiquadFilter();
     band.type = "bandpass";
-    band.Q.value = 3;
-    band.frequency.setValueAtTime(f * 6, at);
-    band.frequency.exponentialRampToValueAtTime(f * 2, at + long);
-    const wob = ac.createOscillator(), wobG = ac.createGain();
-    wob.frequency.value = 7 + 5 * Math.random();
-    wobG.gain.value = f * 0.8;
-    wob.connect(wobG).connect(band.frequency);
-    band.connect(out).connect(to);
-    const car = ac.createOscillator(), mod = ac.createOscillator(), idx = ac.createGain();
-    car.type = "sine";
-    mod.type = "sine";
-    car.frequency.setValueAtTime(f * 2, at);
-    car.frequency.exponentialRampToValueAtTime(f * 1.94, at + long);
-    mod.frequency.setValueAtTime(f * 2 * 1.414, at);
-    idx.gain.setValueAtTime(f * (4 + 6 * s), at);
-    idx.gain.exponentialRampToValueAtTime(f * 0.05, at + long * 0.5);
-    mod.connect(idx).connect(car.frequency);
-    car.connect(band);
-    // A dry share of the carrier, so the note is heard as well as the buzz.
-    const dry = ac.createGain();
-    dry.gain.value = 0.35;
-    car.connect(dry).connect(out);
-    // The sparks: noise, high, in a few quick spits.
-    const n = ac.createBufferSource();
-    n.buffer = noiseBuf;
-    n.playbackRate.value = 0.7 + Math.random() * 0.6;
-    const hp = ac.createBiquadFilter();
-    hp.type = "highpass";
-    hp.frequency.value = 2500;
-    const ng = ac.createGain();
-    ng.gain.setValueAtTime(0.0001, at);
-    for (let k = 0; k < 4; k++) {
-      const tk = at + k * 0.018 + Math.random() * 0.01;
-      ng.gain.setValueAtTime(0.0001, tk);
-      ng.gain.linearRampToValueAtTime((0.25 + 0.4 * s) / (k + 1), tk + 0.003);
-      ng.gain.linearRampToValueAtTime(0.0001, tk + 0.012);
-    }
-    n.connect(hp).connect(ng).connect(out);
-    for (const o of [car, mod, wob]) { o.start(at); o.stop(at + long + 0.05); }
-    n.start(at, Math.random());
-    n.stop(at + 0.12);
+    band.Q.value = 5;
+    band.frequency.setValueAtTime(2600 + 1400 * s, at);
+    band.frequency.exponentialRampToValueAtTime(420, at + dur);
+    const shape = ac.createWaveShaper();
+    shape.curve = gritCurve();
+    shape.connect(band).connect(out);
+    const saw = ac.createOscillator(), sq = ac.createOscillator(), sg = ac.createGain();
+    saw.type = "sawtooth";
+    sq.type = "square";
+    saw.frequency.value = hum;
+    sq.frequency.value = hum * 1.013;
+    sg.gain.value = 0.6;
+    saw.connect(shape);
+    sq.connect(sg).connect(shape);
+    // A jitter on the hum, as a field that will not settle.
+    const jit = ac.createOscillator(), jg = ac.createGain();
+    jit.type = "square";
+    jit.frequency.value = 23 + Math.random() * 17;
+    jg.gain.value = hum * 0.08;
+    jit.connect(jg);
+    jg.connect(saw.frequency);
+    jg.connect(sq.frequency);
+    for (const o of [saw, sq, jit]) { o.start(at); o.stop(at + dur + 0.05); }
+    sparks(at, dur * 0.8, 3 + Math.round(4 * s), 0.04 + 0.05 * s, to);
   }
 
-  /** The hole evaporating. A hole is the hotter the smaller (Hawking:
-   * T ∝ 1/M), so it sounds its forming the other way round: its low tone
-   * climbs, as 1/r_s, faster and faster as it shrinks over `shrink` s, and
-   * then goes in a burst, a deep thump and a rush of air that darkens as it
-   * dies. */
-  function evaporate(shrink = 0.6) {
+  /** A dull thud, the cursor swallowed: a low drop with the overtones small
+   * speakers can play, and no note in it. */
+  function thud(strength = 1) {
     if (!live()) return;
-    const t = ac.currentTime, end = t + shrink;
-    // The climb: the drone's root, as r_s goes from all to almost nothing.
-    const N = 48, curve = new Float32Array(N);
-    for (let i = 0; i < N; i++) {
-      const u = i / (N - 1), sm = u * u * (3 - 2 * u);
-      curve[i] = Math.min(1500, (D / 2) / Math.max(0.05, 1 - Math.pow(sm, 1.4)));
-    }
+    const at = ac.currentTime;
     const g = ac.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.03, t + 0.08);
-    g.gain.exponentialRampToValueAtTime(0.06, end - 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, end + 0.04);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.09 * strength, at + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.45);
     g.connect(bus);
-    [[1, 1, "sine"], [2, 0.45, "triangle"], [3, 0.2, "sine"]].forEach(([m, l, type]) => {
+    [[1, 1], [2.1, 0.5], [3.3, 0.25]].forEach(([m, l]) => {
       const o = ac.createOscillator(), og = ac.createGain();
-      o.type = type;
-      o.frequency.setValueCurveAtTime(curve.map((f) => f * m), t, shrink);
+      o.frequency.setValueAtTime(80 * m, at);
+      o.frequency.exponentialRampToValueAtTime(34 * m, at + 0.3);
       og.gain.value = l;
       o.connect(og).connect(g);
-      o.start(t);
-      o.stop(end + 0.1);
+      o.start(at);
+      o.stop(at + 0.5);
     });
-    // The burst. A thump that drops, with the overtones small speakers play...
-    const th = ac.createGain();
-    th.gain.setValueAtTime(0.0001, end);
-    th.gain.exponentialRampToValueAtTime(0.13, end + 0.01);
-    th.gain.exponentialRampToValueAtTime(0.0001, end + 0.6);
-    th.connect(bus);
-    [[1, 1], [2, 0.5], [3, 0.3]].forEach(([m, l]) => {
+    noise(at, 0.25, "lowpass", 900, 120, 0.04, 0.004);
+  }
+
+  /** The hole going off. First the pressure builds over `build` s, a rush of
+   * noise rising in pitch over a swelling rumble, the drone's last; then the
+   * explosion: a deep boom that drops (its overtones for small speakers), a
+   * blast of air that darkens as it spreads, debris crackling down, and a
+   * long low tail. */
+  function evaporate(build = 0.6) {
+    if (!live()) return;
+    const t = ac.currentTime, end = t + build;
+    // The build: rising, then cut dead at the blast.
+    noise(t, build, "bandpass", 300, 4500, 0.05, build * 0.9, 1.4);
+    noise(t, build, "lowpass", 60, 160, 0.06, build * 0.9, 0.9);
+    // The boom.
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, end);
+    g.gain.exponentialRampToValueAtTime(0.16, end + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, end + 1.6);
+    g.connect(bus);
+    [[1, 1], [2, 0.55], [3, 0.3], [4.2, 0.15]].forEach(([m, l]) => {
       const o = ac.createOscillator(), og = ac.createGain();
-      o.frequency.setValueAtTime(95 * m, end);
-      o.frequency.exponentialRampToValueAtTime(38 * m, end + 0.35);
+      o.frequency.setValueAtTime(70 * m, end);
+      o.frequency.exponentialRampToValueAtTime(26 * m, end + 0.9);
       og.gain.value = l;
-      o.connect(og).connect(th);
+      o.connect(og).connect(g);
       o.start(end);
-      o.stop(end + 0.7);
+      o.stop(end + 1.7);
     });
-    // ...and a rush of air, bright at first and darkening as it dies.
-    const n = ac.createBufferSource();
-    n.buffer = noiseBuf;
-    const f = ac.createBiquadFilter();
-    f.type = "lowpass";
-    f.frequency.setValueAtTime(7000, end);
-    f.frequency.exponentialRampToValueAtTime(250, end + 1.1);
-    const ng = ac.createGain();
-    ng.gain.setValueAtTime(0.0001, end);
-    ng.gain.exponentialRampToValueAtTime(0.07, end + 0.02);
-    ng.gain.exponentialRampToValueAtTime(0.0001, end + 1.2);
-    n.connect(f).connect(ng).connect(bus);
-    n.start(end);
-    n.stop(end + 1.3);
+    // The blast of air, bright at first, darkening; and a long low tail.
+    noise(end, 1.4, "lowpass", 6000, 180, 0.12, 0.006, 0.6);
+    noise(end, 3.2, "lowpass", 300, 50, 0.07, 0.05, 0.8);
+    // Debris: crackles thinning out.
+    for (let k = 0; k < 22; k++) {
+      const tk = end + 0.08 + Math.pow(Math.random(), 1.8) * 1.6;
+      noise(tk, 0.02 + Math.random() * 0.05, "bandpass", 800 + Math.random() * 2500, 600, 0.02 + Math.random() * 0.03, 0.003, 2);
+    }
   }
 
-  /** The sheets coming back out of the hole, each ringing its own note as it
-   * opens, the small ones first. */
-  function reform(tones) {
-    tones.forEach((f, i) => zap(f, 0.35, (i / Math.max(1, tones.length - 1)) * 0.8 - 0.4, 0.1 + i * 0.09));
-  }
-
-  return { start, bell, wood, zap, drone, chirp, shatter, evaporate, reform, live };
+  return { start, bell, wood, zap, thud, drone, chirp, shatter, evaporate, live };
 }

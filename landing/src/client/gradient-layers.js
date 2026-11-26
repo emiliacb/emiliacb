@@ -25,7 +25,8 @@
  * decaying as a radiating pair's does, ρ⁴ falling linearly); inside the tidal
  * radius it comes apart, stretched along the orbit and sheared by it into a
  * thread, and is gone at the shadow. After a moment the hole evaporates in a
- * flash and gives back the sheets and the cursor. Only the drawing is taken:
+ * flash and gives back the sheets and the cursor, and the blast goes through
+ * the page as through a shaken cloth (gradient/ripple.js). Only the drawing is taken:
  * the pointer itself stays where the hand is. All of it is heard
  * (gradient/sound.js).
  *
@@ -33,6 +34,7 @@
  * with reduced motion; everywhere else the sheets stay as they are drawn.
  */
 import { makeLens } from "./gradient/lens.js";
+import { makeRipple } from "./gradient/ripple.js";
 import { makeSound, note } from "./gradient/sound.js";
 
 (() => {
@@ -146,6 +148,8 @@ import { makeSound, note } from "./gradient/sound.js";
   /* ==== the hole ==== */
 
   let lens; // made on the first click (gradient/lens.js); null without WebGL
+  let ripple; // the blast's shock through the page (gradient/ripple.js)
+  let shaken = -1; // s since the blast, while the page still shakes
   // calm → gather (the sheets tremble while the page is copied) → fall (they
   // are eaten, the cursor is caught) → hold → boom → back.
   let phase = "calm", since = 0, clock = 0, eaten = 0;
@@ -195,6 +199,7 @@ import { makeSound, note } from "./gradient/sound.js";
 
   function swallow(box) {
     if (lens === undefined) lens = makeLens(host);
+    if (ripple === undefined) ripple = lens ? makeRipple(host) : null;
     // The hole's size goes with the gradient's.
     const rs = clamp(0.017 * R, 10, 18);
     // Where the circle's centre is, brought into the view far enough for the
@@ -360,9 +365,14 @@ import { makeSound, note } from "./gradient/sound.js";
     const eatenNow = phase === "fall" || phase === "hold" || (phase === "boom" && !leaves[0].out);
     if (!eatenNow) for (const l of leaves) place(l);
     if (phase !== "calm") hole(dt);
+    if (shaken >= 0) {
+      shaken += dt;
+      if (shaken < 2.6) ripple.draw(shaken);
+      else { ripple.stop(); shaken = -1; }
+    }
 
     const moving = hand.seen && Math.hypot(hand.vx, hand.vy) > 1;
-    if (visible || phase !== "calm" || moving) raf = requestAnimationFrame(frame);
+    if (visible || phase !== "calm" || moving || shaken >= 0) raf = requestAnimationFrame(frame);
   }
 
   function hole(dt) {
@@ -398,8 +408,8 @@ import { makeSound, note } from "./gradient/sound.js";
       sink = 1;
       if (since > BIG_BANG) {
         phase = "boom"; since = 0;
-        // The drone gives way to the climb (gradient/sound.js), which ends in
-        // its burst as the flash peaks.
+        // The drone gives way to the pressure building (gradient/sound.js),
+        // which goes off as the flash peaks.
         if (drone) { drone.stop(0.12); drone = null; }
         sound.evaporate(0.62);
       }
@@ -410,7 +420,11 @@ import { makeSound, note } from "./gradient/sound.js";
       now_.rs = at.rs * (1 - smooth(u) ** 1.4);
       now_.disc = (1 + 1.4 * Math.sin(Math.PI * u)) * (1 - smooth((since - 0.5) / 0.25));
       now_.flash = Math.sin(Math.PI * clamp01((since - 0.45) / 0.45));
-      if (since >= 0.62 && !leaves[0].out) giveBack(hx, hy);
+      if (since >= 0.62 && !leaves[0].out) {
+        giveBack(hx, hy);
+        // The blast shakes the page, as a cloth.
+        if (ripple && lens && ripple.start(lens.shot, at.hx, at.hy)) shaken = 0;
+      }
       if (since >= 0.95) { phase = "back"; since = 0; if (lens) lens.close(); }
     } else if (phase === "back") {
       comeBack(dt, hx, hy);
@@ -497,7 +511,7 @@ import { makeSound, note } from "./gradient/sound.js";
       c.bend(null, 0);
       c.offset(0, 0);
       if (chirp) { chirp.stop(); chirp = null; }
-      sound.wood(note(0, -1), 1, clamp((hx / innerWidth) * 2 - 1, -1, 1) * 0.6);
+      sound.thud(1);
     }
   }
 
@@ -532,7 +546,6 @@ import { makeSound, note } from "./gradient/sound.js";
   // The sheets come back out of the hole, each from its centre, and grow.
   function giveBack(hx, hy) {
     stack.classList.remove("eaten");
-    sound.reform(leaves.map((l) => l.tone).reverse());
     leaves.forEach((l, i) => {
       l.out = true;
       l.bx = at.x - W - l.x;
@@ -589,6 +602,8 @@ import { makeSound, note } from "./gradient/sound.js";
   // Back to the drawing as it is, when the page stops being a desktop one.
   function rest() {
     if (phase !== "calm") finish();
+    if (ripple) ripple.stop();
+    shaken = -1;
     stack.classList.remove("live");
     stack.style.perspectiveOrigin = "";
     for (const l of leaves) { l.el.style.transform = ""; l.el.style.opacity = ""; }
