@@ -377,7 +377,12 @@ export function makeLens(host) {
       if (k < 0) { k = tones.length; tones.push(c); }
       li.dataset.bhMarker = String(k);
     });
-    const markers = tones.map((c, k) => `[data-bh-marker="${k}"]::marker{color:${c}}`).join("");
+    // A bullet takes only a few properties of its own, and -webkit-text-fill-
+    // color, which the copy sets on every element in the text's colour, is
+    // not one: it paints over the bullet's colour unless the fill is left to
+    // follow each element's own colour (as it does on the page).
+    const markers = "li,li *{-webkit-text-fill-color:currentcolor!important}" +
+      tones.map((c, k) => `[data-bh-marker="${k}"]::marker{color:${c}}`).join("");
     let img;
     try {
       // Only those rows are drawn: the shell moved up out of a frame that
