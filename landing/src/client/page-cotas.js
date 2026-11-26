@@ -414,6 +414,8 @@
   }
   addEventListener("pointermove", (e) => {
     if (e.pointerType === "touch") return; // a finger scrolls the page
+    // A mouse the page holds (gradient-layers.js) has no place of its own.
+    if (document.pointerLockElement || document.documentElement.hasAttribute("data-pointer-held")) return;
     feed(e.clientX, e.clientY, e.timeStamp);
   }, { passive: true });
   document.addEventListener("pointerleave", () => { here = false; kick(); });

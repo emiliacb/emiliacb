@@ -26,8 +26,10 @@
  * radius it comes apart, stretched along the orbit and sheared by it into a
  * thread, and is gone at the shadow. After a moment the hole evaporates in a
  * flash and gives back the sheets and the cursor, and the blast goes through
- * the page as through a shaken cloth (gradient/ripple.js). Only the drawing
- * is taken: the mouse itself moves freely all along. All of it is heard
+ * the page as through a shaken cloth (gradient/ripple.js). From the click
+ * the page has the mouse (Pointer Lock): it is hidden, and its moves still
+ * take the drawn cursor about, until the hole catches it; from then on the
+ * hand cannot move it. It is given back at the end. All of it is heard
  * (gradient/sound.js).
  *
  * Desktop only, (min-width: 768px) and a fine pointer that can hover, and not
@@ -136,6 +138,7 @@ import { makeSound, note } from "./gradient/sound.js";
   const hand = { x: -1e4, y: -1e4, lastX: -1e4, lastY: -1e4, vx: 0, vy: 0, seen: false };
   addEventListener("pointermove", (e) => {
     if (e.pointerType !== "mouse") return;
+    if (root.hasAttribute("data-pointer-held")) return; // held: see held, below
     hand.x = e.clientX;
     hand.y = e.clientY;
     if (!hand.seen) { hand.lastX = hand.x; hand.lastY = hand.y; hand.seen = true; }
@@ -238,6 +241,12 @@ import { makeSound, note } from "./gradient/sound.js";
     hideHint();
     // What falls in, and comes back out, is the arrow.
     cursor()?.hold("default");
+    // The page takes the mouse (the Pointer Lock API, which the click
+    // allows): hidden, its moves read and given to the drawn cursor, which
+    // still goes where the hand takes it, until the hole catches it.
+    capture(true);
+    // And the page holds still from the click until it has stopped shaking.
+    lockScroll(true);
     sound.start();
     drone = sound.drone();
     wake();
@@ -377,6 +386,11 @@ import { makeSound, note } from "./gradient/sound.js";
     const eatenNow = phase === "fall" || phase === "hold" || (phase === "boom" && !leaves[0].out);
     if (!eatenNow) for (const l of leaves) place(l);
     if (phase !== "calm") hole(dt);
+    // Captured but not yet caught: the drawn cursor is where the hand takes it.
+    if (held.on && !orbit.on && (phase === "gather" || phase === "fall")) {
+      const c = cursor();
+      if (c) c.offset(held.x - c.x, held.y - c.y);
+    }
     if (shaken >= 0) {
       shaken += dt;
       if (shaken < 2.6) ripple.draw(shaken);
@@ -426,8 +440,6 @@ import { makeSound, note } from "./gradient/sound.js";
       sink = 1;
       if (since > BIG_BANG) {
         phase = "boom"; since = 0;
-        // From the blast until the page has stopped shaking, it stays put.
-        lockScroll(true);
         // The drone gives way to the pressure building (gradient/sound.js),
         // which goes off as the flash peaks.
         if (drone) { drone.stop(0.12); drone = null; }
@@ -506,17 +518,20 @@ import { makeSound, note } from "./gradient/sound.js";
     const rs = Math.max(1, now_.rs);
     const w0 = TAU / PERIOD0;
     if (!orbit.on) {
+      // Caught where it is drawn; from here on the hand no longer moves it.
+      const at0 = where(c);
       orbit.on = true;
       orbit.catch = 0;
-      orbit.th = Math.atan2(c.y - hy, c.x - hx);
-      orbit.rho = Math.hypot(c.x - hx, c.y - hy) / rs;
+      orbit.fx = at0.x; orbit.fy = at0.y;
+      orbit.th = Math.atan2(at0.y - hy, at0.x - hx);
+      orbit.rho = Math.hypot(at0.x - hx, at0.y - hy) / rs;
       chirp = sound.chirp();
     }
     orbit.catch += dt;
     const e = smooth(orbit.catch / CATCH);
     if (orbit.catch < CATCH) {
-      // From the hand into the orbit: drawn in, and turning ever more.
-      const from = Math.hypot(c.x - hx, c.y - hy) / rs;
+      // From where it was caught into the orbit: drawn in, and turning ever more.
+      const from = Math.hypot(orbit.fx - hx, orbit.fy - hy) / rs;
       orbit.rho = from + (RHO0 - from) * e;
       orbit.w = w0 * e * Math.pow(RHO0 / Math.max(orbit.rho, RHO0), 1.5);
     } else {
@@ -653,7 +668,52 @@ import { makeSound, note } from "./gradient/sound.js";
     }
   }
 
+  // The mouse while the page has it: where the hand has taken the drawn
+  // cursor since (its moves, added up, kept on the screen). The page counts
+  // it as held from asking for it (html[data-pointer-held], which the other
+  // scripts that follow the mouse heed), since a browser may report a move
+  // to nowhere in between.
+  const held = { on: false, x: 0, y: 0 };
+  const where = (c) => (held.on ? { x: held.x, y: held.y } : { x: c.x, y: c.y });
+  function letGo() {
+    if (!held.on) return;
+    held.on = false;
+    root.removeAttribute("data-pointer-held");
+    // The drawn cursor goes back to the hand, unless the hole has it.
+    if (!orbit.on) { const c = cursor(); if (c) c.offset(0, 0); }
+  }
+  document.addEventListener("pointerlockchange", () => {
+    if (document.pointerLockElement !== host) letGo(); // let go (Esc), or given back
+  });
+  document.addEventListener("pointerlockerror", letGo);
+  document.addEventListener("mousemove", (e) => {
+    if (!held.on || orbit.on || document.pointerLockElement !== host) return;
+    held.x = clamp(held.x + e.movementX, 0, root.clientWidth);
+    held.y = clamp(held.y + e.movementY, 0, innerHeight);
+  });
+  function capture(on) {
+    if (on) {
+      held.on = true;
+      held.x = hand.x;
+      held.y = hand.y;
+      root.setAttribute("data-pointer-held", "");
+      try {
+        const r = host.requestPointerLock && host.requestPointerLock();
+        if (r && r.catch) r.catch(letGo);
+        if (!host.requestPointerLock) letGo();
+      } catch {
+        letGo();
+      }
+    } else {
+      if (document.pointerLockElement === host) document.exitPointerLock();
+      letGo();
+    }
+  }
+
   function finish() {
+    // The mouse is given back; the cursor has come back to where it was
+    // taken, which is where the browser puts the mouse back.
+    capture(false);
     phase = "calm";
     since = 0;
     orbit.back = null;
