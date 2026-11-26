@@ -24,7 +24,8 @@ type LayoutProps = {
   withMarkdown?: boolean;
   /**
    * Dimension the page in ink (src/client/page-cotas.js). On every page by
-   * default; with the tree, without the pointer's rings, which it draws itself.
+   * default, without the pointer's air: that is the home's alone, where the
+   * tree draws it.
    */
   withCotas?: boolean;
 
@@ -383,7 +384,7 @@ document.head.appendChild(o)}initApollo();</script>
         <script src="${ctx.assets.script("layout")}" defer></script>
         <script src="${ctx.assets.script("navigation")}" defer></script>
         ${withCotas
-          ? html`<script src="${ctx.assets.script("page-cotas")}" data-air="${withIlustration ? "off" : "on"}" defer></script>`
+          ? html`<script src="${ctx.assets.script("page-cotas")}" data-air="off" defer></script>`
           : null}
         ${withIlustration
           ? null

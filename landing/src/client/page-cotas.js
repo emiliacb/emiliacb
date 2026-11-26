@@ -9,7 +9,8 @@
 (() => {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   // data-air="off" on the script tag leaves the pointer's rule and
-  // acceleration out, for the pages whose tree draws its own.
+  // acceleration out. Every page has it off for now: the pointer's air is
+  // the home's alone, where the tree draws its own.
   const NO_AIR = !!(document.currentScript && document.currentScript.dataset.air === "off");
   const canvas = document.createElement("canvas");
   canvas.className = "page-cotas-plate";
@@ -722,10 +723,7 @@
     g.clearRect(0, 0, W, Hh);
     // Over something dimensioned the pointer's air steps aside for its cota.
     if (under) stowed = true;
-    // Where something else carries the pointer's air (the gradient's sheets
-    // and their black hole, gradient-layers.js), this one steps aside.
-    const held = document.documentElement.hasAttribute("data-air-held");
-    const wantAir = stowed || held ? 0 : 1;
+    const wantAir = stowed ? 0 : 1;
     airVis += (wantAir - airVis) * (1 - Math.exp(-dt / (wantAir > airVis ? 0.2 : 0.1)));
     if (Math.abs(wantAir - airVis) < 0.004) airVis = wantAir;
     else live = true;

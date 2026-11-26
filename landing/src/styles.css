@@ -1070,8 +1070,7 @@ dropdown-trigger[variant="prose"] a::before {
   }
 }
 
-.page-cotas-plate,
-.grad-air {
+.page-cotas-plate {
   position: fixed;
   inset: 0;
   width: 100%;

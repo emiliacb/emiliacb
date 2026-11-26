@@ -29,10 +29,6 @@
  * the pointer itself stays where the hand is. All of it is heard
  * (gradient/sound.js).
  *
- * The pointer carries the tree's air, its contact ring, its wake and its
- * velocity on a rule, near the sheets and while it falls; page-cotas.js
- * leaves the pointer to this meanwhile (html[data-air-held]).
- *
  * Desktop only, (min-width: 768px) and a fine pointer that can hover, and not
  * with reduced motion; everywhere else the sheets stay as they are drawn.
  */
@@ -223,7 +219,6 @@ import { makeSound, note } from "./gradient/sound.js";
     eaten = 0;
     phase = "gather";
     since = 0;
-    root.setAttribute("data-air-held", "");
     // What falls in, and comes back out, is the arrow.
     cursor()?.hold("default");
     sound.start();
@@ -365,11 +360,9 @@ import { makeSound, note } from "./gradient/sound.js";
     const eatenNow = phase === "fall" || phase === "hold" || (phase === "boom" && !leaves[0].out);
     if (!eatenNow) for (const l of leaves) place(l);
     if (phase !== "calm") hole(dt);
-    follow(dt);
-    drawAir();
 
     const moving = hand.seen && Math.hypot(hand.vx, hand.vy) > 1;
-    if (visible || phase !== "calm" || moving || inked) raf = requestAnimationFrame(frame);
+    if (visible || phase !== "calm" || moving) raf = requestAnimationFrame(frame);
   }
 
   function hole(dt) {
@@ -584,103 +577,6 @@ import { makeSound, note } from "./gradient/sound.js";
     if (lens) lens.close();
   }
 
-  /* ==== the tree's air, round the drawn cursor ==== */
-
-  const plate = document.createElement("canvas");
-  plate.className = "grad-air";
-  plate.setAttribute("aria-hidden", "true");
-  document.body.append(plate);
-  const g = plate.getContext("2d");
-  let pw = 0, ph = 0, pdpr = 1, inked = false;
-  function sizePlate() {
-    pdpr = Math.min(2, devicePixelRatio || 1);
-    pw = innerWidth; ph = innerHeight;
-    plate.width = Math.round(pw * pdpr);
-    plate.height = Math.round(ph * pdpr);
-  }
-  const TONE = {};
-  let lift = 1;
-  function readTheme() {
-    const cs = getComputedStyle(root);
-    TONE.ring = cs.getPropertyValue("--cota-length").trim();
-    TONE.push = cs.getPropertyValue("--cota-force").trim();
-    const th = root.dataset.theme;
-    const dark = th === "dark" || (th !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
-    lift = dark ? 1 : 1.3;
-  }
-  // The light theme's opacity lift, as on the tree and the page's cotas.
-  const A = (x) => (lift === 1 ? x : 1 - Math.pow(1 - clamp01(x), lift));
-
-  const CONTACT = 24, WAKE = 80, V1 = 2600, FULL = 110;
-  const air = { a: 0, t: 0, cur: 0, hold: 0, x: 0, y: 0, lx: 0, ly: 0, vx: 0, vy: 0, set: false };
-  function follow(dt) {
-    const c = cursor();
-    // Where the cursor is drawn: on its orbit, on its way back, or the hand.
-    const drawn = (phase === "fall" && orbit.on) || (phase === "back" && orbit.back);
-    const x = drawn ? orbit.x : hand.x;
-    const y = drawn ? orbit.y : hand.y;
-    if (!air.set) { air.lx = x; air.ly = y; air.set = true; }
-    const vx = (x - air.lx) / dt, vy = (y - air.ly) / dt;
-    air.lx = x; air.ly = y;
-    const k = 1 - Math.exp(-dt / 0.04);
-    air.vx += (vx - air.vx) * k; air.vy += (vy - air.vy) * k;
-    air.x = x; air.y = y;
-    // Near the sheets, or caught by the hole, the air is this one's.
-    let near = false;
-    if (box && hand.seen && c && c.on) near = Math.hypot(hand.x - (box.left + W), hand.y - (box.top + H / 2)) < 0.3 * R + WAKE;
-    const shown = phase === "calm" ? near : phase === "fall" ? orbit.on && !orbit.gone : phase === "back";
-    air.a += ((shown ? 1 : 0) - air.a) * (1 - Math.exp(-dt / 0.1));
-    if (air.a < 0.004) air.a = 0;
-    const speed = Math.hypot(air.vx, air.vy);
-    air.t += (Math.min(1, speed / V1) - air.t) * (1 - Math.exp(-dt / 0.05));
-    if (shown && speed > 40) air.hold = 0.16;
-    else air.hold = Math.max(0, air.hold - dt);
-    const w = air.hold > 0 ? 1 : 0;
-    air.cur += (w - air.cur) * (1 - Math.exp(-dt / (w > air.cur ? 0.05 : 0.2)));
-    if (air.cur < 0.004) air.cur = 0;
-    const held = air.a > 0 || phase !== "calm";
-    if (held !== root.hasAttribute("data-air-held")) root.toggleAttribute("data-air-held", held);
-  }
-  function drawAir() {
-    g.setTransform(pdpr, 0, 0, pdpr, 0, 0);
-    if (inked) g.clearRect(0, 0, pw, ph);
-    inked = air.a >= 0.01;
-    if (!inked) return;
-    const { x, y } = air;
-    g.strokeStyle = g.fillStyle = TONE.ring;
-    g.lineWidth = 0.8 + 1.2 * air.t;
-    g.globalAlpha = A(air.a * (0.4 + 0.5 * air.t));
-    g.beginPath(); g.arc(x, y, CONTACT, 0, TAU); g.stroke();
-    g.lineWidth = 0.7;
-    g.globalAlpha = A(air.a * 0.3);
-    g.beginPath(); g.arc(x, y, WAKE, 0, TAU); g.stroke();
-    // Its velocity on a rule, the arrow reaching as far along it as t.
-    const sp = Math.hypot(air.vx, air.vy);
-    if (sp > 30 && air.cur > 0.01) {
-      g.strokeStyle = g.fillStyle = TONE.push;
-      const ux = air.vx / sp, uy = air.vy / sp;
-      const x0 = x + ux * CONTACT, y0 = y + uy * CONTACT;
-      g.globalAlpha = A(air.a * air.cur * 0.55);
-      g.lineWidth = 1;
-      g.beginPath();
-      g.moveTo(x0, y0); g.lineTo(x0 + ux * FULL, y0 + uy * FULL);
-      for (let k = 0; k <= 10; k++) {
-        const len = k % 5 === 0 ? 6 : 3;
-        const px = x0 + ux * FULL * (k / 10), py = y0 + uy * FULL * (k / 10);
-        g.moveTo(px, py); g.lineTo(px - uy * len, py + ux * len);
-      }
-      g.stroke();
-      const ax = x0 + ux * FULL * air.t, ay = y0 + uy * FULL * air.t;
-      g.globalAlpha = A(air.a * air.cur);
-      g.lineWidth = 1.7;
-      g.beginPath(); g.moveTo(x0, y0); g.lineTo(ax, ay); g.stroke();
-      // Its head: closed and filled, three times as long as wide.
-      const L = 9, hw = L / 6, bx = ax - ux * L, by = ay - uy * L;
-      g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx - uy * hw, by + ux * hw); g.lineTo(bx + uy * hw, by - ux * hw); g.closePath(); g.fill();
-    }
-    g.globalAlpha = 1;
-  }
-
   /* ==== setting up, and putting away ==== */
 
   // Back to the drawing as it is, when the page stops being a desktop one.
@@ -689,22 +585,16 @@ import { makeSound, note } from "./gradient/sound.js";
     stack.classList.remove("live");
     stack.style.perspectiveOrigin = "";
     for (const l of leaves) { l.el.style.transform = ""; l.el.style.opacity = ""; }
-    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, plate.width, plate.height); inked = false;
-    root.removeAttribute("data-air-held");
   }
 
   function start() {
     if (!desk.matches) { rest(); return; }
     measure();
-    sizePlate();
-    readTheme();
     stack.classList.add("live");
     wake();
   }
 
-  addEventListener("resize", () => { measure(); sizePlate(); }, { passive: true });
-  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", readTheme);
-  new MutationObserver(readTheme).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+  addEventListener("resize", measure, { passive: true });
   desk.addEventListener("change", start);
   new IntersectionObserver((entries) => {
     visible = entries[entries.length - 1].isIntersecting;
