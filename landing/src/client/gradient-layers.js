@@ -26,8 +26,9 @@
  * radius it comes apart, stretched along the orbit and sheared by it into a
  * thread, and is gone at the shadow. After a moment the hole evaporates in a
  * flash and gives back the sheets and the cursor, and the blast goes through
- * the page as through a shaken cloth (gradient/ripple.js). Only the drawing is taken:
- * the pointer itself stays where the hand is. All of it is heard
+ * the page as through a shaken cloth (gradient/ripple.js). The mouse itself
+ * is caught too: hidden and held still where it clicked (Pointer Lock) until
+ * the cursor is given back. All of it is heard
  * (gradient/sound.js).
  *
  * Desktop only, (min-width: 768px) and a fine pointer that can hover, and not
@@ -238,6 +239,10 @@ import { makeSound, note } from "./gradient/sound.js";
     hideHint();
     // What falls in, and comes back out, is the arrow.
     cursor()?.hold("default");
+    // And the mouse itself is caught: hidden and held where it clicked, so
+    // the cursor the hole takes is the only one (the Pointer Lock API, which
+    // the click allows; the browser says Esc lets it go, and it does).
+    capture(true);
     sound.start();
     drone = sound.drone();
     wake();
@@ -653,7 +658,22 @@ import { makeSound, note } from "./gradient/sound.js";
     }
   }
 
+  function capture(on) {
+    try {
+      if (on) {
+        const r = host.requestPointerLock && host.requestPointerLock();
+        if (r && r.catch) r.catch(() => {});
+      } else if (document.pointerLockElement === host) {
+        document.exitPointerLock();
+      }
+    } catch {
+      // No pointer lock here: the cursor is still drawn falling in.
+    }
+  }
+
   function finish() {
+    // The mouse is let go where it was caught, as the cursor comes back to it.
+    capture(false);
     phase = "calm";
     since = 0;
     orbit.back = null;
@@ -683,17 +703,27 @@ import { makeSound, note } from "./gradient/sound.js";
     const core = leaves[leaves.length - 1];
     const vw = root.clientWidth, vh = innerHeight;
     const cx = box0.left + core.ax, cy = box0.top + core.ay;
-    // The core must show for the sign to point at it.
-    if (cx < 0 || cy < 60 || cy > vh + 40) return;
-    const ax = Math.min(cx - 40, vw - 60), ay = clamp(cy - 30, 180, vh - 50);
+    // The core must show for the sign to be on it.
+    if (cx < -0.1 * R || cy < -0.1 * R || cy > vh + 0.1 * R) return;
+    // On the gradient where it shows: a little in from the core's centre,
+    // toward the middle of the screen, kept on the screen and well inside
+    // the gradient's rings.
+    const tx = vw / 2 - cx, ty = vh / 2 - cy, td = Math.hypot(tx, ty) || 1;
+    let px = cx + (tx / td) * Math.min(0.12 * R, td);
+    let py = cy + (ty / td) * Math.min(0.12 * R, td);
+    px = clamp(px, 50, vw - 50);
+    py = clamp(py, 50, vh - 50);
+    const off = Math.hypot(px - cx, py - cy), most = 0.22 * R;
+    if (off > most) return;
     const NS = "http://www.w3.org/2000/svg";
     const el = document.createElement("div");
     el.className = "grad-hint";
     el.setAttribute("aria-hidden", "true");
-    // Up and to the left of the core, clear of it: the sign's centre is at
-    // (75, 48) in the drawing, (79, 52) on the page.
-    el.style.left = `${Math.round(ax - 79 - 60)}px`;
-    el.style.top = `${Math.round(ay - 52 - 60)}px`;
+    // In the page with the gradient, so it scrolls with it. The sign's centre
+    // is at (75, 48) in the drawing, (79, 52) in the element.
+    const hb = host.getBoundingClientRect();
+    el.style.left = `${Math.round(px - hb.left - 79)}px`;
+    el.style.top = `${Math.round(py - hb.top - 52)}px`;
     el.innerHTML = `
       <svg viewBox="-4 -4 182 136" width="182" height="136" xmlns="${NS}">
         <g transform="translate(53 23) scale(1.6)">
@@ -705,7 +735,7 @@ import { makeSound, note } from "./gradient/sound.js";
         <circle class="no" pathLength="1" cx="75" cy="48" r="34"/>
         <path class="no" pathLength="1" d="M51 24L99 72"/>
       </svg>`;
-    document.body.appendChild(el);
+    host.appendChild(el);
     hint = el;
     requestAnimationFrame(() => el.classList.add("on"));
     setTimeout(hideHint, HINT_FOR);
