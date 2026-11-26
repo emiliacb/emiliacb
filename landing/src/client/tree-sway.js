@@ -967,26 +967,6 @@ try {
 } catch {
   // No storage: wanted, as for a first visit.
 }
-// Whether the tree has been heard in this visit to the site, on any of its
-// pages. Until it has, the tree asks for it with its window, even where the
-// browser would already let it play (pressing a link on the way here is
-// enough for that): the window is the way in. After, it is heard at once.
-const HEARD_KEY = "tree-sound-heard";
-const heard = () => {
-  try {
-    return sessionStorage.getItem(HEARD_KEY) === "1";
-  } catch {
-    return false;
-  }
-};
-function nowHeard() {
-  try {
-    sessionStorage.setItem(HEARD_KEY, "1");
-  } catch {
-    // Not kept: it asks again on the next page.
-  }
-  answerHint();
-}
 
 /** Turns the sound on or off. Called from a press, which is also what lets it start. */
 function setSound(yes) {
@@ -1028,13 +1008,10 @@ function startSound() {
       bus.connect(echo).connect(dull).connect(back).connect(echo);
       dull.connect(wet).connect(out);
       ac.addEventListener("statechange", () => {
-        if (ac.state === "running") nowHeard();
+        if (ac.state === "running") answerHint();
       });
       sound.ac = ac;
       sound.bus = bus;
-      // Made already running (the browser lets this page play), it changes
-      // no state, and says nothing.
-      if (ac.state === "running") nowHeard();
     }
     if (sound.ac.state === "suspended") sound.ac.resume();
   } catch {
@@ -1191,7 +1168,7 @@ function dragHint(event) {
 }
 
 function offerSound() {
-  if (hint || dropPill || !sound.want || heard() || (sound.ac && sound.ac.state === "running")) return;
+  if (hint || dropPill || !sound.want || !sound.ac || sound.ac.state === "running") return;
   const es = (document.documentElement.lang || "").startsWith("es");
   const t = es
     ? { title: "Decisión", name: "árbol", spell: "ą̨̙͔͙͖̜̟̩̹̗̏̀̐̑̂͞r͇̘̳̀̔̆b͚̟̘͈͖̹̬̙͔̱̾̑̋ͩ͋ͣ̌̍͛͑͐o̸̶̡̩̘̘ͤͬͦ͋̒̏̀̒͛̏ͮl̡͚͍̹̭͓͈̠̇͑̈̍̆ͩ̂ͨ̔̓̓͢͝", wants: "quiere ser escuchado", ignore: "Ignorar", allow: "Permitir", close: "Cerrar" }
@@ -1346,10 +1323,10 @@ const middle = () => [document.documentElement.clientWidth / 2, document.documen
 
 /** Any first press on the page is what lets the sound start; once it is running
  * there is nothing left to wait for. Not one on the window that asks for it:
- * that one is answered by its own buttons. Nor one on a link: the page is
- * being left, and the next one should still ask with its window, not find
- * the tree already playing. Nor one on a dropdown (the navbar's About, the
- * language menu): it only opens a menu, and its own links lead away. */
+ * that one is answered by its own buttons. Nor one on the page's navigation:
+ * a link, or a dropdown (the navbar's About, the language menu), which only
+ * opens a menu whose links lead away. Starting the sound there would answer
+ * the window before it is seen. */
 function onFirstPress(event) {
   if (hint && hint.contains(event.target)) return;
   if (event.target instanceof Element && event.target.closest("a[href], dropdown-trigger")) return;
@@ -2813,10 +2790,10 @@ if (box && svg && woodEl && !reduced && setup()) {
   window.addEventListener("pointermove", track, { passive: true });
   if (COARSE) listenMotion();
   else setTimeout(offerSound, HINT_AFTER);
-  // Heard already in this visit, the tree is heard at once wherever the
-  // browser lets this page play (it was pressed on the way here from another
-  // page of the site). Otherwise it asks first, with its window, and waits.
-  if (heard()) startSound();
+  // Where the browser already lets this page play (it was pressed on the way
+  // here from another page of the site, or its visitor allows it sound), the
+  // tree is heard at once. Everywhere else it waits for the first press.
+  startSound();
   for (const type of FIRST_PRESS) window.addEventListener(type, onFirstPress, { capture: true, passive: true });
   window.addEventListener(SOUND_KEY, (event) => setSound(!!event.detail));
   document.documentElement.addEventListener("pointerleave", release);
