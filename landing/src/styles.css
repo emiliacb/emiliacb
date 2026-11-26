@@ -691,10 +691,10 @@ html.ai-layout-enabled #activity-panel {
   width: 16px;
   height: 16px;
   padding: 0;
-  /* Greyed as the window's own edge, not in full ink. */
-  border: 1px solid var(--ask-close-line);
+  /* Greyed, cross and edge, as the window's own edge: not in full ink. */
+  border: 1px solid currentColor;
   background: transparent;
-  color: inherit;
+  color: var(--ask-close-line);
 }
 .tree-sound-ask-close svg {
   width: 9px;
@@ -725,7 +725,7 @@ html.ai-layout-enabled #activity-panel {
   position: absolute;
   top: 0;
   left: 50%;
-  translate: -50% calc(var(--at) * 0.34em);
+  translate: -50% calc(var(--at) * 0.2em);
   white-space: pre;
   pointer-events: none;
 }
