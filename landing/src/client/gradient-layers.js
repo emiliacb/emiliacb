@@ -231,6 +231,7 @@ import { makeSound, note } from "./gradient/sound.js";
     eaten = 0;
     phase = "gather";
     since = 0;
+    hideHint();
     // What falls in, and comes back out, is the arrow.
     cursor()?.hold("default");
     sound.start();
@@ -620,6 +621,55 @@ import { makeSound, note } from "./gradient/sound.js";
     if (lens) lens.close();
   }
 
+  /* ==== a word before it happens ==== */
+
+  // Once, a moment after the page opens, a sign by the gradient's core: a
+  // pointing hand pressing, struck through. Drawn in the cotas' ink, as if
+  // being sketched; it stays a few seconds and goes, or goes at once when the
+  // hole is made.
+  const HINT_AFTER = 3000, HINT_FOR = 4200;
+  let hint = null;
+  function showHint() {
+    if (phase !== "calm" || !desk.matches || !visible || document.hidden) return;
+    const box0 = stack.getBoundingClientRect();
+    const core = leaves[leaves.length - 1];
+    const vw = root.clientWidth, vh = innerHeight;
+    const cx = box0.left + core.ax, cy = box0.top + core.ay;
+    // The core must show for the sign to point at it.
+    if (cx < 0 || cy < 60 || cy > vh + 40) return;
+    const ax = Math.min(cx - 40, vw - 60), ay = clamp(cy - 30, 180, vh - 50);
+    const NS = "http://www.w3.org/2000/svg";
+    const el = document.createElement("div");
+    el.className = "grad-hint";
+    el.setAttribute("aria-hidden", "true");
+    // Up and to the left of the core, clear of it: the sign's centre is at
+    // (75, 48) in the drawing, (79, 52) on the page.
+    el.style.left = `${Math.round(ax - 79 - 60)}px`;
+    el.style.top = `${Math.round(ay - 52 - 60)}px`;
+    el.innerHTML = `
+      <svg viewBox="-4 -4 182 136" width="182" height="136" xmlns="${NS}">
+        <g transform="translate(53 23) scale(1.6)">
+          <path class="ring r1" pathLength="1" d="M8.5 5.5A3.5 3.5 0 0 1 15.5 5.5"/>
+          <path class="ring r2" pathLength="1" d="M6 5.5A6 6 0 0 1 18 5.5"/>
+          <path class="hand" pathLength="1" d="M10.5 5.5A1.5 1.5 0 0 1 13.5 5.5V13A1.5 1.5 0 0 1 16.5 13V14A1.5 1.5 0 0 1 19.5 14V15A1.5 1.5 0 0 1 22.5 15V21C22.5 25 20.5 28 17 28H14C11.5 28 10 26.5 8.5 24.5L5.2 19.6A1.6 1.6 0 0 1 7.8 17.6L10.5 20Z"/>
+          <path class="hand" pathLength="1" d="M13.5 13V17M16.5 14V17M19.5 15V17"/>
+        </g>
+        <circle class="no" pathLength="1" cx="75" cy="48" r="34"/>
+        <path class="no" pathLength="1" d="M51 24L99 72"/>
+      </svg>`;
+    document.body.appendChild(el);
+    hint = el;
+    requestAnimationFrame(() => el.classList.add("on"));
+    setTimeout(hideHint, HINT_FOR);
+  }
+  function hideHint() {
+    const el = hint;
+    if (!el) return;
+    hint = null;
+    el.classList.remove("on");
+    setTimeout(() => el.remove(), 500);
+  }
+
   /* ==== setting up, and putting away ==== */
 
   // Back to the drawing as it is, when the page stops being a desktop one.
@@ -627,6 +677,7 @@ import { makeSound, note } from "./gradient/sound.js";
     if (phase !== "calm") finish();
     if (ripple) ripple.stop();
     shaken = -1;
+    hideHint();
     stack.classList.remove("live");
     stack.style.perspectiveOrigin = "";
     for (const l of leaves) { l.el.style.transform = ""; l.el.style.opacity = ""; }
@@ -647,4 +698,5 @@ import { makeSound, note } from "./gradient/sound.js";
   }).observe(stack);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) wake(); });
   start();
+  setTimeout(showHint, HINT_AFTER);
 })();
