@@ -1019,53 +1019,103 @@ function startSound() {
   }
 }
 
-// Where the browser is still waiting for a press before it plays, a speaker
-// on the tree itself, low on its trunk and in its colour, says there is
-// something to hear.
-// Pressing it is such a press, and so is any other: either way it goes as soon
-// as the sound runs. It only ever turns the sound on; turning it off is the
-// footer's switch. It is given a moment first, for a browser that needs no
-// press to show it, and stays away while the pill is asking for the phone's
-// motion: that tap starts the sound too.
+// Where the browser is still waiting for a press before it plays, a small
+// window on the tree's trunk asks for it the way a browser asks for the
+// microphone, under the site's own name: "tree" wants to play sound, Ignore
+// or Allow. Allowing is that press. Ignoring (or its close box, or Escape)
+// leaves the tree quiet for this visit, as the footer's switch would, without
+// keeping it: the switch shows it and can turn the sound back on. Any other
+// press on the page still starts the sound and takes the window away; presses
+// on the window itself do not, so it can be dragged by its title bar without
+// answering it. It is given a moment first, for a browser that needs no press
+// to show it, and stays away while the pill is asking for the phone's motion:
+// that tap starts the sound too.
 const HINT_AFTER = 600;
-const HINT_UP = 0.3; // how far up the trunk it sits, from the ground
+const HINT_UP = 0.5; // how far up the trunk its centre sits, from the ground
+const HINT_EDGE = 8; // px kept clear of the tree's box, which clips it
 let hint = null;
+let hintMoved = false; // once dragged, it stays where it was put
 
-/** Puts the speaker on the trunk, wherever the drawing is on the page now. */
+/** Centres the window on the trunk, wherever the drawing is on the page now, inside the tree's box. */
 function placeHint() {
-  if (!hint) return;
+  if (!hint || hintMoved) return;
   const trunk = limbs[0];
   const i = Math.round((trunk.n - 1) * HINT_UP);
-  hint.style.left = `${(ox + trunk.rx[i] * sc).toFixed(1)}px`;
-  hint.style.top = `${(oy + trunk.ry[i] * sc).toFixed(1)}px`;
-  // In the wood's own colour where it sits: the drawing's gradient, read at
-  // that height. The stylesheet darkens or lightens it from there.
-  const grad = svg.querySelector("#tree-wood");
-  const stops = grad ? [...grad.querySelectorAll("stop")].map((st) => (st.getAttribute("stop-color").match(/\d+/g) || []).map(Number)) : [];
-  if (stops.length < 2 || stops.some((c) => c.length !== 3)) return;
-  const y1 = Number(grad.getAttribute("y1"));
-  const y2 = Number(grad.getAttribute("y2"));
-  const t = Math.max(0, Math.min(1, (trunk.ry[i] - y1) / (y2 - y1 || 1)));
-  const [from, to] = [stops[0], stops[stops.length - 1]];
-  hint.style.color = `rgb(${from.map((c, k) => Math.round(c + (to[k] - c) * t)).join(" ")})`;
+  const w = hint.offsetWidth / 2;
+  const h = hint.offsetHeight / 2;
+  const x = Math.max(w + HINT_EDGE, Math.min(box.clientWidth - w - HINT_EDGE, ox + trunk.rx[i] * sc));
+  const y = Math.max(h + HINT_EDGE, Math.min(box.clientHeight - h - HINT_EDGE, oy + trunk.ry[i] * sc));
+  hint.style.left = `${(x - w).toFixed(1)}px`;
+  hint.style.top = `${(y - h).toFixed(1)}px`;
+}
+
+/** Leaves the tree quiet for this visit: told as the footer's switch tells it, so the switch shows it too. */
+function ignoreSound() {
+  window.dispatchEvent(new CustomEvent(SOUND_KEY, { detail: false }));
+  dropHint();
+}
+
+/** Drags the window by its title bar, held inside the tree's box. */
+function dragHint(event) {
+  if (event.button !== 0 || event.target.closest("button")) return;
+  const el = hint;
+  const bar = event.currentTarget;
+  event.preventDefault();
+  bar.setPointerCapture(event.pointerId);
+  const dx = event.clientX - el.offsetLeft;
+  const dy = event.clientY - el.offsetTop;
+  const maxX = box.clientWidth - el.offsetWidth - HINT_EDGE;
+  const maxY = box.clientHeight - el.offsetHeight - HINT_EDGE;
+  const move = (e) => {
+    hintMoved = true;
+    el.style.left = `${Math.max(HINT_EDGE, Math.min(maxX, e.clientX - dx))}px`;
+    el.style.top = `${Math.max(HINT_EDGE, Math.min(maxY, e.clientY - dy))}px`;
+  };
+  const end = () => {
+    bar.removeEventListener("pointermove", move);
+    bar.removeEventListener("pointerup", end);
+    bar.removeEventListener("pointercancel", end);
+  };
+  bar.addEventListener("pointermove", move);
+  bar.addEventListener("pointerup", end);
+  bar.addEventListener("pointercancel", end);
 }
 
 function offerSound() {
   if (hint || dropPill || !sound.want || !sound.ac || sound.ac.state === "running") return;
   const es = (document.documentElement.lang || "").startsWith("es");
-  hint = document.createElement("button");
-  hint.type = "button";
-  hint.className = "tree-sound-hint";
-  // Lucide's "volume-2", as the footer's switch wears.
+  const t = es
+    ? { title: location.hostname, ask: "“árbol” quiere reproducir sonido", ignore: "Ignorar", allow: "Permitir", close: "Cerrar" }
+    : { title: location.hostname, ask: "“tree” wants to play sound", ignore: "Ignore", allow: "Allow", close: "Close" };
+  hint = document.createElement("div");
+  hint.className = "tree-sound-ask";
+  hint.setAttribute("role", "dialog");
+  hint.setAttribute("aria-label", t.ask);
   hint.innerHTML =
-    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" ' +
-    'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/>' +
-    '<path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></svg>';
-  hint.setAttribute("aria-label", es ? "Activar el sonido del árbol" : "Turn the tree's sound on");
-  hint.addEventListener("click", startSound);
-  placeHint();
+    `<div class="tree-sound-ask-bar"><span>${t.title}</span>` +
+    `<button type="button" class="tree-sound-ask-close" data-act="ignore" aria-label="${t.close}">` +
+    '<svg viewBox="0 0 9 9" aria-hidden="true"><path d="M1 1l7 7M8 1L1 8" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>' +
+    "</button></div>" +
+    `<p>${t.ask}</p>` +
+    '<div class="tree-sound-ask-buttons">' +
+    `<button type="button" data-act="ignore">${t.ignore}</button>` +
+    `<button type="button" data-act="allow" class="is-default">${t.allow}</button>` +
+    "</div>";
+  hint.querySelector(".tree-sound-ask-bar").addEventListener("pointerdown", dragHint);
+  hint.addEventListener("click", (event) => {
+    const act = event.target.closest("[data-act]");
+    if (!act) return;
+    if (act.dataset.act === "allow") {
+      startSound();
+      dropHint();
+    } else ignoreSound();
+  });
+  hint.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") ignoreSound();
+  });
+  hintMoved = false;
   box.appendChild(hint);
+  placeHint();
 }
 
 function dropHint() {
@@ -1078,8 +1128,11 @@ function dropHint() {
 
 const FIRST_PRESS = ["pointerdown", "keydown", "touchend"];
 
-/** Any first press on the page is what lets the sound start; once it is running there is nothing left to wait for. */
-function onFirstPress() {
+/** Any first press on the page is what lets the sound start; once it is running
+ * there is nothing left to wait for. Not one on the window that asks for it:
+ * that one is answered by its own buttons. */
+function onFirstPress(event) {
+  if (hint && hint.contains(event.target)) return;
   startSound();
   if (sound.ac && sound.ac.state === "running") {
     for (const type of FIRST_PRESS) window.removeEventListener(type, onFirstPress, true);

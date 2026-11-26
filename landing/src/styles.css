@@ -623,58 +623,139 @@ html.ai-layout-enabled #activity-panel {
   pointer-events: none;
 }
 
-/* The speaker that says the tree can be heard, while the browser still waits
-   for a press before it plays (src/client/tree-sway.js, which puts it where
-   the trunk is and gives it the wood's colour there). On the tree itself, and
-   large enough to be seen there; what keeps it quiet is that it is only an
-   icon, in the trunk's own colour, darker than the wood on the light page and
-   lighter than it on the dark one, where the tree is inverted and so is this.
-   Further the same way under the pointer and while pressed. */
-.tree-sound-hint {
-  --hint-light: 0.5;
+/* The window that asks to play the tree's sound, while the browser still
+   waits for a press before it plays (src/client/tree-sway.js, which sets it on
+   the trunk and lets it be dragged by its bar). A browser's permission prompt
+   drawn as a Windows 95 window in the site's ink: a hairline, no shadow, the
+   title bar in the tree's own gradient, inverted on the dark page as the tree
+   is. The tree's box lets nothing through, so it takes the pointer back. */
+.tree-sound-ask {
+  --ask-page: #f5f5f4;
+  --ask-ink: #292524;
+  --ask-bar: linear-gradient(90deg, rgb(255 176 0), rgb(102 198 169));
+  --ask-bar-ink: #1c1917;
   position: absolute;
   z-index: 5;
   pointer-events: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  margin: -28px 0 0 -28px;
-  border-radius: 50%;
-  color: rgb(122 195 147);
-  filter: invert(var(--tree-invert, 0)) brightness(var(--hint-light));
-  animation: treeSoundHint 0.6s ease both;
-  transition: opacity 0.35s ease, filter 0.15s;
-}
-.tree-sound-hint svg {
-  width: 32px;
-  height: 32px;
-}
-.tree-sound-hint:hover,
-.tree-sound-hint:active,
-.tree-sound-hint:focus-visible {
-  --hint-light: 0.32;
-}
-.tree-sound-hint:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 2px;
+  width: 256px;
+  border: 1px solid var(--ask-ink);
+  background: var(--ask-page);
+  color: var(--ask-ink);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  transform-origin: 50% 100%;
+  animation: treeSoundAsk 0.2s cubic-bezier(0.23, 1, 0.32, 1) both;
+  transition:
+    opacity 0.15s cubic-bezier(0.23, 1, 0.32, 1),
+    scale 0.15s cubic-bezier(0.23, 1, 0.32, 1);
 }
 @media (prefers-color-scheme: dark) {
-  .tree-sound-hint {
-    --hint-light: 1.9;
-  }
-  .tree-sound-hint:hover,
-  .tree-sound-hint:active,
-  .tree-sound-hint:focus-visible {
-    --hint-light: 2.5;
+  .tree-sound-ask {
+    --ask-page: #292524;
+    --ask-ink: #f5f5f4;
+    --ask-bar: linear-gradient(90deg, rgb(0 79 255), rgb(153 57 86));
+    --ask-bar-ink: #fff;
   }
 }
-.tree-sound-hint.is-gone {
+.tree-sound-ask-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  height: 22px;
+  padding: 0 3px 0 6px;
+  border-bottom: 1px solid var(--ask-ink);
+  background: var(--ask-bar);
+  color: var(--ask-bar-ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.tree-sound-ask-bar span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tree-sound-ask-close {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+}
+.tree-sound-ask-close svg {
+  width: 9px;
+  height: 9px;
+}
+.tree-sound-ask-close:hover {
+  background: var(--ask-bar-ink);
+  color: var(--ask-page);
+}
+.tree-sound-ask p {
+  margin: 0;
+  padding: 14px 12px 12px;
+  text-align: center;
+  /* Never a word left alone on its line. */
+  text-wrap: balance;
+}
+.tree-sound-ask-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 0 12px 12px;
+}
+.tree-sound-ask-buttons button {
+  height: 26px;
+  border: 1px solid var(--ask-ink);
+  background: transparent;
+  color: var(--ask-ink);
+  font: inherit;
+  font-size: 0.75rem;
+  transition: transform 0.12s ease-out;
+}
+.tree-sound-ask-buttons button:hover,
+.tree-sound-ask-buttons .is-default {
+  background: var(--ask-ink);
+  color: var(--ask-page);
+}
+.tree-sound-ask-buttons .is-default:hover {
+  background: transparent;
+  color: var(--ask-ink);
+}
+.tree-sound-ask-buttons button:active {
+  transform: scale(0.97);
+}
+.tree-sound-ask button:focus-visible {
+  outline: 1px dotted currentColor;
+  outline-offset: 2px;
+}
+.tree-sound-ask.is-gone {
   opacity: 0;
+  scale: 0.96;
   pointer-events: none;
 }
-@keyframes treeSoundHint {
+@keyframes treeSoundAsk {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tree-sound-ask {
+    animation-name: treeSoundAskFade;
+  }
+  .tree-sound-ask.is-gone {
+    scale: none;
+  }
+}
+@keyframes treeSoundAskFade {
   from {
     opacity: 0;
   }
