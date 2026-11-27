@@ -6,6 +6,7 @@ import { splitDeclarations } from "./declarations.js";
 
 const NAME = /^--[a-z0-9_-]+$/i;
 const CHANNELS = /^(\d{1,3})\s+(\d{1,3})\s+(\d{1,3})$/;
+const KEYWORD = /^(on|off)$/;
 const NUMBER = /^-?(\d+\.?\d*|\.\d+)$/;
 const LENGTH = /^-?(\d+\.?\d*|\.\d+)(px|rem|em|%|vw|vh|ch|ex)$/;
 // A value that refers to other things is checked by the browser when it is
@@ -67,13 +68,15 @@ export function literalProblem(value) {
 
 /**
  * What kind of value a token holds, judged from its computed value now:
- * "colour", "channels" (an "r g b" triple), "number", "length", or "any" when
+ * "colour", "channels" (an "r g b" triple), "number", "length", "keyword" (the
+ * on/off effect switches, --fx-*), or "any" when
  * nothing can be said (keywords, font stacks, tokens nobody declares).
  * @param {string} current
  * @param {(property: string, value: string) => boolean} supports
  */
 export function kindOf(current, supports) {
   if (current === "") return "any";
+  if (KEYWORD.test(current)) return "keyword";
   if (CHANNELS.test(current)) return "channels";
   if (NUMBER.test(current)) return "number";
   if (LENGTH.test(current)) return "length";
@@ -98,10 +101,15 @@ function channelsProblem(value) {
   return 'this token is "r g b" channels, three numbers from 0 to 255 separated by spaces, like "252 190 80" (not a colour)';
 }
 
+function keywordProblem(value) {
+  return KEYWORD.test(value) ? null : 'this token is a switch, "on" or "off"';
+}
+
 // One check per kind; a kind with none ("any") accepts everything.
 const CHECKS = {
   colour: (value, supports) => (supports("color", value) ? null : "it is not a CSS colour (use #rrggbb, rgb(), hsl(), oklch() or a name)"),
   channels: channelsProblem,
+  keyword: keywordProblem,
   number: (value) => (NUMBER.test(value) ? null : "this token is a plain number"),
   length: (value, supports) => (supports("width", value) ? null : "this token is a length or percentage such as 2rem or 110%"),
 };

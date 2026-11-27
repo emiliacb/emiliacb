@@ -48,6 +48,10 @@ The dimension lines in ink that measure the page and follow the pointer, drawn o
 
 Verify with `get_variables` (prefix `--cota`).
 
+## Effects that distort the page
+
+Two effects bend the whole page and would show it in its old look: the warp while the tree sounds (`--fx-ui-warp`) and the black hole's shockwave (`--fx-shockwave`). Both are `off` as soon as you change any style, and come back with `reset_css` or a reload. Turn one back on only if the restyle should keep it: `set_variables({ variables: { "--fx-ui-warp": "on" } })`.
+
 ## Sidebars
 
 GitHub, LinkedIn, Email and Schedule are `ui-drawer` elements already in the page, shown only when opened: `.sidebar-sheet` (surface), `.sidebar-backdrop`, `.sidebar-scroll` (body), `.sidebar-actions` (bottom bar), `.sidebar-number` (the big figure), `.sidebar-close`. A sidebar of the agent's own is `#custom-sidebar`. Open one with `click_link_or_button`: the contact row and the footer have the same trigger, listed once with the other id in `alsoAt`. Ids belong to one page load, so list again after navigating.

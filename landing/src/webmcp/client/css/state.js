@@ -4,7 +4,9 @@
 // Three parts, all kept: design-token overrides (set_variables), a free-form
 // stylesheet (set_css) and per-selector rules (set_css_by_selector). All are
 // printed into the one <style>, in that order, so a per-selector rule wins a
-// tie against the stylesheet, which wins one against a token override.
+// tie against the stylesheet, which wins one against a token override. In
+// front of them all, while there is anything to print, the two effect
+// switches are turned off (see FX_OFF below).
 //
 // Whatever is committed here is announced with `tokenschange`, because the
 // canvases (the tree, the cotas, the gradient) paint with the tokens' values
@@ -39,9 +41,24 @@ export function getState() {
   };
 }
 
+/** Whether the agent has changed nothing: no overrides, no stylesheet, no rules. */
+export function isEmptyState(state) {
+  return state.css === "" && Object.keys(state.rules).length === 0 && !hasVariables(state.variables);
+}
+
+// The page's effect switches (--fx-ui-warp, --fx-shockwave, see styles.css),
+// written off in front of everything else while the agent has changed
+// anything: the tree's warp and the black hole's shockwave bend and shake the
+// page, which gets in the way of an agent judging its own styling. They come
+// FIRST so that the agent's own override (set_variables on either name) comes
+// later and wins, and the agent can turn them back on. An empty state renders
+// nothing at all, so a reset (and a reload) restores the site's default, on.
+const FX_OFF = ":root{--fx-ui-warp:off;--fx-shockwave:off}";
+
 /** The whole agent stylesheet as the browser sees it. */
 export function renderCss(state) {
-  return [variablesToCss(state.variables), state.css, rulesToCss(state.rules)].filter((part) => part !== "").join("\n");
+  if (isEmptyState(state)) return "";
+  return [FX_OFF, variablesToCss(state.variables), state.css, rulesToCss(state.rules)].filter((part) => part !== "").join("\n");
 }
 
 /** Writes `state` into the page, without remembering it. Used to try a change and to roll it back. */
@@ -58,7 +75,7 @@ export function paint(state) {
 
 function save(state) {
   try {
-    if (state.css === "" && Object.keys(state.rules).length === 0 && !hasVariables(state.variables)) navRemove(STORAGE_KEY);
+    if (isEmptyState(state)) navRemove(STORAGE_KEY);
     else navSet(STORAGE_KEY, JSON.stringify(state));
   } catch {
     // Storage blocked or full: the change still applies, it just will not follow the next navigation.
