@@ -201,7 +201,7 @@ document.head.appendChild(o)}initApollo();</script>
              The cotas draw on a canvas, which only asks for a face once it
              draws, so their face is fetched up front. -->
         ${withIlustration || withCotas
-          ? html`<link rel="preload" href="/public/fonts/barlow-condensed-latin-300-normal.woff2" as="font" type="font/woff2" crossorigin />`
+          ? html`<link rel="preload" href="/fonts/barlow-condensed-latin-300-normal.woff2" as="font" type="font/woff2" crossorigin />`
           : ""}
 
         <!-- CSS -->
