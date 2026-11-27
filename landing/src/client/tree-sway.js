@@ -50,7 +50,9 @@
  *
  * It can be heard. Every part has a note of its own, all from one scale, rung
  * when the cursor first touches it, as loud as the cursor is accelerating, and, on a phone, each time it swings back
- * after a shake, as loud as the swing was wide. A browser plays nothing until
+ * after a shake, as loud as the swing was wide. Pressed on, a part is bowed:
+ * its note held while the press is, sliding through the notes of the parts
+ * the bow is drawn across, and the part shakes like a string. A browser plays nothing until
  * the page has been pressed somewhere, so the first notes come after the first
  * click, tap or key; the switch in the page's footer turns it off, and an off
  * is remembered.
@@ -450,6 +452,7 @@ const plateState = () => ({
   went: 0, // which way it was last turning, and the angle it last turned back at
   turned: 0,
   rang: -1, // when it last rang, on the sound's own clock
+  vib: 0, // how hard it is shaking under the bow, 0 to 1
   gap: 1e9, // pointer to its surface, in tree units
   hold: 0,
   fresh: false,
@@ -715,6 +718,10 @@ function build() {
   });
 
   parts = [...limbs, ...leaves];
+  for (const p of parts) {
+    p.bowW = 0;
+    p.vibHz = VIB_HZ * Math.pow((NOTE[p.key] || NOTE.trunk) / 220, 0.25);
+  }
 }
 
 /* ==========================================================================
@@ -1468,6 +1475,153 @@ function chime(dt) {
 }
 
 /* ==========================================================================
+   The bow
+   ========================================================================== */
+
+// Pressed on, a part is bowed rather than struck: its note is held for as long
+// as the press is, as a string under a bow, and the part shakes like one. Drawn
+// up or down the tree, the note slides through those of the parts it passes,
+// a blend of every part within BOW_BLEND, each by how near it is, so between
+// two parts it sits between their notes. The faster the bow is drawn, the
+// louder, up to BOW_V; held still it keeps sounding, softly. Let go, it rings
+// out as a string does.
+const BOW_REACH = 8; // how near a part a press must land to bow it, tree units
+const BOW_BLEND = 14; // how far a part's note still reaches into the blend
+const BOW_GLIDE = 0.06; // how quickly the note slides to where the bow is, s
+const BOW_V = 1400; // bow speed for its full voice, tree units a second
+const BOW_SOFT = 0.03; // its voice held still
+const BOW_LOUD = 0.075; // and drawn at BOW_V
+// The shaking you see: a shimmer at about VIB_HZ, the higher the note the
+// faster; a limb thrown up to VIB_WOOD tree units off its line, a leaf up to
+// VIB_LEAF radians about its pivot. It comes in at once and dies over VIB_FALL.
+const VIB_HZ = 19;
+const VIB_WOOD = 2.4;
+const VIB_LEAF = 0.07;
+const VIB_FALL = 0.45;
+
+const bow = { on: false, voice: null, f: 0, speed: 0 };
+
+/** A bowed voice at `f` hertz: two saws a breath apart, through a violin's body, with a vibrato that comes in late. */
+function bowVoice(f, pan) {
+  const ac = sound.ac;
+  const t = ac.currentTime;
+  const out = ac.createGain();
+  out.gain.setValueAtTime(0.0001, t);
+  let to = sound.bus;
+  if (ac.createStereoPanner) {
+    const side = ac.createStereoPanner();
+    side.pan.value = pan;
+    side.connect(sound.bus);
+    to = side;
+  }
+  const tone = ac.createBiquadFilter();
+  tone.type = "lowpass";
+  tone.Q.value = 0.8;
+  tone.frequency.value = Math.max(900, Math.min(4800, f * 7));
+  const wood1 = ac.createBiquadFilter();
+  wood1.type = "peaking";
+  wood1.frequency.value = 520;
+  wood1.Q.value = 1.4;
+  wood1.gain.value = 7;
+  const wood2 = ac.createBiquadFilter();
+  wood2.type = "peaking";
+  wood2.frequency.value = 2900;
+  wood2.Q.value = 1.8;
+  wood2.gain.value = 5;
+  tone.connect(wood1).connect(wood2).connect(out).connect(to);
+  const lfo = ac.createOscillator();
+  const depth = ac.createGain();
+  lfo.frequency.value = 5.4;
+  depth.gain.setValueAtTime(0, t);
+  depth.gain.linearRampToValueAtTime(0, t + 0.25);
+  depth.gain.linearRampToValueAtTime(13, t + 0.8);
+  lfo.connect(depth);
+  const oscs = [-4, 4].map((cents) => {
+    const osc = ac.createOscillator();
+    osc.type = "sawtooth";
+    osc.frequency.value = f;
+    osc.detune.value = cents;
+    depth.connect(osc.detune);
+    osc.connect(tone);
+    osc.start(t);
+    return osc;
+  });
+  lfo.start(t);
+  return { out, tone, oscs, lfo };
+}
+
+/** Bows the part a press lands on, if it lands on one. */
+function onBowPress(event) {
+  if (event.pointerType === "touch" || event.button !== 0) return;
+  if (hint || !sound.want || !pointer.inBox) return;
+  if (event.target instanceof Element && event.target.closest("a[href], button, input, textarea, select, label, dropdown-trigger")) return;
+  let at = null;
+  for (const p of parts) if (p.gap < BOW_REACH && (!at || p.gap < at.gap)) at = p;
+  if (!at) return;
+  // The press is also what lets the sound start, where it has not yet.
+  startSound();
+  const ac = sound.ac;
+  if (!ac || ac.state !== "running") return;
+  stopBow();
+  bow.on = true;
+  bow.f = NOTE[at.key] || NOTE.trunk;
+  bow.speed = 0;
+  const x = at.kind === "leaf" ? at.cx : at.rx[at.n >> 1];
+  bow.voice = bowVoice(bow.f, Math.max(-0.7, Math.min(0.7, (x - 200) / 200)));
+  // The bow bites: a little louder for its first moment.
+  const t = ac.currentTime;
+  bow.voice.out.gain.exponentialRampToValueAtTime(BOW_LOUD, t + 0.03);
+  bow.voice.out.gain.setTargetAtTime(BOW_SOFT, t + 0.05, 0.12);
+  at.vib = 1;
+  window.dispatchEvent(new Event("tree-note"));
+}
+
+/** Lifts the bow; the note rings out. */
+function stopBow() {
+  bow.on = false;
+  const v = bow.voice;
+  bow.voice = null;
+  if (!v || !sound.ac) return;
+  const t = sound.ac.currentTime;
+  v.out.gain.cancelScheduledValues(t);
+  v.out.gain.setValueAtTime(Math.max(0.0001, v.out.gain.value), t);
+  v.out.gain.setTargetAtTime(0.0001, t, 0.16);
+  for (const o of [...v.oscs, v.lfo]) o.stop(t + 1.2);
+}
+
+/** Each frame: where the bow is on the tree, the note it blends there, how loud, and what shakes. */
+function bowing(dt) {
+  const v = bow.voice;
+  let total = 0;
+  let logs = 0;
+  if (v) {
+    for (const p of parts) {
+      p.bowW = 0;
+      if (p.gap > 3 * BOW_BLEND) continue;
+      const g = Math.max(0, p.gap);
+      p.bowW = Math.exp((-g * g) / (2 * BOW_BLEND * BOW_BLEND));
+      total += p.bowW;
+      logs += p.bowW * Math.log(NOTE[p.key] || NOTE.trunk);
+    }
+    // Off the tree the bow keeps the last note it had.
+    if (total > 0.02) bow.f = Math.exp(logs / total);
+    const t = sound.ac.currentTime;
+    for (const o of v.oscs) o.frequency.setTargetAtTime(bow.f, t, BOW_GLIDE);
+    v.tone.frequency.setTargetAtTime(Math.max(900, Math.min(4800, bow.f * 7)), t, BOW_GLIDE);
+    bow.speed += (Math.min(1, Math.hypot(pointer.vx, pointer.vy) / BOW_V) - bow.speed) * (1 - Math.exp(-dt / 0.06));
+    // On the tree it sounds; between parts, only as much as there is to bow.
+    const on = Math.min(1, total);
+    v.out.gain.setTargetAtTime(Math.max(0.0001, (BOW_SOFT + (BOW_LOUD - BOW_SOFT) * bow.speed) * (0.35 + 0.65 * on)), t, 0.05);
+  }
+  const fall = Math.exp(-dt / VIB_FALL);
+  for (const p of parts) {
+    const want = v && total > 0 ? (p.bowW / Math.max(1, total)) * (0.55 + 0.45 * bow.speed) : 0;
+    p.vib = want > p.vib ? want : p.vib * fall;
+    if (p.vib < 0.002) p.vib = 0;
+  }
+}
+
+/* ==========================================================================
    Physics
    ========================================================================== */
 
@@ -1685,6 +1839,21 @@ function pose() {
       l.cos[i] = Math.cos(r);
       l.sin[i] = Math.sin(r);
     }
+    // Under the bow it shakes like a string across its line: a standing wave
+    // with a little of its octave, still at its base, so whatever hangs from
+    // it is carried along.
+    if (l.vib > 0.002) {
+      const ph = TAU * l.vibHz * clock;
+      const a = l.vib * VIB_WOOD;
+      const c1 = Math.cos(ph);
+      const c2 = 0.35 * Math.cos(2.03 * ph + 1);
+      for (let i = 1; i < l.n; i++) {
+        const u = i / (l.n - 1);
+        const d = a * (Math.sin(Math.PI * u) * c1 + Math.sin(TAU * u) * c2);
+        l.dx[i] -= l.sin[i] * d;
+        l.dy[i] += l.cos[i] * d;
+      }
+    }
   }
 }
 
@@ -1736,7 +1905,8 @@ function drawLeaves() {
     const px = L.dx[j] + L.cos[j] * ox - L.sin[j] * oy;
     const py = L.dy[j] + L.sin[j] * ox + L.cos[j] * oy;
     const turn = soft(f.theta, f.limit);
-    const ang = L.rot[j] + turn;
+    const shake = f.vib > 0.002 ? f.vib * VIB_LEAF * Math.cos(TAU * f.vibHz * clock) : 0;
+    const ang = L.rot[j] + turn + shake;
     const twist = soft(f.twist, TWIST_MAX);
     const q = 1 - (f.squash * (1 - Math.cos(twist))) / (1 - Math.cos(TWIST_MAX));
 
@@ -2689,7 +2859,7 @@ function tick(now) {
       // Its note, on first being touched while the cursor moves, as loud as
       // the cursor's acceleration.
       const on = p.touch > 0.5;
-      if (on && !p.met && drag > 0.02) ring(p, accel, true);
+      if (on && !p.met && drag > 0.02 && !bow.on) ring(p, accel, true);
       p.met = on;
     }
     hx = toX;
@@ -2707,6 +2877,7 @@ function tick(now) {
   drawLeaves();
 
   touch(dt);
+  bowing(dt);
 
   const ease = 1 - Math.exp(-dt / 0.07);
   for (const p of parts) for (let k = 0; k < 5; k++) p.shown[k] += (p.sum[k] / steps - p.shown[k]) * ease;
@@ -2850,6 +3021,13 @@ if (box && svg && woodEl && !reduced && setup()) {
   window.addEventListener(SOUND_KEY, (event) => setSound(!!event.detail));
   document.documentElement.addEventListener("pointerleave", release);
   window.addEventListener("blur", release);
+  window.addEventListener("pointerdown", onBowPress, { passive: true });
+  for (const type of ["pointerup", "pointercancel", "blur"]) window.addEventListener(type, stopBow);
+  document.documentElement.addEventListener("pointerleave", stopBow);
+  // Drawing the bow is not selecting the page under it.
+  document.addEventListener("selectstart", (event) => {
+    if (bow.on) event.preventDefault();
+  });
 
   if ("ResizeObserver" in window) {
     new ResizeObserver(() => {
