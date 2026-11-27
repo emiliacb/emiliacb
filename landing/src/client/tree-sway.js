@@ -761,9 +761,8 @@ const pointer = {
 function track(event) {
   // A finger dragging the page scrolls it; it is not brushing the tree.
   if (event.pointerType === "touch") return;
-  // Over an open sidebar (or its backdrop) the pointer is not over the tree,
-  // wherever the tree is under it.
-  if (event.target instanceof Element && event.target.closest("ui-drawer")) {
+  // While a sidebar is open the tree is under it, out of the pointer's reach.
+  if (document.querySelector("ui-drawer-content[data-open]")) {
     if (pointer.tracking) release();
     return;
   }
