@@ -58,13 +58,18 @@ await fs.cp(publicDir, path.join(dist, "public"), {
   filter: (src) => src !== fontsDir && !isSkippedPublicFile(path.basename(src)),
 });
 await fs.cp(fontsDir, path.join(dist, "fonts"), { recursive: true });
-for (const name of ["sw.js", "robots.txt"]) {
-  await fs.copyFile(path.join(publicDir, name), path.join(dist, name));
-}
+await fs.copyFile(path.join(publicDir, "sw.js"), path.join(dist, "sw.js"));
+// WebMCP: see src/webmcp/README.md (its lines of robots.txt are generated)
+await fs.writeFile(
+  path.join(dist, "robots.txt"),
+  webmcp.renderRobots(await fs.readFile(path.join(publicDir, "robots.txt"), "utf8")),
+);
 
 // 3. Client bundles. Only top-level files are entries; subfolders are modules.
 const clientEntries = (await fs.readdir(clientDir, { withFileTypes: true }))
   .filter((e) => e.isFile() && /\.(js|ts)$/.test(e.name) && !e.name.endsWith(".d.ts"))
+  // WebMCP: see src/webmcp/README.md (its two entries are skipped when it is off)
+  .filter((e) => !webmcp.isDisabledClientEntry(e.name))
   .map((e) => path.join(clientDir, e.name));
 
 const { metafile } = await esbuild.build({

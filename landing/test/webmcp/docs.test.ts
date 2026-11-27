@@ -10,7 +10,7 @@ import type { RenderCtx } from "../../src/site/context";
 import app, { LANGLESS_ROUTES, matchesRoute, type Env } from "../../src/worker/index";
 import { enabledTools, toolGroups } from "../../src/webmcp/client/tools/index.js";
 import { renderDocsMarkdownFiles, renderDocsPages } from "../../src/webmcp/site/docs";
-import { renderAgentNote, renderFooterLink, renderHead, renderRedirects } from "../../src/webmcp/site";
+import { renderAgentNote, renderFooterLink, renderHead, renderRedirects, renderRobots } from "../../src/webmcp/site";
 import { WEBMCP_LANGLESS_ROUTES } from "../../src/webmcp/site/routes";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
@@ -33,7 +33,9 @@ describe("the /mcp docs page", () => {
     const files = renderDocsMarkdownFiles(ctxFor);
     expect(files.map((file) => file.path).toSorted()).toEqual(["/en/mcp.md", "/es/mcp.md"]);
     for (const file of files) {
-      for (const tool of enabledTools) expect(file.markdown, `${file.path} ${tool.name}`).toContain(`#### \`${tool.name}\``);
+      for (const tool of enabledTools) expect(file.markdown, `${file.path} ${tool.name}`).toContain(`- \`${tool.name}\`: ${tool.summary}`);
+      expect(file.markdown).not.toContain("inputSchema\n\n");
+      expect(file.markdown.split("\n").length, `${file.path} is short`).toBeLessThan(120);
       expect(file.markdown).toContain("document.modelContext.getTools()");
       expect(file.markdown).toContain("document.modelContext.executeTool(");
       expect(file.markdown).toContain("/mcp/skills/modifying-page/SKILL.md");
@@ -98,17 +100,20 @@ describe("the /mcp docs page", () => {
       "/es/webmcp.md /es/mcp.md 301",
       "/en/labs/webmcp /en/mcp 301",
       "/es/labs/webmcp /es/mcp 301",
+      "/labs/webmcp /mcp 301",
     ]) {
       expect(lines).toContain(line);
     }
   });
 
-  it("is allowed in robots.txt, with the rest still disallowed", () => {
-    const robots = readFileSync(`${root}/public/robots.txt`, "utf8").split("\n");
+  it("is allowed in robots.txt, generated from the paths, with the rest as in the static file", () => {
+    const base = readFileSync(`${root}/public/robots.txt`, "utf8");
+    expect(base).not.toContain("/mcp");
+    const robots = renderRobots(base).split("\n");
     for (const path of ["/llms.txt", "/mcp", "/mcp.md", "/en/mcp", "/es/mcp", "/en/mcp.md", "/es/mcp.md", "/mcp/skills/"]) {
       expect(robots, path).toContain(`Allow: ${path}`);
     }
-    expect(robots).toContain("Disallow: /");
+    expect(robots.at(-2)).toBe("Disallow: /");
   });
 });
 
@@ -121,8 +126,9 @@ describe("how an agent finds the tools", () => {
     const note = markup(renderAgentNote());
     expect(note).toContain("document.modelContext.getTools()");
     expect(note).toContain("document.modelContext.executeTool(name, input)");
-    expect(note).toContain("https://emiliacabral.com/mcp.md");
-    expect(note).toContain("https://emiliacabral.com/llms.txt");
+    expect(note).toContain("/mcp.md");
+    expect(note).toContain("/llms.txt");
+    expect(note).not.toContain("https://");
     expect(markup(renderFooterLink(ctxFor("es")))).toContain('href="/es/mcp"');
     expect(markup(renderFooterLink(ctxFor("es")))).toContain(">MCP</a");
     expect(markup(renderFooterLink(ctxFor("es")))).toContain('aria-label="MCP: herramientas para agentes de IA"');
@@ -146,6 +152,9 @@ describe("with WEBMCP_ENABLED false", () => {
     expect(offDocs.renderDocsMarkdownFiles(ctxFor)).toEqual([]);
     expect(offRoutes.WEBMCP_LANGLESS_ROUTES).toEqual([]);
     expect(offSkills.renderSkillFiles()).toEqual([]);
+    expect(off.renderRobots("User-agent: *\nDisallow: /\n")).toBe("User-agent: *\nDisallow: /\n");
+    expect(off.isDisabledClientEntry("webmcp.js")).toBe(true);
+    expect(off.isDisabledClientEntry("layout.js")).toBe(false);
     vi.doUnmock("../../src/webmcp/enabled");
   });
 });

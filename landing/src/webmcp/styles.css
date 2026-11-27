@@ -25,23 +25,10 @@
 
 /* The docs page for agents (src/webmcp/site/docs): the prose plugin wraps inline
    code in backticks, which here would double the ones written in the text, and a
-   tool's input table is wider than a phone, so it scrolls inside itself instead
-   of widening the page. */
+   code block wider than a phone scrolls inside itself instead of widening the page. */
 .markdown-content.webmcp-docs code::before,
 .markdown-content.webmcp-docs code::after {
   content: none;
-}
-
-.webmcp-docs table {
-  @apply block max-w-full overflow-x-auto text-sm;
-}
-
-.webmcp-docs :where(h4) {
-  @apply font-mono text-base mt-10 mb-2;
-}
-
-.webmcp-docs :where(h3) {
-  @apply mt-12;
 }
 
 .webmcp-docs pre {

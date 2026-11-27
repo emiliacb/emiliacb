@@ -116,8 +116,10 @@ function idOf(el) {
   return id;
 }
 
-function describe(el) {
+function describe(group) {
+  const el = pickCopy(group);
   const item = { id: idOf(el), kind: kindOf(el), name: cut(nameOf(el)) };
+  if (group.length > 1) item.alsoAt = group.filter((copy) => copy !== el).map(idOf);
   const link = hrefInfo(el);
   if (link) {
     item.href = link.href;
@@ -135,6 +137,51 @@ function describe(el) {
 
 function collect(includeHidden) {
   return Array.from(document.querySelectorAll(INTERACTIVE)).filter((el) => includeHidden || !isHidden(el));
+}
+
+/**
+ * What a visitor gets by pressing the element: the same name and the same
+ * destination (address or sidebar). The page has several real copies of its
+ * contact and footer triggers (the contact row in the content and the footer's
+ * column, both on screen at once), so two elements with the same key are one
+ * choice, not an ambiguity. Menus, buttons and disclosures have no destination
+ * to compare and are never grouped.
+ */
+function targetKey(el) {
+  const link = hrefInfo(el);
+  if (!link) return null;
+  return `${nameOf(el).toLowerCase()}|${link.href}|${el.dataset.sidebar ?? ""}`;
+}
+
+/** The elements in page order, each run of the same target as one group: [first, ...copies]. */
+function groupByTarget(elements) {
+  const groups = [];
+  const byKey = new Map();
+  for (const el of elements) {
+    const key = targetKey(el);
+    const group = key === null ? undefined : byKey.get(key);
+    if (group) {
+      group.push(el);
+      continue;
+    }
+    const created = [el];
+    groups.push(created);
+    if (key !== null) byKey.set(key, created);
+  }
+  return groups;
+}
+
+/** True when the element is on screen and nothing covers its centre (the footer sits behind the content sheet until scrolled to). */
+function isReachable(el) {
+  if (!inViewport(el)) return false;
+  const rect = el.getBoundingClientRect();
+  const top = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  return top !== null && (el === top || el.contains(top) || top.contains(el));
+}
+
+/** Of one group, the copy a visitor could press right now; else one on screen; else the first. */
+function pickCopy(group) {
+  return group.find(isReachable) ?? group.find(inViewport) ?? group[0];
 }
 
 function matchesFilter(el, needle) {
@@ -181,10 +228,11 @@ function elementByText(text) {
   if (pool.length === 0) {
     throw fail(`No visible link or button has the text "${text}". Call get_links_and_buttons (with includeHidden: true to see the hidden ones too).`);
   }
-  if (pool.length > 1) {
-    throw fail(`"${text}" matches ${pool.length} links or buttons: ${candidatesLine(pool)}. Click one by its id.`);
+  const groups = groupByTarget(pool);
+  if (groups.length > 1) {
+    throw fail(`"${text}" matches ${groups.length} links or buttons: ${candidatesLine(groups.map(pickCopy))}. Click one by its id.`);
   }
-  return pool[0];
+  return pickCopy(groups[0]);
 }
 
 function resolveTarget(input) {
@@ -325,7 +373,7 @@ const getLinksAndButtons = {
     "Returns `count` and `items`, each with: `id` (pass it to click_link_or_button; it is stable while the page stays " +
     "open), `kind` (link, button, menu, disclosure or sidebar-trigger), `name` (visible text or aria-label), for links " +
     "`href` (absolute) and `scope` (internal, external, mailto or tel), `opensNewTab`, `opensSidebar`, `expanded`, " +
-    "`disabled`, `in` (the section it is in: nav, header, main, footer, sidebar, dialog, aside or page) and " +
+    "`disabled`, `alsoAt` (ids of identical copies, such as the footer's), `in` (the section it is in: nav, header, main, footer, sidebar, dialog, aside or page) and " +
     "`inViewport`. Read-only: it changes nothing except tagging elements with a data-webmcp-id attribute. " +
     "It describes the page as it is now; call it again after a click that opens a menu or sidebar.",
   inputSchema: {
@@ -338,10 +386,11 @@ const getLinksAndButtons = {
   annotations: { readOnlyHint: true },
   execute(input) {
     const needle = typeof input?.filter === "string" ? input.filter.trim().toLowerCase() : "";
-    const elements = collect(input?.includeHidden === true).filter((el) => needle === "" || matchesFilter(el, needle));
-    const shown = elements.slice(0, MAX_ITEMS).map(describe);
-    const result = { page: location.href, count: elements.length, items: shown };
-    if (elements.length > shown.length) result.note = `Only the first ${MAX_ITEMS} are listed; use "filter" to narrow it.`;
+    const found = collect(input?.includeHidden === true).filter((el) => needle === "" || matchesFilter(el, needle));
+    const groups = groupByTarget(found);
+    const shown = groups.slice(0, MAX_ITEMS).map(describe);
+    const result = { page: location.href, count: groups.length, items: shown };
+    if (groups.length > shown.length) result.note = `Only the first ${MAX_ITEMS} are listed; use "filter" to narrow it.`;
     return Promise.resolve(ok(result));
   },
 };
@@ -353,8 +402,8 @@ const clickLinkOrButton = {
   description:
     "Clicks a link or button on the page the way a visitor would: scrolls it into view and fires a real click, so the " +
     "site's own behavior runs. Give exactly one of: `id` (from get_links_and_buttons, the reliable choice), `text` " +
-    "(the visible text; exact match first, then contains, case-insensitive; an error lists the candidates if more than " +
-    "one element matches) or `selector` (a CSS selector that must match one element). " +
+    "(the visible text; exact match first, then contains, case-insensitive; identical copies, such as the footer's and " +
+    "the contact row's, are one choice and the one on screen is clicked; an error lists the candidates if they differ) or `selector` (a CSS selector that must match one element). " +
     "Returns what was clicked and what happened. Side effects depend on the element: an internal link NAVIGATES this " +
     "tab (the page and its tools are replaced; the new page registers the same tools, so wait a moment and call them " +
     "again); a link with target=_blank asks the browser for a new tab (it may be blocked); an in-page anchor (#section) " +

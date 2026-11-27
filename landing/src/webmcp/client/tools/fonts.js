@@ -3,7 +3,8 @@
 // the CSS stays in one place (css-state.js) and the guard that undoes a
 // change that breaks the page covers it too.
 //
-// Only https://fonts.googleapis.com/css2 is ever requested, and only with a
+// Only https://fonts.googleapis.com/css2 is ever requested by this code (the
+// browser then fetches the font files from fonts.gstatic.com), and only with a
 // URL built here from a validated family name and numeric weights, so nothing
 // the agent sends can reach another host or add parameters.
 //
@@ -210,7 +211,7 @@ const setGoogleFont = {
     "(optional boolean, default false: also load the italic of each weight). Resolves once the font files are " +
     "really loaded, so CSS applied right after uses it with no flash. Rejects with a hint if Google does not " +
     "know the family or the weights, or if loading takes more than 8 seconds. Loading a family again adds the " +
-    "new weights to it. Only fonts.googleapis.com is contacted. The font stays loaded while the visitor navigates the " +
+    "new weights to it. Google Fonts is contacted on two hosts: fonts.googleapis.com serves the stylesheet and fonts.gstatic.com the font files. The font stays loaded while the visitor navigates the " +
     "site in this tab; a reload restores the original. " +
     "Returns `family`, `cssFamily` (the value for font-family, with a generic fallback guessed from the name), " +
     "`weights` and `italic`." +

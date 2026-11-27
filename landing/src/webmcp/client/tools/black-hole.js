@@ -5,12 +5,16 @@
 // nothing here fakes a pointer event or starts a second copy of the effect.
 import { fail, ok } from "../core/result.js";
 
-// The pages that have the effect, said in every refusal so the agent can
-// decide where to go next.
+// Where the effect exists, said in every refusal so the agent can decide where
+// to go next. It is a rule and not a list of pages on purpose: the effect needs
+// the gradient's stack of sheets, which the layout draws on every page except
+// the ones that draw the tree instead (the home and /labs/distortion-bg), so a
+// list would fall behind each time a page is added (the docs page at /mcp, for
+// one, has it).
 const WHERE =
-  "It exists on the pages with the gradient and no illustration: /about, /services, /courses and the blog " +
-  "(and 404), in both languages, on a desktop browser (a window at least 768px wide with a mouse). " +
-  "The home page and /labs/distortion-bg have the tree illustration instead and no black hole.";
+  "It exists on every page that has the background gradient, which is every page except the ones with the tree " +
+  "illustration (the home and /labs/distortion-bg, where there is no black hole), in both languages, on a desktop " +
+  "browser (a window at least 768px wide with a mouse). For example /about, /services, the blog and /mcp have it.";
 
 // What the whole effect takes, from the click to the page being still again
 // (the shockwave included); measured, and only told to the agent as a guide.

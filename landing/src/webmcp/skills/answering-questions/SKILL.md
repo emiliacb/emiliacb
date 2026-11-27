@@ -11,7 +11,7 @@ A good answer is shown as well as said: the page becomes a visual companion to t
 
 ## When to use
 
-- "What does Emilia do?", "Where has she worked?", "How do I contact her?", "What is on this site?", "Is there a post about X?"
+- "What does Emilia do?", "How do I contact her?", "Is there a post about X?"
 - Not for restyling the page: use `modifying-page`.
 
 ## The answer, in four parts
@@ -23,27 +23,20 @@ A good answer is shown as well as said: the page becomes a visual companion to t
    - The answer is contact info: `click_link_or_button` on the GitHub, LinkedIn, Email or Schedule trigger, which opens the site's own sidebar.
    - The answer is a short summary: `open_custom_sidebar` with a title, three lines and links.
    - The answer deserves a note beside the text: `insert_element` with a small callout.
-3. **The chat answer.** Two or three sentences in the visitor's language (es or en), saying what is on screen now.
-4. **Cleanup.** Before the next answer, undo the previous move: `remove_inserted_elements`, `close_sidebar`, and remove the highlight with an empty declaration for its selector.
+3. **The chat answer.** Two or three sentences in the visitor's language, saying what is on screen now.
+4. **Cleanup.** Before the next answer, undo the previous move: `remove_inserted_elements`, `close_sidebar`, and remove the highlight with an empty declaration for its selector. If the move was navigating there is nothing to undo: the next answer starts from that page.
 
-## Example
+## The visitor's language
 
-Visitor: "¿Cómo la contacto?"
+The site has an `en` and an `es` version of every page. When the visitor writes in the other language than the page's, either put the summary in a sidebar in their language (`open_custom_sidebar`), or switch the page first: `get_links_and_buttons` lists the language menu as a `menu` item, `click_link_or_button` on it opens it, list again and click the language's link (it navigates). Then answer in their language.
 
-1. `read_md_page` on `/es.md`: the contact section lists email, LinkedIn, GitHub and the calendar.
-2. `get_links_and_buttons` with filter `Email`, then `click_link_or_button` with the id of the sidebar trigger.
-3. Chat: "Te abrí el panel de contacto: puedes escribirle por email o agendar una reunión desde ahí."
-4. Next question: `close_sidebar` first.
+## Clicking
 
-## Quick reference
+The contact and footer triggers appear twice on a page (the contact row and the footer). The listing groups identical ones, with the other ids in `alsoAt`: click by `id`, or by `text` (it picks the copy on screen).
 
-| The answer is | Visual move | Tool |
-| --- | --- | --- |
-| A page | Go there | `click_link_or_button` |
-| A passage | Highlight | `set_css_by_selector` |
-| Contact | Open its sidebar | `click_link_or_button` |
-| A summary | Custom sidebar | `open_custom_sidebar` |
-| A remark | Callout | `insert_element` |
+## Links for the visitor
+
+Markdown pages are `.md` files (`/en/about.md`). When you give the visitor a link, drop the `.md`: `/en/about` is the page, the `.md` is for agents.
 
 ## Common mistakes
 
@@ -53,3 +46,4 @@ Visitor: "¿Cómo la contacto?"
 | Facts from memory | Read the Markdown page first. |
 | Several moves at once | One move per answer. |
 | Old highlight still on | Run step 4 first. |
+| Summary in the page's language only | Switch the language or write the sidebar in theirs. |
