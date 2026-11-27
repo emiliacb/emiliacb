@@ -203,6 +203,8 @@ const WEBMCP_TOOLS: readonly (readonly [name: string, summary: string])[] = [
   ["reset_css", "remove all custom CSS"],
   ["get_links_and_buttons", "the links and buttons a visitor could click, with ids"],
   ["click_link_or_button", "click a link or button by id, text or selector"],
+  ["set_google_font", "load a Google Fonts family (apply it afterwards with the CSS tools)"],
+  ["list_loaded_fonts", "the Google Fonts loaded in this tab"],
 ];
 
 /** /llms.txt: what the site is and where the Markdown versions live. */
