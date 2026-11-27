@@ -47,6 +47,18 @@ function monthlyChart(ctx: RenderCtx, stats: GithubStats) {
 }
 
 /**
+ * A day's shade, 0 to 4: 0 for none, and the busy days split at their
+ * quartiles, the way GitHub splits them.
+ */
+function shadeLevels(days: number[]): (n: number) => number {
+  const busy = days.filter((n) => n > 0).toSorted((a, b) => a - b);
+  const q = (p: number) => busy[Math.min(busy.length - 1, Math.floor(p * busy.length))] ?? 1;
+  const cuts = [q(0.25), q(0.5), q(0.75)];
+  // Past zero, one shade more for every quartile the count is above.
+  return (n) => (n === 0 ? 0 : 1 + cuts.filter((cut) => n > cut).length);
+}
+
+/**
  * GitHub's contribution calendar, drawn in the site's ink: a column per week,
  * Sunday on top, and four shades past zero split at the quartiles of the busy
  * days, the way GitHub splits them. Today is ringed in the accent.
@@ -58,13 +70,11 @@ function contributionCalendar(ctx: RenderCtx, stats: GithubStats) {
   const dateFmt = new Intl.DateTimeFormat(ctx.lang, { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
   const monthFmt = new Intl.DateTimeFormat(ctx.lang, { month: "short", timeZone: "UTC" });
 
-  const busy = days.filter((n) => n > 0).sort((a, b) => a - b);
-  const q = (p: number) => busy[Math.min(busy.length - 1, Math.floor(p * busy.length))] ?? 1;
-  const cuts = [q(0.25), q(0.5), q(0.75)];
-  const level = (n: number) => (n === 0 ? 0 : n <= cuts[0] ? 1 : n <= cuts[1] ? 2 : n <= cuts[2] ? 3 : 4);
-
-  const label = (n: number) =>
-    n === 0 ? t.dayNone : (n === 1 ? t.dayOne : t.dayMany).replace("{count}", fmt.format(n));
+  const level = shadeLevels(days);
+  const label = (n: number) => {
+    if (n === 0) return t.dayNone;
+    return (n === 1 ? t.dayOne : t.dayMany).replace("{count}", fmt.format(n));
+  };
 
   const t0 = utc(start).getTime();
   const weeks = Math.ceil(days.length / 7);
