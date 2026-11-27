@@ -5,10 +5,10 @@ import type { RenderCtx } from "../context";
 import { SIDEBAR_IDS } from "./sidebar";
 
 const columnLink =
-  "interactive hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 py-0.5 -ml-1";
+  "interactive hover:bg-strong hover:text-on-strong focus-visible:bg-strong focus-visible:text-on-strong px-1 py-0.5 -ml-1";
 
 const rowIcon =
-  "interactive flex w-fit border border-transparent px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black";
+  "interactive flex w-fit border border-transparent px-2 py-1 hover:bg-strong hover:text-on-strong hover:border-strong focus-visible:bg-strong focus-visible:text-on-strong";
 
 type ContactOptions = {
   columnMode?: boolean;
@@ -33,7 +33,7 @@ function contactColumn(ctx: RenderCtx) {
         >
       </li>
       <li class="underline underline-offset-4 mt-1">
-        <a class="hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 pt-1 pb-2 -ml-1" href="${CONTACT.calendar}"
+        <a class="hover:bg-strong hover:text-on-strong focus-visible:bg-strong focus-visible:text-on-strong px-1 pt-1 pb-2 -ml-1" href="${CONTACT.calendar}"
           data-sidebar="${SIDEBAR_IDS.calendar}" aria-haspopup="dialog" target="_blank">
           ${c.scheduleFull}
         </a>
@@ -56,7 +56,7 @@ export default function contact(ctx: RenderCtx, { columnMode = false }: ContactO
     >
       <li>
         <a
-          class="interactive flex gap-2 w-fit border border-black dark:border-white px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black"
+          class="interactive flex gap-2 w-fit border border-strong px-2 py-1 hover:bg-strong hover:text-on-strong hover:border-strong focus-visible:bg-strong focus-visible:text-on-strong"
           href="${CONTACT.calendar}"
           data-sidebar="${SIDEBAR_IDS.calendar}"
           aria-haspopup="dialog"

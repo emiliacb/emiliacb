@@ -1162,7 +1162,12 @@ const UNDER = /[\u0316-\u0319\u031c-\u0333\u0339-\u033c\u0345\u0347-\u0349\u034d
  * by hand, each one a step further out than the last, over and under the
  * window and whatever is near: left to the browser, they may all be drawn in
  * one place, piled on the letter. Each sits on a no-break space of its own,
- * and grows out after the window has come in, the furthest last (--n). */
+ * and grows out after the window has come in, the furthest last (--n).
+ *
+ * The characters are not text nodes but data-c, painted by ::before (see
+ * styles.css): generated content is no part of the page's text, so what an
+ * agent or a reader of the page's text gets (innerText, textContent) is the
+ * window's clean words and not a pile of combining marks. */
 function curse(text) {
   let html = "";
   let open = false;
@@ -1172,9 +1177,9 @@ function curse(text) {
     if (open && MARK.test(ch)) {
       if (ch === "\u034f") continue; // the grapheme joiner, which draws nothing
       const at = THROUGH.test(ch) ? 0 : UNDER.test(ch) ? down++ : -up++;
-      html += `<span class="tree-sound-ask-mark" style="--at:${at};--n:${Math.abs(at)}">\u00a0${ch}</span>`;
+      html += `<span class="tree-sound-ask-mark" data-c="\u00a0${ch}" style="--at:${at};--n:${Math.abs(at)}"></span>`;
     } else {
-      html += `${open ? "</span>" : ""}<span class="tree-sound-ask-letter">${ch}`;
+      html += `${open ? "</span>" : ""}<span class="tree-sound-ask-letter" data-c="${ch}">`;
       open = true;
       up = 0;
       down = 0;
@@ -1236,10 +1241,12 @@ function offerSound() {
     `<button type="button" class="tree-sound-ask-close" data-act="ignore" aria-label="${t.close}">` +
     '<svg viewBox="0 0 9 9" aria-hidden="true"><path d="M1 1l7 7M8 1L1 8" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>' +
     "</button></div>" +
-    // Its name comes through garbled, the way a voice does from far off;
-    // a screen reader is given it whole.
-    `<p><span aria-hidden="true"><span class="tree-sound-ask-name">${curse(t.spell)}</span> ${t.wants}</span>` +
-    `<span class="sr-only">${t.name} ${t.wants}</span></p>` +
+    // Its name comes through garbled, the way a voice does from far off: the
+    // garbling is decoration, hidden from assistive technology, and the name
+    // is given whole in text that is only for it. The words after it are
+    // plain text, read once.
+    `<p><span class="tree-sound-ask-name" aria-hidden="true">${curse(t.spell)}</span>` +
+    `<span class="sr-only">${t.name}</span> ${t.wants}</p>` +
     '<div class="tree-sound-ask-buttons">' +
     `<button type="button" data-act="ignore">${t.ignore}</button>` +
     `<button type="button" data-act="allow" class="is-default">${t.allow}</button>` +
@@ -2245,6 +2252,7 @@ function touch(dt) {
 let plate = null;
 let g = null;
 let floats = null;
+let floatsRoot = null; // where the formulas go: floats' own shadow root, or floats itself
 let curA = null; // F = k v, by the pointer while it moves
 let curB = null; // and how k is interpolated
 let levF = null; // τ = r × F, by the point a part is pushed at
@@ -2259,6 +2267,36 @@ let ox = 0;
 let oy = 0;
 let small = 1; // formulas shrink with a small tree
 
+/** Where the formulas are put. They are decoration (aria-hidden says so to
+ * assistive technology), but a page's text (innerText, which is what an agent
+ * reading the page gets) ignores aria-hidden and would begin with them, so they
+ * live in a shadow root, which that text does not include. A shadow root does
+ * not see the page's rules, so the ones written for the layer in styles.css
+ * (`.tree-floats .fx ...`) are copied into it, with the prefix taken off. Where
+ * a shadow root or an adopted sheet is not to be had, they are put in the layer
+ * itself, as they were. */
+function formulaRoot(host) {
+  if (typeof host.attachShadow !== "function" || typeof CSSStyleSheet !== "function") return host;
+  const sheet = new CSSStyleSheet();
+  if (typeof sheet.replaceSync !== "function") return host;
+  const rules = [];
+  for (const own of document.styleSheets) {
+    try {
+      for (const rule of own.cssRules) {
+        if (rule instanceof CSSStyleRule && rule.selectorText.includes(".tree-floats ")) {
+          rules.push(`${rule.selectorText.replace(/\.tree-floats\s+/g, "")} { ${rule.style.cssText} }`);
+        }
+      }
+    } catch {
+      // A stylesheet from another origin cannot be read; none of the site's is.
+    }
+  }
+  sheet.replaceSync(rules.join("\n"));
+  const root = host.attachShadow({ mode: "open" });
+  root.adoptedStyleSheets = [sheet];
+  return root;
+}
+
 function makeFrags(p) {
   for (const [name, x, y, align, tilt, size] of FRAGS[p.key] || []) {
     const el = document.createElement("div");
@@ -2266,7 +2304,7 @@ function makeFrags(p) {
     el.style.fontSize = `calc(var(--k, 1) * ${size}px)`;
     const num = name === "num";
     el.innerHTML = num ? '<span class="n">0.0000000</span>' : F[name];
-    floats.appendChild(el);
+    floatsRoot.appendChild(el);
     // The bit of the part this formula rides on.
     const j = p.kind === "limb" ? nearest(p, x, y).at : 0;
     p.frags.push({
@@ -2296,7 +2334,7 @@ function loose(name, size, tilt) {
   el.className = "fx force";
   el.style.fontSize = `calc(var(--k, 1) * ${size}px)`;
   el.innerHTML = F[name];
-  floats.appendChild(el);
+  floatsRoot.appendChild(el);
   return { el, w: 0, h: 0, vis: false, o: -1, phase: size, tilt };
 }
 
@@ -3298,6 +3336,7 @@ function setup() {
   floats.className = "tree-floats";
   floats.setAttribute("aria-hidden", "true");
   box.append(plate, floats);
+  floatsRoot = formulaRoot(floats);
 
   build();
   for (const p of parts) makeFrags(p);

@@ -105,6 +105,12 @@ module.exports = {
         paper: token("--color-paper"),
         ink: token("--color-ink"),
         accent,
+        // The text on a colour, and the black-or-white hover: roles that the
+        // stylesheet derives (see --color-on-accent) and the templates name,
+        // so that a highlighted element and its text stay a pair in any palette.
+        "on-accent": token("--color-on-accent"),
+        strong: token("--color-strong"),
+        "on-strong": token("--color-on-strong"),
         signal,
         "code-bg": token("--color-code-bg"),
         "code-ink": token("--color-code-ink"),

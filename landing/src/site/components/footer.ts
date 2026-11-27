@@ -41,7 +41,7 @@ function footerContent(ctx: RenderCtx) {
               aria-pressed="true"
               aria-label="${copy.sound}"
               class="group flex items-center justify-center size-7
-                hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black
+                hover:bg-strong hover:text-on-strong
                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
                 focus-visible:outline-current transition-colors [&_svg]:w-4 [&_svg]:h-4"
             >
@@ -60,7 +60,7 @@ function footerContent(ctx: RenderCtx) {
                 (route) => html`<li>
                   <a
                     href="${baseLangPath}${route.path}"
-                    class="interactive text-sm hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 py-0.5 -ml-1"
+                    class="interactive text-sm hover:bg-strong hover:text-on-strong focus-visible:bg-strong focus-visible:text-on-strong px-1 py-0.5 -ml-1"
                     >${route.name}</a
                   >
                 </li>`
@@ -88,6 +88,11 @@ function footerContent(ctx: RenderCtx) {
 }
 
 export default function footer(ctx: RenderCtx) {
+  // The footer sits on the accent, so its text is the accent's (text-on-accent,
+  // which is read from the accent: see --color-on-accent in styles.css), not
+  // the page's ink, and its links invert to the strong ground as they do
+  // everywhere else (strong, on-strong).
+  //
   // ponytail: no inset variant here. The classes were interpolated from
   // AI_LAYOUT, so Tailwind's scanner never saw them and never generated
   // them, and `html.ai-layout-enabled footer` in styles.css already
@@ -103,7 +108,7 @@ export default function footer(ctx: RenderCtx) {
   // background, without changing how far the page scrolls; the padding gives
   // the height back, so the content still sits 2rem below the overlay's edge.
   return html`<footer
-    class="sticky bottom-0 h-fit pb-8 z-0 flex px-4 sm:px-8 justify-center bg-yellow-300 dark:bg-blue-900 items-center"
+    class="sticky bottom-0 h-fit pb-8 z-0 flex px-4 sm:px-8 justify-center bg-accent text-on-accent items-center"
     style="margin-top: calc(-1 * var(--radius-overlay)); padding-top: calc(var(--radius-overlay) + 2rem)"
   >
     ${footerContent(ctx)}

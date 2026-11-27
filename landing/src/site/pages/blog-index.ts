@@ -6,7 +6,7 @@ import layout from "../components/layout";
 function postCard(ctx: RenderCtx, post: Post) {
   const date = new Intl.DateTimeFormat(ctx.lang, { dateStyle: "medium" }).format(new Date(post.date));
 
-  return html`<a class="group bg-yellow-300 dark:bg-blue-900 hover:bg-black hover:text-stone-100 dark:hover:bg-stone-100 dark:hover:text-stone-900" href="/${ctx.lang}/blog/${post.slug}">
+  return html`<a class="group bg-accent text-on-accent hover:bg-strong hover:text-on-strong" href="/${ctx.lang}/blog/${post.slug}">
     <article class="grid grid-cols-[auto_1fr] h-28">
       <div class="aspect-square relative overflow-hidden">
         <div class="absolute inset-0 blog-card-thumb"></div>
@@ -17,7 +17,7 @@ function postCard(ctx: RenderCtx, post: Post) {
       <div class="flex flex-col justify-center p-2 pl-4 overflow-hidden gap-1">
         <h2 class="font-bold truncate">${post.title} </h2>
         ${post.description
-          ? html`<span class="text-sm text-stone-800 dark:text-stone-300 group-hover:text-stone-100 dark:group-hover:text-stone-900 line-clamp-2">${post.description}</span>`
+          ? html`<span class="text-sm group-hover:text-on-strong line-clamp-2">${post.description}</span>`
           : null}
         <span class="text-xs font-light">${date}</span>
       </div>

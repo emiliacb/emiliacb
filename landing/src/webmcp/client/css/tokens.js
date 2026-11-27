@@ -13,12 +13,17 @@ export const BASE_TOKENS = [
   {
     name: "--color-ink",
     purpose: "The text, the rules drawn in ink, the cotas' dark end.",
-    derives: "the stone scale (swapped with paper in dark), --color-on-ink.",
+    derives:
+      "the stone scale (swapped with paper in dark); --color-on-ink, the text on ink (the ink cursor's halo, the mascot's bubbles), which is " +
+      "read from the ink's lightness (near black or white), automatic, and overridable by setting it yourself.",
   },
   {
     name: "--color-accent",
-    purpose: "The highlight: link fills, the footer, the hovered Allow button. Yellow in light, deep blue in dark.",
-    derives: "--color-on-accent.",
+    purpose: "The highlight: link fills (and the table of contents'), the footer, the blog and course cards, the hovered Allow button. Yellow in light, deep blue in dark.",
+    derives:
+      "--color-on-accent, the text on all of those (the footer's text and links, the highlighted links and cards, the hovered Allow button): " +
+      "automatic, read from the accent's lightness (near black above it, white below it), so any accent stays readable; " +
+      "set --color-on-accent yourself only to override it.",
   },
   {
     name: "--color-signal",
@@ -43,14 +48,16 @@ export const BASE_TOKENS = [
   {
     name: "--tree-grad-a",
     purpose:
-      'The top of the tree\'s leaves and trunk gradient (and the sound window\'s bar), as "r g b" channels, for the light page: ' +
-      "in dark the whole tree is inverted, so what shows is its negative.",
-    derives: "the tree's leaves and trunk, the tree-sound window.",
+      'The top of the tree\'s leaves and trunk gradient (and the start of the sound window\'s bar), as "r g b" channels. It is what is painted, ' +
+      "per mode: light and dark have a pair each (nothing is inverted), so a value set for a mode shows as it is in that mode.",
+    derives:
+      "the tree's leaves and trunk (the SVG, at once), the tree-sound window's bar and, read from the bar's colours, " +
+      "its title and close button (near black or white, automatic). The tree's canvases (anatomy, cotas) take their ink from --tree-hue, not from this.",
   },
   {
     name: "--tree-grad-b",
-    purpose: 'The bottom of the tree\'s leaves and trunk gradient, as "r g b" channels, for the light page (inverted in dark).',
-    derives: "the tree's leaves and trunk, the tree-sound window.",
+    purpose: 'The bottom of the tree\'s leaves and trunk gradient (and the end of the sound window\'s bar), as "r g b" channels; per mode, like --tree-grad-a.',
+    derives: "the same as --tree-grad-a: the tree's leaves and trunk, the tree-sound window's bar and its text.",
   },
   { name: "--font-sans", purpose: "The text face.", derives: "all text." },
   { name: "--font-cota", purpose: "The cotas' face (and the sidebars' numbers).", derives: "the cotas." },

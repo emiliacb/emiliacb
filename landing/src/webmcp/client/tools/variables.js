@@ -220,15 +220,18 @@ function readInput(input) {
   return { mode, entries };
 }
 
+// What follows from what is in the tokens' metadata (css/tokens.js), where get_variables reads it from:
+// --color-on-accent, -on-ink and -on-strong are derived from their ground (overridable), and the tree
+// and the sound window are painted from --tree-grad-a/b as set in each mode, with no inversion in dark.
 const setVariables = {
   name: "set_variables",
   summary: "change design tokens (colours, fonts, sizes) in light, dark or both",
   title: "Change the site's design tokens",
   description:
     "Changes CSS variables (design tokens) such as --color-paper, --color-ink, --color-accent, --tree-hue, --g-a or " +
-    "--font-size-base, and everything built on them follows: the page, and also the tree, the gradient and the " +
-    "cotas, which repaint at once. Prefer this to writing CSS; call get_variables first to see the base tokens, " +
-    "their light and dark values and what each is for. `mode` says which colour mode the values are for: " +
+    "--font-size-base, and what is built on them follows (the tree, gradient and cotas repaint at once; text on the " +
+    "accent is derived automatically, see --color-accent in get_variables). Prefer this to writing CSS; call get_variables first to see the " +
+    "base tokens, their light and dark values and what each is for. `mode` says which colour mode the values are for: " +
     "\"light\", \"dark\", or \"both\" (default), so you do not have to know how the site writes its dark " +
     "values; set a dark value only while it should differ from light. Only custom properties (--name) are " +
     "accepted. A value is checked against what the token holds (a colour for a colour token; \"r g b\" " +
