@@ -94,7 +94,7 @@ export default function footer(ctx: RenderCtx) {
   // container, and width:100% over-constrained the inset state so margin-right
   // was dropped and the right corner landed outside the overflow-x clip.
   //
-  // The overlay rounds its bottom corners (--overlay-radius) once it is
+  // The overlay rounds its bottom corners (--radius-overlay) once it is
   // scrolled past, and what shows through them is whatever sits behind it.
   // The negative margin runs the footer's background up under the overlay by
   // that radius, so the corners open onto the footer rather than the page
@@ -102,7 +102,7 @@ export default function footer(ctx: RenderCtx) {
   // the height back, so the content still sits 2rem below the overlay's edge.
   return html`<footer
     class="sticky bottom-0 h-fit pb-8 z-0 flex px-4 sm:px-8 justify-center bg-yellow-300 dark:bg-blue-900 items-center"
-    style="margin-top: calc(-1 * var(--overlay-radius)); padding-top: calc(var(--overlay-radius) + 2rem)"
+    style="margin-top: calc(-1 * var(--radius-overlay)); padding-top: calc(var(--radius-overlay) + 2rem)"
   >
     ${footerContent(ctx)}
   </footer>`;

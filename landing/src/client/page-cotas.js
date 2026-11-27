@@ -1,3 +1,5 @@
+import { isDark, onThemeChange } from "./lib/theme.js";
+
 // The page in technical-drawing ink: whatever block the pointer touches is
 // dimensioned (its height, in CSS millimetres), the pointer carries its
 // velocity on a rule and its acceleration (not over a dimensioned block), and the right edge holds two
@@ -23,10 +25,6 @@
   const LIFT = 1.3;
   let lift = 1;
   const TONE = {};
-  function isDark() {
-    const t = document.documentElement.dataset.theme;
-    return t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
-  }
   function readTheme() {
     const cs = getComputedStyle(document.documentElement);
     TONE.length = cs.getPropertyValue("--cota-length").trim();
@@ -665,8 +663,21 @@
   const TAU_IN = 0.07, TAU_OUT = 0.35;
   let raf = 0, last = 0;
   function kick() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(tick); } }
+  // --cotas-display (styles.css) is how the page turns the cotas off: none
+  // hides the plate there, and here stops the measuring and the drawing, which
+  // are the cost. Read at the top of each frame, which every pointer move
+  // already asks for, so there is nothing to poll: the first move after the
+  // value changes picks it up, and the canvas is cleared once on the way out.
+  let wasOff = false;
+  function isOff() {
+    const off = getComputedStyle(document.documentElement).getPropertyValue("--cotas-display").trim() === "none";
+    if (off && !wasOff) g.clearRect(0, 0, W, Hh);
+    wasOff = off;
+    return off;
+  }
   function tick(now) {
     raf = 0;
+    if (isOff()) return;
     // A phone's bars can change the window's height without a resize event.
     if (innerHeight !== Hh || innerWidth !== W) layout();
     const dt = Math.min(0.05, (now - last) / 1000);
@@ -761,8 +772,7 @@
   readTheme();
   layout();
   addEventListener("resize", () => { layout(); kick(); });
-  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readTheme(); kick(); });
-  new MutationObserver(() => { readTheme(); kick(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  onThemeChange(() => { readTheme(); kick(); });
   // Nothing in the page's CSS uses the cotas' face, so the browser would not
   // fetch it for a canvas: ask for it, and redraw once it is in.
   if (document.fonts) {

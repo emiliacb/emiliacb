@@ -6,13 +6,15 @@
 // plain links (to GitHub, LinkedIn, Cal.com, or mailto:), which is also what
 // they stay without JavaScript, and what a middle click or a modifier click
 // still opens.
+import { isDark, onThemeChange } from "./lib/theme.js";
+import { rgbOf } from "./lib/color.js";
+
 (function () {
   "use strict";
 
   const TRIGGER = "a[data-sidebar]";
   // A sidebar on a desktop, a bottom sheet on a phone. Same breakpoint as md:.
   const wide = matchMedia("(min-width: 768px)");
-  const dark = matchMedia("(prefers-color-scheme: dark)");
 
   const drawers = Array.from(document.querySelectorAll("ui-drawer.sidebar"));
   if (drawers.length === 0) return;
@@ -57,6 +59,32 @@
   // first time that sidebar opens, never with the page. Cal.com's own snippet
   // queues calls on window.Cal until embed.js arrives and plays them.
   let calendarStarted = false;
+  // The booker's colours, read from the tokens so that it sits in the sheet
+  // however the page was restyled: the sheet's ground, ink and rules (stone),
+  // and the nav rule's green as the accent, blue in the dark.
+  function styleCalendar() {
+    if (!window.Cal) return;
+    const cs = getComputedStyle(document.documentElement);
+    const hex = (name) => {
+      const [r, g, b] = rgbOf(cs.getPropertyValue(name).trim());
+      return "#" + [r, g, b].map((c) => Math.round(c * 255).toString(16).padStart(2, "0")).join("");
+    };
+    const vars = {
+      "cal-bg": hex("--color-paper"),
+      "cal-bg-emphasis": hex(isDark() ? "--color-stone-700" : "--color-stone-200"),
+      "cal-border-subtle": hex(isDark() ? "--color-stone-500" : "--color-stone-400"),
+      "cal-text": hex("--color-ink"),
+      "cal-text-emphasis": hex("--color-ink"),
+      "cal-brand": hex("--color-signal-bar"),
+    };
+    window.Cal("ui", {
+      theme: isDark() ? "dark" : "light",
+      layout: "month_view",
+      hideEventTypeDetails: true,
+      cssVarsPerTheme: { light: vars, dark: vars },
+    });
+  }
+
   function startCalendar() {
     const box = document.getElementById("calendar-embed");
     if (calendarStarted || !box) return;
@@ -78,36 +106,13 @@
     });
     document.head.appendChild(script);
 
-    const theme = dark.matches ? "dark" : "light";
     const Cal = window.Cal;
     Cal("init", { origin: "https://cal.com" });
-    Cal("inline", { elementOrSelector: "#calendar-embed", calLink: box.dataset.calLink, config: { layout: "month_view", theme } });
-    Cal("ui", {
-      theme,
-      layout: "month_view",
-      hideEventTypeDetails: true,
-      // The sheet's ground, ink and rules (stone), so the booker sits in it
-      // instead of on a card of its own; the accent is the nav rule's green,
-      // blue in the dark.
-      cssVarsPerTheme: {
-        light: {
-          "cal-bg": "#f5f5f4",
-          "cal-bg-emphasis": "#e7e5e4",
-          "cal-border-subtle": "#a8a29e",
-          "cal-text": "#292524",
-          "cal-text-emphasis": "#292524",
-          "cal-brand": "#4ade80",
-        },
-        dark: {
-          "cal-bg": "#292524",
-          "cal-bg-emphasis": "#44403c",
-          "cal-border-subtle": "#78716c",
-          "cal-text": "#f5f5f4",
-          "cal-text-emphasis": "#f5f5f4",
-          "cal-brand": "#2563eb",
-        },
-      },
-    });
+    Cal("inline", { elementOrSelector: "#calendar-embed", calLink: box.dataset.calLink, config: { layout: "month_view", theme: isDark() ? "dark" : "light" } });
+    styleCalendar();
+    // The booker follows the page when its mode is changed (the visitor's
+    // system, or setThemeMode), as the sheet around it does.
+    onThemeChange(styleCalendar);
     Cal("on", {
       action: "linkReady",
       callback: function () {

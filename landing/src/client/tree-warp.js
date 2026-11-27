@@ -41,6 +41,8 @@
 // With reduced motion, on touch screens and below md, this does nothing;
 // without WebGL the content still turns but does not bend.
 import { toCanvas, getFontEmbedCSS } from "html-to-image";
+import { onThemeChange } from "./lib/theme.js";
+import { rgbOf } from "./lib/color.js";
 
 (() => {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -183,8 +185,7 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
   // The page's colour behind #content, for the split (uBg), read with the copy.
   let bg = [0, 0, 0];
   function readBg() {
-    const m = getComputedStyle(document.getElementById("overlay-content") || document.body).backgroundColor.match(/[\d.]+/g);
-    if (m && m.length >= 3) bg = m.slice(0, 3).map((c) => Number(c) / 255);
+    bg = rgbOf(getComputedStyle(document.getElementById("overlay-content") || document.body).backgroundColor);
   }
 
   async function take() {
@@ -419,6 +420,5 @@ import { toCanvas, getFontEmbedCSS } from "html-to-image";
     resizing = setTimeout(() => { measure(); take(); }, wait);
   }
   addEventListener("resize", () => retake(200), { passive: true });
-  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => retake(500));
-  new MutationObserver(() => retake(500)).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  onThemeChange(() => retake(500));
 })();

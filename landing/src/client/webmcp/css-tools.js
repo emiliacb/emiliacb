@@ -251,7 +251,8 @@ const setCss = {
     "always send the complete stylesheet (call get_css first to extend it). An empty string removes the stylesheet " +
     "but keeps the per-selector rules from set_css_by_selector; use reset_css to clear everything. The stylesheet is " +
     "added last in <head>, after the site's own styles; use !important where an inline style or a more specific rule " +
-    "may win. Maximum 50000 characters. Dark mode follows @media (prefers-color-scheme: dark). " +
+    "may win. Maximum 50000 characters. Dark mode is html[data-theme=dark], or the system preference when html has no data-theme; " +
+    "the design tokens (get_variables) are redefined for dark in :root[data-theme=dark] and the dark media query. " +
     "After applying, the page is checked: if the change makes it unusable (main content hidden, text with no contrast, " +
     "a full-screen layer blocking clicks) it is rolled back and the call is rejected with what broke. " +
     "Returns what was applied and `warnings` for declarations the browser ignores. " +

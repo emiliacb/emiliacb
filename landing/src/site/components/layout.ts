@@ -68,6 +68,17 @@ export default function layout({
     >
       <head>
         <script>
+          // Puts back the colour mode the visitor chose (src/client/lib/theme.js,
+          // which writes the same key) before the first paint: no attribute
+          // follows the system, and a stored "light" or "dark" overrides it.
+          // Here and not in a bundle because a deferred script would run after
+          // the page had been painted in the system's mode.
+          try {
+            var mode = localStorage.getItem("theme");
+            if (mode === "light" || mode === "dark") document.documentElement.dataset.theme = mode;
+          } catch (e) {}
+        </script>
+        <script>
           // Keeps the AI layout across navigations inside the site (a multi-page
           // app, so the toggle would otherwise reset on every link click), and
           // only those. Clearing the flag on the other paths is the point: left
@@ -245,13 +256,9 @@ document.head.appendChild(o)}initApollo();</script>
             left: 0;
             height: 3px;
             width: 0;
-            background: #86efac;
+            background: var(--color-signal);
             z-index: 9999;
             pointer-events: none;
-          }
-
-          @media (prefers-color-scheme: dark) {
-            #loading-bar { background: #1d4ed8; }
           }
 
           #loading-bar.loading {
@@ -382,7 +389,7 @@ document.head.appendChild(o)}initApollo();</script>
             ${navbar(ctx)}
             <main
               id="content"
-              class="min-h-static-screen-minus-nav overflow-hidden flex flex-col justify-between md:justify-start w-full px-4 sm:px-8 md:pt-6 m-auto max-w-[60rem] h-full pb-16 md:pb-24"
+              class="min-h-static-screen-minus-nav overflow-hidden flex flex-col justify-between md:justify-start w-full px-4 sm:px-8 md:pt-6 m-auto max-w-[var(--size-content)] h-full pb-16 md:pb-24"
             >
               ${children}
             </main>

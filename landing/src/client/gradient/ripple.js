@@ -10,6 +10,8 @@
  * catch the light on one side and fall into shade on the other. It dies away
  * as it spreads, and then the page is given back as it was.
  */
+import { isDark } from "../lib/theme.js";
+
 const VERT = `
 attribute vec2 aPos;
 varying vec2 vUv;
@@ -139,7 +141,7 @@ export function makeRipple(host) {
     gl.uniform2f(U.uOff, x0 - shot.x, y0 - shot.y);
     gl.uniform2f(U.uTexSize, shot.w, shot.h);
     gl.uniform2f(U.uC, cx - x0, cy - y0);
-    const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+    const dark = isDark();
     gl.uniform3fv(U.uShade, dark ? [0, 0, 0] : [0.11, 0.1, 0.09]);
     gl.uniform1f(U.uDark, dark ? 1 : 0);
     draw(0);
