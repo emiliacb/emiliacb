@@ -102,19 +102,30 @@ export const NOTE_EFFECTS = Object.keys(EFFECTS).filter((name) => EFFECTS[name].
 export const SONG_EFFECTS = Object.keys(EFFECTS).filter((name) => EFFECTS[name].scope === "song");
 // The scale's seventh degree, C, has no part of its own: each part has one
 // pitch, and what a visitor brushes or presses must stay as it is. A song may
-// still play it, twice, one low and one high, in a voice of the tree's but on no
-// part of it: nothing shakes, lights or answers in sympathy, and the visitor
-// cannot play them. C3 is wood, where the wood's own notes lie (D2 to G3); C5
-// is a glass bell, among the bells' (D4 to D5). Below C3 a laptop's speakers
-// give nothing and above C5 the bell is thin, so these are the two that sound
-// well, one beside each end of the tree's range.
+// still play it, three times, in a voice of the tree's but on no part of it:
+// nothing shakes, lights or answers in sympathy, and the visitor cannot play
+// them. C3 is wood, where the wood's own notes lie (D2 to G3); C5 is a glass
+// bell, among the bells' (D4 to D5). C4 lies between A3, the highest wood, and
+// D4, the lowest bell, and is wood because it is the nearer to the wood's range;
+// that was chosen by range, not by ear, so swap it to "glass bell" here if it
+// sounds better. Below C3 a laptop's speakers give nothing and above C5 the
+// bell is thin, so these are the Cs that sound well.
 const EXTRA = [
   { name: "C3", hz: 130.81, voice: "wood" },
+  { name: "C4", hz: 261.63, voice: "wood" },
   { name: "C5", hz: 523.25, voice: "glass bell" },
 ];
 
+// The Latin names of the notes (solfege), by the letter they stand for, which a
+// song may write instead of the letters: Do4 is C4, Sib4 is Bb4. The octave is
+// the same as for the letters (Do4 is middle C).
+export const SOLFEGE = { C: "Do", D: "Re", E: "Mi", F: "Fa", G: "Sol", A: "La", B: "Si" };
+
+/** The Latin name of a note's pitch class, with its accidental as the page writes it: Eb4 is "Mi♭", F#4 is "Fa#". */
+export const latinName = (name) => name.replace(/^([A-G])([#b]?)\d*$/, (_, letter, accidental) => SOLFEGE[letter] + (accidental === "b" ? "♭" : accidental));
+
 /**
- * Every note a song may write, low to high: the eleven NOTES, and C3 and C5,
+ * Every note a song may write, low to high: the eleven NOTES, and C3, C4 and C5,
  * which have no `part` (null): the song sounds them in their `voice` alone.
  */
 export const SONG_NOTES = [...NOTES, ...EXTRA.map((note) => ({ name: note.name, midi: midiOf(note.hz), hz: note.hz, part: null, voice: note.voice }))].sort((a, b) => a.hz - b.hz);

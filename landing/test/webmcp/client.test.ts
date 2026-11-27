@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { blend, contrastRatio, parseRgb } from "../../src/webmcp/client/css/contrast.js";
 import { enabledTools } from "../../src/webmcp/client/tools/index.js";
+import { treeSongTools } from "../../src/webmcp/client/tools/tree-song.js";
 import {
   mergeRule,
   parseDeclarations,
@@ -92,5 +93,71 @@ describe("enabledTools", () => {
       expect(tool.title, tool.name).not.toBe("");
       expect(tool.description, tool.name).not.toBe("");
     }
+  });
+});
+
+describe("play_tree_song without audio", () => {
+  const play = treeSongTools[0];
+  const song = { notes: "D4/4" };
+
+  /** A tree whose sound stands at `status`, the window at `place`; play must not be reached unless it is "running". */
+  function withTree(lang: string, status: string, place: { x: string; y: string } | null = { x: "right", y: "bottom" }) {
+    const played: unknown[] = [];
+    Object.assign(globalThis, {
+      document: { documentElement: { lang } },
+      window: {
+        siteTreeSound: {
+          unlock: () => Promise.resolve(status),
+          place: () => place,
+          state: () => ({ wanted: status !== "off" }),
+          play: (input: unknown) => {
+            played.push(input);
+            return { steps: 1, bpm: 120, durationMs: 500, effects: [] };
+          },
+        },
+      },
+    });
+    return played;
+  }
+
+  afterEach(() => {
+    Reflect.deleteProperty(globalThis, "document");
+    Reflect.deleteProperty(globalThis, "window");
+  });
+
+  it("rejects in the page's language, naming the button and where the window is, and plays nothing", async () => {
+    const played = withTree("es", "window");
+    await expect(play.execute(song)).rejects.toThrow(/^Para escuchar al árbol, hacé clic en "Permitir" en la ventana del árbol \(abajo a la derecha\) y avisame\./);
+    withTree("en", "window", { x: "center", y: "bottom" });
+    await expect(play.execute(song)).rejects.toThrow(/^To hear the tree, click "Allow" in the tree's window \(at the bottom\) and let me know\./);
+    expect(played).toEqual([]);
+  });
+
+  it("tells a sound the visitor turned off or ignored apart, and says only they can bring it back", async () => {
+    withTree("es", "off");
+    await expect(play.execute(song)).rejects.toThrow(/^Apagaste el sonido del árbol.*parlante.*Only the visitor/s);
+    withTree("en", "ignored");
+    await expect(play.execute(song)).rejects.toThrow(/^You chose "Ignore" in the tree's window.*speaker button/s);
+  });
+
+  it("never reports success when the sound stops between the check and the song", async () => {
+    withTree("en", "running");
+    Object.assign(window, {
+      siteTreeSound: {
+        unlock: () => Promise.resolve("running"),
+        place: () => null,
+        state: () => ({ wanted: true }),
+        play: () => {
+          throw new Error("The tree's sound is not running.");
+        },
+      },
+    });
+    await expect(play.execute(song)).rejects.toThrow(/^To hear the tree, click or tap anywhere/);
+  });
+
+  it("plays when the sound is running", async () => {
+    const played = withTree("en", "running");
+    await play.execute(song);
+    expect(played).toEqual([song]);
   });
 });

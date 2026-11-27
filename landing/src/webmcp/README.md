@@ -125,7 +125,7 @@ becomes a generic message and a console warning.
 - The hidden note: every page starts with a visually hidden paragraph that says
   how to list and call the tools from the tab and where the docs are. The
   `<head>` has `rel="describedby"` (`/mcp.md`) and `rel="help"` (`/{lang}/mcp`)
-  links, and the footer a visible "For AI agents" link, for the same reason: an
+  links, and the footer a visible "MCP" link, for the same reason: an
   agent that is not told the tools exist does not look for them.
 - The skills: `read_skill` / `list_skills` (WebMCP has no skill primitive), and
   the tool descriptions that change the page or answer from it end with a

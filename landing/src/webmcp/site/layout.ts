@@ -56,6 +56,8 @@ export function renderFooterLink(ctx: RenderCtx): HtmlEscapedString | Promise<Ht
   return html`<li>
     <a
       href="/${ctx.lang}${DOCS_PATH}"
+      aria-label="${DOCS_COPY[ctx.lang].footerLinkLabel}"
+      title="${DOCS_COPY[ctx.lang].footerLinkLabel}"
       class="interactive text-sm hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 py-0.5 -ml-1"
       >${DOCS_COPY[ctx.lang].footerLink}</a
     >

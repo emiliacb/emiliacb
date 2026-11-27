@@ -10,8 +10,10 @@ import type { Lang } from "../../../shared/lang";
 export type DocsCopy = {
   /** <title> and the page's H1. */
   title: string;
-  /** The footer's link to the page, on every page of the site. */
+  /** The footer's link to the page, on every page of the site: just the name of the protocol, since the footer's links are single words. */
   footerLink: string;
+  /** What that link is, for a screen reader and a tooltip, which the one word does not say. */
+  footerLinkLabel: string;
   description: string;
   intro: string;
   what: { heading: string; body: string[] };
@@ -34,7 +36,8 @@ export type DocsCopy = {
 
 const en: DocsCopy = {
   title: "WebMCP tools for agents",
-  footerLink: "For AI agents",
+  footerLink: "MCP",
+  footerLinkLabel: "MCP: tools for AI agents",
   description:
     "The tools this site exposes to a visitor's browser agent through WebMCP, how to call them, and the skills that teach an agent to use them well.",
   intro:
@@ -153,7 +156,8 @@ const en: DocsCopy = {
 
 const es: DocsCopy = {
   title: "Herramientas WebMCP para agentes",
-  footerLink: "Para agentes de IA",
+  footerLink: "MCP",
+  footerLinkLabel: "MCP: herramientas para agentes de IA",
   description:
     "Las herramientas que este sitio expone al agente del navegador de quien lo visita mediante WebMCP, cómo llamarlas y las skills que enseñan a usarlas bien.",
   intro:

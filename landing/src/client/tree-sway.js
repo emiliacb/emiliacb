@@ -1018,7 +1018,10 @@ function offerTilt() {
 // A browser plays nothing until the page has been clicked, tapped or typed
 // into, so it is silent until the first of those, wherever it lands.
 const SOUND_KEY = "tree-sound";
-const sound = { want: true, ac: null, bus: null, fx: null }; // fx: the nodes the song effects turn (setEffects)
+// ignored: the visitor answered the window with Ignore, rather than turning the
+// switch off; a script that asks (unlock) is told which, since only the switch
+// can bring the sound back from there: the window does not come again.
+const sound = { want: true, ignored: false, ac: null, bus: null, fx: null }; // fx: the nodes the song effects turn (setEffects)
 try {
   sound.want = localStorage.getItem(SOUND_KEY) !== "off";
 } catch {
@@ -1028,6 +1031,7 @@ try {
 /** Turns the sound on or off. Called from a press, which is also what lets it start. */
 function setSound(yes) {
   sound.want = yes;
+  if (yes) sound.ignored = false;
   if (yes) startSound();
   else dropHint();
 }
@@ -1182,6 +1186,7 @@ function curse(text) {
 /** Leaves the tree quiet for this visit: told as the footer's switch tells it, so the switch shows it too. */
 function ignoreSound() {
   window.dispatchEvent(new CustomEvent(SOUND_KEY, { detail: false }));
+  sound.ignored = true;
   dropHint();
 }
 
@@ -3312,7 +3317,7 @@ function setup() {
 // the object is plain and documented so anything can use it:
 //
 //   notes      the notes a song may write: { name, midi, hz, part, voice }; the
-//              eleven of the parts, and C3 and C5, which no part rings (part is null)
+//              eleven of the parts, and C3, C4 and C5, which no part rings (part is null)
 //   effects    what a song can ask for, with each parameter's range and default
 //   play(song) plays { notes, bpm?, effects? } (see lib/tree-song.js for the
 //              format) on the tree's own voice; throws a RangeError saying what
@@ -3321,10 +3326,16 @@ function setup() {
 //   state()    { playing, step, steps, notesSounded, ended, audio, wanted,
 //              windowOpen, lit }: where the song is, and the sound's own state
 //   unlock()   a promise of where the sound stands, trying what a script may
-//              try: "running", "off" (its switch is off), "window" (the
-//              window that asks the visitor is open), "press" (only a press
-//              will start it, and there is no window to ask for it) or
-//              "unsupported"
+//              try: "running" (an audio context that is running, now, and
+//              nothing in the way of the notes being heard), "off" (its
+//              switch is off), "ignored" (the visitor answered the window with
+//              Ignore: the window does not come again, the switch is what is
+//              left), "window" (the window that asks the visitor is open, and
+//              scrolled into view), "press" (only a press will start it, and
+//              there is no window to ask for it) or "unsupported"
+//   place()    where the window is on the screen now, { x, y } with x one of
+//              "left", "center", "right" and y one of "top", "middle",
+//              "bottom", or null if it is not up
 //
 // A browser keeps audio locked until the visitor has pressed something on the
 // page, and a script calling this is not a press. So nothing here starts the
@@ -3336,7 +3347,7 @@ function setup() {
 const partOf = (key) => parts.find((p) => p.key === key);
 
 /**
- * What sounds a note that belongs to no part (a song's C3 and C5): a stand-in
+ * What sounds a note that belongs to no part (a song's C3, C4 and C5): a stand-in
  * with only what a voice needs, in no list of the tree's, so that nothing
  * shakes, lights or answers it, and nothing else hears it.
  */
@@ -3393,20 +3404,63 @@ const songEngine = {
 const player = createPlayer(songEngine);
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Where the sound stands, having tried what a script may try to start it. */
+const RESUME_WAIT = 300; // ms a resume() may take before it is taken as refused
+
+/** Tries to resume the audio. Without a press the browser may leave the
+ * promise pending for good, or settle it with the context still suspended, so
+ * what is told is the context's state afterwards, never the promise. */
+async function resumeAudio(ac) {
+  try {
+    await Promise.race([ac.resume().catch(() => {}), wait(RESUME_WAIT)]);
+  } catch {
+    // A context that cannot be resumed (closed) just stays as it is.
+  }
+  return ac.state === "running";
+}
+
+/** Brings the window that asks to the visitor's eyes: it is placed on the
+ * page's scrolling box, so it may be far above or below where they have
+ * scrolled to. Not moved if it is already on screen. */
+function showHint() {
+  if (hint) hint.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+
+/** Where the window is on the screen, in thirds, for a script to say where to look. */
+function hintPlace() {
+  if (!hint) return null;
+  const r = hint.getBoundingClientRect();
+  const html = document.documentElement;
+  const third = (centre, size) => (centre < size / 3 ? 0 : centre < (2 * size) / 3 ? 1 : 2);
+  return {
+    x: ["left", "center", "right"][third(r.left + r.width / 2, html.clientWidth)],
+    y: ["top", "middle", "bottom"][third(r.top + r.height / 2, html.clientHeight)],
+  };
+}
+
+/** Where the sound stands, having tried what a script may try to start it.
+ * "running" is told only when the context is running and a note would be heard
+ * (the switch on, the window gone), looked at again after every wait, because
+ * the visitor may answer the window while this waits. */
 async function unlockSound() {
-  if (!sound.want) return "off";
+  const off = () => (sound.ignored ? "ignored" : "off");
+  if (!sound.want) return off();
   startSound();
   const ac = sound.ac;
   if (!ac) return "unsupported";
-  if (ac.state !== "running") await Promise.race([ac.resume().catch(() => {}), wait(400)]);
-  if (ac.state !== "running") {
-    offerSound(); // does nothing if the window is already up, or the browser needs no window
+  if (ac.state !== "running" && !(await resumeAudio(ac))) {
+    if (!sound.want) return off();
+    offerSound(); // does nothing if the window is already up
+    showHint();
     return hint ? "window" : "press";
   }
   // Running, but the window may still be leaving (a press elsewhere started the sound).
   await windowGone();
-  return hint ? "window" : "running";
+  if (!sound.want) return off();
+  if (hint) {
+    showHint();
+    return "window";
+  }
+  return ac.state === "running" ? "running" : "press";
 }
 
 /** Waits (up to 3 s) for the window that asks to leave. */
@@ -3426,10 +3480,12 @@ function publishSongs() {
       ...player.state(),
       audio: sound.ac ? sound.ac.state : "none",
       wanted: sound.want,
+      ignored: sound.ignored,
       windowOpen: !!hint,
       lit: parts.filter((p) => p.glow > 0.01).map((p) => p.key),
     }),
     unlock: unlockSound,
+    place: hintPlace,
   };
 }
 

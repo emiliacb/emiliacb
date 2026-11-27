@@ -21,10 +21,17 @@ import {
   parseSong,
   TUPLETS,
 } from "../../../client/lib/tree-song.js";
-import { EFFECTS, NOTE_EFFECTS, SONG_EFFECTS, SONG_NOTES } from "../../../client/lib/tree-voice.js";
+import { EFFECTS, latinName, NOTE_EFFECTS, SONG_EFFECTS, SONG_NOTES } from "../../../client/lib/tree-voice.js";
 import { fail, ok } from "../core/result.js";
 
-const noteLines = SONG_NOTES.map((n) => `  ${n.name.padEnd(3)} ${String(n.hz).padStart(6)} Hz  ${n.voice}${n.part ? "" : " (no part)"}`).join("\n");
+const noteLines = SONG_NOTES.map((n) => `  ${n.name.padEnd(3)} ${latinName(n.name).padEnd(4)} ${String(n.hz).padStart(6)} Hz  ${n.voice}${n.part ? "" : " (no part)"}`).join("\n");
+
+// "Do = C, Re = D, Mi♭ = Eb ...": each pitch class the tree has, once, from C up.
+const pitchClasses = new Map(SONG_NOTES.map((n) => [n.midi % 12, n.name.replace(/\d+$/, "")]));
+const latinPairs = [...pitchClasses]
+  .sort(([a], [b]) => a - b)
+  .map(([, name]) => `${latinName(name)} = ${name}`)
+  .join(", ");
 
 const paramText = (params) =>
   Object.entries(params)
@@ -47,6 +54,7 @@ const PLAY_DESCRIPTION = `Plays a song on the tree of the home page, in the tree
 The sound is a Hijaz scale on D (D Eb F# G A Bb C). The tree has eleven parts, one pitch each. C has no part: C3 and C5 are sounded in the tree's wood and bell voices without touching the tree (nothing shakes or lights for them), and only a song can play them. These are all the notes; other pitches cannot be played:
 ${noteLines}
 Eb4, F#4 and Bb4 may also be written D#4, Gb4 and A#4.
+The Latin (solfege) names work as well, in any case, with the same octave numbers and the same # or b (or the signs ♯ and ♭): ${latinPairs}. So "tocá un do" is C4 ("Do4"), and Do4/8, re4, Sib4, Fa#4 and Mi♭4 are all notes. Middle C is C4.
 
 Write the song in "notes", as one string of steps separated by spaces. A step is a note name, "-" for a rest, or "+" between names for a chord (at most ${MAX_CHORD} notes), then "/" and its note value: ${VALUES}, so D4/8 is an eighth note. The beat is a quarter note and "bpm" sets it, ${MIN_BPM} to ${MAX_BPM} (default ${DEFAULT_BPM}). After the value, "." adds half its length (A4/4. is a quarter and an eighth; at most ${MAX_DOTS} dots, ".." adds three quarters), and "t" makes it a triplet, three in the time of two (D4/8t); other tuplets are t${TUPLET_COUNTS.replaceAll(", ", ", t")} (5 in the time of 4, and so on). A group in parentheses writes a tuplet's notes at once: (D4 F#4 A4)/8t, with "-" for a rest inside it. "~" after a step ties it to the next, which must sound the same notes: D4/2~D4/4 is one note of three beats. A step with no value lasts one beat, and "*n" instead gives n beats (D4*2).
 Examples (at the default tempo): "D4/8 Eb4/16 F#4/16 A4/4 -/8 D5/8 A4/4" (eighths and sixteenths with a rest); "D4/4. F#4/8 A4/4. D5/8" (a dotted rhythm); "(D4 F#4 A4)/8t (A4 F#4 D4)/8t D3/2" (two eighth triplets, then a half note); "D4+A4/2~D4+A4/4 G3/4" (a tied chord).
@@ -58,7 +66,7 @@ ${effectLines(NOTE_EFFECTS)}
 Song effects (the "effects" object of the song, e.g. { "echo": { "feedback": 0.6 }, "tone": { "cutoffHz": 2500 } }), which shape the sound for as long as the song plays and rings, and then give it back to the tree:
 ${effectLines(SONG_EFFECTS)}
 
-A browser keeps audio locked until the visitor has pressed something on the page, and a tool call does not count. If the sound is still locked, this tool opens the tree's own permission window on the page ("Decisión: árbol quiere ser escuchado" with Ignorar and Permitir, or "Allow" in English) and fails; ask the visitor to click Permitir in it, then call this tool again. If the visitor has turned the tree's sound off, it fails and says so: do not try to get around that. The song plays in the visitor's browser, so you cannot hear it; the result tells you it started, and the song keeps playing after this returns. A new song replaces the one playing, and stop_tree_song stops it.`;
+Audio needs the visitor's permission, once: a browser keeps it locked until the visitor has pressed something on the page, and a tool call does not count as that. So this tool can FAIL, and when it does nothing was played. If the sound is still locked, it brings up the tree's own permission window on the page ("Decisión: árbol quiere ser escuchado" with Ignorar and Permitir, or "Allow" in English) and rejects with a sentence to tell the visitor, word for word, in the chat: where the window is and which button to click. Tell them that, wait for them to answer, and call this tool again; do not retry in a loop, and do not claim the song played. If the visitor has turned the tree's sound off (the speaker button in the footer, or Ignorar in the window), it rejects too, and only they can turn it back on: do not try to get around that. The song plays in the visitor's browser, so you cannot hear it; success means the sound was running and the song started, and it keeps playing after this returns. A new song replaces the one playing, and stop_tree_song stops it.`;
 
 const stepSchema = {
   oneOf: [
@@ -113,22 +121,78 @@ const NO_TREE =
   "There is no tree on this page, so there is nothing to play it on. The tree is on the home page of the site " +
   "(and is not drawn for a visitor who asked for reduced motion). Open the home page and call this tool again.";
 
-/** The fail() for a sound that could not be started, saying what to ask the visitor. */
-function lockedMessage(status) {
+const PLACES = {
+  es: {
+    middle: "en el centro de la pantalla",
+    row: { top: "arriba", middle: "", bottom: "abajo" },
+    column: { left: "a la izquierda", center: "", right: "a la derecha" },
+    unknown: "en la pantalla",
+  },
+  en: {
+    middle: "in the middle of the screen",
+    row: { top: "top", middle: "", bottom: "bottom" },
+    column: { left: "left", center: "", right: "right" },
+    unknown: "on the screen",
+  },
+};
+
+/** Where the window is, in the visitor's words ("abajo a la derecha"), from the thirds of the screen the engine reports. */
+function placeText(place, spanish) {
+  const words = PLACES[spanish ? "es" : "en"];
+  if (!place) return words.unknown;
+  if (place.x === "center" && place.y === "middle") return words.middle;
+  const row = words.row[place.y];
+  const column = words.column[place.x];
+  if (spanish) return [row, column].filter(Boolean).join(" ");
+  if (row && column) return `${row} ${column}`;
+  return row ? `at the ${row}` : `on the ${column}`;
+}
+
+/**
+ * The fail() for a sound that could not be started. It opens with the sentence
+ * the agent says to the visitor (in the page's language, the one thing the
+ * visitor needs: which button, and where), then what the agent does. The
+ * button names are the window's own (tree-sway.js), and its place is where the
+ * engine says it is on this screen, so it is right on a phone too.
+ */
+function lockedMessage(status, place) {
   const spanish = (document.documentElement.lang || "").startsWith("es");
-  const allow = spanish ? '"Permitir"' : '"Allow" (in Spanish, "Permitir")';
+  const where = placeText(place, spanish);
+  const say = (visitor, then) =>
+    `${visitor}\n\nThat sentence is for the visitor: say it to them in the chat, word for word, ${then} Nothing was played.`;
+  const waitThenRetry = "wait for their answer, and call play_tree_song again once. Do not call it again in a loop, and do not tell them a song is playing.";
   const messages = {
-    off:
-      "The visitor has turned the tree's sound off (with the switch in the page's footer, or by choosing Ignorar/Ignore in the tree's window). " +
-      "That is their choice, so nothing was played. Ask them to turn the tree's sound on, then call this tool again.",
-    window:
-      "The browser is keeping audio locked until the visitor interacts with the page, and a tool call does not count as that. " +
-      `The tree's permission window ("Decisión: árbol quiere ser escuchado") is now showing on the page. Ask the visitor to click ${allow} in it, then call play_tree_song again.`,
-    press:
-      "The browser is keeping audio locked until the visitor interacts with the page, and a tool call does not count as that. " +
-      "Ask the visitor to tap or click anywhere on the page, then call play_tree_song again.",
-    unsupported: "This browser has no Web Audio, so the tree cannot make sound here.",
+    window: say(
+      spanish
+        ? `Para escuchar al árbol, hacé clic en "Permitir" en la ventana del árbol (${where}) y avisame.`
+        : `To hear the tree, click "Allow" in the tree's window (${where}) and let me know.`,
+      `${waitThenRetry} (The browser keeps audio locked until the visitor presses something, and a tool call does not count. The tree's window, "Decisión: árbol quiere ser escuchado" with Ignorar and Permitir, is now on screen.)`,
+    ),
+    press: say(
+      spanish
+        ? "Para escuchar al árbol, hacé clic o tocá en cualquier parte de la página y avisame."
+        : "To hear the tree, click or tap anywhere on the page and let me know.",
+      `${waitThenRetry} (The browser keeps audio locked until the visitor presses something, and there is no window to ask with.)`,
+    ),
+    off: say(
+      spanish
+        ? "Apagaste el sonido del árbol, así que no puedo hacerlo sonar. Si querés escucharlo, activá el botón del parlante al pie de la página y avisame."
+        : "The tree's sound is turned off, so I cannot play it. If you want to hear it, turn the speaker button at the bottom of the page back on and let me know.",
+      "and wait. Only the visitor can turn the sound back on; do not try to get around it. If they say they did, call play_tree_song again once.",
+    ),
+    unsupported: say(
+      spanish
+        ? "Este navegador no puede reproducir audio, así que el árbol no puede sonar acá."
+        : "This browser cannot play audio, so the tree cannot make sound here.",
+      "and do not try again.",
+    ),
   };
+  messages.ignored = messages.off.replace(
+    spanish ? "Apagaste el sonido del árbol, así que no puedo hacerlo sonar." : "The tree's sound is turned off, so I cannot play it.",
+    spanish
+      ? 'Elegiste "Ignorar" en la ventana del árbol, así que quedó en silencio, y esa ventana no vuelve a aparecer.'
+      : 'You chose "Ignore" in the tree\'s window, so it stays silent, and that window does not come back.',
+  );
   return fail(messages[status] ?? messages.press);
 }
 
@@ -144,7 +208,7 @@ function readSong(input) {
 
 const playTreeSong = {
   name: "play_tree_song",
-  summary: "plays a song (notes with rhythmic values, rests, chords, effects) on the home page's tree, which shakes and lights with each note",
+  summary: "plays a song (notes with rhythmic values, rests, chords, effects) on the home page's tree, which shakes and lights with each note; fails until the visitor has allowed the sound",
   title: "Play a song on the tree",
   description: PLAY_DESCRIPTION,
   inputSchema: {
@@ -165,7 +229,7 @@ const playTreeSong = {
     const tree = treeSound();
     if (!tree) throw fail(NO_TREE);
     const status = await tree.unlock();
-    if (status !== "running") throw lockedMessage(status);
+    if (status !== "running") throw lockedMessage(status, tree.place?.());
     try {
       const started = tree.play(input);
       return ok({
@@ -178,7 +242,10 @@ const playTreeSong = {
       });
     } catch (error) {
       if (error instanceof RangeError) throw fail(`${error.message} Nothing was played.`);
-      throw error;
+      // The sound stopped being able to play between the check and the song
+      // (the visitor turned it off, the browser suspended the audio): the same
+      // as if it had never been running, never a success.
+      throw lockedMessage(tree.state().wanted ? "press" : "off", tree.place?.());
     }
   },
 };

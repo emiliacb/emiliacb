@@ -14,6 +14,8 @@ export const CEILING_HZ: number;
 export const ECHO: { timeMs: number; feedback: number; dullHz: number; mix: number };
 export const NOTES: readonly TreeNote[];
 export const SONG_NOTES: readonly TreeNote[];
+export const SOLFEGE: Record<string, string>;
+export function latinName(name: string): string;
 export const EFFECTS: Record<string, EffectSpec>;
 export const NOTE_EFFECTS: readonly string[];
 export const SONG_EFFECTS: readonly string[];
