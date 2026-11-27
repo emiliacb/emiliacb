@@ -6,5 +6,6 @@ import { cssTools } from "./css.js";
 import { domTools } from "./dom.js";
 import { fontTools } from "./fonts.js";
 import { interactionTools } from "./interaction.js";
+import { themeTools } from "./theme.js";
 
-export const enabledTools = [...cssTools, ...interactionTools, ...fontTools, ...contentTools, ...domTools];
+export const enabledTools = [...cssTools, ...interactionTools, ...fontTools, ...contentTools, ...domTools, ...themeTools];
