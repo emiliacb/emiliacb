@@ -10,7 +10,6 @@ import renderBlogPost from "./blog-post";
 import renderLabsDistortion from "./labs-distortion";
 import renderLabsDistortionBg from "./labs-distortion-bg";
 import renderNotFound from "./not-found";
-import renderLabsWebmcp, { LABS_WEBMCP_PATH } from "./labs-webmcp";
 
 export type RenderedPage = { path: string; html: string };
 
@@ -43,10 +42,6 @@ export async function renderSite(
     for (const post of ctx.content.posts) {
       pages.push({ path: `/${lang}/blog/${post.slug}`, html: await renderBlogPost(ctx, post) });
     }
-
-    // Outside PAGES on purpose: a frame around the site, with nothing of its own
-    // to link, list or turn into Markdown.
-    pages.push({ path: `/${lang}${LABS_WEBMCP_PATH}`, html: await renderLabsWebmcp(ctx) });
   }
 
   const [en, es] = await Promise.all([renderNotFound(ctxFor("en")), renderNotFound(ctxFor("es"))]);

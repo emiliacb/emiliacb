@@ -186,6 +186,10 @@ await fs.writeFile(
   path.join(dist, "_redirects"),
   [
     "/cv /public/cv.pdf 302",
+    // The WebMCP lab is gone (the tools are on every page now); a docs page
+    // will take over these URLs.
+    "/en/labs/webmcp /en 302",
+    "/es/labs/webmcp /es 302",
     // Matches every /public/<folder>/…, so dist/public has no folders (the
     // sanity checks below hold it to that).
     "# HTML from before the static build referenced versioned asset paths",
