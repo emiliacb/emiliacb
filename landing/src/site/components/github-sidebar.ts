@@ -1,11 +1,8 @@
-import { html, raw } from "hono/html";
-import { ArrowUpRight, X } from "lucide-static";
+import { html } from "hono/html";
 import { CONTACT } from "../../shared/site";
 import type { RenderCtx } from "../context";
 import { githubStats, type GithubStats } from "../github/stats";
-
-/** The drawer's id: links with data-github-sidebar open it (src/client/github-sidebar.js). */
-export const GITHUB_SIDEBAR_ID = "github-sidebar";
+import { SIDEBAR_IDS, sidebar, sidebarLink } from "./sidebar";
 
 const DAY_MS = 86_400_000;
 const utc = (isoDay: string) => new Date(`${isoDay}T00:00:00Z`);
@@ -138,55 +135,20 @@ export default function githubSidebar(ctx: RenderCtx, stats: GithubStats = githu
   const fmt = new Intl.NumberFormat(ctx.lang);
   const updated = new Intl.DateTimeFormat(ctx.lang, { dateStyle: "medium", timeZone: "UTC" }).format(utc(stats.updatedAt));
 
-  // `side` is a placeholder: the client sets right or bottom by the viewport
-  // before each opening. Content and backdrop start hidden so nothing shows
-  // before the elements upgrade, and they only upgrade once a GitHub link is
-  // approached, when the client loads the drawer.
-  return html`
-    <ui-drawer id="${GITHUB_SIDEBAR_ID}" side="right" class="gh-drawer">
-      <ui-drawer-backdrop hidden class="gh-backdrop"></ui-drawer-backdrop>
-      <ui-drawer-content hidden class="gh-sheet text-stone-800 dark:text-stone-100">
-        <div class="gh-grip" aria-hidden="true"></div>
-        <header class="flex items-center justify-between gap-4 px-6 pt-6 md:pt-10 pb-3 md:pb-4">
-          <div class="flex items-baseline gap-3 min-w-0">
-            <ui-drawer-title class="block text-2xl md:text-3xl font-light">${t.title}</ui-drawer-title>
-            <span class="text-sm truncate">@${stats.user}</span>
-          </div>
-          <ui-drawer-close>
-            <button
-              type="button"
-              aria-label="${t.close}"
-              class="gh-close interactive relative flex items-center justify-center size-8 -mr-2
-                focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
-                focus-visible:outline-current [&>svg]:w-5 [&>svg]:h-5"
-            >
-              ${raw(X)}
-            </button>
-          </ui-drawer-close>
-        </header>
+  return sidebar({
+    id: SIDEBAR_IDS.github,
+    title: t.title,
+    aside: `@${stats.user}`,
+    close: ctx.t.sidebar.close,
+    body: html`
+      <p class="flex flex-col border-b border-stone-400 pb-4">
+        <span class="sidebar-number">${fmt.format(stats.prsMerged30d)}</span>
+        <span class="text-sm text-pretty">${t.prsMerged}</span>
+      </p>
 
-        <div class="gh-scroll flex flex-col gap-4 sm:gap-6 md:gap-8 px-6 pb-4">
-          <p class="flex flex-col border-b border-stone-400 pb-4">
-            <span class="gh-number">${fmt.format(stats.prsMerged30d)}</span>
-            <span class="text-sm text-pretty">${t.prsMerged}</span>
-          </p>
-
-          ${monthlyChart(ctx, stats)} ${contributionCalendar(ctx, stats)}
-        </div>
-
-        <footer class="gh-actions flex items-center justify-between gap-4 px-6 py-3 border-t border-stone-400">
-          <span class="text-xs opacity-75">${t.updated} ${updated}</span>
-          <a
-            class="gh-invert interactive flex shrink-0 items-center gap-1 whitespace-nowrap w-fit border border-black dark:border-white px-3 py-1.5 text-sm
-              focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black
-              [&>svg]:w-4 [&>svg]:h-4"
-            href="${CONTACT.github}"
-            target="_blank"
-            rel="noopener noreferrer"
-            >${t.viewOnGithub} ${raw(ArrowUpRight)}</a
-          >
-        </footer>
-      </ui-drawer-content>
-    </ui-drawer>
-  `;
+      ${monthlyChart(ctx, stats)} ${contributionCalendar(ctx, stats)}
+    `,
+    note: `${t.updated} ${updated}`,
+    action: sidebarLink(t.viewOnGithub, CONTACT.github),
+  });
 }

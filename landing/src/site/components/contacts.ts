@@ -1,8 +1,14 @@
 import { html, raw } from "hono/html";
-import { Linkedin, Github, Calendar } from "lucide-static";
+import { Linkedin, Github, Calendar, Mail } from "lucide-static";
 import { CONTACT } from "../../shared/site";
 import type { RenderCtx } from "../context";
-import emailLink from "./email-link";
+import { SIDEBAR_IDS } from "./sidebar";
+
+const columnLink =
+  "interactive hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 py-0.5 -ml-1";
+
+const rowIcon =
+  "interactive flex w-fit border border-transparent px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black";
 
 type ContactOptions = {
   columnMode?: boolean;
@@ -14,19 +20,21 @@ function contactColumn(ctx: RenderCtx) {
   return html`
     <ul class="flex flex-col gap-1">
       <li>
-        ${emailLink({ email: CONTACT.email, lang: ctx.lang, label: c.email })}
+        <a class="${columnLink}" href="mailto:${CONTACT.email}" data-sidebar="${SIDEBAR_IDS.email}" aria-haspopup="dialog">${c.email}</a>
       </li>
       <li>
-        <a class="interactive hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 py-0.5 -ml-1" href="${CONTACT.linkedin}" target="_blank"
+        <a class="${columnLink}" href="${CONTACT.linkedin}" data-sidebar="${SIDEBAR_IDS.linkedin}" aria-haspopup="dialog" target="_blank"
           >${c.linkedin}</a
         >
       </li>
       <li>
-        <a class="interactive hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 py-0.5 -ml-1" href="${CONTACT.github}"
-          data-github-sidebar aria-haspopup="dialog" target="_blank">${c.github}</a>
+        <a class="${columnLink}" href="${CONTACT.github}" data-sidebar="${SIDEBAR_IDS.github}" aria-haspopup="dialog" target="_blank"
+          >${c.github}</a
+        >
       </li>
       <li class="underline underline-offset-4 mt-1">
-        <a class="hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 pt-1 pb-2 -ml-1" href="${CONTACT.calendar}" target="_blank">
+        <a class="hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 pt-1 pb-2 -ml-1" href="${CONTACT.calendar}"
+          data-sidebar="${SIDEBAR_IDS.calendar}" aria-haspopup="dialog" target="_blank">
           ${c.scheduleFull}
         </a>
       </li>
@@ -50,6 +58,8 @@ export default function contact(ctx: RenderCtx, { columnMode = false }: ContactO
         <a
           class="interactive flex gap-2 w-fit border border-black dark:border-white px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black"
           href="${CONTACT.calendar}"
+          data-sidebar="${SIDEBAR_IDS.calendar}"
+          aria-haspopup="dialog"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="${c.scheduleFull}"
@@ -61,12 +71,21 @@ export default function contact(ctx: RenderCtx, { columnMode = false }: ContactO
         </a>
       </li>
       <li>
-        ${emailLink({ email: CONTACT.email, lang: ctx.lang, label: c.email, variant: "icon", className: "!flex" })}
+        <a
+          class="${rowIcon}"
+          href="mailto:${CONTACT.email}"
+          data-sidebar="${SIDEBAR_IDS.email}"
+          aria-haspopup="dialog"
+          aria-label="${c.email}"
+          >${raw(Mail)}</a
+        >
       </li>
       <li>
         <a
-          class="interactive flex w-fit border border-transparent px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black"
+          class="${rowIcon}"
           href="${CONTACT.linkedin}"
+          data-sidebar="${SIDEBAR_IDS.linkedin}"
+          aria-haspopup="dialog"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="${c.linkedin}"
@@ -75,9 +94,9 @@ export default function contact(ctx: RenderCtx, { columnMode = false }: ContactO
       </li>
       <li>
         <a
-          class="interactive flex w-fit border border-transparent px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black"
+          class="${rowIcon}"
           href="${CONTACT.github}"
-          data-github-sidebar
+          data-sidebar="${SIDEBAR_IDS.github}"
           aria-haspopup="dialog"
           target="_blank"
           rel="noopener noreferrer"

@@ -1564,18 +1564,18 @@ html.ink-cursor #ink-cursor.on {
 }
 
 
-/* ---- The GitHub sidebar (src/site/components/github-sidebar.ts) ----
+/* ---- The contact sidebars (src/site/components/sidebar.ts and *-sidebar.ts) ----
    ui-sdk's drawer positions and moves the sheet (its translate) and fades the
    backdrop (its opacity); these rules give it a size, a surface and edges. A
    sidebar from the right on a desktop, a bottom sheet on a phone: the client
    sets `side`, and the sheet's data-side says which edge it came from. */
 /* A manual popover: the UA sizes those to their content, which for an empty
    backdrop is nothing. */
-.gh-backdrop {
+.sidebar-backdrop {
   @apply fixed inset-0 m-0 p-0 border-0 w-screen h-dvh max-w-none max-h-none bg-black/30 dark:bg-black/50;
 }
 
-.gh-sheet {
+.sidebar-sheet {
   @apply flex-col bg-stone-100 dark:bg-stone-800 shadow-lg outline-none;
   font-family: Montserrat, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
@@ -1583,23 +1583,23 @@ html.ink-cursor #ink-cursor.on {
 /* Only while shown: a display of its own would beat the `hidden` that keeps
    the sheet out of the page until the drawer loads, and it would sit under
    the footer of every page. */
-.gh-sheet:not([hidden]) {
+.sidebar-sheet:not([hidden]) {
   display: flex;
 }
 
-.gh-sheet[data-side="right"] {
+.sidebar-sheet[data-side="right"] {
   @apply h-dvh border-l border-stone-400;
   width: min(28rem, 100vw);
 }
 
 /* Square, like everything else on the site: no radius on either side. */
-.gh-sheet[data-side="bottom"] {
+.sidebar-sheet[data-side="bottom"] {
   @apply w-full border-t border-stone-400;
   max-height: calc(100dvh - 0.75rem);
 }
 
 /* Covers the gap under a bottom sheet pulled past its rest. */
-.gh-sheet[data-side="bottom"]::after {
+.sidebar-sheet[data-side="bottom"]::after {
   content: "";
   position: absolute;
   top: 100%;
@@ -1609,34 +1609,74 @@ html.ink-cursor #ink-cursor.on {
   background: inherit;
 }
 
-.gh-grip {
+.sidebar-grip {
   display: none;
 }
 
-.gh-sheet[data-side="bottom"] .gh-grip {
+.sidebar-sheet[data-side="bottom"] .sidebar-grip {
   @apply block mx-auto mt-3 h-1 w-10 bg-stone-400;
 }
 
-.gh-sheet[data-side="bottom"] header {
+.sidebar-sheet[data-side="bottom"] header {
   @apply pt-3;
 }
 
 /* The long part scrolls; the header and the button stay. A downward drag on a
    phone scrolls it first, then moves the sheet once it is at the top. */
-.gh-scroll {
+.sidebar-scroll {
   @apply min-h-0 flex-1 overflow-y-auto overscroll-contain;
 }
 
-.gh-actions {
+.sidebar-actions {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
 
 /* The number in the cotas' face, the way the page's dimensions are drawn. */
-.gh-number {
+.sidebar-number {
   font-family: "Barlow Condensed", "Montserrat", sans-serif;
   font-weight: 300;
   font-variant-numeric: tabular-nums;
   @apply text-6xl md:text-7xl leading-none;
+}
+
+/* A name or an address in the number's place: a step smaller, so it fits. */
+.sidebar-word {
+  @apply text-5xl md:text-6xl;
+}
+
+/* LinkedIn's jobs: a rule down the left, a dot on it per job. */
+.li-timeline {
+  @apply relative flex flex-col gap-3 ml-1 border-l border-stone-400;
+}
+
+.li-job {
+  @apply relative pl-4;
+}
+
+.li-job::before {
+  content: "";
+  @apply absolute size-2 bg-stone-800 dark:bg-stone-100;
+  left: calc(-0.25rem - 0.5px);
+  top: 0.4rem;
+}
+
+.li-years {
+  @apply text-base leading-none whitespace-nowrap;
+  font-family: "Barlow Condensed", "Montserrat", sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The email sidebar's rows darken a step on hover instead of inverting, so
+   Gmail's and Superhuman's marks keep the ground they were drawn for. */
+@media (hover: hover) and (pointer: fine) {
+  .sidebar-row:hover {
+    @apply bg-stone-200 dark:bg-stone-700;
+  }
+}
+
+/* Cal.com's booker sizes its own iframe to what it shows. */
+.calendar-embed {
+  min-height: 24rem;
 }
 
 /* PRs per month: bars on a rule, the count over each in the cotas' face. */
@@ -1688,25 +1728,25 @@ html.ink-cursor #ink-cursor.on {
 /* Inverted on hover like the site's other buttons, but only where there is a
    real hover: a tap on a phone would leave it stuck inverted. */
 @media (hover: hover) and (pointer: fine) {
-  .gh-close:hover,
-  .gh-invert:hover {
+  .sidebar-close:hover,
+  .sidebar-invert:hover {
     @apply bg-black text-white dark:bg-white dark:text-black;
   }
 }
 
 /* 32px to the eye, 44px to a finger, without growing the header. */
-.gh-close::before {
+.sidebar-close::before {
   content: "";
   position: absolute;
   inset: -6px;
 }
 
 /* A tap that beats the drawer's download: the link answers at once. */
-a[data-github-sidebar] {
+a[data-sidebar] {
   transition-property: background-color, color, scale, opacity;
 }
 
-a[data-github-sidebar][aria-busy="true"] {
+a[data-sidebar][aria-busy="true"] {
   opacity: 0.5;
   cursor: progress;
 }
@@ -1715,12 +1755,12 @@ a[data-github-sidebar][aria-busy="true"] {
    so over the sheet and its backdrop the system's cursor comes back. */
 html.ink-cursor ui-drawer-viewport,
 html.ink-cursor ui-drawer-viewport *,
-html.ink-cursor .gh-backdrop {
+html.ink-cursor .sidebar-backdrop {
   cursor: auto !important;
 }
 
 /* And the ink cursor, left below, would trail the system's one around. */
-html:has(#github-sidebar ui-drawer-content[data-open]) #ink-cursor {
+html:has(ui-drawer-content[data-open]) #ink-cursor {
   display: none;
 }
 
