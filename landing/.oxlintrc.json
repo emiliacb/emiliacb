@@ -110,7 +110,7 @@
     {
       // Shipped to browsers as-is (esbuild targets es2020, no polyfills), so
       // no Array#toSorted.
-      "files": ["src/client/**"],
+      "files": ["src/client/**", "src/webmcp/client/**"],
       "rules": { "unicorn/no-array-sort": "off" }
     },
     {

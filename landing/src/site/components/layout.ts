@@ -12,11 +12,7 @@ import linkedinSidebar from "./linkedin-sidebar";
 import emailSidebar from "./email-sidebar";
 import calendarSidebar from "./calendar-sidebar";
 import { AI_LAYOUT_ENABLED, AI_LAYOUT, AI_FEATURE_ENABLED } from "./frame";
-
-// English on every page: the detail lives in llms.txt, which is in English too.
-const AGENT_NOTE =
-  "Note for AI agents: this page exposes WebMCP tools. " +
-  `Read ${SITE_URL}/llms.txt to learn which ones and how to call them.`;
+import * as webmcp from "../../webmcp/site";
 
 type LayoutProps = {
   ctx: RenderCtx;
@@ -152,6 +148,7 @@ export default function layout({
         <meta name="build-id" content="${ctx.assets.buildId}" />
         <!-- The contact sidebars' drawer, loaded on demand by sidebars.js. -->
         <meta name="asset:ui-drawer" content="${ctx.assets.script("ui-drawer")}" />
+        ${/* WebMCP: see src/webmcp/README.md */ webmcp.renderHead(ctx)}
         ${AI_FEATURE_ENABLED
           ? html`<meta name="asset:pretext" content="${ctx.assets.script("pretext")}" />`
           : null}
@@ -336,12 +333,7 @@ document.head.appendChild(o)}initApollo();</script>
       </head>
 
       <body class="text-stone-800 dark:text-stone-100 overscroll-none md:overscroll-auto">
-        <!-- For AI agents: hidden from sight, not from the DOM text or the accessibility tree. -->
-        <p
-          style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap"
-        >
-          ${AGENT_NOTE}
-        </p>
+        ${/* WebMCP: see src/webmcp/README.md */ webmcp.renderAgentNote()}
         <div id="scroll-wrapper">
         <div id="loading-bar"></div>
         <div
@@ -417,8 +409,7 @@ document.head.appendChild(o)}initApollo();</script>
           : html`<script src="${ctx.assets.script("gradient-layers")}" defer></script>`}
         <!-- The ink cursor, on every page (src/client/ink-cursor.js). -->
         <script src="${ctx.assets.script("ink-cursor")}" defer></script>
-        <!-- WebMCP tools for browser agents, on every page (src/client/webmcp.js). -->
-        <script src="${ctx.assets.script("webmcp")}" defer></script>
+        ${/* WebMCP: see src/webmcp/README.md */ webmcp.renderScript(ctx)}
         ${AI_FEATURE_ENABLED
           ? html`
               <script src="${ctx.assets.script("activity-logger")}" defer></script>

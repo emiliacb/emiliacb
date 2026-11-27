@@ -88,7 +88,7 @@ module.exports = {
       "&:where([data-theme=dark], [data-theme=dark] *)",
     ],
   ],
-  content: ["./src/site/**/*.{html,ts}", "./src/client/**/*.{js,ts}", "./src/shared/**/*.ts"],
+  content: ["./src/site/**/*.{html,ts}", "./src/client/**/*.{js,ts}", "./src/shared/**/*.ts", "./src/webmcp/**/*.{js,ts}"],
   theme: {
     extend: {
       fontFamily: {

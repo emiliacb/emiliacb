@@ -3,8 +3,8 @@
 // Every piece of markup goes through sanitize.js first and the agent is told
 // what was dropped. None of it is saved: a navigation or a reload brings the
 // page back as it was.
-import { fail, ok } from "./result.js";
-import { sanitizeHtmlWithReport } from "./sanitize.js";
+import { fail, ok } from "../core/result.js";
+import { sanitizeHtmlWithReport } from "../core/sanitize.js";
 
 // The shield's host element (shield.js keeps the same id): the one thing on the
 // page an agent's markup must never go into or around.
@@ -105,6 +105,7 @@ function removedNote(removed) {
 
 const openCustomSidebar = {
   name: "open_custom_sidebar",
+  summary: "open a sidebar like the site's own with a title and sanitized HTML",
   title: "Open a sidebar with your own content",
   description:
     "Opens a sidebar on the page with a title and the HTML you give it. It is the same panel the site uses for its " +
@@ -158,6 +159,7 @@ const openCustomSidebar = {
 
 const closeSidebar = {
   name: "close_sidebar",
+  summary: "close whichever sidebar is open",
   title: "Close the open sidebar",
   description:
     "Closes whichever sidebar is open (one of the site's own or the one from open_custom_sidebar). Takes no input. " +
@@ -188,6 +190,7 @@ function insertionProblem(parent, position) {
 
 const insertElement = {
   name: "insert_element",
+  summary: "insert sanitized HTML next to or inside an element",
   title: "Insert HTML into the page",
   description:
     "Adds HTML to the page, next to or inside an existing element. " +
@@ -249,6 +252,7 @@ const insertElement = {
 
 const removeInsertedElements = {
   name: "remove_inserted_elements",
+  summary: "remove what insert_element added",
   title: "Remove what insert_element added",
   description:
     "Removes the elements added with insert_element. Input: optional `id` (the number insert_element returned) " +
@@ -287,6 +291,7 @@ function refusalFor(el) {
 
 const setTextContent = {
   name: "set_text_content",
+  summary: "replace the plain text of one or all elements a selector matches",
   title: "Change the text of elements",
   description:
     "Replaces the text of an element with plain text (never HTML: `<b>` stays as the characters, it is not " +

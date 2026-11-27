@@ -3,9 +3,9 @@
 // .markdown-content classes as a published post, and shown in place of the
 // page's own content until the visitor (or the agent) restores it. Nothing
 // here talks to a server.
-import { Marked } from "marked";
-
-import { sanitizeHtmlWithReport } from "./sanitize.js";
+import { sanitizeHtmlWithReport } from "../core/sanitize.js";
+import { escapeAttribute, headingSlug } from "./text.js";
+import { loadMarkdownRenderer } from "./markdown-loader.js";
 
 const STORAGE_KEY = "webmcp:articles";
 const BANNER_ATTRIBUTE = "data-agent-article-banner";
@@ -19,34 +19,9 @@ const BANNER = {
   es: { note: "Artículo generado por un agente — no publicado", restore: "Restaurar la página original" },
 };
 
-// The anchor icon of site/content/markdown.ts (lucide's link-2), inlined: the
-// lucide package is a build-time dependency and must stay out of the bundle.
-const LINK_ICON =
-  '<svg class="lucide lucide-link-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" ' +
-  'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-  '<path d="M9 17H7A5 5 0 0 1 7 7h2" /><path d="M15 7h2a5 5 0 1 1 0 10h-2" /><line x1="8" x2="16" y1="12" y2="12" /></svg>';
-
-// The classes site/content/markdown.ts puts on the anchor of every h2 and below.
-const ANCHOR_CLASS =
-  "inline-flex justify-center w-5 !p-0 translate-y-[0.2rem] before:hidden text-lg font-bold text-center align-baseline " +
-  "no-underline opacity-50 focus:opacity-100 hover:opacity-100 !bg-transparent !outline-none hover:!bg-black " +
-  "dark:hover:!bg-white hover:!text-white dark:hover:!text-black !border-2 border-transparent focus-visible:!border-red-500";
-
 /** The page's language, "en" or "es". */
 export function pageLang() {
   return document.documentElement.lang === "es" ? "es" : "en";
-}
-
-/** Heading id rule of the site's own posts (site/content/markdown.ts headingSlug). */
-function headingSlug(text) {
-  return text
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N} ]/gu, "")
-    .replace(/ /g, "-");
-}
-
-function escapeAttribute(value) {
-  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 /** The id an article is stored and shown by: its title as a heading slug, so the same title replaces it. */
@@ -104,24 +79,8 @@ export function articleMarkdown(article) {
   return `# ${article.title}\n\n${meta ? `${meta}\n\n` : ""}${article.markdown.trim()}\n`;
 }
 
-/** Renders like the build does for posts (site/content/markdown.ts): same heading ids and anchors. */
-function renderBody(markdown) {
-  const marked = new Marked({
-    renderer: {
-      heading({ tokens, text, depth }) {
-        const slug = headingSlug(text);
-        const inner = this.parser.parseInline(tokens);
-        if (depth === 1) return `<h1 id="${slug}">${inner}</h1>`;
-        const anchor = `<a class="${ANCHOR_CLASS}" href="#${slug}" aria-label="${escapeAttribute(text)}">${LINK_ICON}</a>`;
-        return `<h${depth} id="${slug}">${inner}${anchor}</h${depth}>`;
-      },
-    },
-  });
-  return marked.parse(markdown, { async: false });
-}
-
 /** The post-shaped HTML of an article: its H1, the description and date under it, then the body. */
-function articleHtml(article) {
+function articleHtml(article, renderBody) {
   const title = `<h1 id="${headingSlug(article.title)}">${escapeAttribute(article.title)}</h1>`;
   const byline = [article.date ? formatDate(article.date, article.lang) : "", ...(article.tags ?? [])].filter(Boolean);
   const subtitle = article.subtitle ? `<p class="lead">${escapeAttribute(article.subtitle)}</p>` : "";
@@ -188,10 +147,11 @@ export function shownArticleId() {
  * nodes are kept (not rebuilt) so restoring brings back their listeners and
  * canvases. Returns what the sanitizer dropped.
  */
-export function showArticle(article) {
+export async function showArticle(article) {
+  const renderBody = await loadMarkdownRenderer();
   const content = contentElement();
   if (!content) throw new Error("The page has no #content column to show the article in.");
-  const { fragment, removed } = sanitizeHtmlWithReport(articleHtml(article));
+  const { fragment, removed } = sanitizeHtmlWithReport(articleHtml(article, renderBody));
   const wrapper = document.createElement("div");
   wrapper.className = "markdown-content";
   wrapper.append(fragment);

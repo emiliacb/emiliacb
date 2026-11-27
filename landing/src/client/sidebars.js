@@ -205,9 +205,10 @@ import { rgbOf } from "./lib/color.js";
     return drawer;
   }
 
-  // The API for code that is not a link on the page: the WebMCP tools
-  // (src/client/webmcp/dom-tools.js). Both return a promise of a small
-  // description of what happened.
+  // The API for code that is not a link on the page (the WebMCP tools use it,
+  // src/webmcp/client/tools/dom.js; it is a site feature on its own, so it
+  // stays here when they go). Both return a promise of a small description of
+  // what happened.
   //   openCustom({ title, content, side }): opens a sidebar with the shell of
   //     the contact ones around `content` (a Node; the caller sanitizes it).
   //     Calling it again replaces the title and content. `side` is "auto"

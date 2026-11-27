@@ -8,7 +8,7 @@ export default defineConfig({
         test: {
           name: "site",
           environment: "node",
-          include: ["test/site/**/*.test.ts"],
+          include: ["test/site/**/*.test.ts", "test/webmcp/**/*.test.ts"],
         },
       },
       {

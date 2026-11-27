@@ -1,8 +1,8 @@
 // The one way agent CSS reaches the page: try it, check the page is still
 // usable, and either keep it or undo it and raise the shield.
 import { MIN_CONTRAST, collectProblems, suspendTransitions } from "./health.js";
-import { commitState, emptyState, getState, paint, renderCss } from "./css-state.js";
-import { fail } from "./result.js";
+import { commitState, emptyState, getState, paint, renderCss } from "./state.js";
+import { fail } from "../core/result.js";
 import { showShield } from "./shield.js";
 
 const MAX_WARNINGS = 20;

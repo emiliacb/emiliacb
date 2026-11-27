@@ -4,7 +4,7 @@
 // (or by the visible text). Clicks are the page's own: a real element.click(),
 // so the site's handlers (the contact sidebars, the menu, the loading bar) run
 // exactly as for a person.
-import { fail, ok } from "./result.js";
+import { fail, ok } from "../core/result.js";
 
 // Everything a visitor can press. dropdown-trigger is the site's menu: its real
 // button lives in a shadow root, so the host element stands for it.
@@ -312,6 +312,7 @@ async function performClick(el) {
 
 const getLinksAndButtons = {
   name: "get_links_and_buttons",
+  summary: "the links and buttons a visitor could click, with ids",
   title: "List the links and buttons",
   description:
     "Lists the interactive elements on the current page that a visitor could click: links, buttons, the menu " +
@@ -346,6 +347,7 @@ const getLinksAndButtons = {
 
 const clickLinkOrButton = {
   name: "click_link_or_button",
+  summary: "click a link or button by id, text or selector",
   title: "Click a link or button",
   description:
     "Clicks a link or button on the page the way a visitor would: scrolls it into view and fires a real click, so the " +

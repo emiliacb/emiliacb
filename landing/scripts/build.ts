@@ -10,7 +10,8 @@ import { dictionaries } from "../src/shared/i18n";
 import type { Assets, ClientEntry, RenderCtx } from "../src/site/context";
 import { loadContent } from "../src/site/content";
 import { renderSite } from "../src/site/pages";
-import { renderLlmsTxt, renderPagesManifest, renderSiteMarkdown } from "../src/site/markdown";
+import { renderLlmsTxt, renderSiteMarkdown } from "../src/site/markdown";
+import * as webmcp from "../src/webmcp/site";
 
 // The only file in the project allowed to read process.env.
 // Note: import.meta.dirname is scripts/, so the project root is one level up.
@@ -149,12 +150,11 @@ for (const file of markdownFiles) {
 }
 const llmsTxt = renderLlmsTxt(ctxFor);
 await fs.writeFile(path.join(dist, "llms.txt"), llmsTxt);
-// The list the list_md_pages WebMCP tool reads (see renderPagesManifest).
-await fs.mkdir(path.join(dist, "webmcp"), { recursive: true });
-await fs.writeFile(
-  path.join(dist, "webmcp", "pages.json"),
-  `${JSON.stringify({ pages: renderPagesManifest(ctxFor) }, null, 2)}\n`,
-);
+// WebMCP: see src/webmcp/README.md
+for (const file of webmcp.renderBuildFiles(ctxFor)) {
+  await fs.mkdir(path.dirname(path.join(dist, file.path)), { recursive: true });
+  await fs.writeFile(path.join(dist, file.path), file.content);
+}
 
 const notFoundFiles: [string, string][] = [
   ["404.html", notFound.en],
@@ -192,10 +192,8 @@ await fs.writeFile(
   path.join(dist, "_redirects"),
   [
     "/cv /public/cv.pdf 302",
-    // The WebMCP lab is gone (the tools are on every page now); a docs page
-    // will take over these URLs.
-    "/en/labs/webmcp /en 302",
-    "/es/labs/webmcp /es 302",
+    // WebMCP: see src/webmcp/README.md
+    ...webmcp.renderRedirects(),
     // Matches every /public/<folder>/…, so dist/public has no folders (the
     // sanity checks below hold it to that).
     "# HTML from before the static build referenced versioned asset paths",

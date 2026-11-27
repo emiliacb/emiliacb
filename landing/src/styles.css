@@ -1,3 +1,6 @@
+/* WebMCP: see src/webmcp/README.md */
+@import "./webmcp/styles.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -1754,31 +1757,6 @@ html.ink-cursor #ink-cursor.on {
 .sidebar-actions {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
-
-/* The sidebar an agent opens with open_custom_sidebar (src/client/webmcp/dom-tools.js):
-   its content is arbitrary markup, so the reset that strips headings, lists and
-   links of their look is undone here, in the sheet's own type and ink. */
-#custom-sidebar .sidebar-scroll {
-  @apply gap-3 text-sm sm:text-base pb-6;
-}
-
-#custom-sidebar .sidebar-scroll :is(h1, h2, h3, h4, h5, h6) {
-  @apply font-light;
-}
-
-#custom-sidebar .sidebar-scroll h1 { @apply text-2xl; }
-#custom-sidebar .sidebar-scroll h2 { @apply text-xl; }
-#custom-sidebar .sidebar-scroll :is(h3, h4, h5, h6) { @apply text-lg; }
-
-#custom-sidebar .sidebar-scroll ul { @apply list-disc pl-5; }
-#custom-sidebar .sidebar-scroll ol { @apply list-decimal pl-5; }
-#custom-sidebar .sidebar-scroll li + li { @apply mt-1; }
-#custom-sidebar .sidebar-scroll a { @apply underline underline-offset-2; }
-#custom-sidebar .sidebar-scroll img { @apply max-w-full h-auto; }
-#custom-sidebar .sidebar-scroll blockquote { @apply border-l border-stone-400 pl-4 italic; }
-#custom-sidebar .sidebar-scroll hr { @apply border-stone-400; }
-#custom-sidebar .sidebar-scroll :is(pre, code) { @apply font-mono text-[0.9em]; }
-#custom-sidebar .sidebar-scroll pre { @apply overflow-x-auto; }
 
 /* The number in the cotas' face, the way the page's dimensions are drawn. */
 .sidebar-number {
