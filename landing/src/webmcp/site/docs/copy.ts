@@ -40,8 +40,8 @@ const en: DocsCopy = {
   intro:
     "This site exposes its page to the browser agent of whoever is visiting (Claude in Chrome, Gemini and the like) " +
     "as WebMCP tools. An agent can restyle the page, click around, read the site's Markdown pages, insert elements or " +
-    "open a sidebar. Every change is local to the visitor's tab: nothing is sent to the site or stored on it, and a " +
-    "reload or closing the tab undoes it.",
+    "open a sidebar. Every change is local to the visitor's tab: nothing is sent to the site or stored on it, it is kept " +
+    "while the visitor navigates the site in this tab, and a reload restores the original.",
 
   what: {
     heading: "What this is",
@@ -71,7 +71,7 @@ const en: DocsCopy = {
       "`executeTool` resolves to a JSON string of the spec's result, `{ content: [{ type: \"text\", text }] }`. A tool " +
         "that fails rejects, and its message says what happened and what to try: it is the whole error.",
       "A link that leaves the page navigates the tab. The new page registers the same tools, so wait a moment and call " +
-        "`getTools()` again. Styles and fonts an agent set follow the tab across the site's pages.",
+        "`getTools()` again. Styles, fonts, articles and the colour mode an agent set are kept while the visitor navigates the site in this tab; a reload restores the original.",
     ],
     start:
       "Where to start: call `list_skills` and read the one that fits what the visitor asked for with `read_skill`. " +
@@ -120,8 +120,9 @@ const en: DocsCopy = {
   safety: {
     heading: "Safety",
     items: [
-      "**Local to the tab.** The agent's CSS and fonts are kept in the tab's `sessionStorage`, so they follow it across " +
-        "the site's pages and are gone when it closes. Inserted elements and changed text last until the page is " +
+      "**Local to the tab.** The agent's CSS, fonts, articles and colour mode are kept in the tab's `sessionStorage` " +
+        "while the visitor navigates the site in this tab (links, back and forward); a reload restores the original, " +
+        "and they never reach another tab or a later visit. Inserted elements and changed text last until the page is " +
         "reloaded. The tools do not send anything to the site.",
       "**Sanitized HTML.** What an agent sends to `insert_element`, `open_custom_sidebar` and `create_article` is parsed " +
         "inertly and filtered through an allowlist: no scripts, styles, frames, forms, event handlers or `javascript:` " +
@@ -159,7 +160,7 @@ const es: DocsCopy = {
     "Este sitio expone su página al agente del navegador de quien lo visita (Claude in Chrome, Gemini y similares) " +
     "como herramientas WebMCP. Un agente puede cambiar el estilo de la página, hacer clic, leer las páginas del sitio en " +
     "Markdown, insertar elementos o abrir un panel lateral. Todo cambio es local a la pestaña del visitante: no se " +
-    "envía nada al sitio ni se guarda en él, y recargar o cerrar la pestaña lo deshace.",
+    "envía nada al sitio ni se guarda en él, se conserva mientras el visitante navega el sitio en esa pestaña, y recargar restaura el original.",
 
   what: {
     heading: "Qué es esto",
@@ -190,8 +191,8 @@ const es: DocsCopy = {
       "`executeTool` resuelve a un string JSON con el resultado de la spec, `{ content: [{ type: \"text\", text }] }`. " +
         "Una herramienta que falla rechaza la promesa, y su mensaje dice qué pasó y qué probar: es todo el error.",
       "Un link que sale de la página navega la pestaña. La página nueva registra las mismas herramientas: esperá un " +
-        "momento y llamá a `getTools()` de nuevo. Los estilos y las fuentes que un agente puso siguen a la pestaña por " +
-        "las páginas del sitio.",
+        "momento y llamá a `getTools()` de nuevo. Los estilos, las fuentes, los artículos y el modo de color que un agente puso se conservan mientras el visitante " +
+        "navega el sitio en esa pestaña; recargar restaura el original.",
     ],
     start:
       "Por dónde empezar: llamá a `list_skills` y leé con `read_skill` la que corresponda a lo que pidió el visitante. " +
@@ -241,8 +242,9 @@ const es: DocsCopy = {
   safety: {
     heading: "Seguridad",
     items: [
-      "**Local a la pestaña.** El CSS y las fuentes del agente se guardan en el `sessionStorage` de la pestaña: la " +
-        "siguen por las páginas del sitio y desaparecen al cerrarla. Los elementos insertados y el texto cambiado duran " +
+      "**Local a la pestaña.** El CSS, las fuentes, los artículos y el modo de color del agente se guardan en el `sessionStorage` de la " +
+        "pestaña mientras el visitante navega el sitio (links, atrás y adelante); recargar restaura el original y " +
+        "nunca llegan a otra pestaña ni a una visita posterior. Los elementos insertados y el texto cambiado duran " +
         "hasta recargar la página. Las herramientas no envían nada al sitio.",
       "**HTML sanitizado.** Lo que un agente manda a `insert_element`, `open_custom_sidebar` y `create_article` se " +
         "parsea de forma inerte y se filtra con una lista de permitidos: sin scripts, estilos, frames, formularios, " +

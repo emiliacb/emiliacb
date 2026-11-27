@@ -5,6 +5,18 @@ The site exposes tools to the browser agent of whoever is visiting, through
 The agent runs on the visitor's side: there is no endpoint and no API key, and
 everything a tool changes lives in that tab.
 
+## Persistence
+
+What an agent changes (its CSS, loaded Google Fonts, articles and the forced
+colour mode) is kept while the visitor navigates the site in this tab (links,
+back and forward) and a reload restores the original. It is never shared with
+another tab or a later visit. All of it is stored through
+`src/client/lib/nav-storage.js`: sessionStorage under the `nav:` prefix, emptied
+once per document load when `performance` says the load was a reload (the
+inline script in the layout's `<head>` does the same for the theme key before
+the first paint). A new tool that keeps state across pages must use it too, not
+sessionStorage or localStorage directly.
+
 Everything about the feature is in this folder, plus a handful of one-line
 calls into it (listed at the bottom). `WEBMCP_ENABLED` in `enabled.ts` turns
 all of it off at build time.
@@ -21,7 +33,7 @@ src/webmcp/
     core/               context.js (document.modelContext, polyfill, error guard),
                         result.js (ok/fail), sanitize.js (HTML the agent sends)
     css/                what set_css and friends are built on: state.js (variable
-                        overrides, rules, sessionStorage; announces every commit
+                        overrides, rules, kept with src/client/lib/nav-storage.js; announces every commit
                         with `tokenschange` so the canvases repaint),
                         variables.js (set_variables' checks and the light/dark
                         blocks), tokens.js (what get_variables says about the

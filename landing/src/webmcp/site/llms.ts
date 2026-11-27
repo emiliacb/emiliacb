@@ -21,7 +21,7 @@ export function renderLlmsSection(): string[] {
     ),
     "",
     "Every page exposes WebMCP tools that let a browser agent restyle the page it is looking at. " +
-      "The changes live in that tab only. If your browser does not show them as tools, call them " +
+      "The changes live in that tab only: they are kept while the visitor navigates the site in it, and a reload restores the original. If your browser does not show them as tools, call them " +
       "from JavaScript in the tab: `await document.modelContext.getTools()` lists them and " +
       "`await document.modelContext.executeTool(name, input)` runs one. " +
       "The skills are also tools: `list_skills` and `read_skill({ name })`.",

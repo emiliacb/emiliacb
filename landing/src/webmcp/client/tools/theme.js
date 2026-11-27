@@ -2,23 +2,24 @@
 // the system's). The mode itself belongs to src/client/lib/theme.js; this
 // bundle imports it and so gets its own copy of the module, which is safe
 // because that module keeps no state of its own: the `data-theme` attribute on
-// <html> and the `theme` key in localStorage are the shared state, and the
+// <html> and the `theme` key in navigation storage are the shared state, and the
 // `themechange` event on window is how the canvases in other bundles repaint.
+import { navGet } from "../../../client/lib/nav-storage.js";
 import { getThemeMode, isDark, setThemeMode } from "../../../client/lib/theme.js";
 import { fail, ok } from "../core/result.js";
 
 const MODES = ["light", "dark", "system"];
-// Must match the key theme.js writes and the inline script in the layout reads.
+// Must match the key theme.js writes (through nav-storage.js) and the inline script in the layout reads.
 const STORAGE_KEY = "theme";
 
 function systemMode() {
   return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-/** Whether the visitor's browser holds a forced mode; false when storage is unavailable. */
+/** Whether this tab holds a forced mode for its next pages; false when storage is unavailable. */
 function isStored() {
   try {
-    const value = localStorage.getItem(STORAGE_KEY);
+    const value = navGet(STORAGE_KEY);
     return value === "light" || value === "dark";
   } catch {
     return false;
@@ -42,7 +43,8 @@ const getThemeModeTool = {
     "Returns the site's colour mode. `mode` is what the page was told to be (\"light\", \"dark\", or \"system\" when " +
     "nothing is forced and the visitor's operating system decides); `effective` is what is painted right now " +
     "(\"light\" or \"dark\"); `system` is the operating system's preference; `stored` says whether the visitor's " +
-    "browser remembers a forced mode across visits (localStorage). Takes no input.",
+    "tab keeps a forced mode for the pages the visitor navigates to (kept while they navigate the site in this tab; a " +
+    "reload restores the original). Takes no input.",
   inputSchema: { type: "object", properties: {} },
   annotations: { readOnlyHint: true },
   execute() {
@@ -57,9 +59,9 @@ const setThemeModeTool = {
   description:
     "Switches the site to \"light\", \"dark\", or \"system\" (follow the visitor's operating system). It applies at " +
     "once, canvases included (the tree, the cotas, the gradient repaint), and returns the new state like " +
-    "get_theme_mode. Unlike CSS set by an agent, which lasts only in this tab, a forced \"light\" or \"dark\" is " +
-    "stored in the visitor's browser (localStorage) and persists across visits and tabs; \"system\" clears that " +
-    "stored choice, so use it to hand the decision back. " +
+    "get_theme_mode. Like CSS set by an agent, a forced \"light\" or \"dark\" is kept while the visitor " +
+    "navigates the site in this tab and a reload restores the original; it never reaches another tab or a later " +
+    "visit. \"system\" clears the choice at once, so use it to hand the decision back. " +
     "To make a CSS or token change (set_css, set_css_by_selector, an override of a variable from get_variables) " +
     "show in dark mode too: a token set on `:root` alone only changes light mode, because the site redefines its " +
     "tokens for dark under `:root[data-theme=\"dark\"]` and under `@media (prefers-color-scheme: dark)`, which " +

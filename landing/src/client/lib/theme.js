@@ -6,16 +6,21 @@
 // data-theme="light"> or <html data-theme="dark"> forces one, and no
 // attribute follows the system. styles.css and tailwind.config.cjs read the
 // same attribute, so what this module reports is what the CSS paints. The
-// choice is kept in localStorage under `theme`, and the inline script in the
-// layout's <head> puts it back on <html> before the first paint (it has to be
-// there before any bundle loads, or the page would flash the system's mode
-// first); that script and setThemeMode() must stay in agreement about the key
-// and the attribute.
+// override exists only for agents (visitors have no switcher), so it follows
+// their policy: it is kept in this tab's navigation storage (nav-storage.js,
+// key `theme`) while the visitor navigates the site, and a reload clears it.
+// The inline script in the layout's <head> puts it back on <html> before the
+// first paint (it has to be there before any bundle loads, or the page would
+// flash the system's mode first) and skips it on a reload; that script and
+// setThemeMode() must stay in agreement about the key (`nav:theme`) and the
+// attribute.
 //
 // This file is a module, not an entry (see ClientEntry in site/context.ts):
 // each bundle that imports it gets its own copy, which is fine because there
 // is no state in it, only the attribute, the storage and the `themechange`
 // event on window.
+
+import { navRemove, navSet } from "./nav-storage.js";
 
 const KEY = "theme";
 const EVENT = "themechange";
@@ -35,9 +40,9 @@ export function isDark() {
 }
 
 /**
- * Forces a mode, or hands the choice back to the system. Remembered across
- * visits, unless storage is unavailable (private windows, blocked site data),
- * where it simply lasts until the page is left.
+ * Forces a mode, or hands the choice back to the system. Kept while the
+ * visitor navigates the site in this tab, unless storage is unavailable
+ * (private windows, blocked site data), where it lasts until the page is left.
  * @param {"light" | "dark" | "system"} mode
  */
 export function setThemeMode(mode) {
@@ -46,8 +51,8 @@ export function setThemeMode(mode) {
   if (forced) root.dataset.theme = mode;
   else delete root.dataset.theme;
   try {
-    if (forced) localStorage.setItem(KEY, mode);
-    else localStorage.removeItem(KEY);
+    if (forced) navSet(KEY, mode);
+    else navRemove(KEY);
   } catch {
     // Storage can throw; the attribute is already set and that is what paints.
   }
