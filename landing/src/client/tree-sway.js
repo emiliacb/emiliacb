@@ -878,7 +878,10 @@ function onMotion(e) {
       dropPill();
       offerSound();
     }
-    motionSeen = true;
+    if (!motionSeen) {
+      motionSeen = true;
+      offerTilt();
+    }
     device.grav += ((-SIDE * ig.x) / 9.81 - device.grav) * (1 - Math.exp(-dt / TILT_SMOOTH));
   }
   if (a && a.x != null) device.shake += ((-SIDE * a.x) / 9.81 - device.shake) * (1 - Math.exp(-dt / SHAKE_SMOOTH));
@@ -933,14 +936,56 @@ function offerMotion(DM) {
   pill.addEventListener("click", () => {
     DM.requestPermission()
       .then((state) => {
-        if (state === "granted") gone();
-        else {
+        if (state === "granted") {
+          gone();
+          // That tap started the sound too: no window will ask for it.
+          tiltReady = true;
+        } else {
           pill.querySelector("span").textContent = es ? "Sin permiso" : "Not allowed";
           setTimeout(gone, 1400);
         }
       })
       .catch(gone);
   });
+}
+
+// Once the phone's motion reaches the tree, and nothing is asking anything
+// (the pill, the sound's window), a sign at the foot of the tree says to move
+// the phone: a phone rocking side to side, and the words. Without it nobody
+// would think to. It goes once the tree has been shaken, or after a while.
+// Only where the screen is touched: a laptop's motion moves nothing.
+const TILT_AFTER = 450; // ms after the window has gone, so the two do not cross
+const TILT_FOR = 9000; // ms it stays if the phone is never moved
+let tiltReady = false; // the sound's window has been answered, or was never needed
+let tiltShown = false;
+let dropTilt = null;
+
+function offerTilt() {
+  if (!COARSE || tiltShown || !tiltReady || !motionSeen || hint || dropPill) return;
+  tiltShown = true;
+  setTimeout(() => {
+    const es = (document.documentElement.lang || "").startsWith("es");
+    const sign = document.createElement("div");
+    sign.className = "tree-motion-pill tree-tilt-sign";
+    sign.setAttribute("role", "status");
+    // Lucide's "smartphone", rocked by styles.css.
+    sign.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>' +
+      `<span>${es ? "Mové el celular" : "Tilt your phone"}</span>`;
+    box.appendChild(sign);
+    let up = true;
+    const gone = () => {
+      if (!up) return;
+      up = false;
+      if (dropTilt === gone) dropTilt = null;
+      sign.classList.add("is-gone");
+      setTimeout(() => sign.remove(), 400);
+    };
+    dropTilt = gone;
+    setTimeout(gone, TILT_FOR);
+  }, TILT_AFTER);
 }
 
 /* ==========================================================================
@@ -1154,7 +1199,12 @@ function dragHint(event) {
 }
 
 function offerSound() {
-  if (hint || dropPill || !sound.want || !sound.ac || sound.ac.state === "running") return;
+  if (hint || dropPill) return;
+  if (!sound.want || !sound.ac || sound.ac.state === "running") {
+    // Nothing to ask: the phone's sign may come.
+    tiltReady = true;
+    return offerTilt();
+  }
   const es = (document.documentElement.lang || "").startsWith("es");
   const t = es
     ? { title: "Decisión", name: "árbol", spell: "ą̨̙͔͙͖̜̟̩̹̗̏̀̐̑̂͞r͇̘̳̀̔̆b͚̟̘͈͖̹̬̙͔̱̾̑̋ͩ͋ͣ̌̍͛͑͐o̸̶̡̩̘̘ͤͬͦ͋̒̏̀̒͛̏ͮl̡͚͍̹̭͓͈̠̇͑̈̍̆ͩ̂ͨ̔̓̓͢͝", wants: "quiere ser escuchado", ignore: "Ignorar", allow: "Permitir", close: "Cerrar" }
@@ -1199,6 +1249,8 @@ function dropHint() {
   hint = null;
   el.classList.add("is-gone");
   setTimeout(() => el.remove(), 400);
+  tiltReady = true;
+  offerTilt();
 }
 
 // Pressed anywhere else, the page starts the sound all the same (that press is
@@ -1335,6 +1387,10 @@ function onFirstPress(event) {
 function ring(p, strength) {
   const ac = sound.ac;
   if (!sound.want || !ac || ac.state !== "running") return;
+  // Not while the window still asks: a press elsewhere starts the sound at
+  // once (the browser needs that press), but it is heard only once the ghost
+  // has pressed Allow and the window has gone.
+  if (hint) return;
   const t = ac.currentTime;
   if (t - p.rang < 0.14) return;
   p.rang = t;
@@ -1393,7 +1449,15 @@ const SWING_WOOD = 0.25;
 
 function chime(dt) {
   device.calm += (device.lean - device.calm) * (1 - Math.exp(-dt / 0.5));
-  if (Math.abs(device.lean - device.calm) > STIR) device.stirred = clock;
+  if (Math.abs(device.lean - device.calm) > STIR) {
+    device.stirred = clock;
+    // Shaken: the sign has been understood.
+    const drop = dropTilt;
+    if (drop) {
+      dropTilt = null;
+      setTimeout(() => drop(), 1200);
+    }
+  }
   const live = clock - device.stirred < RING_FOR;
   for (const p of parts) {
     if (p.omega * p.went < 0) {

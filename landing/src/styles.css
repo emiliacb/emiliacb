@@ -639,6 +639,31 @@ html.ai-layout-enabled #activity-panel {
   pointer-events: none;
 }
 
+/* The sign that says to move the phone (tree-sway.js), in the pill's place
+   and drawn as it is, once nothing is asking anything. It is only read, never
+   pressed; its phone rocks the way the phone is to be moved. */
+.tree-tilt-sign {
+  pointer-events: none;
+  animation: treeTiltIn 0.35s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.tree-tilt-sign svg {
+  animation: treeTiltRock 1.4s ease-in-out infinite alternate;
+}
+@keyframes treeTiltIn {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+@keyframes treeTiltRock {
+  from {
+    rotate: -20deg;
+  }
+  to {
+    rotate: 20deg;
+  }
+}
+
 /* The window that asks to play the tree's sound, while the browser still
    waits for a press before it plays (src/client/tree-sway.js, which sets it on
    the trunk and lets it be dragged by its bar). A browser's permission prompt
