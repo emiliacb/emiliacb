@@ -49,9 +49,12 @@
  * equation of motion shows as strong as it is in the sum.
  *
  * It can be heard. Every part has a note of its own, all from one scale, rung
- * when the cursor first touches it and, on a phone, each time it swings back
- * after a shake, as loud as the swing was wide. A browser plays nothing until
- * the page has been pressed somewhere, so the first notes come after the first
+ * when the cursor first touches it, as loud as it comes in fast and is
+ * accelerating, and, on a phone, each time it swings back after a shake, as
+ * loud as the swing was wide. Pressed on, a part rings the same note, held
+ * while the press is; drawn up or down it bends a note either way, the part
+ * shakes like a string, and the others answer it by sympathy. A browser plays
+ * nothing until the page has been pressed somewhere, so the first notes come after the first
  * click, tap or key; the switch in the page's footer turns it off, and an off
  * is remembered.
  *
@@ -183,6 +186,20 @@ const SLACK = 50;
 // Whether the tree does hold the cursor back. Off for now: what it touches is
 // still felt, for its note, but the cursor goes where the hand goes.
 const BRAKE_CURSOR = false;
+
+// The note a part rings on first being touched is struck as a body is: as
+// loud as the cursor comes in fast, V_HIT tree units a second being its
+// loudest, and louder still in proportion to how hard it is accelerating
+// into it, A1 tree units a second squared adding as much again. However
+// slowly it comes it is heard, from HIT_LEAF (a leaf) or HIT_WOOD. The
+// acceleration is read off the smoothed velocity and smoothed again over
+// ACCEL_EASE seconds, or the jitter between two pointer events would ring
+// every note at full.
+const V_HIT = 1800;
+const A1 = 20000;
+const ACCEL_EASE = 0.03;
+const HIT_LEAF = 0.012;
+const HIT_WOOD = 0.018;
 
 const TRANSMIT = 0.55; // share of a push that reaches the limbs below the part pushed
 const INERTIA = 0.7; // how hard a limb lags when the one it hangs from swings
@@ -444,6 +461,10 @@ const plateState = () => ({
   went: 0, // which way it was last turning, and the angle it last turned back at
   turned: 0,
   rang: -1, // when it last rang, on the sound's own clock
+  vib: 0, // how hard it is shaking under the bow, 0 to 1
+  ph: 0, // and how far round that shaking is
+  hz: 0, // at what pitch it is sounding, for the shaking
+  glow: 0, // how much it is lit by the note it is sounding, 0 to 1
   gap: 1e9, // pointer to its surface, in tree units
   hold: 0,
   fresh: false,
@@ -709,6 +730,7 @@ function build() {
   });
 
   parts = [...limbs, ...leaves];
+  scale = [...parts].sort((p, q) => (NOTE[p.key] || 0) - (NOTE[q.key] || 0));
 }
 
 /* ==========================================================================
@@ -756,7 +778,7 @@ function breeze(t, x, seed, flutter) {
 // cursor has fallen behind it, (lagX, lagY). (fromX, fromY) is where the hand
 // was at the last physics step.
 const pointer = {
-  x: 0, y: 0, hx: 0, hy: 0, fromX: 0, fromY: 0, lagX: 0, lagY: 0, vx: 0, vy: 0,
+  x: 0, y: 0, hx: 0, hy: 0, fromX: 0, fromY: 0, lagX: 0, lagY: 0, vx: 0, vy: 0, ax: 0, ay: 0,
   last: -1e9, tracking: false, inBox: false, mouse: false,
 };
 
@@ -777,12 +799,20 @@ function track(event) {
   const dt = (event.timeStamp - pointer.last) / 1000;
   if (pointer.tracking && dt > 0.001 && dt < 0.12) {
     // Smoothed, or a single jittery event reads as a slap.
+    const vx = pointer.vx;
+    const vy = pointer.vy;
     pointer.vx += ((p.x - pointer.hx) / dt - pointer.vx) * 0.5;
     pointer.vy += ((p.y - pointer.hy) / dt - pointer.vy) * 0.5;
+    // And how fast that is changing, for how loud a touch rings.
+    const ease = 1 - Math.exp(-dt / ACCEL_EASE);
+    pointer.ax += ((pointer.vx - vx) / dt - pointer.ax) * ease;
+    pointer.ay += ((pointer.vy - vy) / dt - pointer.ay) * ease;
   } else {
     // A pointer coming back after a pause did not sweep across the gap.
     pointer.vx = 0;
     pointer.vy = 0;
+    pointer.ax = 0;
+    pointer.ay = 0;
     pointer.fromX = p.x;
     pointer.fromY = p.y;
   }
@@ -1365,11 +1395,12 @@ function onFirstPress(event) {
 
 /**
  * Rings a part's note, `strength` from 0 to 1: quiet at its loudest, and a
- * little louder the harder it was struck. A leaf is a small glass bell, a pure
+ * little louder the harder it was struck, or, `exact`, from barely at nothing
+ * to its loudest at 1, in proportion. A leaf is a small glass bell, a pure
  * tone with partials out of tune with it that die away sooner; wood is rounder
  * and shorter. Each sounds from its own side of the tree.
  */
-function ring(p, strength) {
+function ring(p, strength, exact = false) {
   const ac = sound.ac;
   if (!sound.want || !ac || ac.state !== "running") return;
   // Not while the window still asks: a press elsewhere starts the sound at
@@ -1381,8 +1412,10 @@ function ring(p, strength) {
   p.rang = t;
   const leaf = p.kind === "leaf";
   const f = (NOTE[p.key] || NOTE.trunk * 4) * Math.pow(2, (Math.random() - 0.5) / 200);
-  const vol = (leaf ? 0.035 : 0.05) + (leaf ? 0.07 : 0.06) * Math.min(1, strength);
-  const long = leaf ? 1.6 : 1.1;
+  const s = Math.max(0, Math.min(1, strength));
+  const soft = exact ? (leaf ? HIT_LEAF : HIT_WOOD) : leaf ? 0.035 : 0.05;
+  const loud = exact ? (leaf ? 0.105 : 0.11) : soft + (leaf ? 0.07 : 0.06);
+  const vol = soft + (loud - soft) * s;
   let to = sound.bus;
   if (ac.createStereoPanner) {
     const side = ac.createStereoPanner();
@@ -1390,7 +1423,7 @@ function ring(p, strength) {
     side.connect(sound.bus);
     to = side;
   }
-  const voice = (mult, level, rise, fall) => {
+  for (const [mult, level, rise, fall] of partials(p, f, vol)) {
     const osc = ac.createOscillator();
     const g = ac.createGain();
     osc.frequency.value = f * mult;
@@ -1400,27 +1433,42 @@ function ring(p, strength) {
     osc.connect(g).connect(to);
     osc.start(t);
     osc.stop(t + rise + fall + 0.05);
-  };
+  }
   // Wakes the page to listen (tree-warp.js); it hears the note through the ear.
   window.dispatchEvent(new Event("tree-note"));
-  if (leaf) {
-    voice(1, vol, 0.012, long);
-    voice(2, vol * 0.22, 0.012, long * 0.55);
-    voice(2.76, vol * 0.16, 0.006, long * 0.3);
-    voice(5.4, vol * 0.05, 0.004, long * 0.14);
-  } else {
-    // A laptop's speakers give almost nothing below about 150 Hz, where the
-    // trunk's D (73 Hz) and the stem's A sit. The lower the note, the more of
-    // it goes to its overtones, which they do play: given the series, the ear
-    // hears the fundamental the speaker leaves out, and the note keeps its
-    // pitch. Only up to the fourth, so the wood stays round, in the low
-    // register tree-warp.js listens to it in.
-    const low = Math.max(0, Math.min(1, (200 - f) / 130));
-    voice(1, vol * (1 + 0.3 * low), 0.02, long);
-    voice(2, vol * (0.22 + 0.6 * low), 0.014, long * 0.55);
-    voice(3, vol * (0.08 + 0.42 * low), 0.016, long * 0.38);
-    if (low > 0) voice(4, vol * 0.22 * low, 0.016, long * 0.24);
+}
+
+/**
+ * The voice a part sounds `f` in, at `vol`: each partial as [multiple of f,
+ * level, rise, fall], in seconds. A leaf is a small glass bell, a pure tone
+ * with partials out of tune with it that die away sooner; wood is rounder and
+ * shorter.
+ */
+function partials(p, f, vol) {
+  if (p.kind === "leaf") {
+    const long = 1.6;
+    return [
+      [1, vol, 0.012, long],
+      [2, vol * 0.22, 0.012, long * 0.55],
+      [2.76, vol * 0.16, 0.006, long * 0.3],
+      [5.4, vol * 0.05, 0.004, long * 0.14],
+    ];
   }
+  // A laptop's speakers give almost nothing below about 150 Hz, where the
+  // trunk's D (73 Hz) and the stem's A sit. The lower the note, the more of
+  // it goes to its overtones, which they do play: given the series, the ear
+  // hears the fundamental the speaker leaves out, and the note keeps its
+  // pitch. Only up to the fourth, so the wood stays round, in the low
+  // register tree-warp.js listens to it in.
+  const long = 1.1;
+  const low = Math.max(0, Math.min(1, (200 - f) / 130));
+  const out = [
+    [1, vol * (1 + 0.3 * low), 0.02, long],
+    [2, vol * (0.22 + 0.6 * low), 0.014, long * 0.55],
+    [3, vol * (0.08 + 0.42 * low), 0.016, long * 0.38],
+  ];
+  if (low > 0) out.push([4, vol * 0.22 * low, 0.016, long * 0.24]);
+  return out;
 }
 
 // A shaken tree rings each part as it swings back, by how far it swung. Only
@@ -1451,6 +1499,349 @@ function chime(dt) {
       if (live && swing > (p.kind === "leaf" ? SWING_LEAF : SWING_WOOD)) ring(p, swing * 0.6);
     }
     if (p.omega) p.went = p.omega;
+  }
+}
+
+/* ==========================================================================
+   The bow
+   ========================================================================== */
+
+// Pressed on, a part rings its own note, in the very voice it rings when the
+// cursor brushes it, but held: it settles to HELD of its strike and stays there
+// for as long as the press does, and let go it dies away as a brushed note
+// does. Drawn up or down, the note bends: up to the next note of the tree's
+// scale at STEP_PX above where the press landed, down to the one below it at
+// STEP_PX beneath, no further, wherever on the part the press was and however
+// long the part is; between, it sits between the two notes. Only the part
+// pressed shakes, like a string, and is lit from where the press landed. The
+// others answer it by sympathy, as a violin's open strings do, as loud as the
+// physics of it makes them (below), and shake and are lit a little, as much
+// as they ring.
+const STEP_PX = 36;
+const BOW_REACH = 8; // how near a part a press must land to ring it, tree units
+const BOW_GLIDE = 0.05; // how quickly the note slides to where the press is, s
+const BOW_VOL = 0.09; // its strike
+const HELD = 0.5;
+// A held note goes out through a light flanger, which a brushed one does not:
+// a copy of it FLANGE_MS behind, that lag swept FLANGE_DEPTH_MS either way
+// FLANGE_HZ times a second, mixed in at FLANGE_MIX and fed back FLANGE_FEED.
+const FLANGE_MS = 3;
+const FLANGE_DEPTH_MS = 1.8;
+const FLANGE_HZ = 0.35;
+const FLANGE_MIX = 0.45;
+const FLANGE_FEED = 0.35;
+// The shaking you see lasts exactly as long as the note is heard and is as
+// strong as it sounds: struck, held, and dying away once let go. It shakes at
+// the note's own pitch, VIB_DIV times slower so a screen can show it: the
+// trunk's D about 3 times a second, the highest leaf's about 24. At its
+// strike a limb is thrown VIB_WOOD tree units off its line, a leaf VIB_LEAF
+// radians about its pivot.
+const VIB_DIV = 24;
+const VIB_WOOD = 4;
+const VIB_LEAF = 0.1;
+
+// Sympathy, as it happens in a string instrument. Every partial of a part's
+// voice is a mode of it: a damped oscillator at that partial's frequency,
+// whose amplitude decays with the time constant its partial dies with, tau =
+// fall / 7 (the ramp from strike to silence covers about 7 time constants), so
+// its quality factor is Q = pi f tau. Each partial of the held note forces
+// every mode of every other part. A damped oscillator driven at w answers with
+//
+//   |H(w)| = 1 / sqrt(1 + Q^2 (w/w0 - w0/w)^2)
+//
+// of what it would at its own w0; the partials forcing one mode at different
+// frequencies add in power, not in phase; and its amplitude approaches that
+// steady answer, and dies away once there is nothing to answer, with its own
+// tau. Driven, it sounds at the frequency that drives it, left alone at its
+// own. So how loud a part answers follows from how loud the held note is
+// partial by partial, how near in tune each partial is to each of its modes,
+// and how long those modes ring. The one number not derived is how much of a
+// partial's amplitude reaches a mode tuned exactly to it, through the wood:
+// SYMP_COUPLING, a tenth (-20 dB), about what an open string on a violin
+// picks up from a stopped one beside it.
+const SYMP_COUPLING = 0.1;
+const SYMP_FLOOR = 1e-4; // quieter than this is silence
+const SYMP_VIB = 0.6; // an answering part's shaking, at its loudest, as a share of the pressed part's
+const SYMP_GLOW = 0.75; // and its light
+// The light: in the ink the tree's construction is drawn in (its spirals and
+// angles, green on the light page and pink on the dark one), GLOW_ALPHA at its
+// centre and gone GLOW_R tree units out. It has to show on wood thinned to the
+// paper by being touched, so it is that ink, not white.
+const GLOW_ALPHA = 0.35;
+const GLOW_R = 70;
+
+// Every note a press has rung that is still heard: the one held now, and those
+// let go and still dying away, each with the parts answering it.
+const notes = [];
+// Every part, by its note, low to high: the scale the press bends along.
+let scale = [];
+const bow = {
+  on: false, note: null, part: null, at: 0, from: 0, pos: 0,
+  // Where on the part the press landed: along its bone and across it, or, on
+  // a leaf, where on the leaf as drawn; so the light stays there as it moves.
+  bj: 0, bo: 0, lx: 0, ly: 0,
+};
+
+/** Which way along the tree a part sounds from, for the stereo. */
+function panOf(p) {
+  const x = p.kind === "leaf" ? p.cx : p.rx[p.n >> 1];
+  return Math.max(-0.7, Math.min(0.7, (x - 200) / 200));
+}
+
+/** A part's modes: each partial of its voice as a damped oscillator, its frequency, decay and Q. */
+function modesOf(p) {
+  const g0 = NOTE[p.key];
+  return partials(p, g0, 1).map(([mult, , , fall]) => {
+    const f = g0 * mult;
+    const tau = fall / 7;
+    return { f, tau, q: Math.PI * f * tau, a: 0, osc: null, g: null };
+  });
+}
+
+/** How much of its full answer a mode gives to a force at `w` hertz. */
+function response(w, mode) {
+  const x = w / mode.f;
+  return 1 / Math.sqrt(1 + mode.q * mode.q * (x - 1 / x) ** 2);
+}
+
+/** The steady amplitude a mode is driven to by partials `drive` of a note at `f`, each at amplitude `amp(d)`; and the frequency that drives it most. */
+function answer(mode, drive, f, amp) {
+  let power = 0;
+  let top = 0;
+  let at = mode.f;
+  for (const d of drive) {
+    const w = d.mult * f;
+    const r = amp(d) * response(w, mode);
+    power += r * r;
+    if (r > top) {
+      top = r;
+      at = w;
+    }
+  }
+  return [SYMP_COUPLING * Math.sqrt(power), at];
+}
+
+/** A part's modes made to sound, each silent until driven. */
+function sympVoice(p, modes) {
+  const ac = sound.ac;
+  const t = ac.currentTime;
+  let to = sound.bus;
+  if (ac.createStereoPanner) {
+    const side = ac.createStereoPanner();
+    side.pan.value = panOf(p);
+    side.connect(sound.bus);
+    to = side;
+  }
+  for (const m of modes) {
+    m.osc = ac.createOscillator();
+    m.g = ac.createGain();
+    m.osc.frequency.value = m.f;
+    m.g.gain.value = 0;
+    m.osc.connect(m.g).connect(to);
+    m.osc.start(t);
+  }
+  return { p, modes };
+}
+
+/** Holds part `p`'s note at `f`: its partials, each settling to HELD of its strike. */
+function heldVoice(p, f, pan) {
+  const ac = sound.ac;
+  const t = ac.currentTime;
+  let to = sound.bus;
+  if (ac.createStereoPanner) {
+    const side = ac.createStereoPanner();
+    side.pan.value = pan;
+    side.connect(sound.bus);
+    to = side;
+  }
+  // The flanger: the note straight through, and beside it a copy whose lag
+  // sweeps slowly, combing it, with a little of it fed back round.
+  const into = ac.createGain();
+  const lag = ac.createDelay(0.02);
+  const sweep = ac.createOscillator();
+  const depth = ac.createGain();
+  const feed = ac.createGain();
+  const wet = ac.createGain();
+  lag.delayTime.value = FLANGE_MS / 1000;
+  sweep.frequency.value = FLANGE_HZ;
+  depth.gain.value = FLANGE_DEPTH_MS / 1000;
+  feed.gain.value = FLANGE_FEED;
+  wet.gain.value = FLANGE_MIX;
+  sweep.connect(depth).connect(lag.delayTime);
+  into.connect(to);
+  into.connect(lag).connect(wet).connect(to);
+  lag.connect(feed).connect(lag);
+  sweep.start(t);
+  const lead = partials(p, f, BOW_VOL)[0][3];
+  const voices = partials(p, f, BOW_VOL).map(([mult, level, rise, fall]) => {
+    const osc = ac.createOscillator();
+    const g = ac.createGain();
+    osc.frequency.value = f * mult;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(level, t + rise);
+    // Falling as fast as the brushed note falls, to rest where it is held;
+    // the partials that die soonest are held the least.
+    g.gain.setTargetAtTime(Math.max(0.0001, level * HELD * (fall / lead)), t + rise, fall / 7);
+    osc.connect(g).connect(into);
+    osc.start(t);
+    return { osc, g, mult, fall };
+  });
+  return { voices, sweep };
+}
+
+/** Rings the part a press lands on, and holds it. */
+function onBowPress(event) {
+  if (event.pointerType === "touch" || event.button !== 0) return;
+  if (hint || !sound.want || !pointer.inBox) return;
+  if (event.target instanceof Element && event.target.closest("a[href], button, input, textarea, select, label, dropdown-trigger")) return;
+  let at = null;
+  for (const p of parts) if (p.gap < BOW_REACH && (!at || p.gap < at.gap)) at = p;
+  if (!at) return;
+  // The press is also what lets the sound start, where it has not yet.
+  startSound();
+  const ac = sound.ac;
+  if (!ac || ac.state !== "running") return;
+  stopBow();
+  bow.on = true;
+  bow.part = at;
+  if (at.kind === "leaf") {
+    const [a, b, c, d, e, f] = at.m;
+    const det = a * d - b * c || 1;
+    const x = pointer.x - e;
+    const y = pointer.y - f;
+    bow.lx = (d * x - c * y) / det;
+    bow.ly = (a * y - b * x) / det;
+  } else {
+    let best = 1e9;
+    for (let i = 0; i < at.n; i++) {
+      const d = (at.dx[i] - pointer.x) ** 2 + (at.dy[i] - pointer.y) ** 2;
+      if (d < best) {
+        best = d;
+        bow.bj = i;
+      }
+    }
+    bow.bo = (pointer.x - at.dx[bow.bj]) * -at.sin[bow.bj] + (pointer.y - at.dy[bow.bj]) * at.cos[bow.bj];
+  }
+  bow.at = scale.indexOf(at);
+  bow.pos = bow.at;
+  bow.from = event.clientY;
+  const f0 = NOTE[at.key] || NOTE.trunk;
+  // The held note, partial by partial: its strike, where it is held, how fast
+  // it gets there and dies away, as heldVoice and stopBow shape them.
+  const own = partials(at, f0, BOW_VOL);
+  const lead = own[0][3];
+  const drive = own.map(([mult, level, , fall]) => ({
+    mult, level, held: level * HELD * (fall / lead), tau: fall / 7, a: level,
+  }));
+  const note = { part: at, f: f0, on: true, voice: heldVoice(at, f0, panOf(at)), drive, echoes: [] };
+  // Every other part some note within the bend could make heard, at the
+  // strike: the rest could not answer it above silence.
+  const lo = NOTE[scale[Math.max(0, bow.at - 1)].key];
+  const hi = NOTE[scale[Math.min(scale.length - 1, bow.at + 1)].key];
+  for (const p of parts) {
+    if (p === at) continue;
+    const modes = modesOf(p);
+    let most = 0;
+    for (let k = 0; k <= 96 && most <= SYMP_FLOOR; k++) {
+      const f = lo * Math.pow(hi / lo, k / 96);
+      for (const m of modes) most = Math.max(most, answer(m, drive, f, (d) => d.level)[0]);
+    }
+    if (most > SYMP_FLOOR) note.echoes.push(sympVoice(p, modes));
+  }
+  notes.push(note);
+  bow.note = note;
+  at.rang = ac.currentTime;
+  at.vib = 1;
+  window.dispatchEvent(new Event("tree-note"));
+}
+
+function onBowMove(event) {
+  if (!bow.on) return;
+  // Up the screen is up the scale.
+  // A note up or a note down, no further.
+  const bend = Math.max(-1, Math.min(1, (bow.from - event.clientY) / STEP_PX));
+  bow.pos = Math.max(0, Math.min(scale.length - 1, bow.at + bend));
+}
+
+/** Lets go: the note dies away as a brushed one does, and what answers it with it. */
+function stopBow() {
+  bow.on = false;
+  const note = bow.note;
+  if (!note || !note.on) return;
+  note.on = false;
+  const v = note.voice;
+  note.voice = null;
+  if (!v || !sound.ac) return;
+  const t = sound.ac.currentTime;
+  let end = t;
+  for (const { osc, g, fall } of v.voices) {
+    g.gain.cancelScheduledValues(t);
+    g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), t);
+    g.gain.setTargetAtTime(0.0001, t, fall / 7);
+    osc.stop(t + fall + 0.1);
+    end = Math.max(end, t + fall + 0.1);
+  }
+  v.sweep.stop(end + 0.1);
+}
+
+/** Each frame: the note the press is at, every note still heard and what answers it, and what shakes. */
+function bowing(dt) {
+  const ac = sound.ac;
+  const t = ac ? ac.currentTime : 0;
+  const held = bow.on && bow.note;
+  if (held && held.voice) {
+    const i = Math.min(scale.length - 2, Math.floor(bow.pos));
+    const u = bow.pos - i;
+    held.f = Math.exp((1 - u) * Math.log(NOTE[scale[i].key]) + u * Math.log(NOTE[scale[i + 1].key]));
+    for (const { osc, mult } of held.voice.voices) osc.frequency.setTargetAtTime(held.f * mult, t, BOW_GLIDE);
+  }
+  for (const p of parts) {
+    p.vib = 0;
+    p.glow = 0;
+    p.hz = 0;
+  }
+  for (let n = notes.length - 1; n >= 0; n--) {
+    const note = notes[n];
+    let heard = false;
+    // Each partial of the note moves to where it is held, or to silence.
+    for (const d of note.drive) {
+      d.a += ((note.on ? d.held : 0) - d.a) * (1 - Math.exp(-dt / d.tau));
+      if (d.a > SYMP_FLOOR) heard = true;
+    }
+    const env = note.drive[0].a / note.drive[0].level;
+    note.part.vib = Math.max(note.part.vib, env);
+    note.part.glow = Math.max(note.part.glow, Math.min(1, env / HELD));
+    note.part.hz = note.f;
+    // Each mode of each answering part moves to its steady answer with its own
+    // tau: in the page's model, and in the sound, which the same equation
+    // drives (setTargetAtTime is that first-order approach).
+    for (const e of note.echoes) {
+      let power = 0;
+      for (const m of e.modes) {
+        const [want, at] = answer(m, note.drive, note.f, (d) => d.a);
+        m.a += (want - m.a) * (1 - Math.exp(-dt / m.tau));
+        m.g.gain.setTargetAtTime(want, t, m.tau);
+        m.osc.frequency.setTargetAtTime(want > SYMP_FLOOR ? at : m.f, t, m.tau);
+        power += m.a * m.a;
+        if (m.a > SYMP_FLOOR) heard = true;
+      }
+      // Seen by the root of how loud it rings next to a unison's answer to
+      // the held note, so an octave's or a fifth's, quiet as it is, still shows.
+      const seen = Math.sqrt(Math.min(1, Math.sqrt(power) / (SYMP_COUPLING * BOW_VOL * HELD)));
+      e.p.vib = Math.max(e.p.vib, SYMP_VIB * seen);
+      e.p.glow = Math.max(e.p.glow, SYMP_GLOW * seen);
+      if (!e.p.hz) e.p.hz = NOTE[e.p.key];
+    }
+    if (!heard && !note.on) {
+      for (const e of note.echoes) for (const m of e.modes) m.osc.stop(t + 0.05);
+      notes.splice(n, 1);
+    }
+  }
+  // Each shakes at the note it sounds: the pressed part at the held note as it
+  // bends, the others each at its own.
+  for (const p of parts) {
+    if (p.vib < 0.01) p.vib = 0;
+    if (p.vib) p.ph = (p.ph + (TAU * p.hz * dt) / VIB_DIV) % TAU;
   }
 }
 
@@ -1672,6 +2063,21 @@ function pose() {
       l.cos[i] = Math.cos(r);
       l.sin[i] = Math.sin(r);
     }
+    // Under the bow it shakes like a string across its line: a standing wave
+    // with a little of its octave, still at its base, so whatever hangs from
+    // it is carried along.
+    if (l.vib > 0.002) {
+      const ph = l.ph;
+      const a = l.vib * VIB_WOOD;
+      const c1 = Math.cos(ph);
+      const c2 = 0.35 * Math.cos(2 * ph + 1);
+      for (let i = 1; i < l.n; i++) {
+        const u = i / (l.n - 1);
+        const d = a * (Math.sin(Math.PI * u) * c1 + Math.sin(TAU * u) * c2);
+        l.dx[i] -= l.sin[i] * d;
+        l.dy[i] += l.cos[i] * d;
+      }
+    }
   }
 }
 
@@ -1723,7 +2129,8 @@ function drawLeaves() {
     const px = L.dx[j] + L.cos[j] * ox - L.sin[j] * oy;
     const py = L.dy[j] + L.sin[j] * ox + L.cos[j] * oy;
     const turn = soft(f.theta, f.limit);
-    const ang = L.rot[j] + turn;
+    const shake = f.vib > 0.002 ? f.vib * VIB_LEAF * Math.cos(f.ph) : 0;
+    const ang = L.rot[j] + turn + shake;
     const twist = soft(f.twist, TWIST_MAX);
     const q = 1 - (f.squash * (1 - Math.cos(twist))) / (1 - Math.cos(TWIST_MAX));
 
@@ -2571,7 +2978,7 @@ let drawn = false; // whether the plate has anything on it to clear
 function drawPlate() {
   if (!W) return;
   let any = airA >= 0.01 || (lever && leverA >= 0.02);
-  for (const p of parts) if (p.rv > 0.01) any = true;
+  for (const p of parts) if (p.rv > 0.01 || p.glow > 0.01) any = true;
   // Most of the time nothing is touched: one clear, then nothing to do.
   if (!any && !drawn) return;
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -2589,6 +2996,70 @@ function drawPlate() {
   drawLever(u);
   mask();
   g.globalAlpha = 1;
+  drawGlow();
+}
+
+/**
+ * Lights each part sounding a held note: a radial wash of the tree's ink over the
+ * part alone, from where the press landed on the pressed one and from its
+ * middle on one answering it, as strong as it sounds.
+ */
+function drawGlow() {
+  let wood = null;
+  // The ink as r, g, b, whatever form the page gives it in, for the wash to
+  // fade it out to nothing rather than towards black.
+  g.fillStyle = TONE.spiral || INK;
+  const ink = g.fillStyle;
+  const rgb = ink.startsWith("#")
+    ? [1, 3, 5].map((i) => parseInt(ink.slice(i, i + 2), 16)).join(", ")
+    : (ink.match(/[\d.]+/g) || ["13", "87", "41"]).slice(0, 3).join(", ");
+  for (const p of parts) {
+    if (p.glow <= 0.01) continue;
+    g.setTransform(dpr * sc, 0, 0, dpr * sc, dpr * ox, dpr * oy);
+    let cx;
+    let cy;
+    let r = GLOW_R;
+    if (p.kind === "leaf") {
+      if (p === bow.part) {
+        const m = p.m;
+        cx = m[0] * bow.lx + m[2] * bow.ly + m[4];
+        cy = m[1] * bow.lx + m[3] * bow.ly + m[5];
+      } else {
+        cx = p.nowX;
+        cy = p.nowY;
+      }
+    } else {
+      const j = p === bow.part ? bow.bj : p.n >> 1;
+      const o = p === bow.part ? bow.bo : 0;
+      cx = p.dx[j] - p.sin[j] * o;
+      cy = p.dy[j] + p.cos[j] * o;
+      if (p !== bow.part) r = Math.max(GLOW_R, p.len / 2);
+    }
+    g.save();
+    g.beginPath();
+    if (p.kind === "leaf") {
+      g.moveTo(p.nowRimX[0], p.nowRimY[0]);
+      for (let k = 1; k < p.nowRimX.length; k++) g.lineTo(p.nowRimX[k], p.nowRimY[k]);
+      g.closePath();
+    } else {
+      // The limb's own run of the wood: its bone, as wide as it is, within the
+      // wood's outline so the light keeps to the bark.
+      wood = wood || new Path2D(woodD);
+      g.clip(wood);
+      g.beginPath();
+      for (let i = 0; i < p.n; i++) g.lineTo(p.dx[i] - p.sin[i] * p.half[i] * 1.15, p.dy[i] + p.cos[i] * p.half[i] * 1.15);
+      for (let i = p.n - 1; i >= 0; i--) g.lineTo(p.dx[i] + p.sin[i] * p.half[i] * 1.15, p.dy[i] - p.cos[i] * p.half[i] * 1.15);
+      g.closePath();
+    }
+    const a = GLOW_ALPHA * p.glow;
+    const wash = g.createRadialGradient(cx, cy, 0, cx, cy, r);
+    wash.addColorStop(0, `rgba(${rgb}, ${a.toFixed(3)})`);
+    wash.addColorStop(0.45, `rgba(${rgb}, ${(a * 0.45).toFixed(3)})`);
+    wash.addColorStop(1, `rgba(${rgb}, 0)`);
+    g.fillStyle = wash;
+    g.fill();
+    g.restore();
+  }
 }
 
 /* ==========================================================================
@@ -2612,6 +3083,8 @@ function tick(now) {
     const fade = Math.exp(-dt / 0.045);
     pointer.vx *= fade;
     pointer.vy *= fade;
+    pointer.ax *= fade;
+    pointer.ay *= fade;
   }
   // The push: the pointer's velocity times a coefficient interpolated by its
   // speed, from K0 (still) to K1 (at V1 and beyond).
@@ -2620,6 +3093,9 @@ function tick(now) {
   const going = speed > 1 ? 1 : 0;
   const kWood = (K0 + (K1 - K0) * t) * going;
   const kLeaf = (KL0 + (KL1 - KL0) * t) * going;
+  // How hard a touch now would strike: by the speed it comes in at, and more
+  // by how hard it is accelerating.
+  const hit = Math.min(1, speed / V_HIT + Math.hypot(pointer.ax, pointer.ay) / A1);
 
   // Fixed steps, walking the pointer along the path it took since the last
   // one, so a fast swipe cannot jump clean over a thin branch. On a fast
@@ -2670,9 +3146,10 @@ function tick(now) {
     for (const p of parts) {
       p.worn = (p.worn + p.touch * moved) * Math.exp(-H / MEND);
       if (!held) p.touch = 0;
-      // Its note, on first being touched, by the share of its speed the cursor loses.
+      // Its note, on first being touched while the cursor moves, however
+      // slowly: as hard as it was struck.
       const on = p.touch > 0.5;
-      if (on && !p.met && drag > 0.02) ring(p, drag / (1 + drag));
+      if (on && !p.met && speed > 5 && !bow.on) ring(p, hit, true);
       p.met = on;
     }
     hx = toX;
@@ -2690,6 +3167,7 @@ function tick(now) {
   drawLeaves();
 
   touch(dt);
+  bowing(dt);
 
   const ease = 1 - Math.exp(-dt / 0.07);
   for (const p of parts) for (let k = 0; k < 5; k++) p.shown[k] += (p.sum[k] / steps - p.shown[k]) * ease;
@@ -2833,6 +3311,14 @@ if (box && svg && woodEl && !reduced && setup()) {
   window.addEventListener(SOUND_KEY, (event) => setSound(!!event.detail));
   document.documentElement.addEventListener("pointerleave", release);
   window.addEventListener("blur", release);
+  window.addEventListener("pointerdown", onBowPress, { passive: true });
+  window.addEventListener("pointermove", onBowMove, { passive: true });
+  for (const type of ["pointerup", "pointercancel", "blur"]) window.addEventListener(type, stopBow);
+  document.documentElement.addEventListener("pointerleave", stopBow);
+  // Drawing the bow is not selecting the page under it.
+  document.addEventListener("selectstart", (event) => {
+    if (bow.on) event.preventDefault();
+  });
 
   if ("ResizeObserver" in window) {
     new ResizeObserver(() => {
