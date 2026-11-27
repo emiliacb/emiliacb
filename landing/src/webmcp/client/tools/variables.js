@@ -10,8 +10,9 @@ import { BASE_TOKENS, overridesOf } from "../css/tokens.js";
 import { MODES, kindOf, kindProblem, literalProblem, mergeVariables, parseVariables } from "../css/variables.js";
 import { isDark } from "../../../client/lib/theme.js";
 import { fail, ok } from "../core/result.js";
-import { MODIFY_HINT } from "../skills/hints.js";
-import { CHECKS, FORCE_PROPERTY, SCOPE, checkSize } from "./css.js";
+import { MODIFY_GATED_HINT, MODIFY_HINT } from "../skills/hints.js";
+import { requireSkill } from "../core/skill-gate.js";
+import { CHECKS, FORCE_PROPERTY, checkSize } from "./css.js";
 
 /** True for selectors whose subject is the root element: :root, html, html.dark, :root[data-theme="x"]. */
 function isRootSelector(selector) {
@@ -147,16 +148,10 @@ const getVariables = {
   summary: "the site's design tokens: base ones first, with light, dark and what derives from them",
   title: "List the site's CSS variables",
   description:
-    "Call this before writing any CSS: colours, fonts, sizes and radii are design tokens, and changing a token " +
-    "(set_variables) restyles everything built on it, canvases included. By default returns a compact summary of " +
-    "the BASE tokens, the ones meant to be edited: `name`, `light` and `dark` (the site's declared values), " +
-    "`computed` now, `purpose`, what `derives` from it, and `agentOverrides` if you changed it. The DERIVED " +
-    "tokens (the neutral scale, shades, roles, the tree's and the cotas' inks) follow the base ones and are " +
-    "listed only with `includeDerived: true`, each with its `computed` value and its `declarations` (selector, " +
-    "condition, declared value), read from the site's own stylesheets (same-origin only). " +
-    "Input: optional `includeDerived` (boolean, default false) and `prefix` (for example \"--color\") to " +
-    "list only variables whose name starts with it (which also returns the matching derived ones). " +
-    SCOPE +
+    "Call before writing any CSS. Returns the BASE design tokens, the ones meant to be edited: `light` and " +
+    "`dark` values, `computed` now, `purpose`, what `derives` from it and your `agentOverrides`. " +
+    "`includeDerived: true` or a `prefix` such as \"--color\" also lists the derived tokens with their " +
+    "declarations. Read-only. " +
     MODIFY_HINT,
   inputSchema: {
     type: "object",
@@ -231,30 +226,21 @@ const setVariables = {
   summary: "change design tokens (colours, fonts, sizes) in light, dark or both",
   title: "Change the site's design tokens",
   description:
-    "Changes CSS variables (design tokens) such as --color-paper, --color-ink, --color-accent, --tree-hue, --g-a or " +
-    "--font-size-base, and what is built on them follows (the tree, gradient and cotas repaint at once; text on the " +
-    "accent is derived automatically, see --color-accent in get_variables). Prefer this to writing CSS; call get_variables first to see the " +
-    "base tokens, their light and dark values and what each is for. `mode` says which colour mode the values are for: " +
-    "\"light\", \"dark\", or \"both\" (default), so you do not have to know how the site writes its dark " +
-    "values; set a dark value only while it should differ from light. Only custom properties (--name) are " +
-    "accepted. A value is checked against what the token holds (a colour for a colour token; \"r g b\" " +
-    "channels such as \"252 190 80\" for --g-a, --g-b and --tree-grad-*; a number for --tree-hue); one that does " +
-    "not fit is rejected and nothing changes. A name no site stylesheet declares is applied but returned as a " +
-    "warning: it is not used by the site. A null or empty value removes your override of that variable in that " +
-    "mode. " +
+    "Changes design tokens (CSS variables such as --color-paper, --color-accent, --tree-hue, " +
+    "--font-size-base); everything built on them follows (tree, gradient and cotas too). " +
+    "Prefer it to CSS, and call get_variables first. `variables` maps --name to a value (null removes your " +
+    "override); `mode` is light, dark or both (default). A value that does not fit is rejected. " +
+    "Returns before and after values. " +
     CHECKS +
-    "Returns, per variable and mode, `before` and `after` (the computed value in the mode showing now; a change " +
-    "for the other mode shows when you switch with set_theme_mode) and `warnings`. " +
-    "Input: `variables` (object of --name to value), optional `mode`, optional `force` (boolean). " +
-    SCOPE +
-    MODIFY_HINT,
+    MODIFY_GATED_HINT,
   inputSchema: {
     type: "object",
     properties: {
       variables: {
         type: "object",
         additionalProperties: { type: ["string", "number", "null"] },
-        description: 'Object {"--name": "value"}, for example {"--color-paper": "#fff8e7", "--tree-hue": 200}. null or "" removes the override.',
+        description:
+          'Object {"--name": value}; null or "" removes the override. A colour token takes a colour; --g-a, --g-b and --tree-grad-* take "r g b" channels ("252 190 80"); --tree-hue a number.',
       },
       mode: { type: "string", enum: MODES, description: 'Which colour mode the values are for: "light", "dark" or "both" (default).' },
       force: FORCE_PROPERTY,
@@ -262,6 +248,7 @@ const setVariables = {
     required: ["variables"],
   },
   execute(input) {
+    requireSkill("modifying-page");
     const { mode, entries } = readInput(input);
     const current = getState();
     const variables = mergeVariables(current.variables, entries, mode);

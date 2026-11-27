@@ -7,15 +7,15 @@ import { getState } from "../css/state.js";
 import { mergeRule, parseDeclarations, rulesToCss } from "../css/declarations.js";
 import { describeWithText } from "../core/describe.js";
 import { fail, ok } from "../core/result.js";
-import { MODIFY_HINT } from "../skills/hints.js";
+import { MODIFY_GATED_HINT } from "../skills/hints.js";
+import { requireSkill } from "../core/skill-gate.js";
 
 // A stylesheet, not a page: past this it is more likely a mistake than a design.
 const MAX_CSS_CHARS = 50000;
 const MAX_SELECTOR_CHARS = 500;
 const MAX_ELEMENTS = 20;
 const DEFAULT_ELEMENTS = 5;
-export const SCOPE =
-  "The CSS is applied only in this tab: it is kept while the visitor navigates the site in this tab (links, back and forward); a reload restores the original. ";
+export const SCOPE = "Local to this tab: kept while the visitor navigates it, a reload restores the original. ";
 
 const INSPECTED_STYLES = [
   "color", "background-color", "font-family", "font-size", "font-weight", "display", "position", "margin",
@@ -94,21 +94,16 @@ export const FORCE_PROPERTY = {
 };
 
 export const CHECKS =
-  "After applying, the page is checked: main content hidden, unreadable or unclickable, a page that cannot scroll, " +
-  "text with almost no contrast, or a full-screen layer blocking clicks. If the change breaks the page it is rolled " +
-  "back silently and the call is rejected with what broke and how to fix it, so correct it and send it again. " +
-  "`force: true` applies it anyway (the problems come back as `warnings`) but shows the visitor a small notice with a " +
-  "button to restore the original page, so use it only when the effect is intended. ";
+  "A change that breaks the page (content hidden or off-screen, no contrast, no scrolling, a layer blocking clicks) is rolled back and rejected " +
+  "with the cause; `force: true` applies it anyway and shows the visitor a restore notice. ";
 
 const getCss = {
   name: "get_css",
   summary: "the CSS agents have applied so far",
   title: "Get the CSS applied by agents",
   description:
-    "Returns the CSS an agent has applied to this page so far: the variable overrides (set_variables, per mode), " +
-    "the full free-form stylesheet (set_css) and the " +
-    "per-selector rules (set_css_by_selector), plus the combined stylesheet that is actually in the page. " +
-    "Empty when nothing was changed (the page looks as originally designed). Takes no input. " +
+    "Returns the CSS agents have applied so far: variable overrides per mode, the free-form stylesheet, the " +
+    "per-selector rules and the combined stylesheet in the page. Empty when nothing was changed. No input. " +
     SCOPE,
   inputSchema: { type: "object", properties: {} },
   annotations: { readOnlyHint: true },
@@ -125,12 +120,10 @@ const getCssBySelector = {
   summary: "computed styles of the elements a selector matches",
   title: "Inspect the styles of elements",
   description:
-    "Finds the elements matching a CSS selector and returns, for up to `limit` of them (default 5, max 20), a short " +
-    "description (tag, id, classes, text excerpt) and their computed styles (color, background-color, font-family, " +
-    "font-size, font-weight, display, position, margin, padding, border, width, height, opacity, transform), plus the " +
-    "rules an agent has set for exactly that selector. Zero matches is not an error: `matchCount` is 0. " +
-    "An invalid selector is rejected with a message. Use it before set_css_by_selector to see what a selector hits. " +
-    "Input: `selector` (required string), `limit` (optional number).",
+    "Returns up to `limit` elements (default 5, max 20) that a CSS selector matches, each with a short " +
+    "description, its computed styles and the rules an agent set for that selector. Zero matches gives " +
+    "`matchCount` 0; an invalid selector is rejected. Use it before set_css_by_selector to see what a selector " +
+    "hits.",
   inputSchema: {
     type: "object",
     properties: {
@@ -155,20 +148,24 @@ const setCss = {
   summary: "replace the page's custom stylesheet",
   title: "Replace the page's custom CSS",
   description:
-    "Before writing CSS, call get_variables: colours, fonts, sizes and radii are tokens; change them with " +
-    "set_variables (which also repaints the tree, the gradient and the cotas). Use CSS only for what tokens don't " +
-    "cover. Restyles the page with a CSS stylesheet. It REPLACES the free-form stylesheet applied before with this one, so " +
-    "always send the complete stylesheet (call get_css first to extend it). An empty string removes the stylesheet " +
-    "but keeps the per-selector rules from set_css_by_selector; use reset_css to clear everything. The stylesheet is " +
-    "added last in <head>, after the site's own styles; use !important where an inline style or a more specific rule " +
-    "may win. Maximum 50000 characters. Dark mode is html[data-theme=dark], or the system preference when html has no data-theme. " +
-    "Do not set design tokens here (a token on :root alone only affects light mode): use set_variables, " +
-    "which handles light and dark. " +
+    "Replaces the page's free-form stylesheet with the CSS you send, so send it complete (get_css first to " +
+    "extend it; empty removes it, per-selector rules stay). Use it only for what tokens do not cover: colours, " +
+    "fonts, sizes and radii are tokens, so call get_variables and set_variables first. Added last in <head>; " +
+    "max 50000 characters. " +
     CHECKS +
-    "Returns what was applied and `warnings` for declarations the browser ignores. " +
-    "Input: `css` (string), optional `force` (boolean). " +
-    SCOPE +
-    MODIFY_HINT,
+    MODIFY_GATED_HINT +
+    " Full details: get_tool_help.",
+  help:
+    "# set_css\n" +
+    "\n" +
+    "Replaces the free-form stylesheet applied before with the one you send, so always send the complete stylesheet (call `get_css` first to extend it). An empty string removes it but keeps the rules from `set_css_by_selector`; `reset_css` clears everything.\n" +
+    "\n" +
+    "- Before writing CSS, call `get_variables`: colours, fonts, sizes and radii are tokens, and `set_variables` also repaints the tree, the gradient and the cotas. Use CSS only for what tokens do not cover.\n" +
+    "- The stylesheet is added last in `<head>`, after the site's own styles: use `!important` where an inline style or a more specific rule may win. Maximum 50000 characters.\n" +
+    "- Dark mode is `html[data-theme=dark]`, or the system preference when `html` has no `data-theme`. Do not set design tokens here (a token on `:root` alone only affects light mode): use `set_variables`, which handles both modes.\n" +
+    "- After applying, the page is checked: main content hidden, text with almost no contrast, or a full-screen layer blocking clicks. If the change breaks the page it is rolled back and the call is rejected with what broke and how to fix it; correct it and send it again. `force: true` applies it anyway (the problems come back as `warnings`) but shows the visitor a notice with a button to restore the original style, so use it only when the effect is intended.\n" +
+    "- Returns what was applied and `warnings` for declarations the browser ignores.\n" +
+    "- The CSS is kept while the visitor navigates the site in this tab; a reload restores the original.",
   inputSchema: {
     type: "object",
     properties: {
@@ -178,6 +175,7 @@ const setCss = {
     required: ["css"],
   },
   execute(input) {
+    requireSkill("modifying-page");
     if (typeof input?.css !== "string") throw fail('"css" must be a string with the complete stylesheet (empty to remove it).');
     checkSize(input.css, "The css");
     const next = { ...getState(), css: input.css };
@@ -191,19 +189,12 @@ const setCssBySelector = {
   summary: "set or remove declarations for one selector",
   title: "Style a selector",
   description:
-    "Before writing CSS, call get_variables: colours, fonts, sizes and radii are tokens; change them with " +
-    "set_variables (which also repaints the tree, the gradient and the cotas). Use CSS only for what tokens don't " +
-    "cover. Sets, changes or removes CSS declarations for one selector, without touching the rest. The rules are merged " +
-    "with those you set for the same selector before, and are applied after the stylesheet from set_css. " +
-    "Input: `selector` (e.g. \"h1\"); `declarations`: an object of property to value ({\"color\": \"#222\", " +
-    "\"font-size\": \"2rem\"}) or a CSS declaration string (\"color: #222; font-size: 2rem\"); optional `important` " +
-    "(default true) adds !important so the rule beats the site's own styles. A null or empty value removes that " +
-    "property; empty declarations remove the selector's rules. Properties or values the browser does not understand " +
-    "are rejected. " +
+    "Sets, changes or removes CSS declarations for one selector, merged with the rules you set for it before " +
+    "and applied after the set_css stylesheet. `declarations` is an object or a CSS string; a null or empty " +
+    "value removes a property. `important` (default true) beats the site's own styles. Use it only for what " +
+    "tokens do not cover: get_variables and set_variables first. " +
     CHECKS +
-    "Optional `force` (boolean). Returns what is applied. " +
-    SCOPE +
-    MODIFY_HINT,
+    MODIFY_GATED_HINT,
   inputSchema: {
     type: "object",
     properties: {
@@ -218,6 +209,7 @@ const setCssBySelector = {
     required: ["selector", "declarations"],
   },
   execute(input) {
+    requireSkill("modifying-page");
     const selector = requireSelector(input);
     const entries = entriesOrFail(input.declarations);
     checkSupported(entries);
@@ -237,9 +229,8 @@ const resetCss = {
   summary: "remove all custom CSS",
   title: "Restore the original design",
   description:
-    "Removes everything applied with set_variables, set_css and set_css_by_selector, so the page looks as originally designed. " +
-    "Takes no input. (set_css with an empty string only removes the free-form stylesheet; a null value in " +
-    "set_variables removes one variable.) " +
+    "Removes everything applied with set_variables, set_css and set_css_by_selector, so the page looks as " +
+    "originally designed. No input. " +
     SCOPE,
   inputSchema: { type: "object", properties: {} },
   execute() {

@@ -364,18 +364,21 @@ const getLinksAndButtons = {
   summary: "the links and buttons a visitor could click, with ids",
   title: "List the links and buttons",
   description:
-    "Lists the interactive elements on the current page that a visitor could click: links, buttons, the menu " +
-    "triggers, expandable summaries and the contact sidebar triggers (GitHub, LinkedIn, e-mail, calendar). " +
-    "Hidden ones (display none, invisible, transparent, zero-sized, inert or aria-hidden, such as the links of a closed " +
-    "menu or sidebar) are left out unless `includeHidden` is true. " +
-    "Input: optional `filter` (text matched case-insensitively against the name and the address) and optional " +
-    "`includeHidden` (boolean, default false). " +
-    "Returns `count` and `items`, each with: `id` (pass it to click_link_or_button; it is stable while the page stays " +
-    "open), `kind` (link, button, menu, disclosure or sidebar-trigger), `name` (visible text or aria-label), for links " +
-    "`href` (absolute) and `scope` (internal, external, mailto or tel), `opensNewTab`, `opensSidebar`, `expanded`, " +
-    "`disabled`, `alsoAt` (ids of identical copies, such as the footer's), `in` (the section it is in: nav, header, main, footer, sidebar, dialog, aside or page) and " +
-    "`inViewport`. Read-only: it changes nothing except tagging elements with a data-webmcp-id attribute. " +
-    "It describes the page as it is now; call it again after a click that opens a menu or sidebar.",
+    "Lists what a visitor could click on this page: links, buttons, menu triggers, expandable summaries and " +
+    "the contact sidebar triggers. Hidden ones are left out unless `includeHidden` is true; `filter` matches " +
+    "name and address. Returns `count` and `items`, each with an `id` for click_link_or_button, `kind`, " +
+    "`name`, for links `href`, plus flags such as `alsoAt` (identical copies). Read-only. Call it again after " +
+    "a click that opens a menu or sidebar. Full details: get_tool_help.",
+  help:
+    "# get_links_and_buttons\n" +
+    "\n" +
+    "Lists the interactive elements on the current page that a visitor could click: links, buttons, the menu triggers, expandable summaries and the contact sidebar triggers (GitHub, LinkedIn, e-mail, calendar).\n" +
+    "\n" +
+    "- Hidden ones (display none, invisible, transparent, zero-sized, inert or aria-hidden, such as the links of a closed menu or sidebar) are left out unless `includeHidden` is true.\n" +
+    "- `filter`: text matched case-insensitively against the name and the address.\n" +
+    "- Returns `count` and `items`, each with: `id` (pass it to `click_link_or_button`; it is stable while the page stays open), `kind` (link, button, menu, disclosure or sidebar-trigger), `name` (visible text or aria-label), for links `href` (absolute) and `scope` (internal, external, mailto or tel), `opensNewTab`, `opensSidebar`, `expanded`, `disabled`, `alsoAt` (ids of identical copies, such as the footer's), `in` (the section it is in: nav, header, main, footer, sidebar, dialog, aside or page) and `inViewport`.\n" +
+    "- Read-only: it changes nothing except tagging elements with a `data-webmcp-id` attribute. It describes " +
+    "the page as it is now.",
   inputSchema: {
     type: "object",
     properties: {
@@ -400,19 +403,21 @@ const clickLinkOrButton = {
   summary: "click a link or button by id, text or selector",
   title: "Click a link or button",
   description:
-    "Clicks a link or button on the page the way a visitor would: scrolls it into view and fires a real click, so the " +
-    "site's own behavior runs. Give exactly one of: `id` (from get_links_and_buttons, the reliable choice), `text` " +
-    "(the visible text; exact match first, then contains, case-insensitive; identical copies, such as the footer's and " +
-    "the contact row's, are one choice and the one on screen is clicked; an error lists the candidates if they differ) or `selector` (a CSS selector that must match one element). " +
-    "Returns what was clicked and what happened. Side effects depend on the element: an internal link NAVIGATES this " +
-    "tab (the page and its tools are replaced; the new page registers the same tools, so wait a moment and call them " +
-    "again); a link with target=_blank asks the browser for a new tab (it may be blocked); an in-page anchor (#section) " +
-    "scrolls and changes the address; a sidebar trigger opens the contact sidebar (the result says whether it opened); " +
-    "a menu trigger opens or closes the menu. mailto: links hand off to the visitor's mail app. " +
-    "Refuses, without clicking, a disabled element or one a visitor cannot see (click the menu trigger first for links " +
-    "inside a menu)." +
-    " " +
+    "Clicks a link or button the way a visitor would: scrolls it into view and fires a real click. Give " +
+    "exactly one of `id` (from get_links_and_buttons, the reliable choice), `text` (visible text; identical " +
+    "copies count as one) or `selector` (must match one element). An internal link NAVIGATES this tab, so wait " +
+    "a moment and call the tools again. Refuses a disabled or invisible element. Full details: get_tool_help. " +
     ANSWER_HINT,
+  help:
+    "# click_link_or_button\n" +
+    "\n" +
+    "Clicks a link or button on the page the way a visitor would: scrolls it into view and fires a real click, so the site's own behavior runs.\n" +
+    "\n" +
+    "- Give exactly one of: `id` (from `get_links_and_buttons`, the reliable choice), `text` (the visible text; exact match first, then contains, case-insensitive; identical copies, such as the footer's and the contact row's, are one choice and the one on screen is clicked; an error lists the candidates if they differ) or `selector` (a CSS selector that must match one element).\n" +
+    "- An internal link NAVIGATES this tab (the page and its tools are replaced; the new page registers the same tools, so wait a moment and call them again).\n" +
+    "- A link with `target=_blank` asks the browser for a new tab (it may be blocked). An in-page anchor (`#section`) scrolls and changes the address. A sidebar trigger opens the contact sidebar (the result says whether it opened). A menu trigger opens or closes the menu. `mailto:` links hand off to the visitor's mail app.\n" +
+    "- Refuses, without clicking, a disabled element or one a visitor cannot see (click the menu trigger first for links inside a menu).\n" +
+    "- Returns what was clicked and what happened.",
   inputSchema: {
     type: "object",
     properties: {

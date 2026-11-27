@@ -6,7 +6,7 @@ Facts checked against the site's code and in the browser. Each row of the checkl
 
 Set on `:root`. Base tokens: `--color-paper` (ground), `--color-ink` (text), `--color-accent` (link fills, the footer), `--color-signal` (underlines, loading bar), `--font-sans`, `--font-size-base` (a percentage; every size is in rem, so it scales type and spacing), `--radius-frame`, `--radius-overlay`, `--size-content`. The grey scale (`--color-stone-*`) derives from paper and ink, so changing those two moves every neutral. Role tokens, when a look needs them: `--color-raised` (cards), `--color-hairline`, `--color-code-bg`, `--color-code-ink`, `--color-strong`, `--color-on-strong`.
 
-`--color-on-accent` is the text on the accent (the footer, the sound window's hover). It is derived from the accent, so a new accent keeps readable text; set it only to override, and read the footer's colours back to check.
+`--color-on-accent` is the text on the accent (the footer, the sound window's hover). It is derived from the accent, so a new accent keeps readable text; `--color-on-ink` and `--color-on-strong` are derived the same way. Set one only to override, and read the footer's colours back to check.
 
 Dark mode swaps the neutral scale, so a dark palette written into the light block shows correctly only in light mode. Use `set_variables` with `mode: both`, or force one mode with `set_theme_mode`. Without `set_variables`, write `set_css` on `:root`, repeated under `:root[data-theme=dark]` and the dark media query.
 
@@ -38,7 +38,7 @@ Verify with `get_css_by_selector` on `#page-shell > nav > div:first-of-type`.
 
 ## Tree (home and `labs/distortion-bg`)
 
-`#tree-illustration` holds `.cover-tree` (an SVG), a canvas for its anatomy drawn from `--tree-ink-*` (all derived from `--tree-hue`), and `.tree-floats`, the floating equations. Its colours are tokens, with the same meaning in light and dark (no inversion): `--tree-grad-a` and `--tree-grad-b` (`r g b`) are the leaves and trunk as you see them, and `--tree-hue` (0-360) is the ink. Set them for both modes (`mode: both`) and the drawing, the canvas and the sound window `.tree-sound-ask` (its title bar) agree. `.tree-tilt-sign` shows only on touch. `play_tree_song`, when listed, plays the tree.
+`#tree-illustration` holds `.cover-tree` (an SVG), a canvas for its anatomy drawn from `--tree-ink-*` (all derived from `--tree-hue`), and the floating equations, which render in a shadow root: agent CSS does not reach them, so restyle them with `--tree-hue` and `--tree-ink-*`. Its colours are tokens, with the same meaning in light and dark (no inversion): `--tree-grad-a` and `--tree-grad-b` (`r g b`) are the leaves and trunk as you see them, and `--tree-hue` (0-360) is the ink. Set them for both modes (`mode: both`) and the drawing, the canvas and the sound window `.tree-sound-ask` (its title bar) agree. `.tree-tilt-sign` shows only on touch. `play_tree_song`, when listed, plays the tree.
 
 Verify with `get_variables` (prefix `--tree`) and a screenshot in both modes.
 
@@ -62,7 +62,11 @@ A full-page screenshot does not show it, because it sits behind the sheet until 
 
 ## Cursor
 
-`#ink-cursor`, drawn in `--ic-ink`, `--ic-halo` and `--ic-fill`. Over a sidebar the system cursor returns.
+On desktop the native cursor is hidden (`html.ink-cursor * { cursor: none !important }`) and `#ink-cursor`, a fixed SVG, is drawn on top in `--ic-ink`, `--ic-halo` and `--ic-fill`. Over a sidebar the system cursor returns.
+
+The shape follows the inherited `--cur-role` (`default`, `text`, `pointer`, `ns`, `grab`): links, buttons, `summary` and `label` are `pointer`, prose in `#content` is `text`. Restyle the cursor with the three tokens, never with `cursor:` on elements: it is overridden and the native one stays hidden; do not unhide it unless the visitor asks. Whatever you insert or overlay must not cover `#ink-cursor` (keep its `z-index` below the cursor's), and a clickable element you add that is not a link or button should set `--cur-role: pointer`.
+
+Verify by moving the mouse over each kind of element and over your additions.
 
 ## Buttons and links
 

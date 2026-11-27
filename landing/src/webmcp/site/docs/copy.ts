@@ -57,7 +57,9 @@ const en: DocsCopy = {
     body:
       "WebMCP has no skill primitive, so the skills are tools: `list_skills`, then `read_skill({ name })` (and " +
       "`file` for the others in its folder). Read the one that fits before you start. They are also published for " +
-      "agents that install skills:",
+      "agents that install skills. Some tools fail until their skill is read: `set_variables`, `set_css` and " +
+      "`set_css_by_selector` need `modifying-page`, `play_tree_song` and `play_song` need `composing-song`. " +
+      "A tool's description is cut short, so `get_tool_help({ name })` gives the full one.",
   },
 
   tools: {
@@ -77,6 +79,7 @@ const en: DocsCopy = {
     "tree-song": "The tree's song",
     "black-hole": "The black hole",
     skills: "Skills",
+    help: "Help",
   },
 
   safety: {
@@ -138,7 +141,10 @@ const es: DocsCopy = {
     body:
       "WebMCP no tiene una primitiva de skill, así que las skills son herramientas: `list_skills`, y después " +
       "`read_skill({ name })` (con `file` para los otros archivos de su carpeta). Leé la que corresponda antes de " +
-      "empezar. También están publicadas para los agentes que instalan skills:",
+      "empezar. También están publicadas para los agentes que instalan skills. Algunas herramientas fallan hasta " +
+      "leer su skill: `set_variables`, `set_css` y `set_css_by_selector` piden `modifying-page`; `play_tree_song` y " +
+      "`play_song`, `composing-song`. La descripción de una herramienta se corta, así que `get_tool_help({ name })` " +
+      "da la completa.",
   },
 
   tools: {
@@ -159,6 +165,7 @@ const es: DocsCopy = {
     "tree-song": "La canción del árbol",
     "black-hole": "El agujero negro",
     skills: "Skills",
+    help: "Ayuda",
   },
 
   safety: {

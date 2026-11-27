@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { blend, contrastRatio, parseRgb } from "../../src/webmcp/client/css/contrast.js";
+import { markSkillRead } from "../../src/webmcp/client/core/skill-gate.js";
 import { enabledTools } from "../../src/webmcp/client/tools/index.js";
 import { treeSongTools } from "../../src/webmcp/client/tools/tree-song.js";
 import {
@@ -119,6 +120,11 @@ describe("play_tree_song without audio", () => {
     });
     return played;
   }
+
+  // The gate is tested in skill-gate.test.ts; here the skill has been read.
+  beforeEach(() => {
+    markSkillRead("composing-song");
+  });
 
   afterEach(() => {
     Reflect.deleteProperty(globalThis, "document");

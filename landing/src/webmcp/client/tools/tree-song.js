@@ -4,7 +4,7 @@
 // in src/client/tree-sway.js (a bundle of its own) and offers itself to the
 // page as window.siteTreeSound; these tools are a thin skin over that.
 //
-// What the description tells the agent (the notes, the effects, their ranges
+// What the help (get_tool_help) tells the agent (the notes, the effects, their ranges
 // and defaults) is printed from src/client/lib/tree-voice.js, the same numbers
 // the engine plays with, so it cannot drift from what the tree does.
 import {
@@ -23,6 +23,7 @@ import {
 } from "../../../client/lib/tree-song.js";
 import { EFFECTS, latinName, NOTE_EFFECTS, SONG_EFFECTS, SONG_NOTES } from "../../../client/lib/tree-voice.js";
 import { fail, ok } from "../core/result.js";
+import { requireSkill } from "../core/skill-gate.js";
 
 const noteLines = SONG_NOTES.map((n) => `  ${n.name.padEnd(3)} ${latinName(n.name).padEnd(4)} ${String(n.hz).padStart(6)} Hz  ${n.voice}${n.part ? "" : " (no part)"}`).join("\n");
 
@@ -49,7 +50,20 @@ const effectLines = (names) =>
 const VALUES = NOTE_VALUES.map((v) => `/${v.denominator} ${v.name}`).join(", ");
 const TUPLET_COUNTS = Object.keys(TUPLETS).filter((n) => n !== "3").join(", ");
 
-const PLAY_DESCRIPTION = `Plays a song on the tree of the home page, in the tree's own voice, the one the visitor hears when they brush its leaves. Each note is a part of the tree (the leaves are glass bells, the trunk and limbs are wood), and the part shakes and lights up as it sounds. Only the home page has the tree; elsewhere this fails.
+// The description is all that is read before the agent calls, and it is cut at
+// about 900 characters, so it holds only the basics. The full text (the notes,
+// the rhythm syntax, the effects) is PLAY_HELP, served by get_tool_help, and the
+// skill composing-song teaches how to write a song.
+const PLAY_DESCRIPTION =
+  "Plays a song on the tree of the home page, in the tree's own voice: each note is a part of the tree, which " +
+  'shakes and lights as it sounds. `notes` is a string such as "D4/8 Eb4/16 A4/4." (note, "/" and its value; ' +
+  '"-" is a rest, "+" a chord) and `bpm` the tempo. Home page only. The visitor must allow the sound once: ' +
+  "the call may reject with a sentence to tell them. Fails until you read the skill `composing-song` with " +
+  "read_skill. Full details: get_tool_help.";
+
+const PLAY_HELP = `# play_tree_song
+
+Plays a song on the tree of the home page, in the tree's own voice, the one the visitor hears when they brush its leaves. Each note is a part of the tree (the leaves are glass bells, the trunk and limbs are wood), and the part shakes and lights up as it sounds. Only the home page has the tree; elsewhere this fails.
 
 The sound is a Hijaz scale on D (D Eb F# G A Bb C). The tree has eleven parts, one pitch each. C has no part: C3 and C5 are sounded in the tree's wood and bell voices without touching the tree (nothing shakes or lights for them), and only a song can play them. These are all the notes; other pitches cannot be played:
 ${noteLines}
@@ -178,7 +192,8 @@ function lockedMessage(status, place) {
       spanish
         ? "Apagaste el sonido del árbol, así que no puedo hacerlo sonar. Si querés escucharlo, activá el botón del parlante al pie de la página y avisame."
         : "The tree's sound is turned off, so I cannot play it. If you want to hear it, turn the speaker button at the bottom of the page back on and let me know.",
-      "and wait. Only the visitor can turn the sound back on; do not try to get around it. If they say they did, call play_tree_song again once.",
+      "and wait. Only the visitor can turn the sound back on; do not try to get around it. If they say they did, " +
+      "call play_tree_song again once.",
     ),
     unsupported: say(
       spanish
@@ -211,6 +226,7 @@ const playTreeSong = {
   summary: "plays a song (notes with rhythmic values, rests, chords, effects) on the home page's tree, which shakes and lights with each note; fails until the visitor has allowed the sound",
   title: "Play a song on the tree",
   description: PLAY_DESCRIPTION,
+  help: PLAY_HELP,
   inputSchema: {
     type: "object",
     properties: {
@@ -225,6 +241,7 @@ const playTreeSong = {
   },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
   async execute(input) {
+    requireSkill("composing-song");
     readSong(input);
     const tree = treeSound();
     if (!tree) throw fail(NO_TREE);
@@ -250,13 +267,27 @@ const playTreeSong = {
   },
 };
 
+// The same tool under a shorter name, for agents that look for "play song": it
+// shares the definition, so the input, the checks and the gate cannot differ.
+const playSong = {
+  ...playTreeSong,
+  name: "play_song",
+  summary: "alias of play_tree_song: plays a song on the home page's tree",
+  title: "Play a song",
+  description:
+    "Alias of play_tree_song: plays a song on the tree of the home page, with the same input (`notes`, `bpm`, " +
+    "`effects`). Fails until you read the skill `composing-song` with read_skill. Full details: get_tool_help.",
+};
+
 const stopTreeSong = {
   name: "stop_tree_song",
   summary: "stops the song the tree is playing",
   title: "Stop the tree's song",
   description:
-    "Stops the song started with play_tree_song, if one is playing: the notes that are held let go (and die away as a released note does), " +
-    "the tree's effects go back to its own, and no more notes are rung. It does not touch what the visitor plays on the tree themselves. " +
+    "Stops the song started with play_tree_song, if one is playing: the notes that are held let go (and die " +
+    "away as a released note does), " +
+    "the tree's effects go back to its own, and no more notes are rung. It does not touch what the visitor " +
+    "plays on the tree themselves. " +
     "Safe to call when nothing is playing.",
   inputSchema: { type: "object", properties: {} },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
@@ -269,4 +300,4 @@ const stopTreeSong = {
   },
 };
 
-export const treeSongTools = [playTreeSong, stopTreeSong];
+export const treeSongTools = [playTreeSong, stopTreeSong, playSong];

@@ -8,6 +8,7 @@ import { contentTools } from "./content.js";
 import { cssTools } from "./css.js";
 import { domTools } from "./dom.js";
 import { fontTools } from "./fonts.js";
+import { helpTools, provideTools } from "./help.js";
 import { interactionTools } from "./interaction.js";
 import { skillsTools } from "./skills.js";
 import { themeTools } from "./theme.js";
@@ -24,6 +25,9 @@ export const toolGroups = [
   { id: "tree-song", tools: treeSongTools },
   { id: "black-hole", tools: blackHoleTools },
   { id: "skills", tools: skillsTools },
+  { id: "help", tools: helpTools },
 ];
 
 export const enabledTools = toolGroups.flatMap((group) => group.tools);
+
+provideTools(enabledTools);
