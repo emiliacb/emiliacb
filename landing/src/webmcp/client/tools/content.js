@@ -247,6 +247,15 @@ function optionalText(input, key, max) {
   return value.trim();
 }
 
+/** The date as sent, but only when it is one: the article shows it formatted, so text that is no date would be shown as typed. */
+function readDate(input) {
+  const date = optionalText(input, "date", 40);
+  if (date !== undefined && Number.isNaN(Date.parse(date))) {
+    throw fail(`"date" must be a date such as 2026-11-27, not "${date}". Nothing was created; send a valid date or leave it out.`);
+  }
+  return date;
+}
+
 function readTags(input) {
   const tags = input?.tags;
   if (tags === undefined) return [];
@@ -271,7 +280,7 @@ function buildArticle(input) {
     id,
     title,
     subtitle: optionalText(input, "subtitle", 300),
-    date: optionalText(input, "date", 40),
+    date: readDate(input),
     tags: readTags(input),
     markdown,
     lang: pageLang(),

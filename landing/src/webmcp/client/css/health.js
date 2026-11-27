@@ -1,13 +1,23 @@
-// "Is the page still usable?": the checks run after every CSS
-// change. They read computed styles and hit-test the viewport, they never
+// "Is the page still usable?": the checks run after every change an agent
+// makes to the page (its CSS, the elements it inserts, the text it replaces).
+// They read computed styles and geometry and hit-test the viewport, they never
 // change anything. Each problem has a stable `code`, so a problem the page
-// already had before the change is not blamed on it (see css-apply.js).
+// already had before the change is not blamed on it (see apply.js).
+//
+// This file holds the checks of single elements (the page's skeleton, text
+// contrast, layers over the viewport); page-checks.js those that need a sample
+// of the main content (is it readable, can it be clicked, can it be scrolled).
+import { describeElement } from "../core/describe.js";
 import { blend, contrastRatio, parseRgb } from "./contrast.js";
+import { overlap } from "./measure.js";
+import { chainEffect, checkMainContent, checkScrollable, isChrome, pickSamples, problem } from "./page-checks.js";
 
 /** Below this the main text is, for practical purposes, the color of its background. */
 export const MIN_CONTRAST = 1.5;
-const MIN_OPACITY = 0.05;
 const COVER = 0.8;
+// How much of the main content has to be on screen sideways: this many pixels, or this share of the viewport, whichever is less.
+const MIN_VISIBLE_WIDTH_PX = 100;
+const MIN_VISIBLE_WIDTH_SHARE = 0.25;
 
 const REQUIRED = [
   ["html", "the page"],
@@ -16,35 +26,40 @@ const REQUIRED = [
   ["#content", "the main content"],
 ];
 
-function problem(code, message, hint) {
-  return { code, message, hint };
-}
-
-function effectiveOpacity(el) {
-  let opacity = 1;
-  for (let node = el; node; node = node.parentElement) opacity *= Number(getComputedStyle(node).opacity);
-  return opacity;
-}
-
-/** Why `el` cannot be seen, or null. */
+/** Why `el` cannot be seen, or null. What an ancestor does to it (fading, blurring, shrinking) is chainEffect's. */
 function hiddenReason(el) {
   const style = getComputedStyle(el);
   if (style.display === "none") return "has display: none";
   if (style.visibility === "hidden" || style.visibility === "collapse") return "has visibility: hidden";
-  if (effectiveOpacity(el) < MIN_OPACITY) return "is (almost) fully transparent";
   const rect = el.getBoundingClientRect();
   if (rect.width < 1 || rect.height < 1) return "has no size";
-  if (rect.right <= 0 || rect.left >= window.innerWidth || rect.bottom + window.scrollY <= 0) {
-    return "was moved fully off-screen";
-  }
+  const onScreen = overlap(rect, { left: 0, top: 0, right: window.innerWidth, bottom: Number.POSITIVE_INFINITY });
+  const needed = Math.min(MIN_VISIBLE_WIDTH_PX, window.innerWidth * MIN_VISIBLE_WIDTH_SHARE);
+  if (onScreen.width < needed || rect.bottom + window.scrollY <= 0) return "was moved (almost) fully off-screen";
   return null;
 }
 
 function checkVisible() {
   const found = [];
+  const memo = new Map();
   for (const [selector, label] of REQUIRED) {
     const el = document.querySelector(selector);
-    const reason = el ? hiddenReason(el) : null;
+    if (!el) continue;
+    // Opacity, filter and transform come down from the ancestors: the page is as hidden as the highest one that does it, said once.
+    const effect = chainEffect(el, memo).reason;
+    if (effect) {
+      if (!found.some((known) => known.code === `effect:${effect}`)) {
+        found.push(
+          problem(
+            `effect:${effect}`,
+            `${label} (${selector}) cannot be read: ${effect}.`,
+            "Remove the opacity, filter or transform from html, body and the page's wrappers; apply it to a smaller element.",
+          ),
+        );
+      }
+      continue;
+    }
+    const reason = hiddenReason(el);
     if (reason) {
       found.push(
         problem(
@@ -89,9 +104,9 @@ function backgroundBehind(el) {
   return color.a < 1 ? null : color;
 }
 
-function describe(el) {
-  const id = el.id ? `#${el.id}` : "";
-  return `${el.tagName.toLowerCase()}${id}`;
+/** `rgb(r, g, b)`: what the text sits on as the visitor sees it, not the element's own (usually transparent) background. */
+function describeColor(color) {
+  return `rgb(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)})`;
 }
 
 function sampleTexts() {
@@ -109,8 +124,8 @@ function contrastProblem(el) {
   const fontSize = Number.parseFloat(style.fontSize);
   if (fontSize < 4) {
     return problem(
-      `font-size:${describe(el)}`,
-      `Text in <${describe(el)}> has a font size of ${style.fontSize}.`,
+      `font-size:${describeElement(el)}`,
+      `Text in <${describeElement(el)}> has a font size of ${style.fontSize}.`,
       "Keep body text at a readable size (about 12px or more).",
     );
   }
@@ -120,9 +135,9 @@ function contrastProblem(el) {
   const ratio = contrastRatio(blend(text, background), background);
   if (ratio >= MIN_CONTRAST) return null;
   return problem(
-    `contrast:${describe(el)}`,
-    `Text in <${describe(el)}> is almost the same color as its background (contrast ${ratio.toFixed(2)}:1, ` +
-      `text ${style.color} on ${style.backgroundColor}).`,
+    `contrast:${describeElement(el)}`,
+    `Text in <${describeElement(el)}> is almost the same color as its background (contrast ${ratio.toFixed(2)}:1, ` +
+      `text ${style.color} on ${describeColor(background)}).`,
     "Change the text and the background colors together, and keep them clearly apart (contrast of 4.5:1 or more).",
   );
 }
@@ -158,11 +173,11 @@ function checkOverlay() {
   for (const [x, y] of points) {
     const hit = document.elementFromPoint(window.innerWidth * x, window.innerHeight * y);
     // The root and the body can be the hit too: their ::before/::after are layers like any other.
-    if (!hit || hit.id === "webmcp-shield" || !blocksClicks(hit)) continue;
+    if (!hit || isChrome(hit) || !blocksClicks(hit)) continue;
     found.push(
       problem(
-        `overlay:${describe(hit)}`,
-        `<${describe(hit)}> covers the viewport and takes every click, so the page cannot be used.`,
+        `overlay:${describeElement(hit)}`,
+        `<${describeElement(hit)}> covers the viewport and takes every click, so the page cannot be used.`,
         "Do not add full-screen fixed/absolute layers (or ::before/::after) that receive pointer events; add pointer-events: none.",
       ),
     );
@@ -185,7 +200,35 @@ export function suspendTransitions() {
   setTimeout(() => style.remove(), 150);
 }
 
-/** Every problem the page has right now. */
-export function collectProblems() {
-  return [...checkVisible(), ...checkContrast(), ...checkOverlay()];
+/** The main content's problems, less the ones whose cause `known` (the skeleton's and the layers' problems) already told. */
+function contentProblems(samples, known) {
+  const skeleton = known.some((found) => found.code.startsWith("hidden:") || found.code.startsWith("effect:"));
+  const layer = known.some((found) => found.code.startsWith("overlay:"));
+  return checkMainContent(samples).filter((found) => {
+    if (found.code === "content:hidden") return !skeleton;
+    return !(layer && !found.message.includes("pointer-events"));
+  });
+}
+
+/**
+ * Every problem the page has right now. `samples` are the main content's text
+ * taken before the change (see measureBaseline). `sidebar` is for the check
+ * after opening one: a sidebar covers the page and locks its scroll on
+ * purpose, so only what it must never do (hide the page's skeleton, put a
+ * layer of the agent's own over the viewport) is checked.
+ */
+export function collectProblems(samples = [], { sidebar = false } = {}) {
+  const found = [...checkVisible(), ...checkContrast(), ...checkOverlay()];
+  if (sidebar) return found;
+  return [...found, ...contentProblems(samples, found), ...checkScrollable()];
+}
+
+/**
+ * What a change is compared against, taken before it: the main content's text
+ * to measure again afterwards, and the problems the page has already.
+ */
+export function measureBaseline({ sidebar = false } = {}) {
+  const samples = sidebar ? [] : pickSamples();
+  // The sample is readable and clickable by construction: measuring it again here would only cost time.
+  return { samples, problems: collectProblems([], { sidebar }) };
 }

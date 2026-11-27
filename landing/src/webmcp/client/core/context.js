@@ -1,5 +1,5 @@
 // The page's WebMCP ModelContext, and the one way tools get registered.
-import { cleanError } from "./result.js";
+import { ToolError, cleanError } from "./result.js";
 
 /**
  * The part of the spec's ModelContext an agent calling from JavaScript needs:
@@ -52,14 +52,17 @@ export function getModelContext() {
 /**
  * Wraps execute so nothing a tool does can break the page or reach the agent
  * as an unhandled exception: sync throws and rejections both end as one clean
- * rejection, and the real error goes to the console for whoever is debugging.
+ * rejection. A ToolError is the tool reporting a failure it expected (bad input, a
+ * change rolled back): the agent gets it and nothing is logged, or every rejected
+ * change would be a console warning on the visitor's page. Anything else is a bug,
+ * and its real error goes to the console for whoever is debugging.
  */
 function guard(tool) {
   return {
     ...tool,
     execute(input, client) {
       return new Promise((resolve) => resolve(tool.execute(input ?? {}, client))).catch((error) => {
-        console.warn(`[webmcp] ${tool.name} failed:`, error);
+        if (!(error instanceof ToolError)) console.warn(`[webmcp] ${tool.name} failed:`, error);
         throw cleanError(tool.name, error);
       });
     },
