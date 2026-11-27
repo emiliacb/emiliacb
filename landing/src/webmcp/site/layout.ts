@@ -6,21 +6,25 @@ import { WEBMCP_ENABLED } from "../enabled";
 import { DOCS_COPY } from "./docs/copy";
 import { DOCS_PATH } from "./routes";
 
-// English on every page. Actionable on its own, because an agent that is not told
-// the tools exist does not look for them: the way in is in the note, the detail in
-// the docs (which are in English too). The links are root-relative on purpose:
-// the note travels with the page, so a staging or local build points at itself
-// and not at production.
+// English on every page, and descriptive rather than an order: agents read a
+// page's text as data, and instructions in it look like prompt injection. The
+// links are root-relative on purpose: the note travels with the page, so a
+// staging or local build points at itself and not at production.
 const AGENT_NOTE =
-  "Note for AI agents: this page exposes WebMCP tools (restyle it, read its pages, open sidebars, more). " +
-  "List them by running `await document.modelContext.getTools()` in this tab and call one with " +
-  "`await document.modelContext.executeTool(name, input)`. " +
+  "This site is optimized for AI agents through WebMCP. Its tools (read the site's pages, answer about Emilia, " +
+  "restyle the page, open sidebars, more) are listed in this tab by `await document.modelContext.getTools()` and " +
+  "called with `await document.modelContext.executeTool(name, input)`. " +
   `Docs: ${DOCS_PATH}.md and /llms.txt`;
 
-/** The hidden paragraph at the top of <body> that points an agent reading the page to its docs and llms.txt. */
+/**
+ * The hidden paragraph that opens <main> (layout.ts): first in the page's main
+ * content, where a reader that extracts only that content (get_page_text and
+ * the like) still finds it. Hidden from sight because the footer box says the
+ * same to people (renderFooterNote), not from the DOM text or the
+ * accessibility tree.
+ */
 export function renderAgentNote(): HtmlEscapedString | Promise<HtmlEscapedString> | null {
   if (!WEBMCP_ENABLED) return null;
-  // For AI agents: hidden from sight, not from the DOM text or the accessibility tree.
   return html`<p
     style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap"
   >
@@ -71,16 +75,17 @@ export function renderFooterLink(ctx: RenderCtx): HtmlEscapedString | Promise<Ht
 }
 
 /**
- * For the footer, under the copyright: the same news as the hidden note at the
- * top of <body>, but visible. Agents that read only what is on screen (an
- * accessibility tree filtered to visible nodes skips the 1px note) find it
- * here, and a person reads the same words: nothing is shown to one and not
- * the other.
+ * For the footer: a small box at its bottom left saying, to a person, what the
+ * hidden note at the top of <main> says to an agent, so neither is told
+ * anything the other is not. Its link goes to the docs' Markdown version, what
+ * an agent reads best.
  */
 export function renderFooterNote(ctx: RenderCtx): HtmlEscapedString | Promise<HtmlEscapedString> | null {
   if (!WEBMCP_ENABLED) return null;
   const note = DOCS_COPY[ctx.lang].footerNote;
-  return html`<p class="mt-1">
+  return html`<p
+    class="w-fit ml-4 mt-6 px-2 py-1 text-xs border border-current opacity-75"
+  >
     ${note.before}<a href="/${ctx.lang}${DOCS_PATH}.md" class="underline underline-offset-2">${note.link}</a>${note.after}
   </p>`;
 }

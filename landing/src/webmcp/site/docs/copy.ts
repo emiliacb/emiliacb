@@ -16,8 +16,8 @@ export type DocsCopy = {
   /** What that link is, for a screen reader and a tooltip, which the one word does not say. */
   footerLinkLabel: string;
   /**
-   * The line under the copyright, on every page: says in plain words, to a
-   * person and to an agent reading the page alike, that the tools exist.
+   * The box at the bottom left of the footer, on every page: says in plain
+   * words, to a person, what the hidden note opening <main> says to an agent.
    * `before` and `after` surround a link to the docs page's Markdown version
    * (what an agent reads best) whose text is `link`.
    */
@@ -38,7 +38,7 @@ const en: DocsCopy = {
   title: "WebMCP tools for agents",
   footerLink: "MCP",
   footerLinkLabel: "MCP: tools for AI agents",
-  footerNote: { before: "If you are an agent, check the ", link: "WebMCP", after: "" },
+  footerNote: { before: "This site is optimized for AI agents through ", link: "WebMCP", after: "." },
   description:
     "The tools this site exposes to a visitor's browser agent through WebMCP, how to call them, and the skills that teach an agent to use them well.",
   intro:
@@ -123,7 +123,7 @@ const es: DocsCopy = {
   title: "Herramientas WebMCP para agentes",
   footerLink: "MCP",
   footerLinkLabel: "MCP: herramientas para agentes de IA",
-  footerNote: { before: "Si sos un agente, revisá el ", link: "WebMCP", after: "" },
+  footerNote: { before: "Este sitio está optimizado para agentes de IA mediante ", link: "WebMCP", after: "." },
   description:
     "Las herramientas que este sitio expone al agente del navegador de quien lo visita mediante WebMCP, cómo llamarlas y las skills que enseñan a usarlas bien.",
   intro:
