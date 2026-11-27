@@ -1502,6 +1502,14 @@ const BOW_REACH = 8; // how near a part a press must land to ring it, tree units
 const BOW_GLIDE = 0.05; // how quickly the note slides to where the press is, s
 const BOW_VOL = 0.09; // its strike
 const HELD = 0.5;
+// A held note goes out through a light flanger, which a brushed one does not:
+// a copy of it FLANGE_MS behind, that lag swept FLANGE_DEPTH_MS either way
+// FLANGE_HZ times a second, mixed in at FLANGE_MIX and fed back FLANGE_FEED.
+const FLANGE_MS = 3;
+const FLANGE_DEPTH_MS = 1.8;
+const FLANGE_HZ = 0.35;
+const FLANGE_MIX = 0.45;
+const FLANGE_FEED = 0.35;
 // The shaking you see lasts exactly as long as the note is heard and is as
 // strong as it sounds: struck, held, and dying away once let go. It shakes at
 // the note's own pitch, VIB_DIV times slower so a screen can show it: the
@@ -1532,8 +1540,26 @@ function heldVoice(p, f, pan) {
     side.connect(sound.bus);
     to = side;
   }
+  // The flanger: the note straight through, and beside it a copy whose lag
+  // sweeps slowly, combing it, with a little of it fed back round.
+  const into = ac.createGain();
+  const lag = ac.createDelay(0.02);
+  const sweep = ac.createOscillator();
+  const depth = ac.createGain();
+  const feed = ac.createGain();
+  const wet = ac.createGain();
+  lag.delayTime.value = FLANGE_MS / 1000;
+  sweep.frequency.value = FLANGE_HZ;
+  depth.gain.value = FLANGE_DEPTH_MS / 1000;
+  feed.gain.value = FLANGE_FEED;
+  wet.gain.value = FLANGE_MIX;
+  sweep.connect(depth).connect(lag.delayTime);
+  into.connect(to);
+  into.connect(lag).connect(wet).connect(to);
+  lag.connect(feed).connect(lag);
+  sweep.start(t);
   const lead = partials(p, f, BOW_VOL)[0][3];
-  return partials(p, f, BOW_VOL).map(([mult, level, rise, fall]) => {
+  const voices = partials(p, f, BOW_VOL).map(([mult, level, rise, fall]) => {
     const osc = ac.createOscillator();
     const g = ac.createGain();
     osc.frequency.value = f * mult;
@@ -1542,10 +1568,11 @@ function heldVoice(p, f, pan) {
     // Falling as fast as the brushed note falls, to rest where it is held;
     // the partials that die soonest are held the least.
     g.gain.setTargetAtTime(Math.max(0.0001, level * HELD * (fall / lead)), t + rise, fall / 7);
-    osc.connect(g).connect(to);
+    osc.connect(g).connect(into);
     osc.start(t);
     return { osc, g, mult, fall };
   });
+  return { voices, sweep };
 }
 
 /** Rings the part a press lands on, and holds it. */
@@ -1588,12 +1615,15 @@ function stopBow() {
   bow.voice = null;
   if (!v || !sound.ac) return;
   const t = sound.ac.currentTime;
-  for (const { osc, g, fall } of v) {
+  let end = t;
+  for (const { osc, g, fall } of v.voices) {
     g.gain.cancelScheduledValues(t);
     g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), t);
     g.gain.setTargetAtTime(0.0001, t, fall / 7);
     osc.stop(t + fall + 0.1);
+    end = Math.max(end, t + fall + 0.1);
   }
+  v.sweep.stop(end + 0.1);
 }
 
 /** Each frame: the note the press is at on the scale, how loud it is, and what shakes. */
@@ -1606,7 +1636,7 @@ function bowing(dt) {
   if (v) {
     bow.f = Math.exp((1 - u) * Math.log(NOTE[lo.key]) + u * Math.log(NOTE[hi.key]));
     const t = sound.ac.currentTime;
-    for (const { osc, mult } of v) osc.frequency.setTargetAtTime(bow.f * mult, t, BOW_GLIDE);
+    for (const { osc, mult } of v.voices) osc.frequency.setTargetAtTime(bow.f * mult, t, BOW_GLIDE);
   }
   // The note's own envelope, as heldVoice and stopBow shape its first partial.
   const k = 1 - Math.exp(-dt / bow.tc);
