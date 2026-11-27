@@ -1565,8 +1565,15 @@ html.ink-cursor #ink-cursor.on {
 }
 
 .gh-sheet {
-  @apply flex flex-col bg-stone-100 dark:bg-stone-800 shadow-lg outline-none;
+  @apply flex-col bg-stone-100 dark:bg-stone-800 shadow-lg outline-none;
   font-family: Montserrat, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Only while shown: a display of its own would beat the `hidden` that keeps
+   the sheet out of the page until the drawer loads, and it would sit under
+   the footer of every page. */
+.gh-sheet:not([hidden]) {
+  display: flex;
 }
 
 .gh-sheet[data-side="right"] {
