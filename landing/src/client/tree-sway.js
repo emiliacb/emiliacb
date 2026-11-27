@@ -761,6 +761,11 @@ const pointer = {
 function track(event) {
   // A finger dragging the page scrolls it; it is not brushing the tree.
   if (event.pointerType === "touch") return;
+  // While a sidebar is open the tree is under it, out of the pointer's reach.
+  if (document.querySelector("ui-drawer-content[data-open]")) {
+    if (pointer.tracking) release();
+    return;
+  }
   // A hidden tree has no screen position to map onto, and one NaN let into the
   // springs would stay there for good.
   const m = svg.getScreenCTM();

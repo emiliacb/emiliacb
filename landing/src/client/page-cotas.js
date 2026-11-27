@@ -314,9 +314,22 @@
     for (const b of blocks) {
       const q = inkBox(b.el);
       if (q.right - q.left < 1) continue;
-      if (x >= q.left - pad && x <= q.right + pad && y >= q.top - pad && y <= q.bottom + pad) return b;
+      if (x >= q.left - pad && x <= q.right + pad && y >= q.top - pad && y <= q.bottom + pad && shown(b.el, q, x, y)) return b;
     }
     return null;
+  }
+  /** Whether the block is what the page shows there, and not something under
+   * it: the footer under the page that scrolls over it, or the page under an
+   * open sidebar. The point is pulled into the middle of the block's box
+   * first, so the pad around it still counts and a leaning block's corners,
+   * outside its upright box, do not. */
+  function shown(el, q, x, y) {
+    const ix = (q.right - q.left) / 4, iy = (q.bottom - q.top) / 4;
+    const top = document.elementFromPoint(
+      Math.min(Math.max(x, q.left + ix), q.right - ix),
+      Math.min(Math.max(y, q.top + iy), q.bottom - iy),
+    );
+    return !!top && (top === el || el.contains(top));
   }
   const vel = { x: 0, y: 0, last: 0, lastNow: 0 };
 
