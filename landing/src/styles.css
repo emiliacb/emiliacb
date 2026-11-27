@@ -1853,11 +1853,38 @@ html.ink-cursor #ink-cursor.on {
 }
 
 /* Cal.com's booker sizes its own iframe to what it shows. */
-/* Cal.com's booker. Clipped to its box, so nothing it draws while it changes
-   month or step spills past the sheet's edges. */
+/* Cal.com's booker fills the sheet between the title and the footer. Cal.com
+   sizes its frame to the month, and a day's times then open as a dialog no
+   taller than the frame, scrolling inside it; a frame as tall as the sheet
+   gives them all the room there is. The box is at least the month's height,
+   and clipped, so nothing the booker draws spills past the sheet's edges. */
 .calendar-embed {
-  min-height: 24rem;
+  position: relative;
+  flex: 1 0 auto;
+  min-height: 30rem;
   overflow: hidden;
+}
+
+/* Cal.com's element inherits the box's heights in an inline style, which
+   would give it the minimum; it covers the box instead, and the frame it. */
+.calendar-embed cal-inline {
+  position: absolute !important;
+  inset: 0;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+}
+
+.calendar-embed iframe {
+  position: absolute;
+  inset: 0;
+  height: 100% !important;
+}
+
+/* On a phone the calendar's sheet is as tall as a sheet gets, not as tall as
+   the month, so that a day's times have the same room. */
+.sidebar-sheet[data-side="bottom"]:has(.calendar-embed) {
+  height: calc(100dvh - 0.75rem);
 }
 
 /* PRs per month: bars on a rule, the count over each in the cotas' face. */

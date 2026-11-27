@@ -70,8 +70,10 @@ import { rgbOf } from "./lib/color.js";
   // queues calls on window.Cal until embed.js arrives and plays them.
   let calendarStarted = false;
   // The booker's colours, read from the tokens so that it sits in the sheet
-  // however the page was restyled: the sheet's ground, ink and rules (stone),
-  // and the nav rule's green as the accent, blue in the dark.
+  // however the page was restyled. Cal.com's own greys are cool (Tailwind's
+  // gray) and its accent a saturated brand colour; here every grey is the
+  // sheet's warm stone, and the accent is the ink, as on the sheet's own
+  // buttons: a picked day or time inverts, black on paper, white in the dark.
   function styleCalendar() {
     if (!window.Cal) return;
     const cs = getComputedStyle(document.documentElement);
@@ -79,13 +81,29 @@ import { rgbOf } from "./lib/color.js";
       const [r, g, b] = rgbOf(cs.getPropertyValue(name).trim());
       return "#" + [r, g, b].map((c) => Math.round(c * 255).toString(16).padStart(2, "0")).join("");
     };
+    // A stone step, mirrored in the dark: 200 on paper is 700 on the dark ground.
+    const stone = (light, dark) => hex(`--color-stone-${isDark() ? dark : light}`);
     const vars = {
       "cal-bg": hex("--color-paper"),
-      "cal-bg-emphasis": hex(isDark() ? "--color-stone-700" : "--color-stone-200"),
-      "cal-border-subtle": hex(isDark() ? "--color-stone-500" : "--color-stone-400"),
+      // The booker's own card, a shade darker in Cal.com's dark theme.
+      "cal-bg-muted": hex("--color-paper"),
+      "cal-bg-subtle": stone(100, 800),
+      // Days with free times.
+      "cal-bg-emphasis": stone(200, 700),
+      "cal-border": stone(300, 600),
+      "cal-border-muted": stone(200, 700),
+      "cal-border-subtle": stone(400, 500),
+      "cal-border-booker": stone(400, 500),
+      "cal-border-emphasis": stone(400, 500),
       "cal-text": hex("--color-ink"),
       "cal-text-emphasis": hex("--color-ink"),
-      "cal-brand": hex("--color-signal-bar"),
+      "cal-text-subtle": stone(500, 400),
+      "cal-text-muted": stone(400, 500),
+      "cal-brand": hex("--color-ink"),
+      "cal-brand-emphasis": stone(700, 300),
+      "cal-brand-subtle": stone(300, 600),
+      "cal-brand-text": hex("--color-paper"),
+      "cal-brand-accent": hex("--color-paper"),
     };
     window.Cal("ui", {
       theme: isDark() ? "dark" : "light",
@@ -118,7 +136,13 @@ import { rgbOf } from "./lib/color.js";
 
     const Cal = window.Cal;
     Cal("init", { origin: "https://cal.com" });
-    Cal("inline", { elementOrSelector: "#calendar-embed", calLink: box.dataset.calLink, config: { layout: "month_view", theme: isDark() ? "dark" : "light" } });
+    // useSlotsViewOnSmallScreen: the month alone, and a day's times on a page
+    // of their own once it is picked, instead of both stacked in the sheet.
+    Cal("inline", {
+      elementOrSelector: "#calendar-embed",
+      calLink: box.dataset.calLink,
+      config: { layout: "month_view", useSlotsViewOnSmallScreen: "true", theme: isDark() ? "dark" : "light" },
+    });
     styleCalendar();
     // The booker follows the page when its mode is changed (the visitor's
     // system, or setThemeMode), as the sheet around it does.
