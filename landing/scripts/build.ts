@@ -48,10 +48,14 @@ await fs.rm(dist, { recursive: true, force: true });
 await fs.mkdir(path.join(dist, "assets"), { recursive: true });
 
 // 2. Static files. sw.js and robots.txt are also served from the root.
+// public/fonts is served from /fonts: under /public, a folder is read as an
+// old version by the transition redirect below and sent to a 404.
+const fontsDir = path.join(publicDir, "fonts");
 await fs.cp(publicDir, path.join(dist, "public"), {
   recursive: true,
-  filter: (src) => !isSkippedPublicFile(path.basename(src)),
+  filter: (src) => src !== fontsDir && !isSkippedPublicFile(path.basename(src)),
 });
+await fs.cp(fontsDir, path.join(dist, "fonts"), { recursive: true });
 for (const name of ["sw.js", "robots.txt"]) {
   await fs.copyFile(path.join(publicDir, name), path.join(dist, name));
 }
@@ -182,9 +186,8 @@ await fs.writeFile(
   path.join(dist, "_redirects"),
   [
     "/cv /public/cv.pdf 302",
-    // public/ has one folder of its own, fonts/, which the next rule would
-    // read as a version and redirect into a 404. First match wins.
-    "/public/fonts/* /public/fonts/:splat 200",
+    // Matches every /public/<folder>/…, so dist/public has no folders (the
+    // sanity checks below hold it to that).
     "# HTML from before the static build referenced versioned asset paths",
     "/public/:version/* /public/:splat 301",
     "",
@@ -192,6 +195,16 @@ await fs.writeFile(
 );
 
 // 8. Sanity checks. Failing here is cheaper than shipping a broken page.
+const publicFolders = (await fs.readdir(path.join(dist, "public"), { withFileTypes: true }))
+  .filter((e) => e.isDirectory())
+  .map((e) => e.name);
+if (publicFolders.length) {
+  throw new Error(
+    `dist/public has folders (${publicFolders.join(", ")}): the /public/:version/* redirect sends them to a 404. ` +
+      "Serve them from the root, as fonts/ is.",
+  );
+}
+
 const expectedPaths = [
   ...PAGES.flatMap((p) => LANGS.map((lang) => `/${lang}${p.path}`)),
   ...content.posts.flatMap((post) => LANGS.map((lang) => `/${lang}/blog/${post.slug}`)),
