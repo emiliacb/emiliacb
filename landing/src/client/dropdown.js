@@ -108,16 +108,12 @@ class DropdownTrigger extends HTMLElement {
           margin-left: -0.2rem;
         }
 
+        /* Custom properties cross the shadow boundary, so this inverts in
+           whatever mode the page is in, forced or the system's, with the
+           same colours as the page's own buttons (hover:bg-black ...). */
         .variant-small:hover {
-          background: black;
-          color: white;
-        }
-
-        @media (prefers-color-scheme: dark) {
-          .variant-small:hover {
-            background: white;
-            color: black;
-          }
+          background: var(--color-strong);
+          color: var(--color-on-strong);
         }
 
         /* variant-link / variant-prose: look like plain links, no visible caret */

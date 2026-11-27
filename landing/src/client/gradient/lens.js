@@ -33,6 +33,8 @@
  * it stands in for.
  */
 import { toCanvas, getFontEmbedCSS } from "html-to-image";
+import { isDark } from "../lib/theme.js";
+import { rgbOf } from "../lib/color.js";
 
 const VERT = `
 attribute vec2 aPos;
@@ -318,11 +320,10 @@ export function makeLens(host) {
   let half = 0, size = 0, dpr = 1;
   const shell = document.getElementById("page-shell");
 
-  const rgb = (s) => (s.match(/[\d.]+/g) || [0, 0, 0]).slice(0, 3).map((c) => Number(c) / 255);
   function palette() {
-    const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+    const dark = isDark();
     gl.uniform3fv(U.uCore, dark ? [0, 0, 0] : [0.047, 0.04, 0.035]);
-    gl.uniform3fv(U.uBg, rgb(getComputedStyle(host).backgroundColor));
+    gl.uniform3fv(U.uBg, rgbOf(getComputedStyle(host).backgroundColor));
   }
 
   /** A square of half-side `l` round (x, y) in the host's box, for a hole of

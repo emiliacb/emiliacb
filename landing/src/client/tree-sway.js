@@ -60,6 +60,8 @@
  * same SVG, standing still, and with reduced motion that is all there is.
  */
 
+import { isDark, onThemeChange } from "./lib/theme.js";
+
 const box = document.getElementById("tree-illustration");
 const svg = box ? box.querySelector(".cover-tree") : null;
 const woodEl = svg ? svg.querySelector("[data-wood]") : null;
@@ -2015,7 +2017,7 @@ function readTheme() {
   INK = cs.getPropertyValue("--tree-ink").trim() || INK;
   PAPER = cs.getPropertyValue("--tree-paper").trim() || PAPER;
   for (const k of KINDS) TONE[k] = cs.getPropertyValue("--tree-ink-" + k).trim() || INK;
-  lift = window.matchMedia("(prefers-color-scheme: dark)").matches ? 1 : LIFT;
+  lift = isDark() ? 1 : LIFT;
 }
 
 let airA = 0; // the pointer's own air, drawn round it
@@ -2840,7 +2842,12 @@ if (box && svg && woodEl && !reduced && setup()) {
   } else {
     window.addEventListener("resize", layout);
   }
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", readTheme);
+  // The system's mode changing, or the page being given one: the ink is read
+  // again and the plate drawn in it at once, since at rest nothing else would.
+  onThemeChange(() => {
+    readTheme();
+    drawPlate();
+  });
   // The formulas' faces arrive after the first layout; measure them again.
   if (document.fonts) {
     // The cotas' face is used only on the canvas, so ask for it outright.

@@ -64,25 +64,277 @@
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
+/* ==== DESIGN TOKENS ====================================================
+
+   Everything the site is painted and set in comes from the custom properties
+   below; the stylesheet, tailwind.config.cjs (which points its stone, yellow,
+   blue, green, white and black at them, so the templates' class names are
+   unchanged) and the client scripts that paint canvases all read them. Change
+   a BASE token and what derives from it follows; the derived ones are not
+   meant to be edited, only read.
+
+   BASE TOKENS (light values; the dark ones are in the two dark blocks below)
+     --color-paper      the page's ground, and the card, sheet and window grounds.
+     --color-ink        the text, the rules drawn in ink, the cotas' dark end.
+     --color-accent     the highlight: link fills, the footer, the hovered
+                        "Allow" button. Yellow in light, deep blue in dark.
+     --color-signal     the thin accent: link underlines, the loading bar. Green
+                        in light, blue in dark.
+     --tree-hue         the hue (0-360) of the tree's ink and of the cotas.
+                        143 (green) in light, 323 (pink) in dark.
+     --g-a, --g-b       the gradient's two colours, as "r g b" channels (not a
+                        colour: they are used as rgb(var(--g-a) / alpha)).
+     --font-sans        the text face.
+     --font-size-base   the root font size. Every size on the site is in rem, so
+                        this scales type and spacing together. A percentage, so
+                        a visitor's own browser setting is still respected.
+     --radius-frame     the corner of the AI layout's cards (page, footer, panel).
+     --radius-overlay   the corner of the page once scrolled past (6rem on md+).
+     --size-content     the width of the text column.
+     --cotas-display    whether the cotas (the ink dimensions drawn over the page
+                        by page-cotas.js) show: "block" (the default) or "none".
+                        None hides the plate and stops the script measuring and
+                        drawing from its next frame on.
+
+   DERIVED FROM THEM
+     --color-stone-50 ... --color-stone-950   the neutral scale the templates
+        name (text-stone-800, bg-stone-100 ...): mixes of the two ends of the
+        page's neutrals, --neutral-lo (the light end) and --neutral-hi (the dark
+        end), which are paper and ink in light mode and swapped in dark, so
+        that a stone step is the same step in both modes. Paper is stone-100 and
+        ink stone-800 in light; the steps in between are mixes of the two
+        (50 and 900/950 run past the ends, towards white and black).
+     --color-signal-bar, -line, -text   shades of the signal for the GitHub
+        sidebar's bars, the Cal.com embed's accent and the ghost link, taken
+        from --color-signal in OKLCH (lighter or darker, more or less chroma).
+     --color-raised, --color-on-ink, --color-on-accent, --color-strong,
+     --color-on-strong, --color-danger, --color-on-danger, --color-code-bg,
+        --color-code-ink, --color-hairline, --shadow-edge*   roles: surfaces and
+        the text on them, that differ between modes in a way paper and ink alone
+        do not give (white cards in light, stone-700 in dark).
+     --tree-ink-*, --cota-*, --tree-paper   the tree's marks and the cotas' ink:
+        hsl(--tree-hue S L / A), with a saturation and an opacity per kind of
+        mark and one lightness per family (--tree-l-soft, --tree-l-body,
+        --tree-l-lead, --tree-l-ink), which differ per mode: a dark ink is
+        light. Registered as colours (@property, below), because the canvases
+        read them through getComputedStyle and need a colour they can paint
+        with, not the unevaluated hsl(var(...)) text.
+     --tree-invert      0 in light, 1 in dark: the tree is drawn for the light
+        page and flipped for the dark one, and what it sits beside follows.
+
+   MODES. <html data-theme="light"> or "dark" forces one; no attribute
+   follows the system (src/client/lib/theme.js). The dark values are therefore
+   written twice, once under the media query (unless light is forced) and once
+   under the attribute, and test/site/theme-tokens.test.ts keeps the two in
+   step. An override of a token written on :root changes it in light mode; to
+   change it in dark too, repeat it under :root[data-theme="dark"] and in the
+   media query, or use !important on :root.
+   ======================================================================== */
 :root {
-  --tree-invert: 0;
-  --nav-height: 7rem;
+  --color-paper: #f5f5f4;
+  --color-ink: #292524;
+  --color-accent: #fde047;
+  --color-signal: #86efac;
+  --tree-hue: 143;
+  --g-a: 252 190 80;
+  --g-b: 135 207 183;
+
+  --font-sans: Montserrat, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* The cotas' face and the tree's formulas', and the sidebars' numbers. */
+  --font-cota: "Barlow Condensed", "Montserrat", sans-serif;
+  --font-script: "Petit Formal Script", "EB Garamond", cursive;
+  --font-size-base: 100%;
+
+  --radius-frame: 2rem;
   /* The overlay's bottom corners once it is scrolled past. The footer reads it
      too, to run its background up behind those corners. */
-  --overlay-radius: 2rem;
+  --radius-overlay: 2rem;
+  --size-content: 60rem;
+  --size-nav-height: 7rem;
+  --cotas-display: block;
+
+  /* Pure ends, for what is drawn in full black or white whatever the paper is
+     (the hovered button's inversion, the cursor's ink). */
+  --color-white: #fff;
+  --color-black: #000;
+
+  /* The neutrals' two ends: the light one and the dark one, in either mode. */
+  --neutral-lo: var(--color-paper);
+  --neutral-hi: var(--color-ink);
+  --color-stone-50: color-mix(in srgb, var(--color-white) 48.3%, var(--neutral-lo));
+  --color-stone-100: var(--neutral-lo);
+  --color-stone-200: color-mix(in srgb, var(--neutral-hi) 7.4%, var(--neutral-lo));
+  --color-stone-300: color-mix(in srgb, var(--neutral-hi) 16.1%, var(--neutral-lo));
+  --color-stone-400: color-mix(in srgb, var(--neutral-hi) 39.7%, var(--neutral-lo));
+  --color-stone-500: color-mix(in srgb, var(--neutral-hi) 63.4%, var(--neutral-lo));
+  --color-stone-600: color-mix(in srgb, var(--neutral-hi) 78.4%, var(--neutral-lo));
+  --color-stone-700: color-mix(in srgb, var(--neutral-hi) 87.4%, var(--neutral-lo));
+  --color-stone-800: var(--neutral-hi);
+  --color-stone-900: color-mix(in srgb, var(--color-black) 33.2%, var(--neutral-hi));
+  --color-stone-950: color-mix(in srgb, var(--color-black) 72.7%, var(--neutral-hi));
+
+  /* Shades of the signal, in OKLCH: lightness shifted and chroma scaled (and
+     the hue nudged) from the underline's colour, as far as Tailwind's own
+     green-400/500/700 are from its green-300 in light, and blue-600/500/400
+     from blue-700 in dark. */
+  --color-signal-bar: oklch(from var(--color-signal) calc(l - 0.071) calc(c * 1.336) calc(h - 2.7));
+  --color-signal-line: oklch(from var(--color-signal) calc(l - 0.148) calc(c * 1.409) calc(h - 4.9));
+  --color-signal-text: oklch(from var(--color-signal) calc(l - 0.344) calc(c * 1.006) calc(h - 4.4));
+
+  /* Roles: see above. */
+  --color-raised: var(--color-white);
+  --color-on-ink: var(--color-white);
+  --color-on-accent: var(--color-stone-900);
+  --color-strong: var(--color-black);
+  --color-on-strong: var(--color-white);
+  --color-danger: #7f1d1d;
+  --color-on-danger: var(--color-white);
+  --color-code-bg: #fce7f3;
+  --color-code-ink: #831843;
+  --color-focus: #ef4444;
+  --color-hairline: color-mix(in srgb, var(--color-stone-500) 15%, transparent);
+  /* Depth of the cards that sit on the page: the colour of the edge, its
+     opacity, and how much of it is left for the two softer layers under the
+     hairline (none in dark, where a card is only its ring). */
+  --shadow-edge: var(--color-stone-500);
+  --shadow-edge-alpha: 15%;
+  --shadow-edge-depth: 1;
+
+  /* The tree's marks: saturation per kind below, lightness per family here. */
+  --tree-l-soft: 26%;
+  --tree-l-body: 24.4%;
+  --tree-l-lead: 24.8%;
+  --tree-l-ink: 19.6%;
+  --tree-l-scroll: 15%;
+  --tree-invert: 0;
+  /* The tree's own gradient (the sound window's bar, the same two colours as
+     the stops in components/tree.ts), as "r g b". */
+  --tree-grad-a: 255 176 0;
+  --tree-grad-b: 102 198 169;
+
+  --tree-ink: hsl(var(--tree-hue) 74% var(--tree-l-ink));
+  --tree-paper: var(--color-paper);
+  --tree-ink-bone: hsl(var(--tree-hue) 45% var(--tree-l-body));
+  --tree-ink-spiral: hsl(var(--tree-hue) 100% var(--tree-l-lead));
+  --tree-ink-angle: hsl(var(--tree-hue) 100% var(--tree-l-lead));
+  --tree-ink-num: hsl(var(--tree-hue) 50% var(--tree-l-body) / 0.9);
+  --tree-ink-eq: hsl(var(--tree-hue) 25% var(--tree-l-soft) / 0.6);
+  --tree-ink-measure: hsl(var(--tree-hue) 25% var(--tree-l-soft) / 0.6);
+  --tree-ink-length: hsl(var(--tree-hue) 18% var(--tree-l-soft) / 0.45);
+  --tree-ink-construct: hsl(var(--tree-hue) 15% var(--tree-l-soft) / 0.4);
+  --tree-ink-circle: hsl(var(--tree-hue) 10% var(--tree-l-soft) / 0.22);
+  --tree-ink-force: hsl(var(--tree-hue) 50% var(--tree-l-body) / 0.85);
+
+  /* The cotas: the tree's ink, a touch stronger than its length marks since it
+     sits over running text. The scroll rule sits over anything, text and
+     tree, so it is darker in light mode to hold its own. */
+  --cota-measure: hsl(var(--tree-hue) 45% var(--tree-l-body) / 0.9);
+  --cota-length: hsl(var(--tree-hue) 30% var(--tree-l-soft) / 0.75);
+  --cota-force: var(--tree-ink-force);
+  --cota-scroll: hsl(var(--tree-hue) 55% var(--tree-l-scroll));
+
+  /* The ink cursor: ink over a halo of its fill, so it reads on any ground. */
+  --ic-ink: var(--color-strong);
+  --ic-halo: var(--color-on-ink);
+  --ic-fill: var(--color-on-ink);
 }
 
 @media (min-width: 768px) {
   :root {
-    --overlay-radius: 6rem;
+    --radius-overlay: 6rem;
   }
 }
 
+/* The dark values. Written twice (see MODES above): keep the two in step. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    --color-paper: #292524;
+    --color-ink: #f5f5f4;
+    --color-accent: #1e3a8a;
+    --color-signal: #1d4ed8;
+    --tree-hue: 323;
+    --g-a: 118 51 75;
+    --g-b: 0 68 165;
+    --neutral-lo: var(--color-ink);
+    --neutral-hi: var(--color-paper);
+    --color-signal-bar: oklch(from var(--color-signal) calc(l + 0.058) calc(c * 0.991) calc(h - 1.5));
+    --color-signal-line: oklch(from var(--color-signal) calc(l + 0.135) calc(c * 0.866) calc(h - 4.6));
+    --color-signal-text: oklch(from var(--color-signal) calc(l + 0.226) calc(c * 0.66) calc(h - 9.8));
+    --color-raised: var(--color-stone-700);
+    --color-on-ink: var(--color-stone-900);
+    --color-on-accent: var(--color-white);
+    --color-strong: var(--color-white);
+    --color-on-strong: var(--color-black);
+    --color-danger: #fecaca;
+    --color-on-danger: #7f1d1d;
+    --color-code-bg: var(--color-stone-900);
+    --color-code-ink: #fdba74;
+    --color-hairline: color-mix(in srgb, var(--color-white) 10%, transparent);
+    --shadow-edge: var(--color-stone-300);
+    --shadow-edge-alpha: 10%;
+    --shadow-edge-depth: 0;
+    --tree-l-soft: 80%;
+    --tree-l-body: 79%;
+    --tree-l-lead: 70%;
+    --tree-l-ink: 80.4%;
     --tree-invert: 1;
+    --cota-scroll: var(--cota-measure);
   }
 }
+
+:root[data-theme="dark"] {
+  --color-paper: #292524;
+  --color-ink: #f5f5f4;
+  --color-accent: #1e3a8a;
+  --color-signal: #1d4ed8;
+  --tree-hue: 323;
+  --g-a: 118 51 75;
+  --g-b: 0 68 165;
+  --neutral-lo: var(--color-ink);
+  --neutral-hi: var(--color-paper);
+  --color-signal-bar: oklch(from var(--color-signal) calc(l + 0.058) calc(c * 0.991) calc(h - 1.5));
+  --color-signal-line: oklch(from var(--color-signal) calc(l + 0.135) calc(c * 0.866) calc(h - 4.6));
+  --color-signal-text: oklch(from var(--color-signal) calc(l + 0.226) calc(c * 0.66) calc(h - 9.8));
+  --color-raised: var(--color-stone-700);
+  --color-on-ink: var(--color-stone-900);
+  --color-on-accent: var(--color-white);
+  --color-strong: var(--color-white);
+  --color-on-strong: var(--color-black);
+  --color-danger: #fecaca;
+  --color-on-danger: #7f1d1d;
+  --color-code-bg: var(--color-stone-900);
+  --color-code-ink: #fdba74;
+  --color-hairline: color-mix(in srgb, var(--color-white) 10%, transparent);
+  --shadow-edge: var(--color-stone-300);
+  --shadow-edge-alpha: 10%;
+  --shadow-edge-depth: 0;
+  --tree-l-soft: 80%;
+  --tree-l-body: 79%;
+  --tree-l-lead: 70%;
+  --tree-l-ink: 80.4%;
+  --tree-invert: 1;
+  --cota-scroll: var(--cota-measure);
+}
+
+/* The colours the canvases read (page-cotas.js, tree-sway.js) are registered
+   as colours, so that getComputedStyle hands back the colour itself and not
+   the text of the expression that makes it. */
+@property --tree-ink { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --tree-paper { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --tree-ink-bone { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --tree-ink-spiral { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --tree-ink-angle { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --tree-ink-num { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --tree-ink-eq { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --tree-ink-measure { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --tree-ink-length { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --tree-ink-construct { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --tree-ink-circle { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --tree-ink-force { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --cota-measure { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --cota-length { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --cota-force { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --cota-scroll { syntax: "<color>"; inherits: true; initial-value: transparent; }
 
 @keyframes gradientAppear {
   from {
@@ -130,7 +382,8 @@
 }
 
 html {
-  @apply bg-stone-100 dark:bg-stone-800;
+  background-color: var(--color-paper);
+  font-size: var(--font-size-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -188,7 +441,7 @@ html {
 @media (min-width: 768px) {
   #overlay-content:not(:has(#tree-illustration)) #page-shell > nav,
   #overlay-content:not(:has(#tree-illustration)) #content {
-    margin-left: max(0px, calc((100% - 60rem) / 2 - 1rem));
+    margin-left: max(0px, calc((100% - var(--size-content)) / 2 - 1rem));
     margin-right: auto;
   }
 }
@@ -247,8 +500,8 @@ html.nav-in-transition:not(.ai-layout-enabled) #page-shell > nav {
 }
 
 #overlay-content.scrolled {
-  border-bottom-left-radius: var(--overlay-radius);
-  border-bottom-right-radius: var(--overlay-radius);
+  border-bottom-left-radius: var(--radius-overlay);
+  border-bottom-right-radius: var(--radius-overlay);
 }
 
 /* AI layout: toggled live by the mascot button (see src/client/mascot-bot.js).
@@ -313,7 +566,7 @@ html.ai-layout-enabled #scroll-wrapper {
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  border-radius: 2rem;
+  border-radius: var(--radius-frame);
   transition: border-radius 400ms ease-out;
 }
 
@@ -338,7 +591,7 @@ html.ai-layout-enabled footer {
   bottom: var(--ai-layout-bottom);
   margin-left: var(--ai-layout-left);
   margin-right: var(--ai-layout-right);
-  border-radius: 2rem;
+  border-radius: var(--radius-frame);
   transition: bottom 400ms ease-out, margin-left 400ms ease-out,
     border-radius 400ms ease-out, margin-right 400ms ease-out 400ms;
 }
@@ -360,7 +613,7 @@ html.ai-layout-enabled footer {
      the two cards. Derived rather than typed, so both track the frame. */
   right: var(--ai-layout-left);
   width: calc(var(--ai-layout-right) - var(--ai-layout-left) * 1.5);
-  border-radius: 2rem;
+  border-radius: var(--radius-frame);
   overflow: hidden;
   z-index: 20;
   transform: translateX(calc(100% + var(--ai-layout-left)));
@@ -405,14 +658,14 @@ html.ai-layout-enabled #activity-panel {
   font-size: 0.75rem;
   line-height: 1.35;
   word-break: break-word;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  background: var(--color-raised);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-black) 8%, transparent);
 }
 
 .activity-msg.activity-msg-mascot {
   align-self: flex-start;
-  background: #292524;
-  color: #fff;
+  background: var(--color-ink);
+  color: var(--color-on-ink);
 }
 
 /* The mascot's turn while the request is out: the bubble it will answer in, holding
@@ -474,24 +727,8 @@ html.ai-layout-enabled #activity-panel {
 }
 
 .activity-msg.activity-msg-error {
-  background: #7f1d1d;
-  color: #fff;
-}
-
-@media (prefers-color-scheme: dark) {
-  .activity-msg {
-    background: #44403c;
-  }
-
-  .activity-msg.activity-msg-mascot {
-    background: #f5f5f4;
-    color: #1c1917;
-  }
-
-  .activity-msg.activity-msg-error {
-    background: #fecaca;
-    color: #7f1d1d;
-  }
+  background: var(--color-danger);
+  color: var(--color-on-danger);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -528,7 +765,7 @@ html.ai-layout-enabled #activity-panel {
   @apply hover:prose-a:bg-black hover:prose-a:text-white hover:prose-a:outline-black;
   @apply dark:hover:prose-a:bg-white dark:hover:prose-a:text-black dark:hover:prose-a:border-white dark:hover:prose-a:outline-white;
   @apply prose-a:relative prose-a:light-gradient-projection;
-  @apply prose-pre:bg-pink-100 prose-pre:dark:bg-stone-900 prose-code:text-pink-900 prose-code:dark:text-orange-300;
+  @apply prose-pre:bg-code-bg prose-code:text-code-ink;
 }
 
 .cover-tree {
@@ -551,43 +788,14 @@ html.ai-layout-enabled #activity-panel {
    .cover-tree, not in it, so its dark-mode invert does not reach them; they
    take the dark ink from here instead. The paper is the page behind the tree,
    which the touched wood is thinned back to. */
-#tree-illustration {
-  /* The ink is the inverse of the dark one, as the tree's own colours are:
-     hue turned half way round, lightness flipped. Each kind of mark has its
-     own saturation and opacity; spirals and angles lead, at full saturation.
-     Lightness here is matched to the dark theme's contrast in L*, not
-     mirrored in HSL: a green and a pink of the same HSL lightness are not
-     equally light. */
-  --tree-ink: #0d5729;
-  --tree-ink-bone: hsl(143 45% 23.8% / 1);
-  --tree-ink-spiral: hsl(143 100% 24.8% / 1);
-  --tree-ink-angle: hsl(143 100% 24.8% / 1);
-  --tree-ink-num: hsl(143 50% 24.9% / 0.9);
-  --tree-ink-eq: hsl(143 25% 25.5% / 0.6);
-  --tree-ink-measure: hsl(143 25% 25.5% / 0.6);
-  --tree-ink-length: hsl(143 18% 26.1% / 0.45);
-  --tree-ink-construct: hsl(143 15% 26.3% / 0.4);
-  --tree-ink-circle: hsl(143 10% 26.7% / 0.22);
-  --tree-ink-force: hsl(143 50% 24.9% / 0.85);
-  --tree-paper: #f5f5f4;
-}
-
-@media (prefers-color-scheme: dark) {
-  #tree-illustration {
-    --tree-ink: #f2a8d6;
-    --tree-paper: #292524;
-    --tree-ink-bone: hsl(323 45% 80% / 1);
-    --tree-ink-spiral: hsl(323 100% 70% / 1);
-    --tree-ink-angle: hsl(323 100% 70% / 1);
-    --tree-ink-num: hsl(323 50% 78% / 0.9);
-    --tree-ink-eq: hsl(323 25% 80% / 0.6);
-    --tree-ink-measure: hsl(323 25% 80% / 0.6);
-    --tree-ink-length: hsl(323 18% 80% / 0.45);
-    --tree-ink-construct: hsl(323 15% 80% / 0.4);
-    --tree-ink-circle: hsl(323 10% 80% / 0.22);
-    --tree-ink-force: hsl(323 50% 78% / 0.85);
-  }
-}
+/* (The tree's ink and its paper are tokens on :root, with the cotas': see
+   --tree-ink-* there. They are the inverse of the dark ones, as the tree's own
+   colours are: the hue turned half way round, the lightness flipped, each kind
+   of mark with its own saturation and opacity, spirals and angles leading at
+   full saturation. Lightness is matched to the dark theme's contrast in L*,
+   not mirrored in HSL: a green and a pink of the same HSL lightness are not
+   equally light. The paper is the page behind the tree, which the touched
+   wood is thinned back to.) */
 
 /* The sign that says to move the phone (tree-sway.js), at the foot of the
    tree, once nothing is asking anything. Drawn as the Schedule button is: a
@@ -604,9 +812,9 @@ html.ai-layout-enabled #activity-panel {
   gap: 0.5rem;
   white-space: nowrap;
   padding: 0.25rem 0.5rem;
-  border: 1px solid #000;
-  background: #f5f5f4;
-  color: #292524;
+  border: 1px solid var(--color-strong);
+  background: var(--color-paper);
+  color: var(--color-ink);
   font-family: inherit;
   font-size: 0.75rem;
   line-height: 1rem;
@@ -618,13 +826,6 @@ html.ai-layout-enabled #activity-panel {
   width: 16px;
   height: 16px;
   animation: treeTiltRock 1.4s ease-in-out infinite alternate;
-}
-@media (prefers-color-scheme: dark) {
-  .tree-tilt-sign {
-    border-color: #fff;
-    background: #292524;
-    color: #f5f5f4;
-  }
 }
 .tree-tilt-sign.is-gone {
   opacity: 0;
@@ -654,18 +855,26 @@ html.ai-layout-enabled #activity-panel {
    and it scrolls with the page and the tree under it. It comes in
    out of focus and settles, and then its name grows its marks. */
 .tree-sound-ask {
-  --ask-page: #f5f5f4;
-  --ask-ink: #292524;
-  --ask-bar: linear-gradient(90deg, rgb(255 176 0), rgb(102 198 169));
-  --ask-bar-ink: #1c1917;
+  --ask-page: var(--color-paper);
+  --ask-ink: var(--color-ink);
+  /* The tree's own gradient, flipped on the dark page as the tree is
+     (--tree-invert: each channel c becomes 255 - c). */
+  --ask-bar: linear-gradient(
+    90deg,
+    rgb(from rgb(var(--tree-grad-a)) calc(r + var(--tree-invert) * (255 - 2 * r)) calc(g + var(--tree-invert) * (255 - 2 * g)) calc(b + var(--tree-invert) * (255 - 2 * b))),
+    rgb(from rgb(var(--tree-grad-b)) calc(r + var(--tree-invert) * (255 - 2 * r)) calc(g + var(--tree-invert) * (255 - 2 * g)) calc(b + var(--tree-invert) * (255 - 2 * b)))
+  );
+  --ask-bar-ink: var(--color-on-ink);
   /* The window's edge: the navbar's own hairline (stone-400), in both themes.
      Full ink was too heavy around the bar's colour. */
-  --ask-line: #a8a29e;
-  --ask-close-line: #78716c;
+  --ask-line: var(--color-stone-400);
+  /* Greyed in light; in dark it is the ink itself (stone-500 of the dark
+     scale, which is not far from it, would hardly show on the bar). */
+  --ask-close-line: color-mix(in srgb, var(--color-ink) calc(var(--tree-invert) * 100%), var(--color-stone-500));
   /* Allow under the pointer: the site's highlight, yellow on the light page
      and blue on the dark one, as its highlighted cards and links. */
-  --ask-hover: #fde047;
-  --ask-hover-ink: #292524;
+  --ask-hover: var(--color-accent);
+  --ask-hover-ink: var(--color-on-accent);
   position: absolute;
   z-index: 100000000;
   width: 256px;
@@ -680,17 +889,6 @@ html.ai-layout-enabled #activity-panel {
     opacity 0.15s cubic-bezier(0.23, 1, 0.32, 1),
     scale 0.15s cubic-bezier(0.23, 1, 0.32, 1),
     filter 0.15s cubic-bezier(0.23, 1, 0.32, 1);
-}
-@media (prefers-color-scheme: dark) {
-  .tree-sound-ask {
-    --ask-page: #292524;
-    --ask-ink: #f5f5f4;
-    --ask-bar: linear-gradient(90deg, rgb(0 79 255), rgb(153 57 86));
-    --ask-bar-ink: #fff;
-    --ask-close-line: currentColor;
-    --ask-hover: #1e3a8a;
-    --ask-hover-ink: #fff;
-  }
 }
 .tree-sound-ask-bar {
   display: flex;
@@ -928,7 +1126,7 @@ html.ai-layout-enabled #activity-panel {
   left: 0;
   top: 0;
   white-space: nowrap;
-  font-family: "Petit Formal Script", "EB Garamond", cursive;
+  font-family: var(--font-script);
   font-weight: 400;
   line-height: 1.35;
   color: var(--tree-ink-eq);
@@ -1045,8 +1243,8 @@ html.ai-layout-enabled #activity-panel {
 
 @layer utilities {
   .min-h-static-screen-minus-nav {
-    min-height: calc(100vh - var(--nav-height));
-    min-height: calc(100svh - var(--nav-height));
+    min-height: calc(100vh - var(--size-nav-height));
+    min-height: calc(100svh - var(--size-nav-height));
   }
 
   .min-h-static-screen {
@@ -1143,47 +1341,23 @@ html.ai-layout-enabled #activity-panel {
   .blog-card-thumb {
     background-image: linear-gradient(
       to bottom right,
-      rgb(252, 190, 80),
-      rgb(135, 207, 183)
+      rgb(var(--g-a)),
+      rgb(var(--g-b))
     );
   }
 
   .group:hover .blog-card-thumb {
     background-image: linear-gradient(
       to bottom left,
-      rgb(135, 207, 183),
-      rgb(252, 190, 80)
+      rgb(var(--g-b)),
+      rgb(var(--g-a))
     );
   }
 
-  @media (prefers-color-scheme: dark) {
-    .blog-card-thumb {
-      background-image: linear-gradient(
-        to bottom right,
-        rgb(118, 51, 75),
-        rgb(0, 68, 165)
-      );
-    }
-
-    .group:hover .blog-card-thumb {
-      background-image: linear-gradient(
-        to bottom left,
-        rgb(0, 68, 165),
-        rgb(118, 51, 75)
-      );
-    }
-  }
-
-/* Image outline for consistent depth */
+  /* Image outline for consistent depth */
   .img-outline {
-    outline: 1px solid rgba(120, 113, 108, 0.15);
+    outline: 1px solid var(--color-hairline);
     outline-offset: -1px;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .img-outline {
-      outline-color: rgba(255, 255, 255, 0.1);
-    }
   }
 }
 
@@ -1263,49 +1437,21 @@ dropdown-trigger[variant="prose"] a::before {
 /* Shadow as border for depth elements */
 .shadow-border {
   box-shadow:
-    0px 0px 0px 1px rgba(120, 113, 108, 0.15),
-    0px 1px 2px -1px rgba(120, 113, 108, 0.15),
-    0px 2px 4px 0px rgba(120, 113, 108, 0.1);
+    0px 0px 0px 1px color-mix(in srgb, var(--shadow-edge) var(--shadow-edge-alpha), transparent),
+    0px 1px 2px -1px color-mix(in srgb, var(--shadow-edge) calc(var(--shadow-edge-alpha) * var(--shadow-edge-depth)), transparent),
+    0px 2px 4px 0px color-mix(in srgb, var(--shadow-edge) calc(var(--shadow-edge-alpha) * var(--shadow-edge-depth) * 0.667), transparent);
   transition: box-shadow 150ms ease-out;
 }
 
 .shadow-border:hover {
   box-shadow:
-    0px 0px 0px 1px rgba(120, 113, 108, 0.2),
-    0px 1px 2px -1px rgba(120, 113, 108, 0.2),
-    0px 2px 4px 0px rgba(120, 113, 108, 0.15);
-}
-
-@media (prefers-color-scheme: dark) {
-  .shadow-border {
-    box-shadow: 0 0 0 1px rgba(214, 211, 209, 0.1);
-  }
-  .shadow-border:hover {
-    box-shadow: 0 0 0 1px rgba(214, 211, 209, 0.15);
-  }
+    0px 0px 0px 1px color-mix(in srgb, var(--shadow-edge) calc(var(--shadow-edge-alpha) + 5%), transparent),
+    0px 1px 2px -1px color-mix(in srgb, var(--shadow-edge) calc((var(--shadow-edge-alpha) + 5%) * var(--shadow-edge-depth)), transparent),
+    0px 2px 4px 0px color-mix(in srgb, var(--shadow-edge) calc((var(--shadow-edge-alpha) + 5%) * var(--shadow-edge-depth) * 0.75), transparent);
 }
 
 /* ---- Cotas: the page in technical-drawing ink (src/client/page-cotas.js) ----
-   The tree's ink, a touch stronger than its length marks since it sits over
-   running text: green in light, the tree's pink in dark. */
-:root {
-  --cota-measure: hsl(143 45% 24.5% / 0.9);
-  --cota-length: hsl(143 30% 25.5% / 0.75);
-  --cota-force: hsl(143 50% 24.9% / 0.85);
-  /* The scroll rule sits over anything, text and tree; darker in light mode
-     so it holds its own. */
-  --cota-scroll: hsl(143 55% 15% / 1);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --cota-measure: hsl(323 45% 79% / 0.9);
-    --cota-length: hsl(323 30% 80% / 0.75);
-    --cota-force: hsl(323 50% 78% / 0.85);
-    --cota-scroll: hsl(323 45% 79% / 0.9);
-  }
-}
-
+   The ink is --cota-* (the tokens on :root): the tree's, a touch stronger. */
 .page-cotas-plate {
   position: fixed;
   inset: 0;
@@ -1313,26 +1459,12 @@ dropdown-trigger[variant="prose"] a::before {
   height: 100%;
   pointer-events: none;
   z-index: 60;
+  display: var(--cotas-display);
 }
 
 /* ---- The ink cursor (src/client/ink-cursor.js) ----
-   Black over white in light, white over the dark paper in dark, each with a
-   halo of its fill so it reads on any ground. --cur-role tells the script
+   --ic-ink and its halo are tokens on :root. --cur-role tells the script
    which shape the element under the pointer wants. */
-:root {
-  --ic-ink: #000;
-  --ic-halo: #fff;
-  --ic-fill: #fff;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ic-ink: #fff;
-    --ic-halo: #1c1917;
-    --ic-fill: #1c1917;
-  }
-}
-
 html {
   --cur-role: default;
 }
@@ -1420,18 +1552,10 @@ html.ink-cursor #ink-cursor.on {
    old picture; on a desktop the script hangs them in depth and lets them sway
    like leaves. The first width is for browsers without hypot(). */
 #gradient-bg.grad-stack {
-  --g-a: 252 190 80;
-  --g-b: 135 207 183;
+  /* --g-a and --g-b are tokens on :root. */
   perspective: 1200px;
   user-select: none;
   pointer-events: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  #gradient-bg.grad-stack {
-    --g-a: 118 51 75;
-    --g-b: 0 68 165;
-  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1576,8 +1700,8 @@ html.ink-cursor #ink-cursor.on {
 }
 
 .sidebar-sheet {
-  @apply flex-col bg-stone-100 dark:bg-stone-800 shadow-lg outline-none;
-  font-family: Montserrat, system-ui, -apple-system, "Segoe UI", sans-serif;
+  @apply flex-col bg-paper shadow-lg outline-none;
+  font-family: var(--font-sans);
 }
 
 /* Only while shown: a display of its own would beat the `hidden` that keeps
@@ -1633,7 +1757,7 @@ html.ink-cursor #ink-cursor.on {
 
 /* The number in the cotas' face, the way the page's dimensions are drawn. */
 .sidebar-number {
-  font-family: "Barlow Condensed", "Montserrat", sans-serif;
+  font-family: var(--font-cota);
   font-weight: 300;
   font-variant-numeric: tabular-nums;
   @apply text-6xl md:text-7xl leading-none;
@@ -1655,14 +1779,14 @@ html.ink-cursor #ink-cursor.on {
 
 .li-job::before {
   content: "";
-  @apply absolute size-2 bg-stone-800 dark:bg-stone-100;
+  @apply absolute size-2 bg-ink;
   left: calc(-0.25rem - 0.5px);
   top: 0.4rem;
 }
 
 .li-years {
   @apply text-base leading-none whitespace-nowrap;
-  font-family: "Barlow Condensed", "Montserrat", sans-serif;
+  font-family: var(--font-cota);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1686,13 +1810,13 @@ html.ink-cursor #ink-cursor.on {
 }
 
 .gh-month {
-  @apply relative bg-stone-800 dark:bg-stone-100;
+  @apply relative bg-ink;
   min-height: 1px;
 }
 
 .gh-month span {
   @apply absolute bottom-full left-1/2 -translate-x-1/2 pb-0.5 text-xs leading-none;
-  font-family: "Barlow Condensed", "Montserrat", sans-serif;
+  font-family: var(--font-cota);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1705,19 +1829,11 @@ html.ink-cursor #ink-cursor.on {
 }
 
 /* The contribution calendar, in ink: four shades past an empty day. */
-.gh-day { fill: rgb(41 37 36 / 0.07); }
-.gh-l1 { fill: rgb(41 37 36 / 0.28); }
-.gh-l2 { fill: rgb(41 37 36 / 0.52); }
-.gh-l3 { fill: rgb(41 37 36 / 0.76); }
-.gh-l4 { fill: rgb(41 37 36); }
-
-@media (prefers-color-scheme: dark) {
-  .gh-day { fill: rgb(245 245 244 / 0.08); }
-  .gh-l1 { fill: rgb(245 245 244 / 0.28); }
-  .gh-l2 { fill: rgb(245 245 244 / 0.52); }
-  .gh-l3 { fill: rgb(245 245 244 / 0.76); }
-  .gh-l4 { fill: rgb(245 245 244); }
-}
+.gh-day { fill: color-mix(in srgb, var(--color-ink) 7.5%, transparent); }
+.gh-l1 { fill: color-mix(in srgb, var(--color-ink) 28%, transparent); }
+.gh-l2 { fill: color-mix(in srgb, var(--color-ink) 52%, transparent); }
+.gh-l3 { fill: color-mix(in srgb, var(--color-ink) 76%, transparent); }
+.gh-l4 { fill: var(--color-ink); }
 
 .gh-today {
   @apply stroke-green-500 dark:stroke-blue-500;

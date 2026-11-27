@@ -43,12 +43,13 @@ import { MASCOT_COPY, MASCOT_ENDPOINT } from "../shared/mascot";
     var style = document.createElement("style");
     style.textContent =
       // Same visual language as dropdown-trigger[variant="icon-only"]:
-      // transparent, text-stone-800/dark:text-stone-100, invert on hover.
+      // transparent, in the page's ink (--color-ink, which follows the mode),
+      // invert on hover.
       ".mascot-bot-btn{display:none;position:fixed;left:" + EDGE_REM + "rem;" +
       "top:" + EDGE_REM + "rem;z-index:50;" +
       "width:" + BTN_SIZE_REM + "rem;height:" + BTN_SIZE_REM + "rem;padding:0;border:none;cursor:pointer;" +
       "align-items:center;justify-content:center;" +
-      "background:transparent;color:#292524;" +
+      "background:transparent;color:var(--color-ink);" +
       "opacity:0;transform:scale(.6);pointer-events:none;" +
       "transition:opacity 200ms cubic-bezier(.23,1,.32,1),transform 200ms cubic-bezier(.23,1,.32,1)," +
       "background-color 150ms ease-out,color 150ms ease-out;}" +
@@ -61,15 +62,12 @@ import { MASCOT_COPY, MASCOT_ENDPOINT } from "../shared/mascot";
       // not just invisible, but out of the way.
       ".mascot-bot-btn.mascot-bot-visible.mascot-bot-scrolling{opacity:0;pointer-events:none;" +
       "clip-path:inset(50%);transition:opacity 150ms ease-in;}" +
-      ".mascot-bot-btn:hover,.mascot-bot-btn:focus-visible{background:#000;color:#fff;}" +
+      ".mascot-bot-btn:hover,.mascot-bot-btn:focus-visible{background:var(--color-strong);color:var(--color-on-strong);}" +
       ".mascot-bot-btn svg{width:1rem;height:1rem;}" +
       ".mascot-bot-btn .mascot-bot-spin{animation:mascot-bot-spin 800ms linear infinite;}" +
       "@keyframes mascot-bot-spin{to{transform:rotate(360deg);}}" +
       "@media (prefers-reduced-motion: reduce){" +
-      ".mascot-bot-btn .mascot-bot-spin{animation-duration:2s;}}" +
-      "@media (prefers-color-scheme: dark){" +
-      ".mascot-bot-btn{color:#f5f5f4;}" +
-      ".mascot-bot-btn:hover,.mascot-bot-btn:focus-visible{background:#fff;color:#000;}}";
+      ".mascot-bot-btn .mascot-bot-spin{animation-duration:2s;}}";
     document.head.appendChild(style);
   }
 
