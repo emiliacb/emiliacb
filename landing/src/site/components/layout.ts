@@ -342,7 +342,6 @@ document.head.appendChild(o)}initApollo();</script>
       </head>
 
       <body class="text-stone-800 dark:text-stone-100 overscroll-none md:overscroll-auto">
-        ${/* WebMCP: see src/webmcp/README.md */ webmcp.renderAgentNote()}
         <div id="scroll-wrapper">
         <div id="loading-bar"></div>
         <div
@@ -392,6 +391,7 @@ document.head.appendChild(o)}initApollo();</script>
               id="content"
               class="min-h-static-screen-minus-nav overflow-hidden flex flex-col justify-between md:justify-start w-full px-4 sm:px-8 md:pt-6 m-auto max-w-[var(--size-content)] h-full pb-16 md:pb-24"
             >
+              ${/* WebMCP: see src/webmcp/README.md */ webmcp.renderAgentNote()}
               ${children}
             </main>
           </div>

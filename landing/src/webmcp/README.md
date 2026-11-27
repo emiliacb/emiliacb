@@ -136,11 +136,16 @@ works much better after reading a skill can call `requireSkill(name)`
   it cannot drift. It is not in `PAGES` (that would drag it into the manifest,
   llms.txt's page list and the 404's site map), so the build, the Worker and
   robots.txt get it from `site/routes.ts`. It is not a remote MCP server.
-- The hidden note: every page starts with a visually hidden paragraph that says
-  how to list and call the tools from the tab and where the docs are. The
-  `<head>` has `rel="describedby"` (`/mcp.md`) and `rel="help"` (`/{lang}/mcp`)
-  links, and the footer a visible "MCP" link, for the same reason: an
-  agent that is not told the tools exist does not look for them.
+- The hidden note: every page's `<main>` starts with a visually hidden
+  paragraph that says, descriptively, what the tools do, how to list and call
+  them from the tab and where the docs are; first in the main content, so a
+  reader that extracts only that content still finds it. People read the same
+  thing in a small box at the bottom left of the footer ("Este sitio está
+  optimizado para agentes de IA mediante WebMCP", linking `/{lang}/mcp.md`).
+  The `<head>` has `rel="describedby"` (`/mcp.md`), `rel="alternate"
+  type="text/markdown" title="WebMCP"` (`/{lang}/mcp.md`) and `rel="help"`
+  (`/{lang}/mcp`) links, and the footer a visible "MCP" link, for the same
+  reason: an agent that is not told the tools exist does not look for them.
 - The skills: `read_skill` / `list_skills` (WebMCP has no skill primitive), and
   the tool descriptions that change the page or answer from it end with a
   sentence pointing at the right one (`client/skills/hints.js`).
