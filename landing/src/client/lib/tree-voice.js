@@ -100,3 +100,21 @@ export const EFFECTS = {
 /** The effects a step may name, and those a whole song may set. */
 export const NOTE_EFFECTS = Object.keys(EFFECTS).filter((name) => EFFECTS[name].scope === "note");
 export const SONG_EFFECTS = Object.keys(EFFECTS).filter((name) => EFFECTS[name].scope === "song");
+// The scale's seventh degree, C, has no part of its own: each part has one
+// pitch, and what a visitor brushes or presses must stay as it is. A song may
+// still play it, twice, one low and one high, in a voice of the tree's but on no
+// part of it: nothing shakes, lights or answers in sympathy, and the visitor
+// cannot play them. C3 is wood, where the wood's own notes lie (D2 to G3); C5
+// is a glass bell, among the bells' (D4 to D5). Below C3 a laptop's speakers
+// give nothing and above C5 the bell is thin, so these are the two that sound
+// well, one beside each end of the tree's range.
+const EXTRA = [
+  { name: "C3", hz: 130.81, voice: "wood" },
+  { name: "C5", hz: 523.25, voice: "glass bell" },
+];
+
+/**
+ * Every note a song may write, low to high: the eleven NOTES, and C3 and C5,
+ * which have no `part` (null): the song sounds them in their `voice` alone.
+ */
+export const SONG_NOTES = [...NOTES, ...EXTRA.map((note) => ({ name: note.name, midi: midiOf(note.hz), hz: note.hz, part: null, voice: note.voice }))].sort((a, b) => a.hz - b.hz);

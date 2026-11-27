@@ -66,7 +66,7 @@
 import { isDark, onTokensChange } from "./lib/theme.js";
 import { createPlayer } from "./lib/tree-song.js";
 import {
-  CEILING_HZ, ECHO, EFFECTS, FLANGE_DEPTH_MS, FLANGE_FEED, FLANGE_HZ, FLANGE_MIX, FLANGE_MS, HELD, NOTE, NOTES,
+  CEILING_HZ, ECHO, EFFECTS, FLANGE_DEPTH_MS, FLANGE_FEED, FLANGE_HZ, FLANGE_MIX, FLANGE_MS, HELD, NOTE, SONG_NOTES,
 } from "./lib/tree-voice.js";
 
 const box = document.getElementById("tree-illustration");
@@ -1399,7 +1399,7 @@ function onFirstPress(event) {
  * tone with partials out of tune with it that die away sooner; wood is rounder
  * and shorter. Each sounds from its own side of the tree.
  */
-function ring(p, strength, exact = false) {
+function ring(p, strength, exact = false, hz = NOTE[p.key] || NOTE.trunk * 4, unseen = false) {
   const ac = sound.ac;
   if (!sound.want || !ac || ac.state !== "running") return;
   // Not while the window still asks: a press elsewhere starts the sound at
@@ -1410,7 +1410,7 @@ function ring(p, strength, exact = false) {
   if (t - p.rang < 0.14) return;
   p.rang = t;
   const leaf = p.kind === "leaf";
-  const f = (NOTE[p.key] || NOTE.trunk * 4) * Math.pow(2, (Math.random() - 0.5) / 200);
+  const f = hz * Math.pow(2, (Math.random() - 0.5) / 200);
   const s = Math.max(0, Math.min(1, strength));
   const soft = exact ? (leaf ? HIT_LEAF : HIT_WOOD) : leaf ? 0.035 : 0.05;
   const loud = exact ? (leaf ? 0.105 : 0.11) : soft + (leaf ? 0.07 : 0.06);
@@ -1434,7 +1434,7 @@ function ring(p, strength, exact = false) {
     osc.stop(t + rise + fall + 0.05);
   }
   // Wakes the page to listen (tree-warp.js); it hears the note through the ear.
-  window.dispatchEvent(new Event("tree-note"));
+  if (!unseen) window.dispatchEvent(new Event("tree-note"));
 }
 
 /**
@@ -1727,9 +1727,9 @@ function onBowPress(event) {
  * song's held notes shake the tree and are answered by sympathy exactly as a
  * visitor's are. `gain` is how hard it is struck, 1 being the press's own.
  */
-function holdNote(at, gain = 1) {
+function holdNote(at, gain = 1, hz = NOTE[at.key] || NOTE.trunk) {
   const ac = sound.ac;
-  const f0 = NOTE[at.key] || NOTE.trunk;
+  const f0 = hz;
   // The held note, partial by partial: its strike, where it is held, how fast
   // it gets there and dies away, as heldVoice and releaseNote shape them.
   const own = partials(at, f0, BOW_VOL * gain);
@@ -3311,7 +3311,8 @@ function setup() {
 // songs on the tree (src/webmcp/client/tools/tree-song.js) is the one user, but
 // the object is plain and documented so anything can use it:
 //
-//   notes      the tree's eleven notes: { name, midi, hz, part, voice }
+//   notes      the notes a song may write: { name, midi, hz, part, voice }; the
+//              eleven of the parts, and C3 and C5, which no part rings (part is null)
 //   effects    what a song can ask for, with each parameter's range and default
 //   play(song) plays { notes, bpm?, effects? } (see lib/tree-song.js for the
 //              format) on the tree's own voice; throws a RangeError saying what
@@ -3334,25 +3335,37 @@ function setup() {
 /** The part that rings a note, by the key lib/tree-voice.js gives it. */
 const partOf = (key) => parts.find((p) => p.key === key);
 
+/**
+ * What sounds a note that belongs to no part (a song's C3 and C5): a stand-in
+ * with only what a voice needs, in no list of the tree's, so that nothing
+ * shakes, lights or answers it, and nothing else hears it.
+ */
+const bare = (voice) => ({ kind: voice === "wood" ? "wood" : "leaf", cx: 200, rx: [200], n: 0, rang: -1 });
+
 /** Rings a part as a brush on it would, and lights it as the note dies away. */
-function strikePart(key, velocity) {
+function strikePart(key, velocity, hz = NOTE[key], voice = "") {
+  if (!key) return ring(bare(voice), velocity, true, hz, true);
   const p = partOf(key);
   if (!p) return;
   // A song may repeat a note faster than ring's own pause between two.
   p.rang = -1;
-  ring(p, velocity, true);
+  ring(p, velocity, true, hz);
   // The part shakes and lights as long as the note is heard, as a pressed one
   // does (bowing): a note nobody holds, already letting go.
-  const f = NOTE[key];
+  const f = hz;
   const drive = partials(p, f, BOW_VOL).map(([mult, level, , fall]) => ({ mult, level, held: 0, tau: fall / 7, a: level }));
   notes.push({ part: p, f, on: false, voice: null, drive, echoes: [] });
 }
 
 /** Holds a part's note, as a press does; returns what lets go of it. */
-function holdPart(key, velocity) {
+function holdPart(key, velocity, hz, voice = "") {
+  if (!key) {
+    const free = { on: true, voice: heldVoice(bare(voice), hz, 0, BOW_VOL * (0.25 + 0.75 * velocity)) };
+    return () => releaseNote(free);
+  }
   const p = partOf(key);
   if (!p) return () => {};
-  const note = holdNote(p, 0.25 + 0.75 * velocity);
+  const note = holdNote(p, 0.25 + 0.75 * velocity, hz);
   return () => releaseNote(note);
 }
 
@@ -3405,7 +3418,7 @@ async function windowGone(left = 30) {
 
 function publishSongs() {
   window.siteTreeSound = {
-    notes: NOTES,
+    notes: SONG_NOTES,
     effects: EFFECTS,
     play: (song) => player.play(song),
     stop: () => player.stop(),

@@ -16,8 +16,8 @@ export type Song = {
 };
 export type SongEngine = {
   ready(): boolean;
-  strike(part: string, velocity: number): void;
-  hold(part: string, velocity: number): () => void;
+  strike(part: string | null, velocity: number, hz: number, voice: string): void;
+  hold(part: string | null, velocity: number, hz: number, voice: string): () => void;
   effects(fx: Record<string, Record<string, number>> | null): void;
 };
 export type SongState = { playing: boolean; step: number; steps: number; notesSounded: number; ended: string };
@@ -32,6 +32,9 @@ export const MAX_SONG_MS: number;
 export const MAX_CHORD: number;
 export const DEFAULT_VELOCITY: number;
 export const TAIL_MS: number;
+export const MAX_DOTS: number;
+export const NOTE_VALUES: { denominator: number; name: string }[];
+export const TUPLETS: Record<number, number>;
 export function noteNames(): string;
 export function parseSong(input: unknown): Song;
 export function createPlayer(engine: SongEngine): {
