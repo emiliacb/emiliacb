@@ -7,9 +7,10 @@
 // URL built here from a validated family name and numeric weights, so nothing
 // the agent sends can reach another host or add parameters.
 //
-// Loaded fonts are kept in sessionStorage, like the agent's CSS: CSS that
-// uses a font keeps working on the next page of the tab, and the tab's end
-// ends them.
+// Loaded fonts are kept like the agent's CSS (src/client/lib/nav-storage.js):
+// CSS that uses a font keeps working on the next page the visitor navigates
+// to in this tab, and a reload drops them along with that CSS.
+import { navGet, navRemove, navSet } from "../../../client/lib/nav-storage.js";
 import { fail, ok } from "../core/result.js";
 import { MODIFY_HINT } from "../skills/hints.js";
 
@@ -110,8 +111,8 @@ function insertLink({ family, weights, italic }) {
 
 function save() {
   try {
-    if (loaded.size === 0) sessionStorage.removeItem(STORAGE_KEY);
-    else sessionStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(loaded.values())));
+    if (loaded.size === 0) navRemove(STORAGE_KEY);
+    else navSet(STORAGE_KEY, JSON.stringify(Array.from(loaded.values())));
   } catch {
     // Storage blocked or full: the font still works here, it just will not follow the next navigation.
   }
@@ -135,7 +136,7 @@ function isSavedFont(value) {
 function restoreSavedFonts() {
   let saved = [];
   try {
-    const parsed = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "[]");
+    const parsed = JSON.parse(navGet(STORAGE_KEY) ?? "[]");
     if (Array.isArray(parsed)) saved = parsed.filter(isSavedFont);
   } catch {
     // No storage, or something else wrote there: start clean.
@@ -209,8 +210,8 @@ const setGoogleFont = {
     "(optional boolean, default false: also load the italic of each weight). Resolves once the font files are " +
     "really loaded, so CSS applied right after uses it with no flash. Rejects with a hint if Google does not " +
     "know the family or the weights, or if loading takes more than 8 seconds. Loading a family again adds the " +
-    "new weights to it. Only fonts.googleapis.com is contacted. The font stays loaded on the other pages of the " +
-    "site in this tab and is gone when the tab is closed. " +
+    "new weights to it. Only fonts.googleapis.com is contacted. The font stays loaded while the visitor navigates the " +
+    "site in this tab; a reload restores the original. " +
     "Returns `family`, `cssFamily` (the value for font-family, with a generic fallback guessed from the name), " +
     "`weights` and `italic`." +
     " " +

@@ -64,13 +64,22 @@ export default function layout({
     >
       <head>
         <script>
-          // Puts back the colour mode the visitor chose (src/client/lib/theme.js,
-          // which writes the same key) before the first paint: no attribute
-          // follows the system, and a stored "light" or "dark" overrides it.
-          // Here and not in a bundle because a deferred script would run after
-          // the page had been painted in the system's mode.
+          // Puts back the colour mode an agent forced on an earlier page of this
+          // tab (src/client/lib/theme.js, through nav-storage.js, which writes
+          // the same key) before the first paint: no attribute follows the
+          // system, and a stored "light" or "dark" overrides it. A reload
+          // restores the original instead, so it drops the key (the rest of
+          // what nav-storage.js keeps goes when a bundle first uses it). Here
+          // and not in a bundle because a deferred script would run after the
+          // page had been painted in the stale mode. The localStorage line
+          // clears the key an earlier version stored there, which would
+          // otherwise keep forcing a mode for the visitors who had one.
           try {
-            var mode = localStorage.getItem("theme");
+            localStorage.removeItem("theme");
+            var nav = performance.getEntriesByType("navigation")[0];
+            var reload = nav ? nav.type === "reload" : performance.navigation && performance.navigation.type === 1;
+            if (reload) sessionStorage.removeItem("nav:theme");
+            var mode = sessionStorage.getItem("nav:theme");
             if (mode === "light" || mode === "dark") document.documentElement.dataset.theme = mode;
           } catch (e) {}
         </script>

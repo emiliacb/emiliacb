@@ -1,7 +1,7 @@
 // WebMCP tools that read and change the page's CSS. Everything the agent sets
 // goes through applyGuarded (css-apply.js), which undoes a change that breaks
-// the page and tells the agent why (unless the agent forces it). The CSS is local to the visitor's tab and follows it across the
-// site's pages (css-state.js).
+// the page and tells the agent why (unless the agent forces it). The CSS is kept while the visitor navigates the site in this tab and a
+// reload restores the original (css-state.js, nav-storage.js).
 import { applyGuarded, unsupportedDeclarations } from "../css/apply.js";
 import { emptyState, commitState, getState } from "../css/state.js";
 import { mergeRule, parseDeclarations, rulesToCss } from "../css/declarations.js";
@@ -14,7 +14,7 @@ const MAX_SELECTOR_CHARS = 500;
 const MAX_ELEMENTS = 20;
 const DEFAULT_ELEMENTS = 5;
 export const SCOPE =
-  "The CSS is applied only in this tab: it survives navigation to other pages of the site in this tab and disappears when the tab is closed. ";
+  "The CSS is applied only in this tab: it is kept while the visitor navigates the site in this tab (links, back and forward); a reload restores the original. ";
 
 const INSPECTED_STYLES = [
   "color", "background-color", "font-family", "font-size", "font-weight", "display", "position", "margin",
@@ -71,7 +71,7 @@ function appliedResult(state, warnings, message) {
     stylesheetChars: state.css.length,
     selectorRules: Object.keys(state.rules).length,
     warnings,
-    note: "Local to this tab; survives navigation within it.",
+    note: "Kept while the visitor navigates the site in this tab; a reload restores the original.",
   });
 }
 

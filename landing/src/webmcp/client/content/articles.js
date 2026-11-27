@@ -1,15 +1,17 @@
-// The articles an agent creates with create_article: kept in this tab's
-// sessionStorage, rendered with the same Markdown pipeline and the same
+// The articles an agent creates with create_article: kept while the visitor
+// navigates the site in this tab and gone on a reload (src/client/lib/
+// nav-storage.js), rendered with the same Markdown pipeline and the same
 // .markdown-content classes as a published post, and shown in place of the
 // page's own content until the visitor (or the agent) restores it. Nothing
 // here talks to a server.
+import { navGet, navSet } from "../../../client/lib/nav-storage.js";
 import { sanitizeHtmlWithReport } from "../core/sanitize.js";
 import { escapeAttribute, headingSlug } from "./text.js";
 import { loadMarkdownRenderer } from "./markdown-loader.js";
 
 const STORAGE_KEY = "webmcp:articles";
 const BANNER_ATTRIBUTE = "data-agent-article-banner";
-// sessionStorage holds about 5 MB per origin; one article larger than this is
+// Session storage holds about 5 MB per origin; one article larger than this is
 // a mistake, and a few of them would lock out the site's other uses of it.
 const MAX_ARTICLE_CHARS = 200000;
 const MAX_ARTICLES = 20;
@@ -33,12 +35,12 @@ export function articleId(title) {
 
 let articles = null;
 
-/** Every article of this tab, oldest first. Falls back to memory when sessionStorage is blocked. */
+/** Every article of this tab, oldest first. Falls back to memory when storage is blocked. */
 export function listArticles() {
   if (articles) return articles;
   articles = [];
   try {
-    const stored = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "[]");
+    const stored = JSON.parse(navGet(STORAGE_KEY) ?? "[]");
     if (Array.isArray(stored)) articles = stored.filter((a) => a && typeof a.id === "string" && typeof a.markdown === "string");
   } catch {
     // Blocked or corrupt storage: start empty, the tools still work for this page.
@@ -55,9 +57,9 @@ export function saveArticle(article) {
   const others = listArticles().filter((a) => a.id !== article.id);
   articles = [...others, article].slice(-MAX_ARTICLES);
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(articles));
+    navSet(STORAGE_KEY, JSON.stringify(articles));
   } catch (error) {
-    console.warn("[webmcp] Could not keep the article in sessionStorage:", error);
+    console.warn("[webmcp] Could not keep the article in storage:", error);
   }
   return article;
 }

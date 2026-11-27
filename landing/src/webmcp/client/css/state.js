@@ -12,8 +12,11 @@
 // through here (the tools, the shield's restore, the restore of a saved
 // state), so this is the one place that tells them.
 //
-// sessionStorage is the right lifetime: it follows the tab through page loads
-// and is gone when the tab closes, so the visitor's next visit starts clean.
+// The lifetime is src/client/lib/nav-storage.js's: kept while the visitor
+// navigates the site in this tab (links, back and forward), gone on a reload,
+// in another tab and on the next visit, so the original page is always one
+// reload away.
+import { navGet, navRemove, navSet } from "../../../client/lib/nav-storage.js";
 import { notifyTokensChange } from "../../../client/lib/theme.js";
 import { rulesToCss } from "./declarations.js";
 import { emptyVariables, hasVariables, isVariables, variablesToCss } from "./variables.js";
@@ -55,8 +58,8 @@ export function paint(state) {
 
 function save(state) {
   try {
-    if (state.css === "" && Object.keys(state.rules).length === 0 && !hasVariables(state.variables)) sessionStorage.removeItem(STORAGE_KEY);
-    else sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (state.css === "" && Object.keys(state.rules).length === 0 && !hasVariables(state.variables)) navRemove(STORAGE_KEY);
+    else navSet(STORAGE_KEY, JSON.stringify(state));
   } catch {
     // Storage blocked or full: the change still applies, it just will not follow the next navigation.
   }
@@ -80,7 +83,7 @@ function isRules(value) {
 
 function readSaved() {
   try {
-    const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "null");
+    const saved = JSON.parse(navGet(STORAGE_KEY) ?? "null");
     // `variables` is absent from what an earlier version saved.
     const variables = saved?.variables ?? emptyVariables();
     if (saved && typeof saved.css === "string" && isRules(saved.rules) && isVariables(variables)) return { ...saved, variables };

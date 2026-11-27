@@ -21,7 +21,7 @@ A restyle is finished when every row of the checklist is filled and verified, no
 2. Change tokens with `set_variables` (`mode: both`, unless the request is about one theme). Without that tool, write them with `set_css` on `:root`, repeated under `:root[data-theme=dark]` and the dark media query. Load fonts with `set_google_font` first.
 3. Only then CSS (`set_css_by_selector`) for what tokens do not cover, region by region. Copy the checklist, one line per row, and fill each. `read_skill` with `file: "regions.md"` gives each row's selectors and pitfalls.
 4. Verify each row with its check. A rejected call lists what broke: send a corrected change. `force: true` is for an effect that is intended.
-5. Tell the visitor what changed and how to undo it: `reset_css`, `set_theme_mode` with `system`, or reload.
+5. Tell the visitor what changed and how to undo it: `reset_css`, `set_theme_mode` with `system`, or reload. What you changed is kept while the visitor navigates the site in this tab; a reload restores the original.
 
 ## Checklist: all rows are required
 

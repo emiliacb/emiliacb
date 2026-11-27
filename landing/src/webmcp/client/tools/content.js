@@ -286,8 +286,8 @@ const createArticle = {
     "Writes an article and shows it in this tab in place of the page's content, laid out and typeset exactly like " +
     "one of this site's journal posts (same column, headings, lists, code, links), under the navbar and above the footer. " +
     'A small banner says it is agent-generated and not published, with a button to restore the page. ' +
-    "Nothing is published or sent anywhere: the article lives in this tab's sessionStorage (it survives navigation " +
-    "and is gone when the tab closes). Pass \"title\" and \"markdown\" (the body: do not repeat the title as a first " +
+    "Nothing is published or sent anywhere: the article is kept while the visitor navigates the site in this tab, and a " +
+    "reload restores the original. Pass \"title\" and \"markdown\" (the body: do not repeat the title as a first " +
     "heading); optional \"subtitle\" (one line under the title), \"date\" (e.g. 2026-11-27) and \"tags\". " +
     "Markdown is converted in the browser and the result is sanitized: scripts, event handlers and unsafe URLs are " +
     "removed, and the result lists what was dropped. Creating an article with the title of an existing one replaces it. " +
