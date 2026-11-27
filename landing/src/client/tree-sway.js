@@ -184,9 +184,10 @@ const SLACK = 50;
 // still felt, for its note, but the cursor goes where the hand goes.
 const BRAKE_CURSOR = false;
 
-// The note a part rings on first being touched is as loud as the cursor's
-// acceleration then, in tree units a second squared: silent for a hand moving
-// steadily, loudest at A1 and beyond. Its rate of change is read off the
+// The note a part rings on first being touched sounds at least softly, however
+// slowly the cursor comes, and louder in proportion to the cursor's
+// acceleration then, in tree units a second squared, up to its loudest at A1
+// and beyond. Its rate of change is read off the
 // smoothed velocity and smoothed again over ACCEL_EASE seconds, or the jitter
 // between two pointer events would ring every note at full.
 const A1 = 30000;
@@ -1381,8 +1382,8 @@ function onFirstPress(event) {
 
 /**
  * Rings a part's note, `strength` from 0 to 1: quiet at its loudest, and a
- * little louder the harder it was struck, or, `exact`, as loud as `strength`
- * of its loudest and silent at nothing. A leaf is a small glass bell, a pure
+ * little louder the harder it was struck, or, `exact`, from softly at nothing
+ * to its loudest at 1, in proportion. A leaf is a small glass bell, a pure
  * tone with partials out of tune with it that die away sooner; wood is rounder
  * and shorter. Each sounds from its own side of the tree.
  */
@@ -1399,9 +1400,9 @@ function ring(p, strength, exact = false) {
   const leaf = p.kind === "leaf";
   const f = (NOTE[p.key] || NOTE.trunk * 4) * Math.pow(2, (Math.random() - 0.5) / 200);
   const s = Math.max(0, Math.min(1, strength));
-  const vol = exact ? (leaf ? 0.105 : 0.11) * s : (leaf ? 0.035 : 0.05) + (leaf ? 0.07 : 0.06) * s;
-  // Too quiet to hear is not worth the voices, and the ramps cannot reach 0.
-  if (vol < 0.002) return;
+  const soft = leaf ? 0.035 : 0.05;
+  const loud = exact ? (leaf ? 0.105 : 0.11) : soft + (leaf ? 0.07 : 0.06);
+  const vol = soft + (loud - soft) * s;
   let to = sound.bus;
   if (ac.createStereoPanner) {
     const side = ac.createStereoPanner();
@@ -3130,10 +3131,10 @@ function tick(now) {
     for (const p of parts) {
       p.worn = (p.worn + p.touch * moved) * Math.exp(-H / MEND);
       if (!held) p.touch = 0;
-      // Its note, on first being touched while the cursor moves, as loud as
-      // the cursor's acceleration.
+      // Its note, on first being touched while the cursor moves, however
+      // slowly: softly, and louder the more the cursor is accelerating.
       const on = p.touch > 0.5;
-      if (on && !p.met && drag > 0.02 && !bow.on) ring(p, accel, true);
+      if (on && !p.met && speed > 5 && !bow.on) ring(p, accel, true);
       p.met = on;
     }
     hx = toX;
