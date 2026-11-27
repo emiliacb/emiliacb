@@ -113,6 +113,7 @@ const en: DocsCopy = {
     dom: { title: "Elements and sidebars", blurb: "Insert sanitized elements, change text and open a sidebar like the site's own." },
     theme: { title: "Theme", blurb: "Read the colour mode and force light, dark, or the system's." },
     "tree-song": { title: "The tree's song", blurb: "Play a melody on the tree's own voice, on the home page." },
+    "black-hole": { title: "The black hole", blurb: "Set off the gradient's black hole, on desktop pages that have the gradient." },
     skills: { title: "Skills", blurb: "Procedures for working well on this site, as tools." },
   },
 
@@ -233,6 +234,7 @@ const es: DocsCopy = {
     dom: { title: "Elementos y paneles", blurb: "Insertar elementos sanitizados, cambiar texto y abrir un panel lateral como los del sitio." },
     theme: { title: "Tema", blurb: "Leer el modo de color y forzar claro, oscuro o el del sistema." },
     "tree-song": { title: "La canción del árbol", blurb: "Tocar una melodía con la voz del propio árbol, en la página de inicio." },
+    "black-hole": { title: "El agujero negro", blurb: "Desatar el agujero negro del gradiente, en las páginas de escritorio que lo tienen." },
     skills: { title: "Skills", blurb: "Procedimientos para trabajar bien en este sitio, como herramientas." },
   },
 

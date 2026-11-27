@@ -157,6 +157,7 @@ import { isDark, onThemeChange } from "./lib/theme.js";
   // calm → gather (the sheets tremble while the page is copied) → fall (they
   // are eaten, the cursor is caught) → hold → boom → back.
   let phase = "calm", since = 0, clock = 0, eaten = 0;
+  let startedAt = 0; // when the hole began (performance.now()), for state()
   // The hole: its centre in the box and in the host, r_s, and the square
   // the lens draws, half of its side.
   // x0, y0 and hx0, hy0 are where it was born; it drifts from there.
@@ -239,6 +240,7 @@ import { isDark, onThemeChange } from "./lib/theme.js";
     eaten = 0;
     phase = "gather";
     since = 0;
+    startedAt = performance.now();
     hideHint();
     // What falls in, and comes back out, is the arrow.
     cursor()?.hold("default");
@@ -729,6 +731,57 @@ import { isDark, onThemeChange } from "./lib/theme.js";
     // Held until the page has stopped shaking, if it is shaking.
     if (shaken < 0) lockScroll(false);
   }
+
+  /* ==== for code that is not a hand ==== */
+
+  // The hole without a click, for the WebMCP tools (src/webmcp/client/tools/
+  // black-hole.js); it is the same hole, made the way the click makes it, so
+  // it stays here when they go. Set only where the sheets exist: the pages
+  // with the tree, and reduced motion, have no window.siteBlackHole.
+  //   start()  makes the hole at the gradient's core, where it is always born
+  //            (the click only has to be near it). Scrolls the core into view
+  //            first if it is off the screen. Returns { started: true } or
+  //            { started: false, reason }, where reason is "not-desktop"
+  //            (the effect is desktop only) or "running".
+  //   stop()   ends it at once, giving back the sheets, the cursor, the mouse
+  //            and the scroll. Returns whether there was a hole to end.
+  //   state()  { phase, running, elapsedMs }; phase is "calm" at rest, else
+  //            gather, fall, hold, boom or back, in that order.
+  window.siteBlackHole = {
+    start() {
+      if (!desk.matches) return { started: false, reason: "not-desktop" };
+      if (phase !== "calm") return { started: false, reason: "running" };
+      measure();
+      let box0 = stack.getBoundingClientRect();
+      const core = leaves[leaves.length - 1];
+      const cy = box0.top + H / 2;
+      if (cy < 0.15 * innerHeight || cy > 0.85 * innerHeight) {
+        scrollBy({ top: cy - innerHeight / 2, behavior: "instant" });
+        box0 = stack.getBoundingClientRect();
+      }
+      // The hand's place is where the drawn cursor starts from; with no mouse
+      // seen yet, the core's centre.
+      if (!hand.seen) {
+        hand.x = box0.left + core.ax;
+        hand.y = box0.top + core.ay;
+        hand.lastX = hand.x;
+        hand.lastY = hand.y;
+      }
+      swallow(box0);
+      return { started: true };
+    },
+    stop() {
+      if (phase === "calm") return false;
+      finish();
+      if (ripple) ripple.stop();
+      shaken = -1;
+      lockScroll(false);
+      return true;
+    },
+    state() {
+      return { phase, running: phase !== "calm", elapsedMs: phase === "calm" ? 0 : Math.round(performance.now() - startedAt) };
+    },
+  };
 
   /* ==== a word before it happens ==== */
 

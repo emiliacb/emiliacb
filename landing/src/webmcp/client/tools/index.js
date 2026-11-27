@@ -3,6 +3,7 @@
 // this same list (src/webmcp/site/catalog.ts), from llms.txt and from the /mcp
 // docs page, which lists the tools group by group (`id` is the key of the
 // group's title in src/webmcp/site/docs/copy.ts).
+import { blackHoleTools } from "./black-hole.js";
 import { contentTools } from "./content.js";
 import { cssTools } from "./css.js";
 import { domTools } from "./dom.js";
@@ -20,6 +21,7 @@ export const toolGroups = [
   { id: "content", tools: contentTools },
   { id: "dom", tools: domTools },
   { id: "tree-song", tools: treeSongTools },
+  { id: "black-hole", tools: blackHoleTools },
   { id: "skills", tools: skillsTools },
 ];
 
