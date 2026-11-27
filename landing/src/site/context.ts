@@ -24,7 +24,8 @@ export type ClientEntry =
   | "sidebars"
   | "tree-sway"
   | "tree-warp"
-  | "ui-drawer";
+  | "ui-drawer"
+  | "webmcp-css";
 
 export type Assets = {
   /** Hashed URL of a client bundle, e.g. "/assets/layout-3HX2K.js". */
