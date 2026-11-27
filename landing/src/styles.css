@@ -105,6 +105,23 @@
                         by page-cotas.js) show: "block" (the default) or "none".
                         None hides the plate and stops the script measuring and
                         drawing from its next frame on.
+     --fx-ui-warp       "on" (the default) or "off": whether the page's UI
+                        distorts with the tree's music (tree-warp.js): the
+                        content's turn about the foot of the trunk, its bend,
+                        colour split and jumping bands, and the navbar's
+                        glitch. Off, the tree still sounds and the page stays
+                        straight. Read when each frame is drawn.
+     --fx-shockwave     "on" (the default) or "off": whether the black hole's
+                        blast shakes the page like a cloth (gradient/ripple.js,
+                        the 2.6 s wave after the boom). Off, the black hole
+                        still gathers, falls, flashes and sounds; only the
+                        shock through the page's UI is skipped. Read as the
+                        blast goes off.
+        Both are switches rather than looks: WebMCP writes them "off" first
+        in the agent's stylesheet whenever an agent has restyled the page, so
+        a restyled page is not also bent and shaken under the agent's work; an
+        agent can set them back to "on" itself, and a reset or a reload
+        restores the default.
 
    DERIVED FROM THEM
      --color-stone-50 ... --color-stone-950   the neutral scale the templates
@@ -177,6 +194,8 @@
   --size-content: 60rem;
   --size-nav-height: 7rem;
   --cotas-display: block;
+  --fx-ui-warp: on;
+  --fx-shockwave: on;
 
   /* Pure ends, for what is drawn in full black or white whatever the paper is
      (the hovered button's inversion, the cursor's ink). */

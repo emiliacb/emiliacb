@@ -75,6 +75,20 @@ export const BASE_TOKENS = [
     purpose: 'Whether the cotas (the ink dimensions drawn over the page) show: "block" or "none".',
     derives: "the cotas' canvas and its measuring.",
   },
+  {
+    name: "--fx-ui-warp",
+    purpose:
+      'Whether the page\'s UI distorts with the tree\'s music (the content\'s turn, bend, colour split and jumping bands, the navbar\'s glitch): "on" or "off". ' +
+      'Turned off automatically while you restyle; set to "on" to bring it back.',
+    derives: "tree-warp.js only; the tree still sounds when it is off.",
+  },
+  {
+    name: "--fx-shockwave",
+    purpose:
+      'Whether the black hole\'s blast shakes the page like a cloth after its boom (a 2.6 s wave through the text and navbar): "on" or "off". ' +
+      'Turned off automatically while you restyle; set to "on" to bring it back.',
+    derives: "the shockwave only; the black hole itself (gather, fall, flash, sound) still runs when it is off.",
+  },
 ];
 
 /**

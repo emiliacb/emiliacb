@@ -9,7 +9,7 @@ export function hasVariables(variables: Variables): boolean;
 export function isVariables(value: unknown): boolean;
 export function parseVariables(input: unknown): VariableEntry[];
 export function literalProblem(value: string): string | null;
-export function kindOf(current: string, supports: Supports): "colour" | "channels" | "number" | "length" | "any";
+export function kindOf(current: string, supports: Supports): "colour" | "channels" | "keyword" | "number" | "length" | "any";
 export function kindProblem(kind: string, value: string, supports: Supports): string | null;
 export function mergeVariables(variables: Variables, entries: VariableEntry[], mode: string): Variables;
 export function variablesToCss(variables: Variables): string;

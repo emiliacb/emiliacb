@@ -39,10 +39,15 @@
 // may leave the page turned or bent and arrive straight.
 //
 // With reduced motion, on touch screens and below md, this does nothing;
-// without WebGL the content still turns but does not bend.
+// without WebGL the content still turns but does not bend. It does nothing
+// either while the page's `--fx-ui-warp` token is "off" (see FX SWITCHES in
+// styles.css; an agent that restyles the page turns it off): the turn, the
+// bend, the colour split, the jumps and the navbar's glitch are all skipped,
+// and the tree sounds as it always does.
 import { toCanvas, getFontEmbedCSS } from "html-to-image";
 import { onTokensChange } from "./lib/theme.js";
 import { rgbOf } from "./lib/color.js";
+import { fxOn } from "./lib/fx.js";
 
 (() => {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -344,6 +349,15 @@ import { rgbOf } from "./lib/color.js";
     last = now;
     const ear = window.__treeEar;
     const db = ear ? hear(ear, dt, now, gone) : -120;
+    // Read again every frame, so turning the switch off in the middle of a
+    // song puts the page straight at once, and turning it back on resumes
+    // the warp where the music is. The ear is still read above, so the
+    // loudness followers are current the moment it is back on.
+    if (!fxOn("--fx-ui-warp")) {
+      rest(now);
+      if (db > FLOOR - 6 || env > 1e-3 || band.some((b) => b.env > 1e-3 || b.punch > 1e-3)) raf = requestAnimationFrame(frame);
+      return;
+    }
     const reach = BASE + (1 - BASE) * drive;
     const [lo, mid, hi] = band;
     const xLo = lo.env * reach, xMid = mid.env * reach, xHi = hi.env * reach;
@@ -374,10 +388,14 @@ import { rgbOf } from "./lib/color.js";
     else {
       env = 0;
       for (const b of band) b.env = b.punch = 0;
-      content.style.setProperty("--tree-turn", "0deg");
-      show(false);
-      glitchNav(0, 0, now);
+      rest(now);
     }
+  }
+  // The page as it is without the effect: straight, unbent, unglitched.
+  function rest(now) {
+    content.style.setProperty("--tree-turn", "0deg");
+    show(false);
+    glitchNav(0, 0, now);
   }
   function kick() { if (!raf) raf = requestAnimationFrame(frame); }
 

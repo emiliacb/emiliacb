@@ -26,7 +26,8 @@
  * radius it comes apart, stretched along the orbit and sheared by it into a
  * thread, and is gone at the shadow. After a moment the hole evaporates in a
  * flash and gives back the sheets and the cursor, and the blast goes through
- * the page as through a shaken cloth (gradient/ripple.js). From the click
+ * the page as through a shaken cloth (gradient/ripple.js; skipped while the
+ * `--fx-shockwave` token is "off", see FX SWITCHES in styles.css). From the click
  * the page has the mouse (Pointer Lock): it is hidden, and its moves still
  * take the drawn cursor about, until the hole catches it; from then on the
  * hand cannot move it. It is given back at the end. All of it is heard
@@ -38,6 +39,7 @@
 import { makeLens } from "./gradient/lens.js";
 import { makeRipple } from "./gradient/ripple.js";
 import { makeSound, note } from "./gradient/sound.js";
+import { fxOn } from "./lib/fx.js";
 import { isDark, onTokensChange } from "./lib/theme.js";
 
 (() => {
@@ -457,8 +459,12 @@ import { isDark, onTokensChange } from "./lib/theme.js";
       now_.flash = Math.sin(Math.PI * clamp01((since - 0.45) / 0.45));
       if (since >= 0.62 && !leaves[0].out) {
         giveBack(hx, hy);
-        // The blast shakes the page, as a cloth.
-        if (ripple && lens && ripple.start(lens.shot, at.hx, at.hy)) shaken = 0;
+        // The blast shakes the page, as a cloth, unless the page's
+        // `--fx-shockwave` token is "off" (styles.css; an agent that
+        // restyles the page turns it off): the flash, the sound and the
+        // sheets' return are the hole's own and stay, only what moves the
+        // page's UI is skipped. Read here, as the blast goes off.
+        if (ripple && lens && fxOn("--fx-shockwave") && ripple.start(lens.shot, at.hx, at.hy)) shaken = 0;
       }
       if (since >= 0.95) { phase = "back"; since = 0; if (lens) lens.close(); }
     } else if (phase === "back") {
