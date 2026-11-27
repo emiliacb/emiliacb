@@ -64,6 +64,10 @@
  */
 
 import { isDark, onThemeChange } from "./lib/theme.js";
+import { createPlayer } from "./lib/tree-song.js";
+import {
+  CEILING_HZ, ECHO, EFFECTS, FLANGE_DEPTH_MS, FLANGE_FEED, FLANGE_HZ, FLANGE_MIX, FLANGE_MS, HELD, NOTE, NOTES,
+} from "./lib/tree-voice.js";
 
 const box = document.getElementById("tree-illustration");
 const svg = box ? box.querySelector(".cover-tree") : null;
@@ -1006,21 +1010,15 @@ function offerTilt() {
    Sound
    ========================================================================== */
 
-// Every part's note, in hertz: a Hijaz on D (D E♭ F♯ G A B♭), with its two
-// semitones and the wide step between them. The leaves have the scale, the
-// bigger the leaf the lower; the wood holds the root, the fourth and the
-// fifth beneath them.
-const NOTE = {
-  "leaf:crown": 293.66, "leaf:left": 311.13, "leaf:twig": 369.99, "leaf:stem": 440, "leaf:elbow": 466.16, "leaf:right": 587.33,
-  trunk: 73.42, stem: 110, left: 146.83, right: 196, twig: 220,
-};
+// Every part's note, in hertz (NOTE), is in lib/tree-voice.js, with the effects
+// below: the tool that plays songs on the tree reads the same numbers.
 // The sound is wanted from the start, unless its switch, in the page's footer
 // (footer.ts, layout.js), was last left off: the switch keeps that under
 // SOUND_KEY and says so with an event of the same name when it is pressed.
 // A browser plays nothing until the page has been clicked, tapped or typed
 // into, so it is silent until the first of those, wherever it lands.
 const SOUND_KEY = "tree-sound";
-const sound = { want: true, ac: null, bus: null };
+const sound = { want: true, ac: null, bus: null, fx: null }; // fx: the nodes the song effects turn (setEffects)
 try {
   sound.want = localStorage.getItem(SOUND_KEY) !== "off";
 } catch {
@@ -1050,12 +1048,12 @@ function startSound() {
       const dull = ac.createBiquadFilter();
       const wet = ac.createGain();
       out.type = "lowpass";
-      out.frequency.value = 5200;
-      echo.delayTime.value = 0.27;
-      back.gain.value = 0.42;
+      out.frequency.value = CEILING_HZ;
+      echo.delayTime.value = ECHO.timeMs / 1000;
+      back.gain.value = ECHO.feedback;
       dull.type = "lowpass";
-      dull.frequency.value = 1800;
-      wet.gain.value = 0.5;
+      dull.frequency.value = ECHO.dullHz;
+      wet.gain.value = ECHO.mix;
       // An ear on what goes out, echo and all, for the page to listen to
       // (tree-warp.js): it bends as loud as the tree sounds.
       const ear = ac.createAnalyser();
@@ -1071,6 +1069,7 @@ function startSound() {
       });
       sound.ac = ac;
       sound.bus = bus;
+      sound.fx = { out, echo, back, wet };
     }
     if (sound.ac.state === "suspended") sound.ac.resume();
   } catch {
@@ -1521,15 +1520,8 @@ const STEP_PX = 36;
 const BOW_REACH = 8; // how near a part a press must land to ring it, tree units
 const BOW_GLIDE = 0.05; // how quickly the note slides to where the press is, s
 const BOW_VOL = 0.09; // its strike
-const HELD = 0.5;
-// A held note goes out through a light flanger, which a brushed one does not:
-// a copy of it FLANGE_MS behind, that lag swept FLANGE_DEPTH_MS either way
-// FLANGE_HZ times a second, mixed in at FLANGE_MIX and fed back FLANGE_FEED.
-const FLANGE_MS = 3;
-const FLANGE_DEPTH_MS = 1.8;
-const FLANGE_HZ = 0.35;
-const FLANGE_MIX = 0.45;
-const FLANGE_FEED = 0.35;
+// A held note goes out through a light flanger, which a brushed one does not
+// (FLANGE_*, in lib/tree-voice.js).
 // The shaking you see lasts exactly as long as the note is heard and is as
 // strong as it sounds: struck, held, and dying away once let go. It shakes at
 // the note's own pitch, VIB_DIV times slower so a screen can show it: the
@@ -1643,8 +1635,8 @@ function sympVoice(p, modes) {
   return { p, modes };
 }
 
-/** Holds part `p`'s note at `f`: its partials, each settling to HELD of its strike. */
-function heldVoice(p, f, pan) {
+/** Holds part `p`'s note at `f`, as loud as `vol` strikes it: its partials, each settling to HELD of its strike. */
+function heldVoice(p, f, pan, vol = BOW_VOL) {
   const ac = sound.ac;
   const t = ac.currentTime;
   let to = sound.bus;
@@ -1672,8 +1664,8 @@ function heldVoice(p, f, pan) {
   into.connect(lag).connect(wet).connect(to);
   lag.connect(feed).connect(lag);
   sweep.start(t);
-  const lead = partials(p, f, BOW_VOL)[0][3];
-  const voices = partials(p, f, BOW_VOL).map(([mult, level, rise, fall]) => {
+  const lead = partials(p, f, vol)[0][3];
+  const voices = partials(p, f, vol).map(([mult, level, rise, fall]) => {
     const osc = ac.createOscillator();
     const g = ac.createGain();
     osc.frequency.value = f * mult;
@@ -1725,19 +1717,32 @@ function onBowPress(event) {
   bow.at = scale.indexOf(at);
   bow.pos = bow.at;
   bow.from = event.clientY;
+  bow.note = holdNote(at);
+}
+
+/**
+ * Starts holding part `at`'s own note, as a press does, and returns it (it is
+ * one of `notes`: let go with releaseNote). The press that lands on a part and
+ * the songs of window.siteTreeSound (below) hold notes through here, so a
+ * song's held notes shake the tree and are answered by sympathy exactly as a
+ * visitor's are. `gain` is how hard it is struck, 1 being the press's own.
+ */
+function holdNote(at, gain = 1) {
+  const ac = sound.ac;
   const f0 = NOTE[at.key] || NOTE.trunk;
   // The held note, partial by partial: its strike, where it is held, how fast
-  // it gets there and dies away, as heldVoice and stopBow shape them.
-  const own = partials(at, f0, BOW_VOL);
+  // it gets there and dies away, as heldVoice and releaseNote shape them.
+  const own = partials(at, f0, BOW_VOL * gain);
   const lead = own[0][3];
   const drive = own.map(([mult, level, , fall]) => ({
     mult, level, held: level * HELD * (fall / lead), tau: fall / 7, a: level,
   }));
-  const note = { part: at, f: f0, on: true, voice: heldVoice(at, f0, panOf(at)), drive, echoes: [] };
+  const note = { part: at, f: f0, on: true, voice: heldVoice(at, f0, panOf(at), BOW_VOL * gain), drive, echoes: [] };
   // Every other part some note within the bend could make heard, at the
   // strike: the rest could not answer it above silence.
-  const lo = NOTE[scale[Math.max(0, bow.at - 1)].key];
-  const hi = NOTE[scale[Math.min(scale.length - 1, bow.at + 1)].key];
+  const idx = scale.indexOf(at);
+  const lo = NOTE[scale[Math.max(0, idx - 1)].key];
+  const hi = NOTE[scale[Math.min(scale.length - 1, idx + 1)].key];
   for (const p of parts) {
     if (p === at) continue;
     const modes = modesOf(p);
@@ -1749,10 +1754,10 @@ function onBowPress(event) {
     if (most > SYMP_FLOOR) note.echoes.push(sympVoice(p, modes));
   }
   notes.push(note);
-  bow.note = note;
   at.rang = ac.currentTime;
   at.vib = 1;
   window.dispatchEvent(new Event("tree-note"));
+  return note;
 }
 
 function onBowMove(event) {
@@ -1766,7 +1771,11 @@ function onBowMove(event) {
 /** Lets go: the note dies away as a brushed one does, and what answers it with it. */
 function stopBow() {
   bow.on = false;
-  const note = bow.note;
+  releaseNote(bow.note);
+}
+
+/** Lets go of a note held with holdNote. */
+function releaseNote(note) {
   if (!note || !note.on) return;
   note.on = false;
   const v = note.voice;
@@ -3293,6 +3302,124 @@ function setup() {
   return true;
 }
 
+/* ==========================================================================
+   Songs: window.siteTreeSound
+   ========================================================================== */
+
+// This file is a bundle of its own, so what the page's other scripts may do
+// with the tree's sound is said here, in one place. The WebMCP tool that plays
+// songs on the tree (src/webmcp/client/tools/tree-song.js) is the one user, but
+// the object is plain and documented so anything can use it:
+//
+//   notes      the tree's eleven notes: { name, midi, hz, part, voice }
+//   effects    what a song can ask for, with each parameter's range and default
+//   play(song) plays { notes, bpm?, effects? } (see lib/tree-song.js for the
+//              format) on the tree's own voice; throws a RangeError saying what
+//              is wrong with the song, or an Error if the sound is not running
+//   stop()     stops it, and lets go of what it holds
+//   state()    { playing, step, steps, notesSounded, ended, audio, wanted,
+//              windowOpen, lit }: where the song is, and the sound's own state
+//   unlock()   a promise of where the sound stands, trying what a script may
+//              try: "running", "off" (its switch is off), "window" (the
+//              window that asks the visitor is open), "press" (only a press
+//              will start it, and there is no window to ask for it) or
+//              "unsupported"
+//
+// A browser keeps audio locked until the visitor has pressed something on the
+// page, and a script calling this is not a press. So nothing here starts the
+// sound out of nothing: unlock() resumes the sound if the browser allows it
+// (the visitor has pressed before) and otherwise shows the window that asks,
+// leaving Allow to the visitor, as it is for them.
+
+/** The part that rings a note, by the key lib/tree-voice.js gives it. */
+const partOf = (key) => parts.find((p) => p.key === key);
+
+/** Rings a part as a brush on it would, and lights it as the note dies away. */
+function strikePart(key, velocity) {
+  const p = partOf(key);
+  if (!p) return;
+  // A song may repeat a note faster than ring's own pause between two.
+  p.rang = -1;
+  ring(p, velocity, true);
+  // The part shakes and lights as long as the note is heard, as a pressed one
+  // does (bowing): a note nobody holds, already letting go.
+  const f = NOTE[key];
+  const drive = partials(p, f, BOW_VOL).map(([mult, level, , fall]) => ({ mult, level, held: 0, tau: fall / 7, a: level }));
+  notes.push({ part: p, f, on: false, voice: null, drive, echoes: [] });
+}
+
+/** Holds a part's note, as a press does; returns what lets go of it. */
+function holdPart(key, velocity) {
+  const p = partOf(key);
+  if (!p) return () => {};
+  const note = holdNote(p, 0.25 + 0.75 * velocity);
+  return () => releaseNote(note);
+}
+
+/** Turns the song's effects on the sound, or, with null, puts the tree's own back. */
+function setEffects(fx) {
+  const nodes = sound.fx;
+  if (!nodes || !sound.ac) return;
+  const t = sound.ac.currentTime;
+  const echo = { ...ECHO, ...(fx && fx.echo) };
+  const cutoff = (fx && fx.tone && fx.tone.cutoffHz) || CEILING_HZ;
+  // Eased over a few milliseconds, not set, so that no click comes with it.
+  nodes.echo.delayTime.setTargetAtTime(echo.timeMs / 1000, t, 0.05);
+  nodes.back.gain.setTargetAtTime(echo.feedback, t, 0.05);
+  nodes.wet.gain.setTargetAtTime(echo.mix, t, 0.05);
+  nodes.out.frequency.setTargetAtTime(cutoff, t, 0.05);
+}
+
+const songEngine = {
+  // Not while the window still asks: ring is silent until it has gone.
+  ready: () => sound.want && !hint && !!sound.ac && sound.ac.state === "running",
+  strike: strikePart,
+  hold: holdPart,
+  effects: setEffects,
+};
+const player = createPlayer(songEngine);
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Where the sound stands, having tried what a script may try to start it. */
+async function unlockSound() {
+  if (!sound.want) return "off";
+  startSound();
+  const ac = sound.ac;
+  if (!ac) return "unsupported";
+  if (ac.state !== "running") await Promise.race([ac.resume().catch(() => {}), wait(400)]);
+  if (ac.state !== "running") {
+    offerSound(); // does nothing if the window is already up, or the browser needs no window
+    return hint ? "window" : "press";
+  }
+  // Running, but the window may still be leaving (a press elsewhere started the sound).
+  await windowGone();
+  return hint ? "window" : "running";
+}
+
+/** Waits (up to 3 s) for the window that asks to leave. */
+async function windowGone(left = 30) {
+  if (!hint || left === 0) return;
+  await wait(100);
+  await windowGone(left - 1);
+}
+
+function publishSongs() {
+  window.siteTreeSound = {
+    notes: NOTES,
+    effects: EFFECTS,
+    play: (song) => player.play(song),
+    stop: () => player.stop(),
+    state: () => ({
+      ...player.state(),
+      audio: sound.ac ? sound.ac.state : "none",
+      wanted: sound.want,
+      windowOpen: !!hint,
+      lit: parts.filter((p) => p.glow > 0.01).map((p) => p.key),
+    }),
+    unlock: unlockSound,
+  };
+}
+
 if (box && svg && woodEl && !reduced && setup()) {
   readTheme();
   layout();
@@ -3307,6 +3434,7 @@ if (box && svg && woodEl && !reduced && setup()) {
   // here from another page of the site, or its visitor allows it sound), the
   // tree is heard at once. Everywhere else it waits for the first press.
   startSound();
+  publishSongs();
   for (const type of FIRST_PRESS) window.addEventListener(type, onFirstPress, { capture: true, passive: true });
   window.addEventListener(SOUND_KEY, (event) => setSound(!!event.detail));
   document.documentElement.addEventListener("pointerleave", release);

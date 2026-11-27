@@ -7,5 +7,14 @@ import { domTools } from "./dom.js";
 import { fontTools } from "./fonts.js";
 import { interactionTools } from "./interaction.js";
 import { themeTools } from "./theme.js";
+import { treeSongTools } from "./tree-song.js";
 
-export const enabledTools = [...cssTools, ...interactionTools, ...fontTools, ...contentTools, ...domTools, ...themeTools];
+export const enabledTools = [
+  ...cssTools,
+  ...interactionTools,
+  ...fontTools,
+  ...contentTools,
+  ...domTools,
+  ...themeTools,
+  ...treeSongTools,
+];
