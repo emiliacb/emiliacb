@@ -272,6 +272,11 @@ body {
 }
 
 #scroll-wrapper {
+  /* Positioned, so what is laid out absolute on it (the tree's sound window,
+     .tree-sound-ask) is placed on the page and scrolls with it, whether the
+     page scrolls itself or this box does (the AI layout). Its own children are
+     fixed, relative or sticky, so none of them is placed any differently. */
+  position: relative;
   transition: border-radius 400ms ease-out 400ms;
 }
 
@@ -639,9 +644,9 @@ html.ai-layout-enabled #activity-panel {
    the trunk and lets it be dragged by its bar). A browser's permission prompt
    drawn as a Windows 95 window in the site's ink: a hairline, no shadow, the
    title bar in the tree's own gradient, inverted on the dark page as the tree
-   is. It sits on the page's body, over everything (under the ink cursor
-   alone), so it can be dragged anywhere; placed on the screen, but held on
-   the tree as the page scrolls (followHint), so it goes with it. It comes in
+   is. It sits on the page's scrolling box (#scroll-wrapper), absolute and
+   over everything (under the ink cursor alone): it can be dragged anywhere,
+   and it scrolls with the page and the tree under it. It comes in
    out of focus and settles, and then its name grows its marks. */
 .tree-sound-ask {
   --ask-page: #f5f5f4;
@@ -656,7 +661,7 @@ html.ai-layout-enabled #activity-panel {
      and blue on the dark one, as its highlighted cards and links. */
   --ask-hover: #fde047;
   --ask-hover-ink: #292524;
-  position: fixed;
+  position: absolute;
   z-index: 100000000;
   width: 256px;
   border: 1px solid var(--ask-line);
