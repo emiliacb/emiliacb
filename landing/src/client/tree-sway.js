@@ -719,9 +719,6 @@ function build() {
 
   parts = [...limbs, ...leaves];
   scale = [...parts].sort((p, q) => (NOTE[p.key] || 0) - (NOTE[q.key] || 0));
-  for (const p of parts) {
-    p.vibHz = VIB_HZ * Math.pow((NOTE[p.key] || NOTE.trunk) / 220, 0.25);
-  }
 }
 
 /* ==========================================================================
@@ -1505,17 +1502,24 @@ const BOW_REACH = 8; // how near a part a press must land to ring it, tree units
 const BOW_GLIDE = 0.05; // how quickly the note slides to where the press is, s
 const BOW_VOL = 0.09; // its strike
 const HELD = 0.5;
-// The shaking you see: a shimmer at about VIB_HZ, the higher the note the
-// faster; a limb thrown up to VIB_WOOD tree units off its line, a leaf up to
-// VIB_LEAF radians about its pivot. It dies over VIB_FALL once let go.
-const VIB_HZ = 19;
-const VIB_WOOD = 2.4;
-const VIB_LEAF = 0.07;
-const VIB_FALL = 0.45;
+// The shaking you see lasts exactly as long as the note is heard and is as
+// strong as it sounds: struck, held, and dying away once let go. It shakes at
+// the note's own pitch, VIB_DIV times slower so a screen can show it: the
+// trunk's D about 3 times a second, the highest leaf's about 24. At its
+// strike a limb is thrown VIB_WOOD tree units off its line, a leaf VIB_LEAF
+// radians about its pivot.
+const VIB_DIV = 24;
+const VIB_WOOD = 4;
+const VIB_LEAF = 0.1;
 
 // Every part, by its note, low to high: the scale the press slides along.
 let scale = [];
-const bow = { on: false, voice: null, at: 0, from: 0, pos: 0 };
+const bow = {
+  on: false, voice: null, at: 0, from: 0, pos: 0,
+  // How loud the note is now, as a share of its strike, and how fast it moves
+  // towards where it is going; the note, and how far round its shaking is.
+  env: 0, tc: 0.2, f: 0, ph: 0,
+};
 
 /** Holds part `p`'s note at `f`: its partials, each settling to HELD of its strike. */
 function heldVoice(p, f, pan) {
@@ -1561,6 +1565,9 @@ function onBowPress(event) {
   bow.at = scale.indexOf(at);
   bow.pos = bow.at;
   bow.from = event.clientY;
+  bow.f = NOTE[at.key] || NOTE.trunk;
+  bow.env = 1;
+  bow.tc = partials(at, bow.f, 1)[0][3] / 7;
   const x = at.kind === "leaf" ? at.cx : at.rx[at.n >> 1];
   bow.voice = heldVoice(at, NOTE[at.key] || NOTE.trunk, Math.max(-0.7, Math.min(0.7, (x - 200) / 200)));
   at.rang = ac.currentTime;
@@ -1589,23 +1596,25 @@ function stopBow() {
   }
 }
 
-/** Each frame: the note the press is at on the scale, and what shakes. */
+/** Each frame: the note the press is at on the scale, how loud it is, and what shakes. */
 function bowing(dt) {
   const v = bow.voice;
   const i = Math.min(scale.length - 2, Math.floor(bow.pos));
   const u = bow.pos - i;
+  const lo = scale[i];
+  const hi = scale[i + 1];
   if (v) {
-    const lo = scale[i];
-    const hi = scale[i + 1];
-    const f = Math.exp((1 - u) * Math.log(NOTE[lo.key]) + u * Math.log(NOTE[hi.key]));
+    bow.f = Math.exp((1 - u) * Math.log(NOTE[lo.key]) + u * Math.log(NOTE[hi.key]));
     const t = sound.ac.currentTime;
-    for (const { osc, mult } of v) osc.frequency.setTargetAtTime(f * mult, t, BOW_GLIDE);
+    for (const { osc, mult } of v) osc.frequency.setTargetAtTime(bow.f * mult, t, BOW_GLIDE);
   }
-  const fall = Math.exp(-dt / VIB_FALL);
+  // The note's own envelope, as heldVoice and stopBow shape its first partial.
+  const k = 1 - Math.exp(-dt / bow.tc);
+  bow.env += ((bow.on ? HELD : 0) - bow.env) * k;
+  if (bow.env < 0.01) bow.env = 0;
+  bow.ph = (bow.ph + (TAU * bow.f * dt) / VIB_DIV) % TAU;
   for (const p of parts) {
-    const want = !v ? 0 : p === scale[i] ? 1 - u : p === scale[i + 1] ? u : 0;
-    p.vib = want > p.vib ? want : Math.max(want, p.vib * fall);
-    if (p.vib < 0.002) p.vib = 0;
+    p.vib = !bow.env ? 0 : bow.env * (p === lo ? 1 - u : p === hi ? u : 0);
   }
 }
 
@@ -1831,10 +1840,10 @@ function pose() {
     // with a little of its octave, still at its base, so whatever hangs from
     // it is carried along.
     if (l.vib > 0.002) {
-      const ph = TAU * l.vibHz * clock;
+      const ph = bow.ph;
       const a = l.vib * VIB_WOOD;
       const c1 = Math.cos(ph);
-      const c2 = 0.35 * Math.cos(2.03 * ph + 1);
+      const c2 = 0.35 * Math.cos(2 * ph + 1);
       for (let i = 1; i < l.n; i++) {
         const u = i / (l.n - 1);
         const d = a * (Math.sin(Math.PI * u) * c1 + Math.sin(TAU * u) * c2);
@@ -1893,7 +1902,7 @@ function drawLeaves() {
     const px = L.dx[j] + L.cos[j] * ox - L.sin[j] * oy;
     const py = L.dy[j] + L.sin[j] * ox + L.cos[j] * oy;
     const turn = soft(f.theta, f.limit);
-    const shake = f.vib > 0.002 ? f.vib * VIB_LEAF * Math.cos(TAU * f.vibHz * clock) : 0;
+    const shake = f.vib > 0.002 ? f.vib * VIB_LEAF * Math.cos(bow.ph) : 0;
     const ang = L.rot[j] + turn + shake;
     const twist = soft(f.twist, TWIST_MAX);
     const q = 1 - (f.squash * (1 - Math.cos(twist))) / (1 - Math.cos(TWIST_MAX));
