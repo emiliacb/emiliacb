@@ -12,7 +12,6 @@ export type ClientEntry =
   | "distortion"
   | "dropdown"
   | "email-link"
-  | "github-sidebar"
   | "gradient-distortion"
   | "gradient-layers"
   | "ink-cursor"
@@ -22,9 +21,11 @@ export type ClientEntry =
   | "page-cotas"
   | "posthog"
   | "pretext"
+  | "sidebars"
   | "tree-sway"
   | "tree-warp"
-  | "ui-drawer";
+  | "ui-drawer"
+  | "webmcp";
 
 export type Assets = {
   /** Hashed URL of a client bundle, e.g. "/assets/layout-3HX2K.js". */

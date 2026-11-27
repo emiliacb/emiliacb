@@ -38,6 +38,7 @@
 import { makeLens } from "./gradient/lens.js";
 import { makeRipple } from "./gradient/ripple.js";
 import { makeSound, note } from "./gradient/sound.js";
+import { isDark, onThemeChange } from "./lib/theme.js";
 
 (() => {
   const stack = document.getElementById("gradient-bg");
@@ -468,7 +469,7 @@ import { makeSound, note } from "./gradient/sound.js";
       now_.lens += ((lens.ready ? 1 : 0) - now_.lens) * (1 - Math.exp(-dt / 0.2));
       const ox = at.x0 - at.half, oy = at.y0 - at.half; // the square, in the box
       const ga = rgbOf("--g-a"), gb = rgbOf("--g-b");
-      const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+      const dark = isDark();
       // The disc is lit in the gradient's own colours, brighter: the inner
       // sheets' at its hot middle, the outer ones' at its edge.
       const lit = (c, k) => c.map((v) => v + (1 - v) * k);
@@ -506,7 +507,7 @@ import { makeSound, note } from "./gradient/sound.js";
     if (!colours[name]) colours[name] = getComputedStyle(stack).getPropertyValue(name).trim().split(/\s+/).map((c) => Number(c) / 255);
     return colours[name];
   }
-  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { for (const k in colours) delete colours[k]; });
+  onThemeChange(() => { for (const k in colours) delete colours[k]; });
 
   /* ---- the cursor's fall ---- */
 

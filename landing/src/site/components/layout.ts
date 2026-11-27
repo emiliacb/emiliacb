@@ -8,7 +8,15 @@ import footer from "./footer";
 import languageSwitcher from "./language-switcher";
 import activityPanel from "./activity-panel";
 import githubSidebar from "./github-sidebar";
+import linkedinSidebar from "./linkedin-sidebar";
+import emailSidebar from "./email-sidebar";
+import calendarSidebar from "./calendar-sidebar";
 import { AI_LAYOUT_ENABLED, AI_LAYOUT, AI_FEATURE_ENABLED } from "./frame";
+
+// English on every page: the detail lives in llms.txt, which is in English too.
+const AGENT_NOTE =
+  "Note for AI agents: this page exposes WebMCP tools. " +
+  `Read ${SITE_URL}/llms.txt to learn which ones and how to call them.`;
 
 type LayoutProps = {
   ctx: RenderCtx;
@@ -59,6 +67,17 @@ export default function layout({
       style="--ai-layout-top: ${AI_LAYOUT.top}; --ai-layout-right: ${AI_LAYOUT.right}; --ai-layout-bottom: ${AI_LAYOUT.bottom}; --ai-layout-left: ${AI_LAYOUT.left};"
     >
       <head>
+        <script>
+          // Puts back the colour mode the visitor chose (src/client/lib/theme.js,
+          // which writes the same key) before the first paint: no attribute
+          // follows the system, and a stored "light" or "dark" overrides it.
+          // Here and not in a bundle because a deferred script would run after
+          // the page had been painted in the system's mode.
+          try {
+            var mode = localStorage.getItem("theme");
+            if (mode === "light" || mode === "dark") document.documentElement.dataset.theme = mode;
+          } catch (e) {}
+        </script>
         <script>
           // Keeps the AI layout across navigations inside the site (a multi-page
           // app, so the toggle would otherwise reset on every link click), and
@@ -131,7 +150,7 @@ export default function layout({
           ? html`<link rel="alternate" type="text/markdown" href="${SITE_URL}${markdownPath(ctx.lang, path)}" />`
           : null}
         <meta name="build-id" content="${ctx.assets.buildId}" />
-        <!-- The GitHub sidebar's drawer, loaded on demand by github-sidebar.js. -->
+        <!-- The contact sidebars' drawer, loaded on demand by sidebars.js. -->
         <meta name="asset:ui-drawer" content="${ctx.assets.script("ui-drawer")}" />
         ${AI_FEATURE_ENABLED
           ? html`<meta name="asset:pretext" content="${ctx.assets.script("pretext")}" />`
@@ -237,13 +256,9 @@ document.head.appendChild(o)}initApollo();</script>
             left: 0;
             height: 3px;
             width: 0;
-            background: #86efac;
+            background: var(--color-signal);
             z-index: 9999;
             pointer-events: none;
-          }
-
-          @media (prefers-color-scheme: dark) {
-            #loading-bar { background: #1d4ed8; }
           }
 
           #loading-bar.loading {
@@ -321,6 +336,12 @@ document.head.appendChild(o)}initApollo();</script>
       </head>
 
       <body class="text-stone-800 dark:text-stone-100 overscroll-none md:overscroll-auto">
+        <!-- For AI agents: hidden from sight, not from the DOM text or the accessibility tree. -->
+        <p
+          style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap"
+        >
+          ${AGENT_NOTE}
+        </p>
         <div id="scroll-wrapper">
         <div id="loading-bar"></div>
         <div
@@ -368,7 +389,7 @@ document.head.appendChild(o)}initApollo();</script>
             ${navbar(ctx)}
             <main
               id="content"
-              class="min-h-static-screen-minus-nav overflow-hidden flex flex-col justify-between md:justify-start w-full px-4 sm:px-8 md:pt-6 m-auto max-w-[60rem] h-full pb-16 md:pb-24"
+              class="min-h-static-screen-minus-nav overflow-hidden flex flex-col justify-between md:justify-start w-full px-4 sm:px-8 md:pt-6 m-auto max-w-[var(--size-content)] h-full pb-16 md:pb-24"
             >
               ${children}
             </main>
@@ -383,11 +404,11 @@ document.head.appendChild(o)}initApollo();</script>
         ${withFooter ? footer(ctx) : null}
         </div>
         ${languageSwitcher(ctx)}
-        ${githubSidebar(ctx)}
+        ${githubSidebar(ctx)} ${linkedinSidebar(ctx)} ${emailSidebar(ctx)} ${calendarSidebar(ctx)}
         ${AI_FEATURE_ENABLED ? activityPanel() : null}
         <script src="${ctx.assets.script("layout")}" defer></script>
         <script src="${ctx.assets.script("navigation")}" defer></script>
-        <script src="${ctx.assets.script("github-sidebar")}" defer></script>
+        <script src="${ctx.assets.script("sidebars")}" defer></script>
         ${withCotas
           ? html`<script src="${ctx.assets.script("page-cotas")}" data-air="off" defer></script>`
           : null}
@@ -396,6 +417,8 @@ document.head.appendChild(o)}initApollo();</script>
           : html`<script src="${ctx.assets.script("gradient-layers")}" defer></script>`}
         <!-- The ink cursor, on every page (src/client/ink-cursor.js). -->
         <script src="${ctx.assets.script("ink-cursor")}" defer></script>
+        <!-- WebMCP tools for browser agents, on every page (src/client/webmcp.js). -->
+        <script src="${ctx.assets.script("webmcp")}" defer></script>
         ${AI_FEATURE_ENABLED
           ? html`
               <script src="${ctx.assets.script("activity-logger")}" defer></script>

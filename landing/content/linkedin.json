@@ -1,0 +1,20 @@
+{
+  "experience": [
+    { "company": "Sonora", "role": { "en": "Founding Engineer · Senior AI Engineer", "es": "Founding Engineer · Senior AI Engineer" }, "from": "2025-10" },
+    { "company": "Marvik", "role": { "en": "Senior AI Engineer", "es": "Senior AI Engineer" }, "from": "2025-05", "to": "2025-10" },
+    { "company": "BuildWithin", "role": { "en": "Senior Software Engineer, AI Team", "es": "Senior Software Engineer, Equipo de IA" }, "from": "2024-02", "to": "2025-05" },
+    { "company": "Fair Share Group", "role": { "en": "Founding Software Engineer, part-time", "es": "Ingeniera de Software Fundadora, part-time" }, "from": "2023-12", "to": "2024-02" },
+    { "company": "Mercado Libre", "role": { "en": "Software Engineer", "es": "Ingeniera de Software" }, "from": "2021-03", "to": "2024-02" },
+    { "company": "Freelance", "role": { "en": "Full Stack Engineer, part-time", "es": "Ingeniera Full Stack, part-time" }, "from": "2020-07", "to": "2024-02" }
+  ],
+  "latestPost": {
+    "url": "https://www.linkedin.com/feed/update/urn:li:activity:7530752338014375937/",
+    "date": "2026-11-23",
+    "lang": "es",
+    "lines": [
+      "Ganamos! (el tercer puesto)",
+      "Cómo hicimos en 2 horas casi 4 días de experimentos de Computación Cuántica",
+      "Y por qué te puede interesar para aplicarlo a tus workflows con IA"
+    ]
+  }
+}

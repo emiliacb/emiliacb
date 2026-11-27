@@ -176,6 +176,43 @@ export function renderSiteMarkdown(ctxFor: (lang: Lang) => RenderCtx): MarkdownF
   return files;
 }
 
+export type ManifestEntry = {
+  /** Root-relative path of the .md file: "/en/about.md", "/en.md", "/es/blog/<slug>.md". */
+  path: string;
+  title: string;
+  lang: Lang;
+  /** "index" lists other pages (the blog); the rest are a page or a post. */
+  kind: "page" | "post" | "index";
+};
+
+/**
+ * What src/client/webmcp/content-tools.js lists as the site's Markdown pages,
+ * written to dist/webmcp/pages.json. It comes from the same loops as
+ * renderSiteMarkdown, so a page cannot have a .md file and be missing here
+ * (the test in test/site/markdown.test.ts holds the two together); parsing
+ * llms.txt in the browser would only cover the English pages and drop titles
+ * whenever its prose changes. Paths are root-relative: the tool resolves them
+ * against the origin it runs on, so they also work in wrangler dev.
+ */
+export function renderPagesManifest(ctxFor: (lang: Lang) => RenderCtx): ManifestEntry[] {
+  const entries: ManifestEntry[] = [];
+  for (const lang of LANGS) {
+    const ctx = ctxFor(lang);
+    for (const page of PAGES) {
+      entries.push({
+        path: markdownPath(lang, page.path),
+        title: ctx.t.pages[page.id].mapTitle,
+        lang,
+        kind: page.id === "blog" ? "index" : "page",
+      });
+    }
+    for (const post of ctx.content.posts) {
+      entries.push({ path: markdownPath(lang, `/blog/${post.slug}`), title: post.title, lang, kind: "post" });
+    }
+  }
+  return entries;
+}
+
 /** Labs pages are WebGL experiments: listed under "Optional" in llms.txt. */
 const OPTIONAL_PAGES: readonly PageId[] = ["labs-distortion", "labs-distortion-bg"];
 
@@ -189,6 +226,31 @@ function pageLink(ctx: RenderCtx, id: PageId): string {
   const t = ctx.t.pages[id];
   return `- [${t.mapTitle}](${SITE_URL}${markdownPath(ctx.lang, pagePath(id))}): ${t.blurb}`;
 }
+
+/**
+ * The WebMCP tools every page registers (src/client/webmcp/*-tools.js). Keep in
+ * step with them: a test fails when a tool is missing here.
+ */
+const WEBMCP_TOOLS: readonly (readonly [name: string, summary: string])[] = [
+  ["get_css", "the CSS agents have applied so far"],
+  ["get_variables", "the site's CSS variables (design tokens), declared and computed"],
+  ["get_css_by_selector", "computed styles of the elements a selector matches"],
+  ["set_css", "replace the page's custom stylesheet"],
+  ["set_css_by_selector", "set or remove declarations for one selector"],
+  ["reset_css", "remove all custom CSS"],
+  ["get_links_and_buttons", "the links and buttons a visitor could click, with ids"],
+  ["click_link_or_button", "click a link or button by id, text or selector"],
+  ["set_google_font", "load a Google Fonts family (apply it afterwards with the CSS tools)"],
+  ["list_loaded_fonts", "the Google Fonts loaded in this tab"],
+  ["list_md_pages", "list the site's Markdown pages (and the articles you created in this tab)"],
+  ["read_md_page", "read one Markdown page, in parts when it is long"],
+  ["create_article", "show a temporary article, styled as a blog post, in this tab only"],
+  ["open_custom_sidebar", "open a sidebar like the site's own with a title and sanitized HTML"],
+  ["close_sidebar", "close whichever sidebar is open"],
+  ["insert_element", "insert sanitized HTML next to or inside an element"],
+  ["remove_inserted_elements", "remove what insert_element added"],
+  ["set_text_content", "replace the plain text of one or all elements a selector matches"],
+];
 
 /** /llms.txt: what the site is and where the Markdown versions live. */
 export function renderLlmsTxt(ctxFor: (lang: Lang) => RenderCtx): string {
@@ -235,6 +297,15 @@ export function renderLlmsTxt(ctxFor: (lang: Lang) => RenderCtx): string {
       `- [Schedule a meeting](${CONTACT.calendar})`,
       `- [Resume (PDF)](${SITE_URL}/public/cv.pdf)`,
     ]),
+    "",
+    "## WebMCP tools",
+    "",
+    "Every page exposes WebMCP tools that let a browser agent restyle the page it is looking at. " +
+      "The changes live in that tab only. If your browser does not show them as tools, call them " +
+      "from JavaScript in the tab: `await document.modelContext.getTools()` lists them and " +
+      "`await document.modelContext.executeTool(name, input)` runs one.",
+    "",
+    list(WEBMCP_TOOLS.map(([name, summary]) => `- \`${name}\`: ${summary}`)),
     "",
     "## Optional",
     "",
