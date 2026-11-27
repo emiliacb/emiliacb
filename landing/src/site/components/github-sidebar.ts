@@ -147,12 +147,10 @@ export default function githubSidebar(ctx: RenderCtx, stats: GithubStats = githu
       <ui-drawer-backdrop hidden class="gh-backdrop"></ui-drawer-backdrop>
       <ui-drawer-content hidden class="gh-sheet text-stone-800 dark:text-stone-100">
         <div class="gh-grip" aria-hidden="true"></div>
-        <header class="flex items-start justify-between gap-4 px-6 pt-6 md:pt-10 pb-3 md:pb-4">
-          <div>
+        <header class="flex items-center justify-between gap-4 px-6 pt-6 md:pt-10 pb-3 md:pb-4">
+          <div class="flex items-baseline gap-3 min-w-0">
             <ui-drawer-title class="block text-2xl md:text-3xl font-light">${t.title}</ui-drawer-title>
-            <ui-drawer-description class="block text-sm mt-1"
-              >@${stats.user} · ${t.description}</ui-drawer-description
-            >
+            <span class="text-sm truncate">@${stats.user}</span>
           </div>
           <ui-drawer-close>
             <button

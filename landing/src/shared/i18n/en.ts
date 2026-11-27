@@ -46,10 +46,9 @@ export const en = {
 
   github: {
     title: "GitHub",
-    description: "what I've been shipping lately",
     close: "Close",
     prsMerged: "pull requests merged in the last 30 days",
-    monthsTitle: "Pull requests per month",
+    monthsTitle: "Per month",
     monthLabel: "{month}: {count} pull requests",
     monthSummary: "Pull requests merged per month, from {from} to {to}. The busiest month had {max}.",
     contributions: "{total} contributions in the last year",

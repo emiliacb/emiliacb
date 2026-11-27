@@ -182,6 +182,9 @@ await fs.writeFile(
   path.join(dist, "_redirects"),
   [
     "/cv /public/cv.pdf 302",
+    // public/ has one folder of its own, fonts/, which the next rule would
+    // read as a version and redirect into a 404. First match wins.
+    "/public/fonts/* /public/fonts/:splat 200",
     "# HTML from before the static build referenced versioned asset paths",
     "/public/:version/* /public/:splat 301",
     "",

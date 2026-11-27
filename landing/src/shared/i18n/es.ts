@@ -45,10 +45,9 @@ export const es: Dict = {
 
   github: {
     title: "GitHub",
-    description: "lo que vengo publicando",
     close: "Cerrar",
     prsMerged: "pull requests mergeados en los últimos 30 días",
-    monthsTitle: "Pull requests por mes",
+    monthsTitle: "Por mes",
     monthLabel: "{month}: {count} pull requests",
     monthSummary: "Pull requests mergeados por mes, de {from} a {to}. El mes con más tuvo {max}.",
     contributions: "{total} contribuciones en el último año",
