@@ -12,7 +12,6 @@ export type ClientEntry =
   | "distortion"
   | "dropdown"
   | "email-link"
-  | "github-sidebar"
   | "gradient-distortion"
   | "gradient-layers"
   | "ink-cursor"
@@ -22,6 +21,7 @@ export type ClientEntry =
   | "page-cotas"
   | "posthog"
   | "pretext"
+  | "sidebars"
   | "tree-sway"
   | "tree-warp"
   | "ui-drawer";

@@ -45,7 +45,6 @@ export const es: Dict = {
 
   github: {
     title: "GitHub",
-    close: "Cerrar",
     prsMerged: "pull requests mergeados en los últimos 30 días",
     monthsTitle: "Por mes",
     monthLabel: "{month}: {count} pull requests",
@@ -59,6 +58,40 @@ export const es: Dict = {
     more: "Más",
     updated: "Actualizado el",
     viewOnGithub: "Ver en GitHub",
+  },
+
+  sidebar: {
+    close: "Cerrar",
+  },
+
+  linkedin: {
+    title: "LinkedIn",
+    since: "{role}, desde {date}",
+    before: "Antes",
+    present: "hoy",
+    latestPost: "Último post",
+    readPost: "Leer en LinkedIn",
+    viewOnLinkedin: "Ver en LinkedIn",
+  },
+
+  email: {
+    title: "Email",
+    languages: "Escribime en español o inglés.",
+    copy: "Copiar email",
+    copied: "¡Copiado!",
+    gmail: "Abrir en Gmail",
+    superhuman: "Abrir en Superhuman",
+    mailApp: "Abrir en tu app de correo",
+    note: "Respondo desde Buenos Aires",
+    write: "Escribir",
+  },
+
+  calendar: {
+    title: "Agendar",
+    length: "15 o 30 min",
+    loading: "Cargando el calendario…",
+    where: "Google Meet",
+    openInCal: "Abrir en Cal.com",
   },
 
   emailLink: {

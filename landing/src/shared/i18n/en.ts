@@ -46,7 +46,6 @@ export const en = {
 
   github: {
     title: "GitHub",
-    close: "Close",
     prsMerged: "pull requests merged in the last 30 days",
     monthsTitle: "Per month",
     monthLabel: "{month}: {count} pull requests",
@@ -60,6 +59,40 @@ export const en = {
     more: "More",
     updated: "Updated",
     viewOnGithub: "View on GitHub",
+  },
+
+  sidebar: {
+    close: "Close",
+  },
+
+  linkedin: {
+    title: "LinkedIn",
+    since: "{role}, since {date}",
+    before: "Before",
+    present: "now",
+    latestPost: "Latest post",
+    readPost: "Read on LinkedIn",
+    viewOnLinkedin: "View on LinkedIn",
+  },
+
+  email: {
+    title: "Email",
+    languages: "Write to me in English or Spanish.",
+    copy: "Copy email",
+    copied: "Copied!",
+    gmail: "Open in Gmail",
+    superhuman: "Open in Superhuman",
+    mailApp: "Open in your mail app",
+    note: "I answer from Buenos Aires",
+    write: "Write",
+  },
+
+  calendar: {
+    title: "Schedule",
+    length: "15 or 30 min",
+    loading: "Loading the calendar…",
+    where: "Google Meet",
+    openInCal: "Open in Cal.com",
   },
 
   emailLink: {
