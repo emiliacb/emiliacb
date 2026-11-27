@@ -61,8 +61,23 @@ export function renderFooterLink(ctx: RenderCtx): HtmlEscapedString | Promise<Ht
       href="/${ctx.lang}${DOCS_PATH}"
       aria-label="${DOCS_COPY[ctx.lang].footerLinkLabel}"
       title="${DOCS_COPY[ctx.lang].footerLinkLabel}"
-      class="interactive text-sm hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 py-0.5 -ml-1 relative before:absolute before:inset-x-0 before:-inset-y-[11px] before:content-['']"
+      class="interactive text-sm hover:bg-strong hover:text-on-strong focus-visible:bg-strong focus-visible:text-on-strong px-1 py-0.5 -ml-1 relative before:absolute before:inset-x-0 before:-inset-y-[11px] before:content-['']"
       >${DOCS_COPY[ctx.lang].footerLink}</a
     >
   </li>`;
+}
+
+/**
+ * For the footer, under the copyright: the same news as the hidden note at the
+ * top of <body>, but visible. Agents that read only what is on screen (an
+ * accessibility tree filtered to visible nodes skips the 1px note) find it
+ * here, and a person reads the same words: nothing is shown to one and not
+ * the other.
+ */
+export function renderFooterNote(ctx: RenderCtx): HtmlEscapedString | Promise<HtmlEscapedString> | null {
+  if (!WEBMCP_ENABLED) return null;
+  const note = DOCS_COPY[ctx.lang].footerNote;
+  return html`<p class="mt-1">
+    ${note.before}<a href="/${ctx.lang}${DOCS_PATH}" class="underline underline-offset-2">${note.link}</a>${note.after}
+  </p>`;
 }
