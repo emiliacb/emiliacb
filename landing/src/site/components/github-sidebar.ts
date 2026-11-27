@@ -27,7 +27,7 @@ function monthlyChart(ctx: RenderCtx, stats: GithubStats) {
 
   return html`
     <figure>
-      <figcaption class="text-md italic mb-3">${t.monthsTitle}</figcaption>
+      <figcaption class="text-sm sm:text-base italic mb-2">${t.monthsTitle}</figcaption>
       <div role="img" aria-label="${summary}">
         <div class="gh-months" aria-hidden="true">
           ${months.map(
@@ -92,12 +92,16 @@ function contributionCalendar(ctx: RenderCtx, stats: GithubStats) {
 
   return html`
     <figure>
-      <figcaption class="text-md italic mb-3">
+      <figcaption class="text-sm sm:text-base italic mb-2">
         ${t.contributions.replace("{total}", fmt.format(total))}
       </figcaption>
       <div class="relative h-4 text-[0.65rem] opacity-75" aria-hidden="true">
         ${names.map(
-          (n) => html`<span class="absolute" style="left:${((n.col / weeks) * 100).toFixed(2)}%">${n.text}</span>`,
+          // Every other name only on the narrowest phones, where they would touch.
+          (n, i) =>
+            html`<span class="${i % 2 ? "absolute max-[359px]:hidden" : "absolute"}" style="left:${((n.col / weeks) * 100).toFixed(2)}%"
+              >${n.text}</span
+            >`,
         )}
       </div>
       <svg
@@ -122,7 +126,7 @@ function contributionCalendar(ctx: RenderCtx, stats: GithubStats) {
 export default function githubSidebar(ctx: RenderCtx, stats: GithubStats = githubStats) {
   const { github: t } = ctx.t;
   const fmt = new Intl.NumberFormat(ctx.lang);
-  const updated = new Intl.DateTimeFormat(ctx.lang, { dateStyle: "long", timeZone: "UTC" }).format(utc(stats.updatedAt));
+  const updated = new Intl.DateTimeFormat(ctx.lang, { dateStyle: "medium", timeZone: "UTC" }).format(utc(stats.updatedAt));
 
   // `side` is a placeholder: the client sets right or bottom by the viewport
   // before each opening. Content and backdrop start hidden so nothing shows
@@ -133,9 +137,9 @@ export default function githubSidebar(ctx: RenderCtx, stats: GithubStats = githu
       <ui-drawer-backdrop hidden class="gh-backdrop"></ui-drawer-backdrop>
       <ui-drawer-content hidden class="gh-sheet text-stone-800 dark:text-stone-100">
         <div class="gh-grip" aria-hidden="true"></div>
-        <header class="flex items-start justify-between gap-4 px-6 pt-6 md:pt-10 pb-4">
+        <header class="flex items-start justify-between gap-4 px-6 pt-6 md:pt-10 pb-3 md:pb-4">
           <div>
-            <ui-drawer-title class="block text-3xl font-light">${t.title}</ui-drawer-title>
+            <ui-drawer-title class="block text-2xl md:text-3xl font-light">${t.title}</ui-drawer-title>
             <ui-drawer-description class="block text-sm mt-1"
               >@${stats.user} · ${t.description}</ui-drawer-description
             >
@@ -154,8 +158,8 @@ export default function githubSidebar(ctx: RenderCtx, stats: GithubStats = githu
           </ui-drawer-close>
         </header>
 
-        <div class="gh-scroll flex flex-col gap-10 px-6 pb-6">
-          <p class="flex flex-col border-b border-stone-400 pb-6">
+        <div class="gh-scroll flex flex-col gap-4 sm:gap-6 md:gap-8 px-6 pb-4">
+          <p class="flex flex-col border-b border-stone-400 pb-4">
             <span class="gh-number">${fmt.format(stats.prsMerged30d)}</span>
             <span class="text-sm text-pretty">${t.prsMerged}</span>
           </p>
@@ -163,7 +167,7 @@ export default function githubSidebar(ctx: RenderCtx, stats: GithubStats = githu
           ${monthlyChart(ctx, stats)} ${contributionCalendar(ctx, stats)}
         </div>
 
-        <footer class="gh-actions flex items-center justify-between gap-4 px-6 py-4 border-t border-stone-400">
+        <footer class="gh-actions flex items-center justify-between gap-4 px-6 py-3 border-t border-stone-400">
           <span class="text-xs opacity-75">${t.updated} ${updated}</span>
           <a
             class="interactive flex shrink-0 items-center gap-1 whitespace-nowrap w-fit border border-black dark:border-white px-3 py-1.5 text-sm

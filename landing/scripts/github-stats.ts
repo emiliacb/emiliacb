@@ -32,7 +32,7 @@ const AGENT_PRS = [
   // Hermes does not say who asked, so all of its PRs count.
   "author:app/hermes-bsario",
 ];
-const MONTHS = 12;
+const MONTHS = 6;
 const SEARCH_INTERVAL_MS = 2_200;
 
 const root = path.resolve(import.meta.dirname, "..");
