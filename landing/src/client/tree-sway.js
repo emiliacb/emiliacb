@@ -1533,11 +1533,11 @@ const SYMP_CENTS = 30;
 const SYMP_RISE = 0.12;
 const SYMP_VIB = 0.6; // its shaking, at its loudest, as a share of the pressed part's
 const SYMP_GLOW = 0.75; // and its light
-// The light: warm, the yellow of the tree's own tips, GLOW_ALPHA at its centre
-// and gone GLOW_R tree units out. It has to show on wood thinned to the paper
-// by being touched, so it is a colour, not white.
-const GLOW = "255, 196, 64";
-const GLOW_ALPHA = 0.55;
+// The light: in the ink the tree's construction is drawn in (its spirals and
+// angles, green on the light page and pink on the dark one), GLOW_ALPHA at its
+// centre and gone GLOW_R tree units out. It has to show on wood thinned to the
+// paper by being touched, so it is that ink, not white.
+const GLOW_ALPHA = 0.35;
 const GLOW_R = 70;
 
 // Every sympathetic voice still sounding: those answering the held note, and
@@ -2953,12 +2953,19 @@ function drawPlate() {
 }
 
 /**
- * Lights each part sounding a held note: a radial wash of warm light over the
+ * Lights each part sounding a held note: a radial wash of the tree's ink over the
  * part alone, from where the press landed on the pressed one and from its
  * middle on one answering it, as strong as it sounds.
  */
 function drawGlow() {
   let wood = null;
+  // The ink as r, g, b, whatever form the page gives it in, for the wash to
+  // fade it out to nothing rather than towards black.
+  g.fillStyle = TONE.spiral || INK;
+  const ink = g.fillStyle;
+  const rgb = ink.startsWith("#")
+    ? [1, 3, 5].map((i) => parseInt(ink.slice(i, i + 2), 16)).join(", ")
+    : (ink.match(/[\d.]+/g) || ["13", "87", "41"]).slice(0, 3).join(", ");
   for (const p of parts) {
     if (p.glow <= 0.01) continue;
     g.setTransform(dpr * sc, 0, 0, dpr * sc, dpr * ox, dpr * oy);
@@ -2999,9 +3006,9 @@ function drawGlow() {
     }
     const a = GLOW_ALPHA * p.glow;
     const wash = g.createRadialGradient(cx, cy, 0, cx, cy, r);
-    wash.addColorStop(0, `rgba(${GLOW}, ${a.toFixed(3)})`);
-    wash.addColorStop(0.45, `rgba(${GLOW}, ${(a * 0.45).toFixed(3)})`);
-    wash.addColorStop(1, `rgba(${GLOW}, 0)`);
+    wash.addColorStop(0, `rgba(${rgb}, ${a.toFixed(3)})`);
+    wash.addColorStop(0.45, `rgba(${rgb}, ${(a * 0.45).toFixed(3)})`);
+    wash.addColorStop(1, `rgba(${rgb}, 0)`);
     g.fillStyle = wash;
     g.fill();
     g.restore();
