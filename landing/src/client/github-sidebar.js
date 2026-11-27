@@ -66,12 +66,20 @@
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
     opener = link;
+    // Dims the link while the drawer downloads. Once it is loaded the promise
+    // settles before the next frame, so this never shows.
+    link.setAttribute("aria-busy", "true");
+    var done = function () {
+      link.removeAttribute("aria-busy");
+    };
     load().then(
       function () {
+        done();
         placeSide();
         drawer.open = true;
       },
       function () {
+        done();
         // No drawer: the link does what it would have done.
         window.open(link.href, "_blank", "noopener");
       }

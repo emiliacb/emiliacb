@@ -148,8 +148,7 @@ export default function githubSidebar(ctx: RenderCtx, stats: GithubStats = githu
             <button
               type="button"
               aria-label="${t.close}"
-              class="interactive flex items-center justify-center size-8 -mr-2
-                hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black
+              class="gh-close interactive relative flex items-center justify-center size-8 -mr-2
                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
                 focus-visible:outline-current [&>svg]:w-5 [&>svg]:h-5"
             >
@@ -170,8 +169,7 @@ export default function githubSidebar(ctx: RenderCtx, stats: GithubStats = githu
         <footer class="gh-actions flex items-center justify-between gap-4 px-6 py-3 border-t border-stone-400">
           <span class="text-xs opacity-75">${t.updated} ${updated}</span>
           <a
-            class="interactive flex shrink-0 items-center gap-1 whitespace-nowrap w-fit border border-black dark:border-white px-3 py-1.5 text-sm
-              hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black
+            class="gh-invert interactive flex shrink-0 items-center gap-1 whitespace-nowrap w-fit border border-black dark:border-white px-3 py-1.5 text-sm
               focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black
               [&>svg]:w-4 [&>svg]:h-4"
             href="${CONTACT.github}"

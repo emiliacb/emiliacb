@@ -1667,6 +1667,32 @@ html.ink-cursor #ink-cursor.on {
   paint-order: stroke;
 }
 
+/* Inverted on hover like the site's other buttons, but only where there is a
+   real hover: a tap on a phone would leave it stuck inverted. */
+@media (hover: hover) and (pointer: fine) {
+  .gh-close:hover,
+  .gh-invert:hover {
+    @apply bg-black text-white dark:bg-white dark:text-black;
+  }
+}
+
+/* 32px to the eye, 44px to a finger, without growing the header. */
+.gh-close::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+/* A tap that beats the drawer's download: the link answers at once. */
+a[data-github-sidebar] {
+  transition-property: background-color, color, scale, opacity;
+}
+
+a[data-github-sidebar][aria-busy="true"] {
+  opacity: 0.5;
+  cursor: progress;
+}
+
 /* The ink cursor is drawn in the page, under the top layer the sheet opens in,
    so over the sheet and its backdrop the system's cursor comes back. */
 html.ink-cursor ui-drawer-viewport,
