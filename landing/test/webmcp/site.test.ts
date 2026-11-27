@@ -83,7 +83,7 @@ describe("page integration", () => {
     const { ctxFor } = await setup();
     const ctx = ctxFor("en");
 
-    expect(markup(renderAgentNote())).toContain("/llms.txt");
+    expect(markup(renderAgentNote())).toContain('href="/mcp.md"');
     expect(markup(renderHead(ctx))).toContain('name="asset:webmcp-markdown" content="/assets/webmcp-markdown.js"');
     expect(markup(renderScript(ctx))).toContain('src="/assets/webmcp.js"');
     expect(renderRedirects()).toContain("/en/labs/webmcp /en/mcp 301");

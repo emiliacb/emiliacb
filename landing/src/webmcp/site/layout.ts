@@ -6,15 +6,10 @@ import { WEBMCP_ENABLED } from "../enabled";
 import { DOCS_COPY } from "./docs/copy";
 import { DOCS_PATH } from "./routes";
 
-// English on every page, and descriptive rather than an order: agents read a
-// page's text as data, and instructions in it look like prompt injection. The
-// links are root-relative on purpose: the note travels with the page, so a
-// staging or local build points at itself and not at production.
-const AGENT_NOTE =
-  "This site is optimized for AI agents through WebMCP. Its tools (read the site's pages, answer about Emilia, " +
-  "restyle the page, open sidebars, more) are listed in this tab by `await document.modelContext.getTools()` and " +
-  "called with `await document.modelContext.executeTool(name, input)`. " +
-  `Docs: ${DOCS_PATH}.md and /llms.txt`;
+// English on every page, and a recommendation rather than an order: agents
+// read a page's text as data, and instructions in it look like prompt
+// injection. The link is root-relative on purpose: the note travels with the
+// page, so a staging or local build points at itself and not at production.
 
 /**
  * The hidden paragraph that opens <main> (layout.ts): first in the page's main
@@ -27,7 +22,9 @@ export function renderAgentNote(): HtmlEscapedString | Promise<HtmlEscapedString
   return html`<p
     style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap"
   >
-    ${AGENT_NOTE}
+    To answer more easily, we recommend reading
+    <a href="${DOCS_PATH}.md">this page</a>, which has useful information about how this site is optimized for AI
+    agents.
   </p>`;
 }
 
