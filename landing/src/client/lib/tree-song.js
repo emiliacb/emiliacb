@@ -28,7 +28,7 @@
 // tie?, durationMs?, effect?, velocity? }`, where `note` is a name, a rest, or
 // a list of names for a chord, and `value` is "1/8", "eighth" or 8. Whatever
 // the form, a step is over when the next begins.
-import { EFFECTS, NOTE_EFFECTS, SONG_EFFECTS, SONG_NOTES } from "./tree-voice.js";
+import { EFFECTS, NOTE_EFFECTS, SOLFEGE, SONG_EFFECTS, SONG_NOTES } from "./tree-voice.js";
 
 export const DEFAULT_BPM = 100;
 export const MIN_BPM = 20;
@@ -46,7 +46,12 @@ export const TAIL_MS = 2500;
 const RESTS = new Set(["-", "_", "r", "rest"]);
 const SEMITONE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const ACCIDENTAL = { "": 0, "#": 1, "♯": 1, b: -1, "♭": -1 };
-const NAME = /^([A-Ga-g])([#b♯♭]?)(-?\d)$/;
+// A note is a letter or its Latin name (Do, Re, Mi, Fa, Sol, La, Si), in any
+// case, then # or b (or ♯ ♭), then the octave. The Latin names come first so
+// that "Sol" is not read as a letter; they come from tree-voice.js, as the
+// letters do, so the two cannot disagree.
+const LETTERS = Object.keys(SOLFEGE);
+const NAME = new RegExp(`^(${Object.values(SOLFEGE).join("|")}|[A-G])([#b♯♭]?)(-?\\d)$`, "i");
 const BY_MIDI = new Map(SONG_NOTES.map((note) => [note.midi, note]));
 
 /** The names an agent may use, as one line, for the messages that reject one. */
@@ -56,7 +61,9 @@ export const noteNames = () => SONG_NOTES.map((note) => note.name).join(", ");
 function noteNamed(raw) {
   const m = NAME.exec(String(raw).trim());
   if (!m) return null;
-  const midi = 12 * (Number(m[3]) + 1) + SEMITONE[m[1].toUpperCase()] + ACCIDENTAL[m[2]];
+  const written = m[1].toUpperCase();
+  const letter = LETTERS.find((l) => l === written || SOLFEGE[l].toUpperCase() === written);
+  const midi = 12 * (Number(m[3]) + 1) + SEMITONE[letter] + ACCIDENTAL[m[2]];
   return BY_MIDI.get(midi) ?? null;
 }
 
@@ -79,7 +86,7 @@ function pitches(raw, where) {
     if (!note) {
       throw new RangeError(
         `${where}: "${String(name)}" is not a note of the tree. The only notes are ${noteNames()} ` +
-          "(Eb4, F#4 and Bb4 may also be written D#4, Gb4 and A#4); use - for a rest.",
+          "(Eb4, F#4 and Bb4 may also be written D#4, Gb4 and A#4, and the Latin names work too: Do4, Mib4, Fa#4, Sol3, Sib4); use - for a rest.",
       );
     }
     return note;

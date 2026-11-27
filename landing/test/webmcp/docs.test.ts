@@ -124,8 +124,10 @@ describe("how an agent finds the tools", () => {
     expect(note).toContain("https://emiliacabral.com/mcp.md");
     expect(note).toContain("https://emiliacabral.com/llms.txt");
     expect(markup(renderFooterLink(ctxFor("es")))).toContain('href="/es/mcp"');
-    expect(markup(renderFooterLink(ctxFor("es")))).toContain("Para agentes de IA");
-    expect(markup(renderFooterLink(ctxFor("en")))).toContain("For AI agents");
+    expect(markup(renderFooterLink(ctxFor("es")))).toContain(">MCP</a");
+    expect(markup(renderFooterLink(ctxFor("es")))).toContain('aria-label="MCP: herramientas para agentes de IA"');
+    expect(markup(renderFooterLink(ctxFor("en")))).toContain(">MCP</a");
+    expect(markup(renderFooterLink(ctxFor("en")))).toContain('aria-label="MCP: tools for AI agents"');
   });
 });
 

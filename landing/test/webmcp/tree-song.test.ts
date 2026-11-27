@@ -10,20 +10,37 @@ describe("the tree's notes", () => {
 });
 
 describe("the notes a song may write", () => {
-  it("add C3 (wood) and C5 (bell), which belong to no part of the tree", () => {
-    expect(SONG_NOTES.map((n) => n.name)).toEqual(["D2", "A2", "C3", "D3", "G3", "A3", "D4", "Eb4", "F#4", "A4", "Bb4", "C5", "D5"]);
+  it("add C3 and C4 (wood) and C5 (bell), which belong to no part of the tree", () => {
+    expect(SONG_NOTES.map((n) => n.name)).toEqual(["D2", "A2", "C3", "D3", "G3", "A3", "C4", "D4", "Eb4", "F#4", "A4", "Bb4", "C5", "D5"]);
     expect(SONG_NOTES.filter((n) => n.part === null).map((n) => [n.name, n.voice])).toEqual([
       ["C3", "wood"],
+      ["C4", "wood"],
       ["C5", "glass bell"],
     ]);
     expect(NOTES.some((n) => n.part === null)).toBe(false);
   });
 
-  it("are all parsed, with no part for the two Cs and C4 still refused", () => {
-    const song = parseSong({ notes: "C3 C5+D5" });
+  it("are all parsed, with no part for the Cs and E4 still refused", () => {
+    const song = parseSong({ notes: "C3 C4 C5+D5" });
     expect(song.steps[0].notes[0]).toMatchObject({ name: "C3", part: null, voice: "wood" });
-    expect(song.steps[1].notes.map((n) => n.name)).toEqual(["C5", "D5"]);
-    expect(() => parseSong({ notes: "C4" })).toThrow(/"C4" is not a note/);
+    expect(song.steps[1].notes[0]).toMatchObject({ name: "C4", part: null, voice: "wood", hz: 261.63 });
+    expect(song.steps[2].notes.map((n) => n.name)).toEqual(["C5", "D5"]);
+    expect(() => parseSong({ notes: "E4" })).toThrow(/"E4" is not a note/);
+  });
+
+  it("may be written with their Latin names, in any case, with # b ♯ ♭", () => {
+    const names = (notes: string | string[]) => parseSong({ notes }).steps.map((s) => s.notes.map((n) => n.name));
+    expect(names("Do4/8 re4 Sib4 Fa#4 Mib4 SOL3 La4 Si♭4 Mi♭4 fa♯4")).toEqual([["C4"], ["D4"], ["Bb4"], ["F#4"], ["Eb4"], ["G3"], ["A4"], ["Bb4"], ["Eb4"], ["F#4"]]);
+    expect(names("Do4+Mi♭4+Sol3/2 -/4")).toEqual([["C4", "Eb4", "G3"], []]);
+    expect(
+      parseSong({ notes: [{ note: "dO5", value: "1/8" }, { note: ["Re4", "la4"] }] }).steps.map((s) => s.notes.map((n) => n.name)),
+    ).toEqual([["C5"], ["D4", "A4"]]);
+    // The letters still mean what they did (Bb is the letter B flat, not Si).
+    expect(names("bb4")).toEqual([["Bb4"]]);
+  });
+
+  it("refuse a Latin name that is not on the tree, naming the Latin names", () => {
+    expect(() => parseSong({ notes: "Mi4" })).toThrow(/"Mi4" is not a note of the tree.*Latin names/);
   });
 });
 
@@ -178,7 +195,7 @@ describe("parseSong", () => {
   });
 
   it("rejects a note the tree does not have, and lists the ones it has", () => {
-    expect(() => parseSong({ notes: "D4 C4" })).toThrow(/"C4" is not a note of the tree.*D2, A2, C3, D3/);
+    expect(() => parseSong({ notes: "D4 E4" })).toThrow(/"E4" is not a note of the tree.*D2, A2, C3, D3/);
   });
 
   it("rejects what cannot be played", () => {
