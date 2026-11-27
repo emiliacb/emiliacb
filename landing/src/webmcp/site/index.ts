@@ -4,3 +4,5 @@ export { renderAgentNote, renderFooterLink, renderHead, renderScript } from "./l
 export { renderLlmsSection } from "./llms";
 export { renderBuildFiles, renderPagesManifest, MANIFEST_PATH, type ManifestEntry } from "./manifest";
 export { renderRedirects } from "./redirects";
+export { renderRobots } from "./robots";
+export { isDisabledClientEntry } from "./routes";

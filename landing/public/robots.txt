@@ -1,11 +1,3 @@
 User-agent: *
 Allow: /llms.txt
-# WebMCP: the docs for agents (HTML and Markdown) and the skills they can read.
-Allow: /mcp
-Allow: /mcp.md
-Allow: /en/mcp
-Allow: /en/mcp.md
-Allow: /es/mcp
-Allow: /es/mcp.md
-Allow: /mcp/skills/
 Disallow: /

@@ -9,7 +9,10 @@ everything a tool changes lives in that tab.
 
 What an agent changes (its CSS, loaded Google Fonts, articles and the forced
 colour mode) is kept while the visitor navigates the site in this tab (links,
-back and forward) and a reload restores the original. It is never shared with
+back and forward) and a reload restores the original. An article is kept but not
+shown again until `create_article` is called with `show`. What the DOM tools put
+on a page (`insert_element`, `set_text_content`, `open_custom_sidebar`) is not
+kept: navigating clears it. It is never shared with
 another tab or a later visit. All of it is stored through
 `src/client/lib/nav-storage.js`: sessionStorage under the `nav:` prefix, emptied
 once per document load when `performance` says the load was a reload (the
@@ -59,10 +62,12 @@ src/webmcp/
     routes.ts           where the docs page lives (/mcp), and the Worker routes
     skills.ts           reads the skills' files; the build publishes them at
                         /mcp/skills/<name>/SKILL.md
-    docs/               the /{lang}/mcp page and its .md, from the tool catalog
-                        (copy.ts holds its words in both languages)
-    redirects.ts        /webmcp (+ .md, per language) and the old /labs/webmcp,
-                        all 301 to /mcp
+    docs/               the short /{lang}/mcp page and its .md: the tool list
+                        comes from the catalog, copy.ts holds the rest of its
+                        words in both languages
+    redirects.ts        /webmcp (+ .md, per language) and the old /labs/webmcp
+                        (with and without a language), all 301 to /mcp
+    robots.ts           the Allow lines for robots.txt, spliced in by the build
     index.ts            what the rest of the site imports
 ```
 
@@ -144,8 +149,16 @@ published at `/mcp/skills/<name>/...` for agents that can install skills.
 ## Turning it off
 
 Set `WEBMCP_ENABLED = false` in `enabled.ts`. The build then renders no script
-tag, no `<meta>`, no note, no llms.txt section, no `pages.json` and no
-redirects. (The two bundles are still built, nothing refers to them.)
+tag, no `<meta>`, no note, no footer link, no docs pages, no llms.txt section,
+no `pages.json`, no skills files, no redirects and no WebMCP lines in
+robots.txt, and it does not bundle the two `webmcp*.js` entries. The Worker
+registers no `/mcp` route either (`WEBMCP_LANGLESS_ROUTES` is empty), so
+`/mcp` and `/mcp.md` fall through to the assets and answer 404. Two leftovers
+are harmless: `"/mcp", "/mcp.md"` stay in `run_worker_first` in `wrangler.jsonc`
+(static JSON, it cannot read the flag; the Worker just passes those requests to
+the assets), and `src/webmcp/styles.css` is still `@import`-ed into the
+stylesheet by `src/styles.css`, so its few rules (`#custom-sidebar`,
+`.webmcp-docs`) are still built, unused.
 
 ## How to remove WebMCP
 
@@ -162,9 +175,11 @@ Delete the folder, then remove these (grep `WebMCP: see src/webmcp/README.md`):
    `loader: { ".md": "text" }` line, the `site`/`pages` and `markdownFiles` lines
    that add the docs pages, the `renderBuildFiles` loop and the
    `...webmcp.renderRedirects()` line.
-5b. `src/worker/index.ts` (the `WEBMCP_LANGLESS_ROUTES` import and spread),
-    `wrangler.jsonc` (`"/mcp", "/mcp.md"` in `run_worker_first`) and
-    `public/robots.txt` (the `Allow` lines for `/mcp`).
+5b. `src/worker/index.ts` (the `WEBMCP_LANGLESS_ROUTES` import and spread) and
+    `wrangler.jsonc` (`"/mcp", "/mcp.md"` in `run_worker_first`). The
+    `webmcp.renderRobots` and `webmcp.isDisabledClientEntry` calls in
+    `scripts/build.ts` go with its other `webmcp` lines (the robots.txt write
+    becomes a plain copy of `public/robots.txt`).
 6. `src/site/context.ts`: `"webmcp"` and `"webmcp-markdown"` in `ClientEntry`.
 7. `src/styles.css`: the `@import "./webmcp/styles.css"` line (the file must be
    inlined by the Tailwind CLI, which it is: postcss-import is built in).

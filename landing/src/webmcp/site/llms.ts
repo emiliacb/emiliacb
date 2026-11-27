@@ -21,9 +21,11 @@ export function renderLlmsSection(): string[] {
     ),
     "",
     "Every page exposes WebMCP tools that let a browser agent restyle the page it is looking at. " +
-      "The changes live in that tab only: they are kept while the visitor navigates the site in it, and a reload restores the original. If your browser does not show them as tools, call them " +
+      "The changes live in that tab only: styles, fonts, articles and the colour mode are kept while the visitor navigates the site in it (inserted elements and changed text are not: navigating clears them), and a reload restores the original. If your browser does not show them as tools, call them " +
       "from JavaScript in the tab: `await document.modelContext.getTools()` lists them and " +
-      "`await document.modelContext.executeTool(name, input)` runs one. " +
+      "`await document.modelContext.executeTool(name, input)` runs one: it resolves to a JSON string of " +
+      "`{content:[{type:\"text\", text}]}` (parse it, and parse `text` too: it is JSON), and rejects with an Error " +
+      "whose message says what happened and what to do next. " +
       "The skills are also tools: `list_skills` and `read_skill({ name })`.",
     "",
     ...WEBMCP_TOOLS.map(([name, summary]) => `- \`${name}\`: ${summary}`),

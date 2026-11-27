@@ -22,3 +22,15 @@ export const SKILLS_URL_PATH = `${DOCS_PATH}/skills`;
  * the flag, so the Worker's bundle stays free of the tool catalog.
  */
 export const WEBMCP_LANGLESS_ROUTES: readonly string[] = WEBMCP_ENABLED ? [DOCS_PATH] : [];
+
+/**
+ * The two bundles WebMCP adds to src/client/ (the build treats every top-level
+ * file there as an entry). Nothing refers to them when the feature is off, so
+ * the build skips them.
+ */
+const CLIENT_ENTRY_FILES: ReadonlySet<string> = new Set(["webmcp.js", "webmcp-markdown.js"]);
+
+/** True for a src/client/ file the build should not bundle because WebMCP is off. */
+export function isDisabledClientEntry(fileName: string): boolean {
+  return !WEBMCP_ENABLED && CLIENT_ENTRY_FILES.has(fileName);
+}
