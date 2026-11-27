@@ -118,16 +118,15 @@ describe("the /mcp docs page", () => {
 });
 
 describe("how an agent finds the tools", () => {
-  it("has the head links, an actionable hidden note and a footer link", async () => {
+  it("has the head links, the hidden note and a footer link", async () => {
     const { ctxFor } = await setup();
     const head = markup(renderHead(ctxFor("es")));
     expect(head).toContain('rel="describedby" href="/mcp.md" type="text/markdown"');
     expect(head).toContain('rel="help" href="/es/mcp"');
     const note = markup(renderAgentNote());
-    expect(note).toContain("document.modelContext.getTools()");
-    expect(note).toContain("document.modelContext.executeTool(name, input)");
-    expect(note).toContain("/mcp.md");
-    expect(note).toContain("/llms.txt");
+    expect(note).toContain("we recommend reading");
+    expect(note).toContain('href="/mcp.md"');
+    expect(note).toContain("how this site is optimized for AI");
     expect(note).not.toContain("https://");
     expect(markup(renderFooterLink(ctxFor("es")))).toContain('href="/es/mcp"');
     expect(markup(renderFooterLink(ctxFor("es")))).toContain(">MCP</a");
