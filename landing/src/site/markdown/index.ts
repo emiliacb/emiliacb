@@ -201,6 +201,8 @@ const WEBMCP_TOOLS: readonly (readonly [name: string, summary: string])[] = [
   ["set_css", "replace the page's custom stylesheet"],
   ["set_css_by_selector", "set or remove declarations for one selector"],
   ["reset_css", "remove all custom CSS"],
+  ["get_links_and_buttons", "the links and buttons a visitor could click, with ids"],
+  ["click_link_or_button", "click a link or button by id, text or selector"],
 ];
 
 /** /llms.txt: what the site is and where the Markdown versions live. */
