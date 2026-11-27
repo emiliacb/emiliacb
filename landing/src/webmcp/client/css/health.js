@@ -1,4 +1,4 @@
-// "Is the page still usable?": the checks the shield runs after every CSS
+// "Is the page still usable?": the checks run after every CSS
 // change. They read computed styles and hit-test the viewport, they never
 // change anything. Each problem has a stable `code`, so a problem the page
 // already had before the change is not blamed on it (see css-apply.js).

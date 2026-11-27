@@ -1,4 +1,4 @@
-// Pure color math for the shield's contrast check (WCAG 2.x relative
+// Pure color math for the page health contrast check (WCAG 2.x relative
 // luminance, no DOM), so it can be unit-tested.
 
 /** "rgb(1, 2, 3)" / "rgba(1 2 3 / 0.5)" as {r, g, b, a}, or null for any other notation. */

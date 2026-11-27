@@ -1,5 +1,8 @@
 // The one way agent CSS reaches the page: try it, check the page is still
-// usable, and either keep it or undo it and raise the shield.
+// usable, and either keep it or undo it and tell the agent what to fix. The
+// feedback is for the agent, which made the mistake and can correct it, so the
+// visitor only hears about it (the shield) when the agent deliberately forces a
+// change the checks flagged and the page is therefore left that way.
 import { MIN_CONTRAST, collectProblems, suspendTransitions } from "./health.js";
 import { commitState, emptyState, getState, paint, renderCss } from "./state.js";
 import { fail } from "../core/result.js";
@@ -52,23 +55,30 @@ function newProblems(before, after) {
   return after.filter((found) => !known.has(found.code));
 }
 
+function describe(found) {
+  return `${found.message} Fix: ${found.hint}`;
+}
+
 function rejection(problems) {
-  const lines = problems.map((found) => `- ${found.message} Fix: ${found.hint}`);
+  const lines = problems.map((found) => `- ${describe(found)}`);
   return fail(
     "The change was NOT applied: it broke the page, so it was rolled back and the page looks as before.\n" +
       `${lines.join("\n")}\n` +
-      `(The shield checks that the main elements stay visible, text keeps a contrast of at least ${MIN_CONTRAST}:1, ` +
-      "and nothing covers the viewport and blocks clicks.) The visitor was shown a notice with the option to " +
-      "apply it anyway. Send a corrected change.",
+      `(The checks are that the main elements stay visible, text keeps a contrast of at least ${MIN_CONTRAST}:1, ` +
+      "and nothing covers the viewport and blocks clicks.) Send a corrected change. If the effect is intended " +
+      'despite this (for example a deliberately faint decorative style), send the same change with "force": true; ' +
+      "it is then applied and the visitor is offered a button to restore the original style.",
   );
 }
 
 /**
  * Applies `next` (a {css, rules} state) if the page stays usable. Resolves to
- * the warnings (declarations the browser ignores); throws a ToolError, after
- * rolling back and showing the shield, when the change broke the page.
+ * the warnings (declarations the browser ignores). When the change broke the
+ * page it is rolled back silently and a ToolError tells the agent what to fix,
+ * unless `force` is set: then it is kept, the problems are returned as
+ * warnings, and the visitor gets the shield with a way back.
  */
-export function applyGuarded(next) {
+export function applyGuarded(next, force = false) {
   const css = renderCss(next);
   checkParses(css);
   const before = getState();
@@ -80,10 +90,14 @@ export function applyGuarded(next) {
     commitState(next);
     return unsupportedDeclarations(css);
   }
-  paint(before);
-  showShield(problems, {
-    onApply: () => commitState(next),
-    onRestore: () => commitState(emptyState()),
-  });
-  throw rejection(problems);
+  if (!force) {
+    paint(before);
+    throw rejection(problems);
+  }
+  commitState(next);
+  showShield({ onRestore: () => commitState(emptyState()) });
+  return [
+    ...problems.map((found) => `Applied anyway (force): ${describe(found)}`),
+    ...unsupportedDeclarations(css),
+  ];
 }
