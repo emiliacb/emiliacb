@@ -448,6 +448,7 @@ async function init() {
   const layers = [];
 
   if (native) {
+    // oxlint-disable-next-line no-console -- one-line note on which render path is live
     console.info("[fx-bg] HTML-in-Canvas supported — using live element textures");
 
     // Attach the (still invisible, opacity:0) canvas now and reparent the
@@ -491,6 +492,9 @@ async function init() {
   // fully faded in AND (fallback path) the original has fully faded out —
   // otherwise the distortion would be visible mid-crossfade, while both
   // layers are still blending into each other.
+  // Pre-existing: nothing reads effectReady any more, so the effect does not
+  // actually wait for the crossfade the comment above describes.
+  // oxlint-disable-next-line no-unused-vars -- kept until the gate is rewired or dropped
   let effectReady = false;
   requestAnimationFrame(() => {
     canvasEl.style.opacity = "1";

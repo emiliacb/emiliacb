@@ -1,20 +1,16 @@
 import { html, raw } from "hono/html";
 import { Languages, Volume2, VolumeX } from "lucide-static";
-import { FOOTER_NAV, PAGES, SITE_TITLE } from "../../shared/site";
+import { FOOTER_NAV, SITE_TITLE, pagePath } from "../../shared/site";
 import type { RenderCtx } from "../context";
 import contact from "./contacts";
 import { languageLinks } from "./language-switcher";
 
 function footerContent(ctx: RenderCtx) {
-  const { footer, language, pages } = ctx.t;
+  const { footer: copy, language, pages } = ctx.t;
   const baseLangPath = `/${ctx.lang}`;
 
   // Footer nav: the shared order from FOOTER_NAV, the pages' footer names and paths.
-  const routes = FOOTER_NAV.map((id) => {
-    const def = PAGES.find((page) => page.id === id);
-    if (!def) throw new Error(`FOOTER_NAV names unknown page: ${id}`);
-    return { name: pages[id].navTitle, path: def.path };
-  });
+  const routes = FOOTER_NAV.map((id) => ({ name: pages[id].navTitle, path: pagePath(id) }));
 
   return html`
     <div>
@@ -25,7 +21,7 @@ function footerContent(ctx: RenderCtx) {
         <div class="flex flex-col lg:mx-auto">
           <h4 class="text-xl font-bold mb-4">${SITE_TITLE}</h4>
           <p class="text-sm pr-6 lg:pr-24 text-pretty">
-            ${footer.tagline}
+            ${copy.tagline}
           </p>
           <div class="mt-2 flex items-start gap-2">
             <dropdown-trigger class="relative w-fit z-10 py-[0.2rem]" variant="small" label="${language.label}">
@@ -42,7 +38,7 @@ function footerContent(ctx: RenderCtx) {
               id="sound-toggle"
               type="button"
               aria-pressed="true"
-              aria-label="${footer.sound}"
+              aria-label="${copy.sound}"
               class="group flex items-center justify-center size-7
                 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black
                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
@@ -56,8 +52,8 @@ function footerContent(ctx: RenderCtx) {
 
         <!-- Column 2: Navigation links -->
         <div class="flex flex-col lg:mx-auto">
-          <h4 class="text-md italic mb-1 md:mb-2">${footer.navigation}</h4>
-          <nav aria-label="${footer.navigationLabel}">
+          <h4 class="text-md italic mb-1 md:mb-2">${copy.navigation}</h4>
+          <nav aria-label="${copy.navigationLabel}">
             <ul class="flex flex-col">
               ${routes.map(
                 (route) => html`<li>
@@ -74,7 +70,7 @@ function footerContent(ctx: RenderCtx) {
 
         <!-- Column 3: Contact information -->
         <div class="flex flex-col lg:mx-auto">
-          <h4 class="text-md italic mb-1 md:mb-2">${footer.contact}</h4>
+          <h4 class="text-md italic mb-1 md:mb-2">${copy.contact}</h4>
           <div class="text-sm">${contact(ctx, { columnMode: true })}</div>
         </div>
       </div>
@@ -83,7 +79,7 @@ function footerContent(ctx: RenderCtx) {
       <div
         class="w-full text-center pt-8 text-xs opacity-75"
       >
-        © ${new Date().getFullYear()} ${footer.license}
+        © ${new Date().getFullYear()} ${copy.license}
       </div>
     </div>
   `;

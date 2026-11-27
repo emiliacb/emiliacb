@@ -105,7 +105,7 @@ import { MASCOT_COPY, MASCOT_ENDPOINT } from "../shared/mascot";
       }
       var raw = localStorage.getItem("activity_logs");
       storedLogsCache = raw ? JSON.parse(raw) : null;
-    } catch (e) {
+    } catch {
       storedLogsCache = null;
     }
     return storedLogsCache;
@@ -139,7 +139,7 @@ import { MASCOT_COPY, MASCOT_ENDPOINT } from "../shared/mascot";
       var stored = raw ? JSON.parse(raw) : null;
       var events = (stored && stored.events) || [];
       return events[events.length - 1] || null;
-    } catch (e) {
+    } catch {
       return null;
     }
   }
@@ -163,7 +163,7 @@ import { MASCOT_COPY, MASCOT_ENDPOINT } from "../shared/mascot";
         suppressAuto = true;
         window.__activityLogger.log(fields);
       }
-    } catch (e) {
+    } catch {
       // non-critical, skip
     }
     suppressAuto = false;

@@ -1,5 +1,5 @@
-import { readFile } from "fs/promises";
-import { fileURLToPath } from "url";
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 
 import { marked } from "marked";
 import { describe, it, expect } from "vitest";
@@ -54,12 +54,13 @@ describe("loadContent", () => {
       expect(post.html.en).toBeTruthy();
       expect(post.html.es).toBeTruthy();
       expect(post.date).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-
-      const source = await readFile(`${root}content/blog/${post.slug}.md`, "utf8");
-      if (source.includes("%table-of-contents%")) {
-        expect(post.html.es).toContain("Tabla de Contenidos");
-      }
     }
+
+    const sources = await Promise.all(
+      content.posts.map((post) => readFile(`${root}content/blog/${post.slug}.md`, "utf8")),
+    );
+    const withToc = content.posts.filter((_, i) => sources[i].includes("%table-of-contents%"));
+    for (const post of withToc) expect(post.html.es).toContain("Tabla de Contenidos");
   });
 
   it("renders the static pages in both languages", async () => {

@@ -243,7 +243,7 @@ class DropdownTrigger extends HTMLElement {
       el.style.transform = "translateY(-8px)";
       el.style.transition = "none";
       // Force reflow so the initial state applies before animating
-      el.offsetHeight;
+      void el.offsetHeight;
       el.style.transition = prefersReduced
         ? "opacity 100ms linear"
         : "opacity 200ms ease-out, transform 250ms cubic-bezier(0.23, 1, 0.32, 1)";

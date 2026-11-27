@@ -5,10 +5,16 @@ import { PAGES } from "../../src/shared/site";
 import { LANGLESS_ROUTES, matchesRoute } from "../../src/worker/index";
 
 /** wrangler.jsonc is JSONC: strip comments, but leave string contents (like "https://") alone. */
-function readWranglerJsonc(): { assets: { run_worker_first: string[] } } {
+type WranglerConfig = { assets: { run_worker_first: string[] } };
+
+function readWranglerJsonc(): WranglerConfig {
   const raw = readFileSync(new URL("../../wrangler.jsonc", import.meta.url), "utf8");
-  const json = raw.replace(/("(?:\\.|[^"\\])*")|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (_m, str) => str ?? "");
-  return JSON.parse(json);
+  const json = raw.replace(
+    /("(?:\\.|[^"\\])*")|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,
+    (_m, str: string | undefined) => str ?? "",
+  );
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- shape checked by the tests below
+  return JSON.parse(json) as WranglerConfig;
 }
 
 describe("Worker routes vs wrangler.jsonc", () => {
