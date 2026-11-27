@@ -862,7 +862,7 @@ const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
   (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const SIDE = IOS ? -1 : 1;
 let motionSeen = false;
-let dropPill = null; // takes the pill down, while it is up
+let askMotion = null; // asks the browser for the phone's motion, where it wants a tap for it (iOS)
 
 function onMotion(e) {
   const now = e.timeStamp || performance.now();
@@ -872,12 +872,6 @@ function onMotion(e) {
   const a = e.acceleration;
   const r = e.rotationRate;
   if (ig && ig.x != null) {
-    // Motion that arrives without being asked for needs no asking, and the
-    // pill's place is free for the sound's.
-    if (!motionSeen && dropPill) {
-      dropPill();
-      offerSound();
-    }
     if (!motionSeen) {
       motionSeen = true;
       offerTilt();
@@ -897,60 +891,43 @@ function onMotion(e) {
   device.lean = Number.isFinite(lean) ? lean : 0;
 }
 
-/** Listens to the phone's motion. Where the browser asks first (iOS), a pill
- * at the foot of the tree asks, on a tap: a permission prompt needs one, and
- * a pill says what it is for, where a tap anywhere would not. That tap is
- * also the press that lets the sound start, as any press on the page is. */
+/** Listens to the phone's motion. Where the browser asks first (iOS), it is
+ * asked by the press that lets the sound start: Allow, on the sound's window,
+ * or a tap anywhere else on the page (onMotionPress). The permission prompt
+ * needs a tap of its own, and the window already asks for one; a second
+ * button for it would be one too many. */
 function listenMotion() {
+  setTimeout(offerSound, HINT_AFTER);
   const DM = window.DeviceMotionEvent;
-  if (!DM) return setTimeout(offerSound, HINT_AFTER);
+  if (!DM) return;
   window.addEventListener("devicemotion", onMotion, { passive: true });
-  if (typeof DM.requestPermission !== "function") return setTimeout(offerSound, HINT_AFTER);
-  // Already granted in this visit: the events flow and no pill is needed,
-  // and its place is free for the sound's.
-  setTimeout(() => {
-    if (!motionSeen) offerMotion(DM);
-    else offerSound();
-  }, 700);
+  if (typeof DM.requestPermission === "function") armMotion(DM);
 }
 
-function offerMotion(DM) {
-  const es = (document.documentElement.lang || "").startsWith("es");
-  const pill = document.createElement("button");
-  pill.type = "button";
-  pill.className = "tree-motion-pill";
-  // Lucide's "vibrate", as the Schedule button beside it wears Lucide's calendar.
-  pill.innerHTML =
-    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" ' +
-    'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    '<path d="m2 8 2 2-2 2 2 2-2 2"/><path d="m22 8-2 2 2 2-2 2 2 2"/><rect width="8" height="14" x="8" y="5" rx="1"/></svg>' +
-    `<span>${es ? "Interactuar" : "Interact"}</span>`;
-  pill.setAttribute("aria-label", es ? "Mover el árbol con el teléfono" : "Move the tree with your phone");
-  box.appendChild(pill);
-  const gone = () => {
-    dropPill = null;
-    pill.classList.add("is-gone");
-    setTimeout(() => pill.remove(), 400);
+/** Readies the asking: once, from the next tap, unless the motion comes anyway
+ * (already allowed in this visit). A tap the browser does not take as one is
+ * not an answer: the one after asks again. */
+function armMotion(DM) {
+  askMotion = () => {
+    askMotion = null;
+    window.removeEventListener("touchend", onMotionPress, true);
+    if (!motionSeen) DM.requestPermission().catch(() => armMotion(DM));
   };
-  dropPill = gone;
-  pill.addEventListener("click", () => {
-    DM.requestPermission()
-      .then((state) => {
-        if (state === "granted") {
-          gone();
-          // That tap started the sound too: no window will ask for it.
-          tiltReady = true;
-        } else {
-          pill.querySelector("span").textContent = es ? "Sin permiso" : "Not allowed";
-          setTimeout(gone, 1400);
-        }
-      })
-      .catch(gone);
-  });
+  window.addEventListener("touchend", onMotionPress, { capture: true, passive: true });
 }
 
-// Once the phone's motion reaches the tree, and nothing is asking anything
-// (the pill, the sound's window), a sign at the foot of the tree says to move
+/** A tap on the page asks for the phone's motion, as it starts the sound
+ * (onFirstPress): not one on the sound's window, whose Allow asks itself, nor
+ * one on a link or a menu, which leads away. Only a touch's end: iOS takes
+ * that, not its start, as the tap a permission prompt needs. */
+function onMotionPress(event) {
+  if (hint && hint.contains(event.target)) return;
+  if (event.target instanceof Element && event.target.closest("a[href], dropdown-trigger")) return;
+  if (askMotion) askMotion();
+}
+
+// Once the phone's motion reaches the tree, and the sound's window is not
+// asking anything, a sign at the foot of the tree says to move
 // the phone: a phone rocking side to side, and the words. Without it nobody
 // would think to. It goes once the tree has been shaken, or after a while.
 // Only where the screen is touched: a laptop's motion moves nothing.
@@ -961,12 +938,12 @@ let tiltShown = false;
 let dropTilt = null;
 
 function offerTilt() {
-  if (!COARSE || tiltShown || !tiltReady || !motionSeen || hint || dropPill) return;
+  if (!COARSE || tiltShown || !tiltReady || !motionSeen || hint) return;
   tiltShown = true;
   setTimeout(() => {
     const es = (document.documentElement.lang || "").startsWith("es");
     const sign = document.createElement("div");
-    sign.className = "tree-motion-pill tree-tilt-sign";
+    sign.className = "tree-tilt-sign";
     sign.setAttribute("role", "status");
     // Lucide's "smartphone", rocked by styles.css.
     sign.innerHTML =
@@ -1073,8 +1050,8 @@ function startSound() {
 // press on the page still starts the sound and takes the window away; presses
 // on the window itself do not, so it can be dragged by its title bar without
 // answering it. It is given a moment first, for a browser that needs no press
-// to show it, and stays away while the pill is asking for the phone's motion:
-// that tap starts the sound too.
+// to show it. On iOS, Allow (or the tap elsewhere) also asks for the phone's
+// motion (listenMotion).
 const HINT_AFTER = 600;
 const HINT_UP = 0.5; // how far up the trunk its centre sits, from the ground
 const HINT_EDGE = 8; // px kept clear of the screen's edges
@@ -1199,7 +1176,7 @@ function dragHint(event) {
 }
 
 function offerSound() {
-  if (hint || dropPill) return;
+  if (hint) return;
   if (!sound.want || !sound.ac || sound.ac.state === "running") {
     // Nothing to ask: the phone's sign may come.
     tiltReady = true;
@@ -1231,6 +1208,7 @@ function offerSound() {
     const act = event.target.closest("[data-act]");
     if (!act) return;
     if (act.dataset.act === "allow") {
+      if (askMotion) askMotion();
       startSound();
       dropHint();
     } else ignoreSound();
