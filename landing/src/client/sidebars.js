@@ -19,11 +19,21 @@ import { rgbOf } from "./lib/color.js";
   const drawers = Array.from(document.querySelectorAll("ui-drawer.sidebar"));
   if (drawers.length === 0) return;
 
+  // An untouched copy of the first sidebar's shell (backdrop, sheet, grip,
+  // title, close button), taken now because after the drawer upgrades the
+  // elements carry its state. openCustom builds its sidebar from it, so a
+  // sheet made at runtime is the site's own markup and not a lookalike.
+  const shell = drawers[0].cloneNode(true);
+  const CUSTOM_ID = "custom-sidebar";
+
   // Set while closed only: moving an open sheet to another edge would make it
   // jump. It catches up on the next opening.
+  // A sidebar can be pinned to one edge (data-side-pinned, set by openCustom).
   function placeSide() {
     for (const drawer of drawers) {
-      if (!drawer.open) drawer.setAttribute("side", wide.matches ? "right" : "bottom");
+      if (drawer.open) continue;
+      const pinned = drawer.dataset.sidePinned;
+      drawer.setAttribute("side", pinned || (wide.matches ? "right" : "bottom"));
     }
   }
   placeSide();
@@ -168,7 +178,7 @@ import { rgbOf } from "./lib/color.js";
   // Opened from code, not from a ui-drawer-trigger, so focus is handed back to
   // the link that opened it by hand. Only when it was inside the sheet: a
   // press outside that closed it may have put it somewhere on purpose.
-  for (const drawer of drawers) {
+  function restoreFocus(drawer) {
     drawer.addEventListener("openchangecomplete", function () {
       if (drawer.open || !opener) return;
       const active = document.activeElement;
@@ -178,4 +188,65 @@ import { rgbOf } from "./lib/color.js";
       opener = null;
     });
   }
+  for (const drawer of drawers) restoreFocus(drawer);
+
+  // The shell of the sidebar openCustom builds, made on first use.
+  function customDrawer() {
+    const existing = document.getElementById(CUSTOM_ID);
+    if (existing) return existing;
+    const drawer = shell.cloneNode(true);
+    drawer.id = CUSTOM_ID;
+    // No footer, and no aside next to the title (GitHub's handle): the shell
+    // is the first sidebar's, and there is no note, button or handle to put in.
+    for (const part of drawer.querySelectorAll(".sidebar-actions, header span.truncate")) part.remove();
+    drawers[0].after(drawer);
+    drawers.push(drawer);
+    restoreFocus(drawer);
+    return drawer;
+  }
+
+  // The API for code that is not a link on the page: the WebMCP tools
+  // (src/client/webmcp/dom-tools.js). Both return a promise of a small
+  // description of what happened.
+  //   openCustom({ title, content, side }): opens a sidebar with the shell of
+  //     the contact ones around `content` (a Node; the caller sanitizes it).
+  //     Calling it again replaces the title and content. `side` is "auto"
+  //     (right on a desktop, bottom on a phone), "right" or "bottom"; an open
+  //     sheet is not moved, the new edge applies from its next opening.
+  //   close(): closes whichever sidebar is open.
+  window.siteSidebars = {
+    openCustom: function (options) {
+      const drawer = customDrawer();
+      const side = options.side === "right" || options.side === "bottom" ? options.side : "";
+      if (side) drawer.dataset.sidePinned = side;
+      else delete drawer.dataset.sidePinned;
+
+      const title = drawer.querySelector("ui-drawer-title");
+      if (title) title.textContent = options.title;
+      const scroll = drawer.querySelector(".sidebar-scroll");
+      if (scroll) {
+        scroll.replaceChildren(options.content);
+        scroll.scrollTop = 0;
+      }
+      const wasOpen = drawer.open === true;
+
+      return load().then(function () {
+        placeSide();
+        if (!wasOpen) {
+          const active = document.activeElement;
+          opener = active && active !== document.body ? active : null;
+          drawer.open = true;
+        }
+        return { id: CUSTOM_ID, replaced: wasOpen, side: drawer.getAttribute("side") };
+      });
+    },
+    close: function () {
+      const drawer = drawers.find(function (d) {
+        return d.open;
+      });
+      if (!drawer) return Promise.resolve(null);
+      drawer.open = false;
+      return Promise.resolve({ id: drawer.id });
+    },
+  };
 })();

@@ -24,7 +24,14 @@ const ALLOWED_TAGS = new Set([
 ]);
 
 const URL_ATTRIBUTES = new Set(["href", "src", "xlink:href", "action", "poster", "srcset"]);
-const ALWAYS_REMOVED = new Set(["srcdoc", "formaction", "form", "formmethod", "formtarget", "ping"]);
+// `name` is removed because a named element clobbers properties of document
+// (<img name="cookie"> shadows document.cookie); the popover and invoker
+// attributes because a button could otherwise drive an element it does not own
+// (popovertarget="webmcp-shield", the sidebars' backdrops).
+const ALWAYS_REMOVED = new Set([
+  "srcdoc", "formaction", "form", "formmethod", "formtarget", "ping", "name",
+  "popover", "popovertarget", "popovertargetaction", "command", "commandfor",
+]);
 const SAFE_SCHEME = /^(https?:|mailto:|tel:)/i;
 const SAFE_DATA_IMAGE = /^data:image\/(png|jpeg|gif|webp)[;,]/i;
 const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
@@ -36,6 +43,19 @@ function isSafeUrl(value) {
   const url = value.replace(/[\p{Cc}\s]/gu, "");
   if (SAFE_DATA_IMAGE.test(url) || SAFE_SCHEME.test(url)) return true;
   return !HAS_SCHEME.test(url);
+}
+
+/**
+ * An id the page already uses, or one in the shield's namespace: a second
+ * element with it could come first in a lookup (getElementById returns the
+ * first in tree order) and stand in for the page's own, such as a sidebar.
+ */
+function isTakenId(id) {
+  return id.startsWith("webmcp") || document.getElementById(id) !== null;
+}
+
+function idProblem(attribute) {
+  return attribute.name === "id" && isTakenId(attribute.value) ? "id already used by the page" : null;
 }
 
 /** Why `attribute` must go, or null to keep it. */
@@ -52,7 +72,7 @@ function attributeProblem(tag, attribute) {
 function cleanAttributes(el, removed) {
   const tag = el.localName;
   for (const attribute of Array.from(el.attributes)) {
-    const reason = attributeProblem(tag, attribute);
+    const reason = attributeProblem(tag, attribute) ?? idProblem(attribute);
     if (!reason) continue;
     removed.push(`${reason}: ${tag}[${attribute.name}]`);
     el.removeAttribute(attribute.name);
@@ -93,6 +113,8 @@ function cleanNode(node, removed) {
 export function sanitizeHtmlWithReport(html) {
   const removed = [];
   const parsed = new DOMParser().parseFromString(String(html), "text/html");
+  // Markup that opens with <script>, <style>, <link>... is parsed into <head>, which is never used: say so.
+  for (const child of Array.from(parsed.head.children)) removed.push(`element: <${child.localName}>`);
   cleanChildren(parsed.body, removed);
   const fragment = document.createDocumentFragment();
   fragment.append(...Array.from(parsed.body.childNodes).map((node) => document.importNode(node, true)));

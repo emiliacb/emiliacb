@@ -245,6 +245,11 @@ const WEBMCP_TOOLS: readonly (readonly [name: string, summary: string])[] = [
   ["list_md_pages", "list the site's Markdown pages (and the articles you created in this tab)"],
   ["read_md_page", "read one Markdown page, in parts when it is long"],
   ["create_article", "show a temporary article, styled as a blog post, in this tab only"],
+  ["open_custom_sidebar", "open a sidebar like the site's own with a title and sanitized HTML"],
+  ["close_sidebar", "close whichever sidebar is open"],
+  ["insert_element", "insert sanitized HTML next to or inside an element"],
+  ["remove_inserted_elements", "remove what insert_element added"],
+  ["set_text_content", "replace the plain text of one or all elements a selector matches"],
 ];
 
 /** /llms.txt: what the site is and where the Markdown versions live. */
