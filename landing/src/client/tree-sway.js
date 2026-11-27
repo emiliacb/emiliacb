@@ -453,6 +453,8 @@ const plateState = () => ({
   turned: 0,
   rang: -1, // when it last rang, on the sound's own clock
   vib: 0, // how hard it is shaking under the bow, 0 to 1
+  ph: 0, // and how far round that shaking is
+  glow: 0, // how much it is lit by the note it is sounding, 0 to 1
   gap: 1e9, // pointer to its surface, in tree units
   hold: 0,
   fresh: false,
@@ -1496,10 +1498,11 @@ function chime(dt) {
 // scale at STEP_PX above where the press landed, down to the one below it at
 // STEP_PX beneath, no further, wherever on the part the press was and however
 // long the part is; between, it sits between the two notes. Only the part
-// pressed shakes, like a string. The others answer it by sympathy, as a
-// violin's open strings do: each part whose note the held one is in tune with,
-// at the unison, the octave, the fifth, any ratio of whole numbers up to 4,
-// rings its own note quietly, the simpler the ratio the louder.
+// pressed shakes, like a string, and is lit from where the press landed. The
+// others answer it by sympathy, as a violin's open strings do: each part whose
+// note the held one is in tune with, at the unison, the octave, the fifth, any
+// ratio of whole numbers up to 4, rings its own note quietly, the simpler the
+// ratio the louder, and shakes and is lit a little, as much as it rings.
 const STEP_PX = 36;
 const BOW_REACH = 8; // how near a part a press must land to ring it, tree units
 const BOW_GLIDE = 0.05; // how quickly the note slides to where the press is, s
@@ -1528,16 +1531,30 @@ const VIB_LEAF = 0.1;
 const SYMP_VOL = 0.045;
 const SYMP_CENTS = 30;
 const SYMP_RISE = 0.12;
+const SYMP_VIB = 0.6; // its shaking, at its loudest, as a share of the pressed part's
+const SYMP_GLOW = 0.75; // and its light
+// The light: warm, the yellow of the tree's own tips, GLOW_ALPHA at its centre
+// and gone GLOW_R tree units out. It has to show on wood thinned to the paper
+// by being touched, so it is a colour, not white.
+const GLOW = "255, 196, 64";
+const GLOW_ALPHA = 0.55;
+const GLOW_R = 70;
 
+// Every sympathetic voice still sounding: those answering the held note, and
+// those still ringing on after it was let go.
+const echoes = [];
 // Every part, by its note, low to high: the scale the press bends along.
 let scale = [];
 const bow = {
   on: false, voice: null, part: null, at: 0, from: 0, pos: 0,
+  // Where on the part the press landed: along its bone and across it, or, on
+  // a leaf, where on the leaf as drawn; so the light stays there as it moves.
+  bj: 0, bo: 0, lx: 0, ly: 0,
   // The other parts that can answer it, each with its own held voice.
   symp: [],
   // How loud the note is now, as a share of its strike, and how fast it moves
-  // towards where it is going; the note, and how far round its shaking is.
-  env: 0, tc: 0.2, f: 0, ph: 0,
+  // towards where it is going; and the note.
+  env: 0, tc: 0.2, f: 0,
 };
 
 /** Which way along the tree a part sounds from, for the stereo. */
@@ -1584,7 +1601,7 @@ function sympVoice(p) {
     osc.start(t);
     return osc;
   });
-  return { p, f, level, oscs, tc: lead / 7, r: 0 };
+  return { p, f, level, oscs, tc: lead / 7, r: 0, amp: 0, live: true };
 }
 
 /** Holds part `p`'s note at `f`: its partials, each settling to HELD of its strike. */
@@ -1648,6 +1665,24 @@ function onBowPress(event) {
   stopBow();
   bow.on = true;
   bow.part = at;
+  if (at.kind === "leaf") {
+    const [a, b, c, d, e, f] = at.m;
+    const det = a * d - b * c || 1;
+    const x = pointer.x - e;
+    const y = pointer.y - f;
+    bow.lx = (d * x - c * y) / det;
+    bow.ly = (a * y - b * x) / det;
+  } else {
+    let best = 1e9;
+    for (let i = 0; i < at.n; i++) {
+      const d = (at.dx[i] - pointer.x) ** 2 + (at.dy[i] - pointer.y) ** 2;
+      if (d < best) {
+        best = d;
+        bow.bj = i;
+      }
+    }
+    bow.bo = (pointer.x - at.dx[bow.bj]) * -at.sin[bow.bj] + (pointer.y - at.dy[bow.bj]) * at.cos[bow.bj];
+  }
   bow.at = scale.indexOf(at);
   bow.pos = bow.at;
   bow.from = event.clientY;
@@ -1662,7 +1697,11 @@ function onBowPress(event) {
     if (p === at) continue;
     let most = 0;
     for (let k = 0; k <= 24; k++) most = Math.max(most, sympathy(lo * Math.pow(hi / lo, k / 24), NOTE[p.key]));
-    if (most > 0.05) bow.symp.push(sympVoice(p));
+    if (most > 0.05) {
+      const e = sympVoice(p);
+      bow.symp.push(e);
+      echoes.push(e);
+    }
   }
   at.rang = ac.currentTime;
   at.vib = 1;
@@ -1688,6 +1727,7 @@ function stopBow() {
   const t = sound.ac.currentTime;
   // What answered it rings on a moment after it, each as its own note dies.
   for (const s of symp) {
+    s.live = false;
     s.level.gain.cancelScheduledValues(t);
     s.level.gain.setValueAtTime(Math.max(0.0001, s.level.gain.value), t);
     s.level.gain.setTargetAtTime(0.0001, t, s.tc);
@@ -1725,8 +1765,37 @@ function bowing(dt) {
   const k = 1 - Math.exp(-dt / bow.tc);
   bow.env += ((bow.on ? HELD : 0) - bow.env) * k;
   if (bow.env < 0.01) bow.env = 0;
-  bow.ph = (bow.ph + (TAU * bow.f * dt) / VIB_DIV) % TAU;
-  for (const p of parts) p.vib = p === bow.part ? bow.env : 0;
+  // Each answering part rings as the held note is in tune with it, swelling
+  // and letting go slowly, then on as its own note dies once that is let go.
+  const rise = 1 - Math.exp(-dt / SYMP_RISE);
+  for (let k = echoes.length - 1; k >= 0; k--) {
+    const e = echoes[k];
+    if (e.live) e.amp += ((e.r * bow.env) / HELD - e.amp) * rise;
+    else e.amp *= Math.exp(-dt / e.tc);
+    if (!e.live && e.amp < 0.01) echoes.splice(k, 1);
+  }
+  for (const p of parts) {
+    p.vib = 0;
+    p.glow = 0;
+  }
+  // Seen by the root of how loud it rings, so an octave's or a fifth's
+  // answer, quiet as it is, still shows.
+  for (const e of echoes) {
+    const seen = Math.sqrt(Math.min(1, e.amp));
+    e.p.vib = Math.max(e.p.vib, SYMP_VIB * seen);
+    e.p.glow = Math.max(e.p.glow, SYMP_GLOW * seen);
+  }
+  if (bow.part && bow.env) {
+    bow.part.vib = bow.env;
+    bow.part.glow = Math.min(1, bow.env / HELD);
+  }
+  // Each shakes at the note it sounds: the pressed part at the held note as it
+  // bends, the others each at its own.
+  for (const p of parts) {
+    if (!p.vib) continue;
+    const hz = p === bow.part ? bow.f : NOTE[p.key];
+    p.ph = (p.ph + (TAU * hz * dt) / VIB_DIV) % TAU;
+  }
 }
 
 /* ==========================================================================
@@ -1951,7 +2020,7 @@ function pose() {
     // with a little of its octave, still at its base, so whatever hangs from
     // it is carried along.
     if (l.vib > 0.002) {
-      const ph = bow.ph;
+      const ph = l.ph;
       const a = l.vib * VIB_WOOD;
       const c1 = Math.cos(ph);
       const c2 = 0.35 * Math.cos(2 * ph + 1);
@@ -2013,7 +2082,7 @@ function drawLeaves() {
     const px = L.dx[j] + L.cos[j] * ox - L.sin[j] * oy;
     const py = L.dy[j] + L.sin[j] * ox + L.cos[j] * oy;
     const turn = soft(f.theta, f.limit);
-    const shake = f.vib > 0.002 ? f.vib * VIB_LEAF * Math.cos(bow.ph) : 0;
+    const shake = f.vib > 0.002 ? f.vib * VIB_LEAF * Math.cos(f.ph) : 0;
     const ang = L.rot[j] + turn + shake;
     const twist = soft(f.twist, TWIST_MAX);
     const q = 1 - (f.squash * (1 - Math.cos(twist))) / (1 - Math.cos(TWIST_MAX));
@@ -2862,7 +2931,7 @@ let drawn = false; // whether the plate has anything on it to clear
 function drawPlate() {
   if (!W) return;
   let any = airA >= 0.01 || (lever && leverA >= 0.02);
-  for (const p of parts) if (p.rv > 0.01) any = true;
+  for (const p of parts) if (p.rv > 0.01 || p.glow > 0.01) any = true;
   // Most of the time nothing is touched: one clear, then nothing to do.
   if (!any && !drawn) return;
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -2880,6 +2949,63 @@ function drawPlate() {
   drawLever(u);
   mask();
   g.globalAlpha = 1;
+  drawGlow();
+}
+
+/**
+ * Lights each part sounding a held note: a radial wash of warm light over the
+ * part alone, from where the press landed on the pressed one and from its
+ * middle on one answering it, as strong as it sounds.
+ */
+function drawGlow() {
+  let wood = null;
+  for (const p of parts) {
+    if (p.glow <= 0.01) continue;
+    g.setTransform(dpr * sc, 0, 0, dpr * sc, dpr * ox, dpr * oy);
+    let cx;
+    let cy;
+    let r = GLOW_R;
+    if (p.kind === "leaf") {
+      if (p === bow.part) {
+        const m = p.m;
+        cx = m[0] * bow.lx + m[2] * bow.ly + m[4];
+        cy = m[1] * bow.lx + m[3] * bow.ly + m[5];
+      } else {
+        cx = p.nowX;
+        cy = p.nowY;
+      }
+    } else {
+      const j = p === bow.part ? bow.bj : p.n >> 1;
+      const o = p === bow.part ? bow.bo : 0;
+      cx = p.dx[j] - p.sin[j] * o;
+      cy = p.dy[j] + p.cos[j] * o;
+      if (p !== bow.part) r = Math.max(GLOW_R, p.len / 2);
+    }
+    g.save();
+    g.beginPath();
+    if (p.kind === "leaf") {
+      g.moveTo(p.nowRimX[0], p.nowRimY[0]);
+      for (let k = 1; k < p.nowRimX.length; k++) g.lineTo(p.nowRimX[k], p.nowRimY[k]);
+      g.closePath();
+    } else {
+      // The limb's own run of the wood: its bone, as wide as it is, within the
+      // wood's outline so the light keeps to the bark.
+      wood = wood || new Path2D(woodD);
+      g.clip(wood);
+      g.beginPath();
+      for (let i = 0; i < p.n; i++) g.lineTo(p.dx[i] - p.sin[i] * p.half[i] * 1.15, p.dy[i] + p.cos[i] * p.half[i] * 1.15);
+      for (let i = p.n - 1; i >= 0; i--) g.lineTo(p.dx[i] + p.sin[i] * p.half[i] * 1.15, p.dy[i] - p.cos[i] * p.half[i] * 1.15);
+      g.closePath();
+    }
+    const a = GLOW_ALPHA * p.glow;
+    const wash = g.createRadialGradient(cx, cy, 0, cx, cy, r);
+    wash.addColorStop(0, `rgba(${GLOW}, ${a.toFixed(3)})`);
+    wash.addColorStop(0.45, `rgba(${GLOW}, ${(a * 0.45).toFixed(3)})`);
+    wash.addColorStop(1, `rgba(${GLOW}, 0)`);
+    g.fillStyle = wash;
+    g.fill();
+    g.restore();
+  }
 }
 
 /* ==========================================================================
