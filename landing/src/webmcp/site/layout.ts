@@ -19,8 +19,7 @@ const AGENT_NOTE =
 /**
  * The hidden paragraph that opens <main> (layout.ts): first in the page's main
  * content, where a reader that extracts only that content (get_page_text and
- * the like) still finds it. Hidden from sight because the footer box says the
- * same to people (renderFooterNote), not from the DOM text or the
+ * the like) still finds it. Hidden from sight, not from the DOM text or the
  * accessibility tree.
  */
 export function renderAgentNote(): HtmlEscapedString | Promise<HtmlEscapedString> | null {
@@ -72,20 +71,4 @@ export function renderFooterLink(ctx: RenderCtx): HtmlEscapedString | Promise<Ht
       >${DOCS_COPY[ctx.lang].footerLink}</a
     >
   </li>`;
-}
-
-/**
- * For the footer: a small box at its bottom left saying, to a person, what the
- * hidden note at the top of <main> says to an agent, so neither is told
- * anything the other is not. Its link goes to the docs' Markdown version, what
- * an agent reads best.
- */
-export function renderFooterNote(ctx: RenderCtx): HtmlEscapedString | Promise<HtmlEscapedString> | null {
-  if (!WEBMCP_ENABLED) return null;
-  const note = DOCS_COPY[ctx.lang].footerNote;
-  return html`<p
-    class="w-fit ml-4 mt-6 px-2 py-1 text-xs border border-current opacity-75"
-  >
-    ${note.before}<a href="/${ctx.lang}${DOCS_PATH}.md" class="underline underline-offset-2">${note.link}</a>${note.after}
-  </p>`;
 }

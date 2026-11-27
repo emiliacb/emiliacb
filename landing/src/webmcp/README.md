@@ -139,9 +139,7 @@ works much better after reading a skill can call `requireSkill(name)`
 - The hidden note: every page's `<main>` starts with a visually hidden
   paragraph that says, descriptively, what the tools do, how to list and call
   them from the tab and where the docs are; first in the main content, so a
-  reader that extracts only that content still finds it. People read the same
-  thing in a small box at the bottom left of the footer ("Este sitio está
-  optimizado para agentes de IA mediante WebMCP", linking `/{lang}/mcp.md`).
+  reader that extracts only that content still finds it.
   The `<head>` has `rel="describedby"` (`/mcp.md`), `rel="alternate"
   type="text/markdown" title="WebMCP"` (`/{lang}/mcp.md`) and `rel="help"`
   (`/{lang}/mcp`) links, and the footer a visible "MCP" link, for the same
@@ -182,7 +180,7 @@ Delete the folder, then remove these (grep `WebMCP: see src/webmcp/README.md`):
 2. `src/client/webmcp.js` and `src/client/webmcp-markdown.js`: the two entries.
 3. `src/site/components/layout.ts`: the `import * as webmcp` line and the three
    `webmcp.render*` calls (note, head, script). `src/site/components/footer.ts`:
-   the import and the `webmcp.renderFooterLink` and `webmcp.renderFooterNote` calls.
+   the import and the `webmcp.renderFooterLink` call.
 4. `src/site/markdown/index.ts`: the import and the `...renderWebmcpLlmsSection()`
    line in `renderLlmsTxt`.
 5. `scripts/build.ts`: the `import * as webmcp` line, the docs import, the
