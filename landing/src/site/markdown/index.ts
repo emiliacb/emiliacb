@@ -176,6 +176,43 @@ export function renderSiteMarkdown(ctxFor: (lang: Lang) => RenderCtx): MarkdownF
   return files;
 }
 
+export type ManifestEntry = {
+  /** Root-relative path of the .md file: "/en/about.md", "/en.md", "/es/blog/<slug>.md". */
+  path: string;
+  title: string;
+  lang: Lang;
+  /** "index" lists other pages (the blog); the rest are a page or a post. */
+  kind: "page" | "post" | "index";
+};
+
+/**
+ * What src/client/webmcp/content-tools.js lists as the site's Markdown pages,
+ * written to dist/webmcp/pages.json. It comes from the same loops as
+ * renderSiteMarkdown, so a page cannot have a .md file and be missing here
+ * (the test in test/site/markdown.test.ts holds the two together); parsing
+ * llms.txt in the browser would only cover the English pages and drop titles
+ * whenever its prose changes. Paths are root-relative: the tool resolves them
+ * against the origin it runs on, so they also work in wrangler dev.
+ */
+export function renderPagesManifest(ctxFor: (lang: Lang) => RenderCtx): ManifestEntry[] {
+  const entries: ManifestEntry[] = [];
+  for (const lang of LANGS) {
+    const ctx = ctxFor(lang);
+    for (const page of PAGES) {
+      entries.push({
+        path: markdownPath(lang, page.path),
+        title: ctx.t.pages[page.id].mapTitle,
+        lang,
+        kind: page.id === "blog" ? "index" : "page",
+      });
+    }
+    for (const post of ctx.content.posts) {
+      entries.push({ path: markdownPath(lang, `/blog/${post.slug}`), title: post.title, lang, kind: "post" });
+    }
+  }
+  return entries;
+}
+
 /** Labs pages are WebGL experiments: listed under "Optional" in llms.txt. */
 const OPTIONAL_PAGES: readonly PageId[] = ["labs-distortion", "labs-distortion-bg"];
 
@@ -205,6 +242,9 @@ const WEBMCP_TOOLS: readonly (readonly [name: string, summary: string])[] = [
   ["click_link_or_button", "click a link or button by id, text or selector"],
   ["set_google_font", "load a Google Fonts family (apply it afterwards with the CSS tools)"],
   ["list_loaded_fonts", "the Google Fonts loaded in this tab"],
+  ["list_md_pages", "list the site's Markdown pages (and the articles you created in this tab)"],
+  ["read_md_page", "read one Markdown page, in parts when it is long"],
+  ["create_article", "show a temporary article, styled as a blog post, in this tab only"],
 ];
 
 /** /llms.txt: what the site is and where the Markdown versions live. */
