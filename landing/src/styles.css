@@ -639,8 +639,9 @@ html.ai-layout-enabled #activity-panel {
    the trunk and lets it be dragged by its bar). A browser's permission prompt
    drawn as a Windows 95 window in the site's ink: a hairline, no shadow, the
    title bar in the tree's own gradient, inverted on the dark page as the tree
-   is. It sits on the page's body, fixed to the screen and over everything
-   (under the ink cursor alone), so it can be dragged anywhere. It comes in
+   is. It sits on the page's body, over everything (under the ink cursor
+   alone), so it can be dragged anywhere; placed on the screen, but held on
+   the tree as the page scrolls (followHint), so it goes with it. It comes in
    out of focus and settles, and then its name grows its marks. */
 .tree-sound-ask {
   --ask-page: #f5f5f4;
