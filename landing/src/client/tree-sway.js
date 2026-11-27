@@ -1390,10 +1390,12 @@ const middle = () => [document.documentElement.clientWidth / 2, document.documen
  * that one is answered by its own buttons. Nor one on the page's navigation:
  * a link, or a dropdown (the navbar's About, the language menu), which only
  * opens a menu whose links lead away. Starting the sound there would answer
- * the window before it is seen. */
+ * the window before it is seen. Nor one in a contact sidebar or on the
+ * backdrop that closes it: it is over the tree, and a press there is about
+ * the sidebar, not the tree. */
 function onFirstPress(event) {
   if (hint && hint.contains(event.target)) return;
-  if (event.target instanceof Element && event.target.closest("a[href], dropdown-trigger")) return;
+  if (event.target instanceof Element && event.target.closest("a[href], dropdown-trigger, ui-drawer-content, ui-drawer-backdrop")) return;
   // Where the ghost leaves from: where the finger or the pointer came down.
   // A touch's end carries its place in its touches, not on itself, and a key
   // has none: then the place already known stands, or the screen's middle.
