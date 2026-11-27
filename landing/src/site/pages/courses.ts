@@ -20,14 +20,14 @@ export default async function render(ctx: RenderCtx): Promise<string> {
   }
 
   const cards = courses.items.map(
-    (item, index) => html`<div class="flex flex-col bg-yellow-300 dark:bg-blue-900 overflow-hidden">
+    (item, index) => html`<div class="flex flex-col bg-accent text-on-accent overflow-hidden">
       <div class="aspect-video relative overflow-hidden">
         <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('/public/${COURSES[index].thumbnail}')"></div>
-        <span class="absolute top-2 left-2 text-[0.6rem] font-bold uppercase tracking-wide px-2 py-1 bg-black text-white dark:bg-white dark:text-black">${courses.comingSoon}</span>
+        <span class="absolute top-2 left-2 text-[0.6rem] font-bold uppercase tracking-wide px-2 py-1 bg-strong text-on-strong">${courses.comingSoon}</span>
       </div>
       <div class="flex flex-col p-3 gap-1.5">
         <h2 class="font-bold leading-tight">${item.title}</h2>
-        <p class="text-xs text-stone-800 dark:text-stone-200">${item.description}</p>
+        <p class="text-xs">${item.description}</p>
       </div>
     </div>`
   );

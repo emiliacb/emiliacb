@@ -89,10 +89,11 @@
                         colour: they are used as rgb(var(--g-a) / alpha)).
      --tree-grad-a, --tree-grad-b   the colours of the tree's leaves and trunk
                         (the top and the bottom of their gradient, and the sound
-                        window's bar), as "r g b" channels. They are the colours
-                        of the tree drawn for the LIGHT page: on the dark one the
-                        whole tree is inverted (--tree-invert), so pick them as
-                        for light and what shows in dark is their negative.
+                        window's bar), as "r g b" channels. They are what is
+                        painted, in each mode: the dark block gives its own pair
+                        (the negative of the light one, which is what the tree
+                        used to be flipped into), so a value set for a mode shows
+                        as it is in that mode.
      --font-sans        the text face.
      --font-size-base   the root font size. Every size on the site is in rem, so
                         this scales type and spacing together. A percentage, so
@@ -116,11 +117,18 @@
      --color-signal-bar, -line, -text   shades of the signal for the GitHub
         sidebar's bars, the Cal.com embed's accent and the ghost link, taken
         from --color-signal in OKLCH (lighter or darker, more or less chroma).
-     --color-raised, --color-on-ink, --color-on-accent, --color-strong,
-     --color-on-strong, --color-danger, --color-on-danger, --color-code-bg,
-        --color-code-ink, --color-hairline, --shadow-edge*   roles: surfaces and
-        the text on them, that differ between modes in a way paper and ink alone
-        do not give (white cards in light, stone-700 in dark).
+     --color-raised, --color-strong, --color-danger, --color-on-danger,
+     --color-code-bg, --color-code-ink, --color-hairline, --shadow-edge*
+        roles: surfaces and the text on them, that differ between modes in a way
+        paper and ink alone do not give (white cards in light, stone-700 in dark).
+     --color-on-accent, --color-on-ink, --color-on-strong   the text on the
+        accent, on the ink and on the strong ground: not written per mode but
+        read from the colour they sit on (its OKLCH lightness picks the near
+        black or the white that contrasts with it), so any palette stays
+        readable. Overridable like any token: a value set on one of them wins.
+        The footer, the highlighted links and cards and the hovered "Allow"
+        button take their text from --color-on-accent; the hovers (black or
+        white, whichever the mode is) from --color-on-strong.
      --tree-ink-*, --cota-*, --tree-paper   the tree's marks and the cotas' ink:
         hsl(--tree-hue S L / A), with a saturation and an opacity per kind of
         mark and one lightness per family (--tree-l-soft, --tree-l-body,
@@ -128,8 +136,9 @@
         light. Registered as colours (@property, below), because the canvases
         read them through getComputedStyle and need a colour they can paint
         with, not the unevaluated hsl(var(...)) text.
-     --tree-invert      0 in light, 1 in dark: the tree is drawn for the light
-        page and flipped for the dark one, and what it sits beside follows.
+     The sound window's bar text and its close button's cross are derived the
+     same way, from the two --tree-grad-* colours the bar is painted with; they
+     are not tokens of their own.
 
    LIVE. A token changed at runtime (an agent's set_variables, or any stylesheet
    that redefines it) repaints the canvases too: the scripts that read tokens
@@ -199,10 +208,15 @@
 
   /* Roles: see above. */
   --color-raised: var(--color-white);
-  --color-on-ink: var(--color-white);
-  --color-on-accent: var(--color-stone-900);
+  /* The text on a colour is read from the colour (OKLCH lightness l: near
+     black above 0.6, white below it: about where the two contrast alike), so it
+     holds for any palette in either mode, and is not written per mode. The
+     near black is stone-900's, so that the default look is what it was; chroma
+     is cut to nothing for white. Each is registered below as a colour. */
+  --color-on-ink: oklch(from var(--color-ink) clamp(0.216, calc((0.6 - l) * 1000), 1) clamp(0, calc((l - 0.6) * 1000), 0.006) 49);
+  --color-on-accent: oklch(from var(--color-accent) clamp(0.216, calc((0.6 - l) * 1000), 1) clamp(0, calc((l - 0.6) * 1000), 0.006) 49);
   --color-strong: var(--color-black);
-  --color-on-strong: var(--color-white);
+  --color-on-strong: oklch(from var(--color-strong) clamp(0, calc((0.6 - l) * 1000), 1) 0 0);
   --color-danger: #7f1d1d;
   --color-on-danger: var(--color-white);
   --color-code-bg: #fce7f3;
@@ -222,9 +236,9 @@
   --tree-l-lead: 24.8%;
   --tree-l-ink: 19.6%;
   --tree-l-scroll: 15%;
-  --tree-invert: 0;
   /* The tree's own gradient (the stops of its leaves and trunk in
-     components/tree.ts, and the sound window's bar), as "r g b". */
+     components/tree.ts, and the sound window's bar), as "r g b": what is
+     painted, with a pair of its own in dark. */
   --tree-grad-a: 255 176 0;
   --tree-grad-b: 102 198 169;
 
@@ -277,10 +291,7 @@
     --color-signal-line: oklch(from var(--color-signal) calc(l + 0.135) calc(c * 0.866) calc(h - 4.6));
     --color-signal-text: oklch(from var(--color-signal) calc(l + 0.226) calc(c * 0.66) calc(h - 9.8));
     --color-raised: var(--color-stone-700);
-    --color-on-ink: var(--color-stone-900);
-    --color-on-accent: var(--color-white);
     --color-strong: var(--color-white);
-    --color-on-strong: var(--color-black);
     --color-danger: #fecaca;
     --color-on-danger: #7f1d1d;
     --color-code-bg: var(--color-stone-900);
@@ -293,7 +304,8 @@
     --tree-l-body: 79%;
     --tree-l-lead: 70%;
     --tree-l-ink: 80.4%;
-    --tree-invert: 1;
+    --tree-grad-a: 0 79 255;
+    --tree-grad-b: 153 57 86;
     --cota-scroll: var(--cota-measure);
   }
 }
@@ -312,10 +324,7 @@
   --color-signal-line: oklch(from var(--color-signal) calc(l + 0.135) calc(c * 0.866) calc(h - 4.6));
   --color-signal-text: oklch(from var(--color-signal) calc(l + 0.226) calc(c * 0.66) calc(h - 9.8));
   --color-raised: var(--color-stone-700);
-  --color-on-ink: var(--color-stone-900);
-  --color-on-accent: var(--color-white);
   --color-strong: var(--color-white);
-  --color-on-strong: var(--color-black);
   --color-danger: #fecaca;
   --color-on-danger: #7f1d1d;
   --color-code-bg: var(--color-stone-900);
@@ -328,13 +337,18 @@
   --tree-l-body: 79%;
   --tree-l-lead: 70%;
   --tree-l-ink: 80.4%;
-  --tree-invert: 1;
+  --tree-grad-a: 0 79 255;
+  --tree-grad-b: 153 57 86;
   --cota-scroll: var(--cota-measure);
 }
 
 /* The colours the canvases read (page-cotas.js, tree-sway.js) are registered
    as colours, so that getComputedStyle hands back the colour itself and not
-   the text of the expression that makes it. */
+   the text of the expression that makes it; so are the texts on a colour
+   (--color-on-*), whose expression would tell an agent reading them nothing. */
+@property --color-on-ink { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --color-on-accent { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --color-on-strong { syntax: "<color>"; inherits: true; initial-value: transparent; }
 @property --tree-ink { syntax: "<color>"; inherits: true; initial-value: transparent; }
 @property --tree-paper { syntax: "<color>"; inherits: true; initial-value: transparent; }
 @property --tree-ink-bone { syntax: "<color>"; inherits: true; initial-value: transparent; }
@@ -368,15 +382,15 @@
 
 @keyframes treeAppear {
   0% {
-    filter: saturate(0.4) blur(1px) invert(var(--tree-invert, 0));
+    filter: saturate(0.4) blur(1px);
   }
 
   40% {
-    filter: saturate(0.6) blur(0) invert(var(--tree-invert, 0));
+    filter: saturate(0.6) blur(0);
   }
 
   to {
-    filter: saturate(1.1) blur(0) invert(var(--tree-invert, 0));
+    filter: saturate(1.1) blur(0);
   }
 }
 
@@ -774,18 +788,19 @@ html.ai-layout-enabled #activity-panel {
   @apply text-pretty;
   @apply prose-h1:pt-20 prose-h1:-mt-4 prose-h1:mb-10 prose-h1:font-light prose-h1:text-balance;
   @apply prose-h2:font-semibold prose-h2:pt-[5rem] prose-h2:-mt-12 prose-h2:mb-2 prose-h2:text-balance;
-  @apply prose-a:ml-[2px] prose-a:outline prose-a:outline-yellow-300 prose-a:outline-offset-0 prose-a:outline-2 prose-a:transition-[background-color,color,scale] prose-a:duration-150 prose-a:ease-out prose-a:active:scale-[0.96];
-  @apply prose-a:bg-yellow-300 prose-a:no-underline prose-a:font-light;
-  @apply dark:prose-a:outline-blue-900 dark:prose-a:bg-blue-900;
+  @apply prose-a:ml-[2px] prose-a:outline prose-a:outline-accent prose-a:outline-offset-0 prose-a:outline-2 prose-a:transition-[background-color,color,scale] prose-a:duration-150 prose-a:ease-out prose-a:active:scale-[0.96];
+  /* A link is the accent's highlight, with the text that contrasts with it
+     (--color-on-accent) and, under the pointer, the strong ground and its
+     text, in whichever mode the page is. */
+  @apply prose-a:bg-accent prose-a:text-on-accent prose-a:no-underline prose-a:font-light;
   @apply focus-visible:prose-a:outline-red-500;
-  @apply hover:prose-a:bg-black hover:prose-a:text-white hover:prose-a:outline-black;
-  @apply dark:hover:prose-a:bg-white dark:hover:prose-a:text-black dark:hover:prose-a:border-white dark:hover:prose-a:outline-white;
+  @apply hover:prose-a:bg-strong hover:prose-a:text-on-strong hover:prose-a:outline-strong;
   @apply prose-a:relative prose-a:light-gradient-projection;
   @apply prose-pre:bg-code-bg prose-code:text-code-ink;
 }
 
 .cover-tree {
-  @apply absolute h-[80%] 2xl:h-[80vh] max-h-[1000px] opacity-60 lg:opacity-90 w-auto bottom-0 object-cover dark:invert;
+  @apply absolute h-[80%] 2xl:h-[80vh] max-h-[1000px] opacity-60 lg:opacity-90 w-auto bottom-0 object-cover;
   right: max(30vw, 200px);
   margin-right: -300px;
   /* Swaying leaves may cross the edge of the drawing's own box. */
@@ -801,12 +816,11 @@ html.ai-layout-enabled #activity-panel {
 /* The tree's anatomy, drawn by src/client/tree-sway.js where the pointer
    touches it: the construction on a canvas laid over the illustration, the
    formulas afloat beside it, all in one ink. Both layers sit beside
-   .cover-tree, not in it, so its dark-mode invert does not reach them; they
-   take the dark ink from here instead. The paper is the page behind the tree,
-   which the touched wood is thinned back to. */
+   .cover-tree, not in it, and take their ink from the tokens. The paper is the
+   page behind the tree, which the touched wood is thinned back to. */
 /* (The tree's ink and its paper are tokens on :root, with the cotas': see
-   --tree-ink-* there. They are the inverse of the dark ones, as the tree's own
-   colours are: the hue turned half way round, the lightness flipped, each kind
+   --tree-ink-* there. The dark ones are the inverse of the light ones, as the
+   tree's own colours are (--tree-grad-*): the hue turned half way round, the lightness flipped, each kind
    of mark with its own saturation and opacity, spirals and angles leading at
    full saturation. Lightness is matched to the dark theme's contrast in L*,
    not mirrored in HSL: a green and a pink of the same HSL lightness are not
@@ -865,28 +879,29 @@ html.ai-layout-enabled #activity-panel {
    waits for a press before it plays (src/client/tree-sway.js, which sets it on
    the trunk and lets it be dragged by its bar). A browser's permission prompt
    drawn as a Windows 95 window in the site's ink: a hairline, no shadow, the
-   title bar in the tree's own gradient, inverted on the dark page as the tree
-   is. It sits on the page's scrolling box (#scroll-wrapper), absolute and
+   title bar in the tree's own gradient (--tree-grad-*, which have a pair of
+   their own in dark). It sits on the page's scrolling box (#scroll-wrapper), absolute and
    over everything (under the ink cursor alone): it can be dragged anywhere,
    and it scrolls with the page and the tree under it. It comes in
    out of focus and settles, and then its name grows its marks. */
 .tree-sound-ask {
   --ask-page: var(--color-paper);
   --ask-ink: var(--color-ink);
-  /* The tree's own gradient, flipped on the dark page as the tree is
-     (--tree-invert: each channel c becomes 255 - c). */
-  --ask-bar: linear-gradient(
-    90deg,
-    rgb(from rgb(var(--tree-grad-a)) calc(r + var(--tree-invert) * (255 - 2 * r)) calc(g + var(--tree-invert) * (255 - 2 * g)) calc(b + var(--tree-invert) * (255 - 2 * b))),
-    rgb(from rgb(var(--tree-grad-b)) calc(r + var(--tree-invert) * (255 - 2 * r)) calc(g + var(--tree-invert) * (255 - 2 * g)) calc(b + var(--tree-invert) * (255 - 2 * b)))
-  );
-  --ask-bar-ink: var(--color-on-ink);
+  /* The tree's own gradient, as the tokens give it in the mode the page is
+     in (dark has its own pair, so nothing is flipped here). */
+  --ask-bar: linear-gradient(90deg, rgb(var(--tree-grad-a)), rgb(var(--tree-grad-b)));
+  /* What the bar is, on average: the title sits at its start, so the first
+     colour weighs more. The bar's text is read from it as the text on the
+     accent is (see --color-on-accent), so a gradient of any colours keeps its
+     title readable. */
+  --ask-bar-mix: color-mix(in srgb, rgb(var(--tree-grad-a)) 70%, rgb(var(--tree-grad-b)));
+  --ask-bar-ink: oklch(from var(--ask-bar-mix) clamp(0.216, calc((0.6 - l) * 1000), 1) clamp(0, calc((l - 0.6) * 1000), 0.006) 49);
   /* The window's edge: the navbar's own hairline (stone-400), in both themes.
      Full ink was too heavy around the bar's colour. */
   --ask-line: var(--color-stone-400);
-  /* Greyed in light; in dark it is the ink itself (stone-500 of the dark
-     scale, which is not far from it, would hardly show on the bar). */
-  --ask-close-line: color-mix(in srgb, var(--color-ink) calc(var(--tree-invert) * 100%), var(--color-stone-500));
+  /* The cross and edge of the close button: the bar's text, softened, so it
+     reads on the bar without being full ink. */
+  --ask-close-line: color-mix(in srgb, var(--ask-bar-ink) 70%, transparent);
   /* Allow under the pointer: the site's highlight, yellow on the light page
      and blue on the dark one, as its highlighted cards and links. */
   --ask-hover: var(--color-accent);
@@ -945,7 +960,7 @@ html.ai-layout-enabled #activity-panel {
 }
 .tree-sound-ask-close:hover {
   background: var(--ask-bar-ink);
-  color: var(--ask-page);
+  color: var(--ask-bar-mix);
 }
 .tree-sound-ask p {
   margin: 0;
@@ -962,6 +977,12 @@ html.ai-layout-enabled #activity-panel {
 }
 .tree-sound-ask-letter {
   position: relative;
+}
+/* The garbled name's characters are generated content (data-c, set by
+   curse() in tree-sway.js), so that they are not part of the page's text. */
+.tree-sound-ask-letter::before,
+.tree-sound-ask-mark::before {
+  content: attr(data-c);
 }
 /* Each mark a step further from its letter than the last (tree-sway.js),
    grown out from the letter once the window has settled, the furthest last. */
@@ -1382,7 +1403,7 @@ dropdown-trigger:not(:defined) * {
 }
 
 dropdown-trigger::part(trigger) {
-  @apply px-2 py-2 -my-1 hover:bg-black hover:text-white hover:border-black dark:hover:bg-white dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black h-fit;
+  @apply px-2 py-2 -my-1 hover:bg-strong hover:text-on-strong hover:border-strong focus-visible:bg-strong focus-visible:text-on-strong h-fit;
 }
 
 dropdown-trigger::part(icon) {
@@ -1391,17 +1412,15 @@ dropdown-trigger::part(icon) {
 
 /* Email link: a dropdown-trigger dressed up as a plain inline link */
 dropdown-trigger[variant="link"]::part(trigger) {
-  @apply interactive hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 py-0.5 -ml-1 h-fit;
+  @apply interactive hover:bg-strong hover:text-on-strong focus-visible:bg-strong focus-visible:text-on-strong px-1 py-0.5 -ml-1 h-fit;
 }
 
 /* Email link: a dropdown-trigger dressed up as a markdown-content prose link */
 dropdown-trigger[variant="prose"]::part(trigger) {
-  @apply relative ml-[2px] my-0 px-2 py-0.5 outline outline-yellow-300 outline-offset-0 outline-2 transition-[background-color,color,scale] duration-150 ease-out active:scale-[0.96];
-  @apply bg-yellow-300 text-stone-900 no-underline font-light h-fit;
-  @apply dark:outline-blue-900 dark:bg-blue-900 dark:text-white;
+  @apply relative ml-[2px] my-0 px-2 py-0.5 outline outline-accent outline-offset-0 outline-2 transition-[background-color,color,scale] duration-150 ease-out active:scale-[0.96];
+  @apply bg-accent text-on-accent no-underline font-light h-fit;
   @apply focus-visible:outline-red-500;
-  @apply hover:bg-black hover:text-white hover:outline-black;
-  @apply dark:hover:bg-white dark:hover:text-black dark:hover:outline-white;
+  @apply hover:bg-strong hover:text-on-strong hover:outline-strong;
 }
 
 /* Email link: a dropdown-trigger dressed up as an icon-only contact button.
@@ -1411,7 +1430,7 @@ dropdown-trigger[variant="prose"]::part(trigger) {
    it (without a style the 1px width computes to 0). */
 dropdown-trigger[variant="icon"]::part(trigger) {
   @apply my-0 border-solid;
-  @apply interactive flex w-fit border border-transparent px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black h-fit;
+  @apply interactive flex w-fit border border-transparent px-2 py-1 hover:bg-strong hover:text-on-strong hover:border-strong focus-visible:bg-strong focus-visible:text-on-strong h-fit;
 }
 
 /* The Gmail/Superhuman <a> items can be nested inside .markdown-content
