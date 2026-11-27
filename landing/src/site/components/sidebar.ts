@@ -42,16 +42,18 @@ export function sidebar({ id, title, aside, close, body, note, action }: Sidebar
       <ui-drawer-backdrop hidden class="sidebar-backdrop"></ui-drawer-backdrop>
       <ui-drawer-content hidden class="sidebar-sheet text-stone-800 dark:text-stone-100">
         <div class="sidebar-grip" aria-hidden="true"></div>
-        <header class="flex items-center justify-between gap-4 px-6 pt-6 md:pt-10 pb-3 md:pb-4">
-          <div class="flex items-baseline gap-3 min-w-0">
+        <!-- The X stays in the corner, on the title's first line, however many
+             lines the title and its aside take. -->
+        <header class="flex items-start justify-between gap-4 px-6 pt-6 md:pt-10 pb-3 md:pb-4">
+          <div class="flex flex-wrap items-baseline gap-x-3 min-w-0">
             <ui-drawer-title class="block text-2xl md:text-3xl font-light">${title}</ui-drawer-title>
             ${aside ? html`<span class="text-sm truncate">${aside}</span>` : null}
           </div>
-          <ui-drawer-close>
+          <ui-drawer-close class="shrink-0">
             <button
               type="button"
               aria-label="${close}"
-              class="sidebar-close interactive relative flex items-center justify-center size-8 -mr-2
+              class="sidebar-close interactive relative flex shrink-0 items-center justify-center size-8 -mr-2 md:mt-0.5
                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
                 focus-visible:outline-current [&>svg]:w-5 [&>svg]:h-5"
             >
