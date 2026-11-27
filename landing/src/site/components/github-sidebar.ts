@@ -8,73 +8,121 @@ import { githubStats, type GithubStats } from "../github/stats";
 export const GITHUB_SIDEBAR_ID = "github-sidebar";
 
 const DAY_MS = 86_400_000;
+const utc = (isoDay: string) => new Date(`${isoDay}T00:00:00Z`);
 
-/** Commits per week as bars, oldest on the left; the current week in the accent. */
-function weeklyChart(ctx: RenderCtx, stats: GithubStats) {
+/** Merged PRs per month as bars with their count on top; the current month, still running, in the accent. */
+function monthlyChart(ctx: RenderCtx, stats: GithubStats) {
   const { github: t } = ctx.t;
-  const weeks = stats.commits.weekly;
-  const max = Math.max(1, ...weeks);
+  const months = stats.prsByMonth;
+  const max = Math.max(1, ...months.map((m) => m.count));
   const fmt = new Intl.NumberFormat(ctx.lang);
-  const dateFmt = new Intl.DateTimeFormat(ctx.lang, { month: "short", day: "numeric", timeZone: "UTC" });
-  const end = Date.parse(`${stats.updatedAt}T00:00:00Z`);
+  const short = new Intl.DateTimeFormat(ctx.lang, { month: "short", timeZone: "UTC" });
+  const long = new Intl.DateTimeFormat(ctx.lang, { month: "long", year: "numeric", timeZone: "UTC" });
+  const name = (month: string) => short.format(utc(`${month}-15`)).replace(".", "").slice(0, 3);
 
-  // Each bar is 3 units wide on a 4-unit pitch; the box is 40 units tall. The
-  // SVG stretches to the panel's width, which is fine for rectangles.
-  const H = 40;
-  const bars = weeks.map((n, i) => {
-    const weeksBack = weeks.length - 1 - i;
-    const start = new Date(end - (weeksBack * 7 + 6) * DAY_MS);
-    // A week with nothing still leaves a tick on the line, so the year reads as a year.
-    const h = n === 0 ? 0.6 : Math.max(1.5, (n / max) * H);
-    const label = t.weekLabel.replace("{date}", dateFmt.format(start)).replace("{count}", fmt.format(n));
-    return html`<rect
-      x="${i * 4}"
-      y="${H - h}"
-      width="3"
-      height="${h}"
-      class="${weeksBack === 0 ? "gh-bar gh-bar-now" : "gh-bar"}"
-      ><title>${label}</title></rect
-    >`;
-  });
-
-  const summary = t.chartSummary
-    .replace("{total}", fmt.format(stats.commits.year))
+  const summary = t.monthSummary
+    .replace("{from}", long.format(utc(`${months[0].month}-15`)))
+    .replace("{to}", long.format(utc(`${months[months.length - 1].month}-15`)))
     .replace("{max}", fmt.format(max));
 
   return html`
-    <figure class="gh-chart">
-      <figcaption class="text-md italic mb-2">${t.weeklyTitle}</figcaption>
-      <svg
-        viewBox="0 0 ${weeks.length * 4 - 1} ${H}"
-        preserveAspectRatio="none"
-        role="img"
-        aria-label="${summary}"
-        class="block w-full h-20 border-b border-stone-400"
-      >
-        ${bars}
-      </svg>
-      <div class="flex justify-between mt-1 text-xs opacity-75" aria-hidden="true">
-        <span>${t.yearAgo}</span><span>${t.thisWeek}</span>
+    <figure>
+      <figcaption class="text-md italic mb-3">${t.monthsTitle}</figcaption>
+      <div role="img" aria-label="${summary}">
+        <div class="gh-months" aria-hidden="true">
+          ${months.map(
+            (m, i) => html`<div
+              class="${i === months.length - 1 ? "gh-month gh-month-now" : "gh-month"}"
+              style="height:${((m.count / max) * 100).toFixed(1)}%"
+              title="${t.monthLabel.replace("{month}", long.format(utc(`${m.month}-15`))).replace("{count}", fmt.format(m.count))}"
+            ><span>${fmt.format(m.count)}</span></div>`,
+          )}
+        </div>
+        <div class="gh-month-names" aria-hidden="true">
+          ${months.map((m) => html`<span>${name(m.month)}</span>`)}
+        </div>
       </div>
     </figure>
   `;
 }
 
-function stat(value: string, label: string, big = false) {
-  return html`<div class="flex flex-col">
-    <dt class="order-2 text-sm text-pretty">${label}</dt>
-    <dd class="${big ? "gh-number gh-number-big" : "gh-number"}">${value}</dd>
-  </div>`;
+/**
+ * GitHub's contribution calendar, drawn in the site's ink: a column per week,
+ * Sunday on top, and four shades past zero split at the quartiles of the busy
+ * days, the way GitHub splits them. Today is ringed in the accent.
+ */
+function contributionCalendar(ctx: RenderCtx, stats: GithubStats) {
+  const { github: t } = ctx.t;
+  const { days, start, total } = stats.contributions;
+  const fmt = new Intl.NumberFormat(ctx.lang);
+  const dateFmt = new Intl.DateTimeFormat(ctx.lang, { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+  const monthFmt = new Intl.DateTimeFormat(ctx.lang, { month: "short", timeZone: "UTC" });
+
+  const busy = days.filter((n) => n > 0).sort((a, b) => a - b);
+  const q = (p: number) => busy[Math.min(busy.length - 1, Math.floor(p * busy.length))] ?? 1;
+  const cuts = [q(0.25), q(0.5), q(0.75)];
+  const level = (n: number) => (n === 0 ? 0 : n <= cuts[0] ? 1 : n <= cuts[1] ? 2 : n <= cuts[2] ? 3 : 4);
+
+  const label = (n: number) =>
+    n === 0 ? t.dayNone : (n === 1 ? t.dayOne : t.dayMany).replace("{count}", fmt.format(n));
+
+  const t0 = utc(start).getTime();
+  const weeks = Math.ceil(days.length / 7);
+  const PITCH = 12;
+  const CELL = 10;
+
+  // A month's name over the first week that starts in it, unless the
+  // previous name is too close to leave room for it.
+  const names: { col: number; text: string }[] = [];
+  let prevMonth = -1;
+  for (let col = 0; col < weeks; col++) {
+    const date = new Date(t0 + col * 7 * DAY_MS);
+    if (date.getUTCMonth() === prevMonth) continue;
+    prevMonth = date.getUTCMonth();
+    if (col > weeks - 3) continue;
+    if (names.length && col - names[names.length - 1].col < 3) names.pop();
+    names.push({ col, text: monthFmt.format(date).replace(".", "").slice(0, 3) });
+  }
+
+  const cells = days.map((n, i) => {
+    const date = dateFmt.format(new Date(t0 + i * DAY_MS));
+    const cls = `gh-day gh-l${level(n)}${i === days.length - 1 ? " gh-today" : ""}`;
+    return html`<rect x="${Math.floor(i / 7) * PITCH}" y="${(i % 7) * PITCH}" width="${CELL}" height="${CELL}" class="${cls}"><title>${date}: ${label(n)}</title></rect>`;
+  });
+
+  return html`
+    <figure>
+      <figcaption class="text-md italic mb-3">
+        ${t.contributions.replace("{total}", fmt.format(total))}
+      </figcaption>
+      <div class="relative h-4 text-[0.65rem] opacity-75" aria-hidden="true">
+        ${names.map(
+          (n) => html`<span class="absolute" style="left:${((n.col / weeks) * 100).toFixed(2)}%">${n.text}</span>`,
+        )}
+      </div>
+      <svg
+        viewBox="0 0 ${weeks * PITCH - (PITCH - CELL)} ${7 * PITCH - (PITCH - CELL)}"
+        role="img"
+        aria-label="${t.calendarSummary.replace("{total}", fmt.format(total))}"
+        class="block w-full h-auto"
+      >
+        ${cells}
+      </svg>
+      <div class="flex items-center justify-end gap-1 mt-2 text-[0.65rem] opacity-75" aria-hidden="true">
+        <span class="mr-1">${t.less}</span>
+        ${[0, 1, 2, 3, 4].map(
+          (l) => html`<svg viewBox="0 0 10 10" class="size-2.5"><rect width="10" height="10" class="gh-day gh-l${l}"></rect></svg>`,
+        )}
+        <span class="ml-1">${t.more}</span>
+      </div>
+    </figure>
+  `;
 }
 
 export default function githubSidebar(ctx: RenderCtx, stats: GithubStats = githubStats) {
   const { github: t } = ctx.t;
   const fmt = new Intl.NumberFormat(ctx.lang);
-  const updated = new Intl.DateTimeFormat(ctx.lang, { dateStyle: "long", timeZone: "UTC" }).format(
-    new Date(`${stats.updatedAt}T00:00:00Z`),
-  );
-  const prs = stats.prsMerged30d.own + stats.prsMerged30d.requested;
-  const maxLang = Math.max(1, ...stats.languages.map((l) => l.repos));
+  const updated = new Intl.DateTimeFormat(ctx.lang, { dateStyle: "long", timeZone: "UTC" }).format(utc(stats.updatedAt));
 
   // `side` is a placeholder: the client sets right or bottom by the viewport
   // before each opening. Content and backdrop start hidden so nothing shows
@@ -106,36 +154,13 @@ export default function githubSidebar(ctx: RenderCtx, stats: GithubStats = githu
           </ui-drawer-close>
         </header>
 
-        <div class="gh-scroll flex flex-col gap-8 px-6 pb-6">
-          <dl class="flex flex-col gap-6">
-            <div class="flex flex-col border-b border-stone-400 pb-6">
-              ${stat(fmt.format(prs), t.prsMerged, true)}
-              <p class="order-3 text-xs opacity-75 mt-1 text-pretty">${t.prsNote}</p>
-            </div>
-            <div class="grid grid-cols-2 gap-x-4 gap-y-5">
-              ${stat(fmt.format(stats.commits.year), t.commitsYear)}
-              ${stat(fmt.format(stats.commits.last30d), t.commits30d)}
-              ${stat(fmt.format(stats.publicRepos), t.publicRepos)}
-              ${stat(fmt.format(stats.stars), t.stars)}
-            </div>
-          </dl>
+        <div class="gh-scroll flex flex-col gap-10 px-6 pb-6">
+          <p class="flex flex-col border-b border-stone-400 pb-6">
+            <span class="gh-number">${fmt.format(stats.prsMerged30d)}</span>
+            <span class="text-sm text-pretty">${t.prsMerged}</span>
+          </p>
 
-          ${weeklyChart(ctx, stats)}
-
-          ${stats.languages.length
-            ? html`<section>
-                <h3 class="text-md italic mb-2">${t.languages}</h3>
-                <ul class="flex flex-col gap-1.5 text-sm">
-                  ${stats.languages.map(
-                    (lang) => html`<li class="grid grid-cols-[7rem_1fr_1.5rem] items-center gap-3">
-                      <span>${lang.name}</span>
-                      <span class="gh-lang-bar" style="--w:${((lang.repos / maxLang) * 100).toFixed(1)}%"></span>
-                      <span class="text-right tabular-nums opacity-75">${fmt.format(lang.repos)}</span>
-                    </li>`,
-                  )}
-                </ul>
-              </section>`
-            : null}
+          ${monthlyChart(ctx, stats)} ${contributionCalendar(ctx, stats)}
         </div>
 
         <footer class="gh-actions flex items-center justify-between gap-4 px-6 py-4 border-t border-stone-400">

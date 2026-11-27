@@ -1571,7 +1571,7 @@ html.ink-cursor #ink-cursor.on {
 
 .gh-sheet[data-side="right"] {
   @apply h-dvh border-l border-stone-400;
-  width: min(26rem, 100vw);
+  width: min(28rem, 100vw);
 }
 
 .gh-sheet[data-side="bottom"] {
@@ -1614,29 +1614,58 @@ html.ink-cursor #ink-cursor.on {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 
-/* The numbers in the cotas' face, the way the page's dimensions are drawn. */
+/* The number in the cotas' face, the way the page's dimensions are drawn. */
 .gh-number {
   font-family: "Barlow Condensed", "Montserrat", sans-serif;
   font-weight: 300;
   font-variant-numeric: tabular-nums;
-  @apply text-4xl leading-none;
+  @apply text-7xl leading-none;
 }
 
-.gh-number-big {
-  @apply text-7xl;
+/* PRs per month: bars on a rule, the count over each in the cotas' face. */
+.gh-months {
+  @apply grid grid-cols-12 gap-1 items-end h-28 border-b border-stone-400;
+  padding-top: 1.1rem;
 }
 
-.gh-bar {
-  @apply fill-stone-800 dark:fill-stone-100;
+.gh-month {
+  @apply relative bg-stone-800 dark:bg-stone-100;
+  min-height: 1px;
 }
 
-.gh-bar-now {
-  @apply fill-green-400 dark:fill-blue-600;
+.gh-month span {
+  @apply absolute bottom-full left-1/2 -translate-x-1/2 pb-0.5 text-xs leading-none;
+  font-family: "Barlow Condensed", "Montserrat", sans-serif;
+  font-variant-numeric: tabular-nums;
 }
 
-.gh-lang-bar {
-  @apply block h-2 bg-yellow-300 dark:bg-blue-900;
-  width: var(--w);
+.gh-month-now {
+  @apply bg-green-400 dark:bg-blue-600;
+}
+
+.gh-month-names {
+  @apply grid grid-cols-12 gap-1 mt-1 text-[0.65rem] text-center opacity-75;
+}
+
+/* The contribution calendar, in ink: four shades past an empty day. */
+.gh-day { fill: rgb(41 37 36 / 0.07); }
+.gh-l1 { fill: rgb(41 37 36 / 0.28); }
+.gh-l2 { fill: rgb(41 37 36 / 0.52); }
+.gh-l3 { fill: rgb(41 37 36 / 0.76); }
+.gh-l4 { fill: rgb(41 37 36); }
+
+@media (prefers-color-scheme: dark) {
+  .gh-day { fill: rgb(245 245 244 / 0.08); }
+  .gh-l1 { fill: rgb(245 245 244 / 0.28); }
+  .gh-l2 { fill: rgb(245 245 244 / 0.52); }
+  .gh-l3 { fill: rgb(245 245 244 / 0.76); }
+  .gh-l4 { fill: rgb(245 245 244); }
+}
+
+.gh-today {
+  @apply stroke-green-500 dark:stroke-blue-500;
+  stroke-width: 2;
+  paint-order: stroke;
 }
 
 /* The ink cursor is drawn in the page, under the top layer the sheet opens in,
@@ -1645,6 +1674,11 @@ html.ink-cursor ui-drawer-viewport,
 html.ink-cursor ui-drawer-viewport *,
 html.ink-cursor .gh-backdrop {
   cursor: auto !important;
+}
+
+/* And the ink cursor, left below, would trail the system's one around. */
+html:has(#github-sidebar ui-drawer-content[data-open]) #ink-cursor {
+  display: none;
 }
 
 html.ink-cursor ui-drawer-viewport :is(a, button),
