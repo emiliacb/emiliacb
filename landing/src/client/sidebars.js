@@ -8,6 +8,7 @@
 // still opens.
 import { isDark, onTokensChange } from "./lib/theme.js";
 import { rgbOf } from "./lib/color.js";
+import { guardBack } from "./lib/back-guard.js";
 
 (function () {
   "use strict";
@@ -178,7 +179,11 @@ import { rgbOf } from "./lib/color.js";
         clearBusy();
         placeSide();
         drawer.open = true;
-        if (drawer.querySelector("#calendar-embed")) startCalendar();
+        if (drawer.querySelector("#calendar-embed")) {
+          startCalendar();
+          // Back closes it wherever the focus is, Cal.com's frame included.
+          guardBack(drawer);
+        }
       },
       function () {
         clearBusy();
