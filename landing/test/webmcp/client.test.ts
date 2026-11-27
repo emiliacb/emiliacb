@@ -1,22 +1,13 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
 import { describe, expect, it } from "vitest";
 
-import { type Lang } from "../../src/shared/lang";
-import { dictionaries } from "../../src/shared/i18n";
-import { loadContent } from "../../src/site/content";
-import type { RenderCtx } from "../../src/site/context";
-import { renderLlmsTxt } from "../../src/site/markdown";
-import { blend, contrastRatio, parseRgb } from "../../src/client/webmcp/contrast.js";
+import { blend, contrastRatio, parseRgb } from "../../src/webmcp/client/css/contrast.js";
+import { enabledTools } from "../../src/webmcp/client/tools/index.js";
 import {
   mergeRule,
   parseDeclarations,
   rulesToCss,
   splitDeclarations,
-} from "../../src/client/webmcp/declarations.js";
-
-const root = fileURLToPath(new URL("../..", import.meta.url));
+} from "../../src/webmcp/client/css/declarations.js";
 
 describe("parseDeclarations", () => {
   it("reads a declaration string and an object the same way", () => {
@@ -90,22 +81,16 @@ describe("contrast", () => {
   });
 });
 
-describe("llms.txt WebMCP section", () => {
-  it("lists every tool the client registers", async () => {
-    const content = await loadContent(root);
-    const assets = { script: () => "/x.js", css: "/x.css", buildId: "test" };
-    const ctxFor = (lang: Lang): RenderCtx => ({ lang, t: dictionaries[lang], assets, content });
-    const txt = renderLlmsTxt(ctxFor);
-
-    const dir = `${root}/src/client/webmcp`;
-    const names: string[] = [];
-    for (const file of readdirSync(dir).filter((f) => f.endsWith("-tools.js"))) {
-      const source = readFileSync(`${dir}/${file}`, "utf8");
-      for (const match of source.matchAll(/^\s+name: "([a-z_]+)",$/gm)) names.push(match[1]);
-    }
+describe("enabledTools", () => {
+  it("defines every tool completely, with a unique name", () => {
+    const names = enabledTools.map((tool) => tool.name);
     expect(names.length).toBeGreaterThan(0);
-    for (const name of names) expect(txt, name).toContain(`\`${name}\``);
-    expect(txt).toContain("document.modelContext.getTools()");
-    expect(txt).not.toContain("](/");
+    expect(new Set(names).size).toBe(names.length);
+    for (const tool of enabledTools) {
+      expect(tool.name, tool.name).toMatch(/^[a-z]+(_[a-z]+)*$/);
+      expect(tool.summary, tool.name).not.toBe("");
+      expect(tool.title, tool.name).not.toBe("");
+      expect(tool.description, tool.name).not.toBe("");
+    }
   });
 });

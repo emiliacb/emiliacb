@@ -10,7 +10,7 @@
 // Loaded fonts are kept in sessionStorage, like the agent's CSS: CSS that
 // uses a font keeps working on the next page of the tab, and the tab's end
 // ends them.
-import { fail, ok } from "./result.js";
+import { fail, ok } from "../core/result.js";
 
 const STORAGE_KEY = "webmcp:fonts";
 const LINK_ATTRIBUTE = "data-webmcp-font";
@@ -197,6 +197,7 @@ function describe({ family, weights, italic }) {
 
 const setGoogleFont = {
   name: "set_google_font",
+  summary: "load a Google Fonts family (apply it afterwards with the CSS tools)",
   title: "Load a Google Font",
   description:
     "Loads a Google Fonts family into the page. It ONLY loads the font: it does not apply it to anything. " +
@@ -249,6 +250,7 @@ const setGoogleFont = {
 
 const listLoadedFonts = {
   name: "list_loaded_fonts",
+  summary: "the Google Fonts loaded in this tab",
   title: "List the loaded Google Fonts",
   description:
     "Lists the Google Fonts loaded with set_google_font in this tab (family, the `cssFamily` value to use in " +

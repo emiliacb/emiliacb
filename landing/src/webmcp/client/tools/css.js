@@ -2,10 +2,10 @@
 // goes through applyGuarded (css-apply.js), which undoes a change that breaks
 // the page. The CSS is local to the visitor's tab and follows it across the
 // site's pages (css-state.js).
-import { applyGuarded, unsupportedDeclarations } from "./css-apply.js";
-import { emptyState, commitState, getState, STYLE_ID } from "./css-state.js";
-import { mergeRule, parseDeclarations, rulesToCss } from "./declarations.js";
-import { fail, ok } from "./result.js";
+import { applyGuarded, unsupportedDeclarations } from "../css/apply.js";
+import { emptyState, commitState, getState, STYLE_ID } from "../css/state.js";
+import { mergeRule, parseDeclarations, rulesToCss } from "../css/declarations.js";
+import { fail, ok } from "../core/result.js";
 
 // A stylesheet, not a page: past this it is more likely a mistake than a design.
 const MAX_CSS_CHARS = 50000;
@@ -172,6 +172,7 @@ function checkSupported(entries) {
 
 const getCss = {
   name: "get_css",
+  summary: "the CSS agents have applied so far",
   title: "Get the CSS applied by agents",
   description:
     "Returns the CSS an agent has applied to this page so far: the full free-form stylesheet (set_css) and the " +
@@ -190,6 +191,7 @@ const getCss = {
 
 const getVariables = {
   name: "get_variables",
+  summary: "the site's CSS variables (design tokens), declared and computed",
   title: "List the site's CSS variables",
   description:
     "Lists the CSS custom properties (--name) the site defines on :root / html, the design tokens it is built " +
@@ -216,6 +218,7 @@ const getVariables = {
 
 const getCssBySelector = {
   name: "get_css_by_selector",
+  summary: "computed styles of the elements a selector matches",
   title: "Inspect the styles of elements",
   description:
     "Finds the elements matching a CSS selector and returns, for up to `limit` of them (default 5, max 20), a short " +
@@ -245,6 +248,7 @@ const getCssBySelector = {
 
 const setCss = {
   name: "set_css",
+  summary: "replace the page's custom stylesheet",
   title: "Replace the page's custom CSS",
   description:
     "Restyles the page with a CSS stylesheet. It REPLACES the free-form stylesheet applied before with this one, so " +
@@ -274,6 +278,7 @@ const setCss = {
 
 const setCssBySelector = {
   name: "set_css_by_selector",
+  summary: "set or remove declarations for one selector",
   title: "Style a selector",
   description:
     "Sets, changes or removes CSS declarations for one selector, without touching the rest. The rules are merged " +
@@ -314,6 +319,7 @@ const setCssBySelector = {
 
 const resetCss = {
   name: "reset_css",
+  summary: "remove all custom CSS",
   title: "Restore the original design",
   description:
     "Removes everything applied with set_css and set_css_by_selector, so the page looks as originally designed. " +

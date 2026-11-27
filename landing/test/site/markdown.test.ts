@@ -7,7 +7,7 @@ import { CONTACT, PAGES, SITE_URL } from "../../src/shared/site";
 import { dictionaries } from "../../src/shared/i18n";
 import { loadContent } from "../../src/site/content";
 import type { RenderCtx } from "../../src/site/context";
-import { renderLlmsTxt, renderPagesManifest, renderSiteMarkdown, toServedMarkdown } from "../../src/site/markdown";
+import { renderLlmsTxt, renderSiteMarkdown, toServedMarkdown } from "../../src/site/markdown";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 
@@ -119,28 +119,5 @@ describe("toServedMarkdown links", () => {
   ])("%s -> %s", async (href, expected) => {
     const { ctxFor } = await setup();
     expect(toServedMarkdown(`[link](${href})`, ctxFor("en"), known)).toBe(`[link](${expected})\n`);
-  });
-});
-
-describe("renderPagesManifest", () => {
-  it("lists exactly the .md files the build writes, with a title and a kind each", async () => {
-    const { ctxFor, files } = await setup();
-    const manifest = renderPagesManifest(ctxFor);
-
-    expect(manifest.map((entry) => entry.path).toSorted()).toEqual(files.map((file) => file.path).toSorted());
-    for (const entry of manifest) {
-      expect(entry.title, entry.path).not.toBe("");
-      expect(entry.path.startsWith(`/${entry.lang}`), entry.path).toBe(true);
-    }
-  });
-
-  it("marks posts, the blog index and plain pages", async () => {
-    const { content, ctxFor } = await setup();
-    const byPath = new Map(renderPagesManifest(ctxFor).map((entry) => [entry.path, entry]));
-
-    expect(byPath.get("/en/blog.md")?.kind).toBe("index");
-    expect(byPath.get("/es/about.md")?.kind).toBe("page");
-    const post = content.posts[0];
-    expect(byPath.get(`/en/blog/${post.slug}.md`)).toMatchObject({ kind: "post", title: post.title, lang: "en" });
   });
 });

@@ -12,10 +12,10 @@ import {
   restoreOriginal,
   saveArticle,
   showArticle,
-} from "./articles.js";
-import { fail, ok } from "./result.js";
+} from "../content/articles.js";
+import { fail, ok } from "../core/result.js";
 
-// Built together with the .md files (scripts/build.ts, renderPagesManifest).
+// Written at build time by src/webmcp/site/manifest.ts (MANIFEST_PATH): keep the two in step.
 const MANIFEST_URL = "/webmcp/pages.json";
 // What one read returns. The longest post is a little over this, so paging is
 // the normal way to read it, not an edge case.
@@ -56,6 +56,7 @@ function articleEntry(article) {
 
 const listMdPages = {
   name: "list_md_pages",
+  summary: "list the site's Markdown pages (and the articles you created in this tab)",
   title: "List the site's Markdown pages",
   description:
     "Lists the pages of this site that have a Markdown version, which is the best way to read them: " +
@@ -185,6 +186,7 @@ async function markdownOf(raw, signal) {
 
 const readMdPage = {
   name: "read_md_page",
+  summary: "read one Markdown page, in parts when it is long",
   title: "Read a page as Markdown",
   description:
     "Returns the Markdown text of one page of this site. Pass the page as an absolute URL of this site, a path " +
@@ -212,7 +214,7 @@ const readMdPage = {
 
 // --- create_article --------------------------------------------------------
 
-function showExisting(show) {
+async function showExisting(show) {
   if (show === "original") {
     if (!restoreOriginal()) return ok("The page's own content was already on show.");
     return ok("Restored the page's original content.");
@@ -222,7 +224,7 @@ function showExisting(show) {
     const known = listArticles().map((a) => a.id);
     throw fail(`No article "${show}" in this tab. ${known.length ? `Known ids: ${known.join(", ")}.` : "None has been created yet."}`);
   }
-  const removed = showArticle(article);
+  const removed = await showArticle(article);
   return ok({ id: article.id, shown: true, sanitized: removed });
 }
 
@@ -273,6 +275,7 @@ function buildArticle(input) {
 
 const createArticle = {
   name: "create_article",
+  summary: "show a temporary article, styled as a blog post, in this tab only",
   title: "Show a temporary article in this tab",
   description:
     "Writes an article and shows it in this tab in place of the page's content, laid out and typeset exactly like " +
@@ -301,10 +304,10 @@ const createArticle = {
     },
   },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
-  execute(input) {
+  async execute(input) {
     if (typeof input?.show === "string" && input.show.trim() !== "") return showExisting(input.show.trim());
     const article = saveArticle(buildArticle(input));
-    const removed = showArticle(article);
+    const removed = await showArticle(article);
     return ok({
       id: article.id,
       path: `${ARTICLE_PREFIX}${article.id}`,
