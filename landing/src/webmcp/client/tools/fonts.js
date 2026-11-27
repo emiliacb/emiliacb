@@ -203,20 +203,26 @@ const setGoogleFont = {
   summary: "load a Google Fonts family (apply it afterwards with the CSS tools)",
   title: "Load a Google Font",
   description:
-    "Loads a Google Fonts family into the page. It ONLY loads the font: it does not apply it to anything. " +
-    "Apply it afterwards with set_css or set_css_by_selector, using the returned `cssFamily`, for example " +
-    "set_css_by_selector({ selector: \"body\", declarations: { \"font-family\": \"'Lora', serif\" } }). " +
-    "Input: `family` (required, the exact name on fonts.google.com, such as \"Lora\" or \"Space Grotesk\"; letters, " +
-    "digits, spaces and hyphens only), `weights` (optional array of numbers, default [400, 700]), `italic` " +
-    "(optional boolean, default false: also load the italic of each weight). Resolves once the font files are " +
-    "really loaded, so CSS applied right after uses it with no flash. Rejects with a hint if Google does not " +
-    "know the family or the weights, or if loading takes more than 8 seconds. Loading a family again adds the " +
-    "new weights to it. Google Fonts is contacted on two hosts: fonts.googleapis.com serves the stylesheet and fonts.gstatic.com the font files. The font stays loaded while the visitor navigates the " +
-    "site in this tab; a reload restores the original. " +
-    "Returns `family`, `cssFamily` (the value for font-family, with a generic fallback guessed from the name), " +
-    "`weights` and `italic`." +
-    " " +
-    MODIFY_HINT,
+    "Loads a Google Fonts family into the page; it does not apply it. Then use set_css_by_selector with the " +
+    "returned `cssFamily`, for example font-family on body. `family` is the exact name on fonts.google.com; " +
+    "`weights` default [400, 700]; `italic` default false. Resolves once the font files are really loaded, and " +
+    "rejects if Google lacks the family or weights or it takes over 8 seconds. Loading a family again adds " +
+    "weights. Kept while the visitor navigates this tab. " +
+    MODIFY_HINT +
+    " Full details: get_tool_help.",
+  help:
+    "# set_google_font\n" +
+    "\n" +
+    "Loads a Google Fonts family and nothing else: apply it afterwards with `set_css` or `set_css_by_selector`, using the returned `cssFamily`, for example `set_css_by_selector({ selector: \"body\", declarations: { \"font-family\": \"'Lora', serif\" } })`.\n" +
+    "\n" +
+    "- `family`: the exact name on fonts.google.com, letters, digits, spaces and hyphens only.\n" +
+    "- `weights`: array of numbers, default `[400, 700]`. Many families have no 500 or 600.\n" +
+    "- `italic`: also load the italic of each weight (default false).\n" +
+    "- Resolves once the font files are really loaded, so CSS applied right after uses it with no flash. Rejects with a hint if Google does not know the family or the weights, or if loading takes more than 8 seconds.\n" +
+    "- Google Fonts is contacted on two hosts: `fonts.googleapis.com` serves the stylesheet and `fonts.gstatic.com` the font files.\n" +
+    "- Returns `family`, `cssFamily` (for `font-family`, with a generic fallback guessed from the name), " +
+    "`weights` and `italic`. The font stays loaded while the visitor navigates the site in this tab; a reload " +
+    "restores the original.",
   inputSchema: {
     type: "object",
     properties: {
@@ -258,8 +264,8 @@ const listLoadedFonts = {
   summary: "the Google Fonts loaded in this tab",
   title: "List the loaded Google Fonts",
   description:
-    "Lists the Google Fonts loaded with set_google_font in this tab (family, the `cssFamily` value to use in " +
-    "font-family, weights, italic). Empty when none. Takes no input.",
+    "Lists the Google Fonts loaded with set_google_font in this tab: family, the `cssFamily` for font-family, " +
+    "weights and italic. Empty when none. No input.",
   inputSchema: { type: "object", properties: {} },
   annotations: { readOnlyHint: true },
   execute() {

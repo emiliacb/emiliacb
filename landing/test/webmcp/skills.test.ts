@@ -29,8 +29,8 @@ const words = (text: string) => text.split(/\s+/).filter(Boolean).length;
 describe("skills", () => {
   const onDisk = readSkills();
 
-  it("has the two skills, each named for its folder, with a triggering description", () => {
-    expect(onDisk.map((skill) => skill.name)).toEqual(["answering-questions", "modifying-page"]);
+  it("has the skills, each named for its folder, with a triggering description", () => {
+    expect(onDisk.map((skill) => skill.name)).toEqual(["answering-questions", "composing-song", "modifying-page"]);
     for (const skill of onDisk) {
       expect(skill.name, skill.name).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
       expect(skill.description, skill.name).toMatch(/^Use when/);
@@ -63,6 +63,7 @@ describe("skills", () => {
     const paths = renderSkillFiles().map((file) => file.path);
     expect(paths).toContain("/mcp/skills/modifying-page/SKILL.md");
     expect(paths).toContain("/mcp/skills/answering-questions/SKILL.md");
+    expect(paths).toContain("/mcp/skills/composing-song/SKILL.md");
     expect(renderBuildFiles(ctxFor).map((file) => file.path)).toEqual(expect.arrayContaining(paths));
 
     const txt = renderLlmsTxt(ctxFor);

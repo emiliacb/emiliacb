@@ -40,11 +40,9 @@ const getThemeModeTool = {
   summary: "the colour mode: light, dark or system, and what is showing now",
   title: "Get the colour mode",
   description:
-    "Returns the site's colour mode. `mode` is what the page was told to be (\"light\", \"dark\", or \"system\" when " +
-    "nothing is forced and the visitor's operating system decides); `effective` is what is painted right now " +
-    "(\"light\" or \"dark\"); `system` is the operating system's preference; `stored` says whether the visitor's " +
-    "tab keeps a forced mode for the pages the visitor navigates to (kept while they navigate the site in this tab; a " +
-    "reload restores the original). Takes no input.",
+    "Returns the colour mode: `mode` (light, dark, or system when nothing is forced), `effective` (what is " +
+    "painted now), `system` (the operating system's preference) and `stored` (whether this tab keeps a forced " +
+    "mode). No input.",
   inputSchema: { type: "object", properties: {} },
   annotations: { readOnlyHint: true },
   execute() {
@@ -57,18 +55,23 @@ const setThemeModeTool = {
   summary: "switch to light, dark or the system's colour mode",
   title: "Set the colour mode",
   description:
-    "Switches the site to \"light\", \"dark\", or \"system\" (follow the visitor's operating system). It applies at " +
-    "once, canvases included (the tree, the cotas, the gradient repaint), and returns the new state like " +
-    "get_theme_mode. Like CSS set by an agent, a forced \"light\" or \"dark\" is kept while the visitor " +
-    "navigates the site in this tab and a reload restores the original; it never reaches another tab or a later " +
-    "visit. \"system\" clears the choice at once, so use it to hand the decision back. " +
-    "To make a CSS or token change (set_css, set_css_by_selector, an override of a variable from get_variables) " +
-    "show in dark mode too: a token set on `:root` alone only changes light mode, because the site redefines its " +
-    "tokens for dark under `:root[data-theme=\"dark\"]` and under `@media (prefers-color-scheme: dark)`, which " +
-    "win over it. Either write the override in both places (the attribute selector, and the media query with " +
-    "`:root:not([data-theme=\"light\"])`), or add `!important` on `:root`, then check the result with this tool " +
-    "in each mode. " +
-    "Input: `mode`, one of \"light\", \"dark\", \"system\".",
+    "Switches the colour mode to \"light\", \"dark\" or \"system\" (follow the visitor's operating system) and " +
+    "returns the new state like get_theme_mode. It applies at once, canvases included. A forced mode is kept " +
+    "while the visitor navigates in this tab; a reload restores the original, and \"system\" hands the " +
+    "decision back. A token set on `:root` alone shows only in light mode: use set_variables. Full details: " +
+    "get_tool_help.",
+  help:
+    "# set_theme_mode\n" +
+    "\n" +
+    "Switches the site to `light`, `dark` or `system`. It applies at once (the tree, the cotas and the gradient repaint) and returns the new state like `get_theme_mode`.\n" +
+    "\n" +
+    "A forced `light` or `dark` is kept while the visitor navigates the site in this tab and a reload restores the original; it never reaches another tab or a later visit. `system` clears the choice at once.\n" +
+    "\n" +
+    "To make a CSS or token change show in dark mode too: a token set on `:root` alone only changes light " +
+    "mode, because the site redefines its tokens for dark under `:root[data-theme=\"dark\"]` and under `@media " +
+    "(prefers-color-scheme: dark)`, which win over it. Use `set_variables` with `mode: both`, or write the " +
+    "override in both places (the attribute selector, and the media query with " +
+    "`:root:not([data-theme=\"light\"])`), or add `!important` on `:root`, and check the result in each mode.",
   inputSchema: {
     type: "object",
     properties: {

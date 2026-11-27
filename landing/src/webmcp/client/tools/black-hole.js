@@ -38,18 +38,23 @@ const startBlackHole = {
   summary: "turn the background gradient into a black hole for a few seconds",
   title: "Start the black hole",
   description:
-    "Plays the site's black hole, exactly as if the visitor had clicked the bright core of the background gradient. " +
-    "What the visitor sees: the page trembles, the gradient's coloured sheets collapse into a small black sphere ringed by a " +
-    "glowing disc, the page behind bends round it, the mouse cursor is caught and spun into it (and the mouse is " +
-    "hidden meanwhile), then the hole evaporates in a flash that sends a shockwave through the page and gives " +
-    "everything back as it was. It is purely visual and temporary (about 12 seconds), and it makes sound if the " +
-    "browser allows audio. It is a playful moment: use it to celebrate, dramatize or punctuate something, or when " +
-    "the visitor asks for something fun; not for no reason, and not repeatedly. The page does not scroll while it " +
-    "runs. It is born at the core of the gradient, which this tool scrolls into view if needed, so it takes no " +
-    "position. Returns as soon as it has started, with its expected duration; use get_black_hole_state or " +
-    "stop_black_hole afterwards. Refused while one is already running, on pages without the gradient, on a phone " +
-    "or narrow window, and when the visitor prefers reduced motion. " +
-    WHERE,
+    "Plays the site's black hole, as if the visitor had clicked the bright core of the background gradient: " +
+    "the gradient collapses into a black sphere, the page bends round it, the cursor is caught, then it " +
+    "evaporates in a shockwave and everything returns (about 12 seconds, with sound if the browser allows). " +
+    "Purely visual and playful: use it to celebrate or punctuate, not for no reason or repeatedly. Refused on " +
+    "the home page, on a phone, and under reduced motion. Full details: get_tool_help.",
+  help:
+    "# start_black_hole\n" +
+    "\n" +
+    "Plays the site's black hole, exactly as if the visitor had clicked the bright core of the background gradient. The page trembles, the gradient's coloured sheets collapse into a small black sphere ringed by a glowing disc, the page behind bends round it, the mouse cursor is caught and spun into it (and hidden meanwhile), then the hole evaporates in a flash that sends a shockwave through the page and gives everything back as it was.\n" +
+    "\n" +
+    "- Purely visual and temporary (about 12 seconds); it makes sound if the browser allows audio.\n" +
+    "- A playful moment: use it to celebrate, dramatize or punctuate something, or when the visitor asks for something fun; not for no reason, and not repeatedly.\n" +
+    "- The page does not scroll while it runs. It is born at the core of the gradient, which the tool scrolls into view, so it takes no position.\n" +
+    "- Returns as soon as it has started, with its expected duration; use `get_black_hole_state` or `stop_black_hole` afterwards.\n" +
+    "- Refused while one is already running, on pages without the gradient (every page has it except the ones " +
+    "with the tree illustration: the home and /labs/distortion-bg), on a phone or narrow window (it needs a " +
+    "desktop browser at least 768px wide with a mouse), and when the visitor prefers reduced motion.",
   inputSchema: { type: "object", properties: {}, additionalProperties: false },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
   execute() {
@@ -75,8 +80,8 @@ const stopBlackHole = {
   summary: "end the black hole early and restore the gradient",
   title: "Stop the black hole",
   description:
-    "Ends a running black hole at once: the gradient, the mouse cursor and scrolling are given back immediately, " +
-    "without the final flash. Not an error when none is running: it says so. Also returns the state afterwards.",
+    "Ends a running black hole at once, giving back the gradient, the cursor and scrolling without the final " +
+    "flash. Not an error when none is running. Returns the state afterwards.",
   inputSchema: { type: "object", properties: {}, additionalProperties: false },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
   execute() {
@@ -94,8 +99,8 @@ const getBlackHoleState = {
   summary: "whether a black hole is running, and its phase",
   title: "Get the black hole's state",
   description:
-    "Reports whether the black hole is running and in which phase (calm when at rest; then gather, fall, hold, boom, " +
-    "back, in that order) and how long ago it started. Read-only. " +
+    "Reports whether the black hole is running, its phase (calm, then gather, fall, hold, boom, back) and how " +
+    "long ago it started. Read-only. " +
     WHERE,
   inputSchema: { type: "object", properties: {}, additionalProperties: false },
   annotations: { readOnlyHint: true },

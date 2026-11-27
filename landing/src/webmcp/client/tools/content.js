@@ -60,13 +60,10 @@ const listMdPages = {
   summary: "list the site's Markdown pages (and the articles you created in this tab)",
   title: "List the site's Markdown pages",
   description:
-    "Lists the pages of this site that have a Markdown version, which is the best way to read them: " +
-    "clean text, links already absolute. Each entry has the page's path (an absolute URL of its .md file, " +
-    "ready for read_md_page), title, language (en or es) and kind: page, post (a journal article), " +
-    "index (the journal's list of posts) or agent-article (an article you made with create_article in this tab; " +
-    'its path is "agent-article:<id>", not a URL). Takes an optional "lang": en or es, or all for both ' +
-    "(default: the language of the page you are on). Your own agent-articles are always listed." +
-    " " +
+    "Lists the site's pages that have a Markdown version, the best way to read them. Each entry has `path` (a " +
+    "URL ready for read_md_page), title, language and kind: page, post, index or agent-article (one you made " +
+    "with create_article; its path is \"agent-article:<id>\"). `lang` is en, es or all (default: the current " +
+    "page's language). " +
     ANSWER_HINT,
   inputSchema: {
     type: "object",
@@ -192,13 +189,11 @@ const readMdPage = {
   summary: "read one Markdown page, in parts when it is long",
   title: "Read a page as Markdown",
   description:
-    "Returns the Markdown text of one page of this site. Pass the page as an absolute URL of this site, a path " +
-    '("/es/about", "/es/about.md", "/blog/<slug>"; a path without a language is served in the visitor\'s language), ' +
-    'its title or slug as list_md_pages shows it ("About", a post\'s slug), or an agent-article path. ' +
-    "Only this site's own pages are read: another origin is refused. " +
-    `A long page comes back ${PAGE_CHARS} characters at a time; when it is cut, the text ends with a line saying so ` +
-    'and which "offset" to pass to continue.' +
-    " " +
+    "Returns the Markdown of one page of this site. Pass a URL or path (\"/es/about\", \"/blog/<slug>\"), a " +
+    "title or slug as list_md_pages shows it, or an agent-article path. Other origins are refused. A long page " +
+    "comes back in parts of " +
+    PAGE_CHARS +
+    " characters: the text ends with the `offset` to pass to continue. " +
     ANSWER_HINT,
   inputSchema: {
     type: "object",
@@ -292,19 +287,24 @@ const createArticle = {
   summary: "show a temporary article, styled as a blog post, in this tab only",
   title: "Show a temporary article in this tab",
   description:
-    "Writes an article and shows it in this tab in place of the page's content, laid out and typeset exactly like " +
-    "one of this site's journal posts (same column, headings, lists, code, links), under the navbar and above the footer. " +
-    'A small banner says it is agent-generated and not published, with a button to restore the page. ' +
-    "Nothing is published or sent anywhere: the article is kept while the visitor navigates the site in this tab, and a " +
-    "reload restores the original. Pass \"title\" and \"markdown\" (the body: do not repeat the title as a first " +
-    "heading); optional \"subtitle\" (one line under the title), \"date\" (e.g. 2026-11-27) and \"tags\". " +
-    "Markdown is converted in the browser and the result is sanitized: scripts, event handlers and unsafe URLs are " +
-    "removed, and the result lists what was dropped. Creating an article with the title of an existing one replaces it. " +
-    "Articles appear in list_md_pages as kind agent-article and read_md_page returns their Markdown. " +
-    'To show one again (for example after navigating to another page) pass only "show" with its id; ' +
-    '"show": "original" restores the page\'s own content.' +
-    " " +
+    "Shows an article in this tab in place of the page's content, typeset like one of the site's journal " +
+    "posts, with a banner saying it is agent-generated and not published. Pass `title` and `markdown` (the " +
+    "body, without the title); optional `subtitle`, `date` and `tags`. The HTML is sanitized and the result " +
+    "lists what was dropped. Pass only `show` (an article's id, or \"original\") to show one again or restore " +
+    "the page. Full details: get_tool_help. " +
     ANSWER_HINT,
+  help:
+    "# create_article\n" +
+    "\n" +
+    "Writes an article and shows it in this tab in place of the page's content, laid out and typeset exactly like one of this site's journal posts (same column, headings, lists, code, links), under the navbar and above the footer. A small banner says it is agent-generated and not published, with a button to restore the page.\n" +
+    "\n" +
+    "- Nothing is published or sent anywhere: the article is kept while the visitor navigates the site in this tab, and a reload restores the original.\n" +
+    "- `title` and `markdown` (the body: do not repeat the title as a first heading); optional `subtitle` (one line under the title), `date` (for example 2026-11-27) and `tags`.\n" +
+    "- Markdown is converted in the browser and the result is sanitized: scripts, event handlers and unsafe URLs are removed, and the result lists what was dropped.\n" +
+    "- Creating an article with the title of an existing one replaces it.\n" +
+    "- Articles appear in `list_md_pages` as kind `agent-article` and `read_md_page` returns their Markdown.\n" +
+    "- To show one again (for example after navigating to another page) pass only `show` with its id; " +
+    "`\"show\": \"original\"` restores the page's own content.",
   inputSchema: {
     type: "object",
     properties: {

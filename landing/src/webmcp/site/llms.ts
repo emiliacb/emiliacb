@@ -26,7 +26,9 @@ export function renderLlmsSection(): string[] {
       "`await document.modelContext.executeTool(name, input)` runs one: it resolves to a JSON string of " +
       "`{content:[{type:\"text\", text}]}` (parse it, and parse `text` too: it is JSON), and rejects with an Error " +
       "whose message says what happened and what to do next. " +
-      "The skills are also tools: `list_skills` and `read_skill({ name })`.",
+      "The skills are also tools: `list_skills` and `read_skill({ name })`. `set_variables`, `set_css` and " +
+      "`set_css_by_selector` fail until you have read `modifying-page`, and `play_tree_song` and `play_song` until " +
+      "you have read `composing-song`. A tool's description is cut short: `get_tool_help({ name })` returns the full one.",
     "",
     ...WEBMCP_TOOLS.map(([name, summary]) => `- \`${name}\`: ${summary}`),
     "",

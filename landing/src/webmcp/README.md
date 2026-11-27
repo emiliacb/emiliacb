@@ -34,7 +34,8 @@ src/webmcp/
   client/               runs in the browser
     index.js            the entry logic: restore saved CSS, register the tools
     core/               context.js (document.modelContext, polyfill, error guard),
-                        result.js (ok/fail), sanitize.js (HTML the agent sends)
+                        result.js (ok/fail), sanitize.js (HTML the agent sends),
+                        skill-gate.js (tools that fail until their skill was read)
     css/                what set_css and friends are built on: state.js (variable
                         overrides, rules, kept with src/client/lib/nav-storage.js; announces every commit
                         with `tokenschange` so the canvases repaint),
@@ -89,7 +90,8 @@ const getThing = {
   name: "get_thing",              // snake_case, unique
   summary: "the thing, read-only", // one line, shown in llms.txt
   title: "Get the thing",
-  description: "What it does, what it takes, what it returns, for an agent.",
+  description: "What it does, what it takes, what it returns, for an agent.", // at most 700 characters
+  help: "Optional Markdown with the rest; get_tool_help returns it.",
   inputSchema: { type: "object", properties: { ... } },
   annotations: { readOnlyHint: true },
   execute(input) {
@@ -102,6 +104,13 @@ export const thingTools = [getThing];
 `execute` may be async. Whatever it throws is cleaned up by `core/context.js`
 before the agent sees it: a `fail(...)` message goes through as written, a bug
 becomes a generic message and a console warning.
+
+A description is cut by the agent's client at about 900 characters, so a test
+holds every one to 700 (and the play tools to 500): lead with what it does,
+then the key inputs and the one caveat, and put the rest in the input
+properties (at most 200 characters each), in `help`, or in a skill. A tool that
+works much better after reading a skill can call `requireSkill(name)`
+(`core/skill-gate.js`) first in `execute`; `read_skill` unlocks it for the tab.
 
 ## Adding a tool in 3 steps
 

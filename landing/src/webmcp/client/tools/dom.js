@@ -25,7 +25,7 @@ const DOM_FORCE_ADVICE =
   "Send a corrected change. If the effect is intended despite this, send the same call with \"force\": true; the " +
   "change then stays and the visitor is offered a button to restore the original page.";
 const SIDEBAR_ADVICE = "Send different HTML: nothing in a sidebar may cover the page or take its clicks.";
-const SCOPE = "The change lives only in this tab's current page: navigating or reloading brings the page back as it was. ";
+const SCOPE = "Lasts only on this page: navigating clears it. ";
 
 const POSITIONS = ["append", "prepend", "before", "after"];
 // Tags that cannot hold the markup (void) or whose content is not rendered as markup.
@@ -108,21 +108,22 @@ const openCustomSidebar = {
   summary: "open a sidebar like the site's own with a title and sanitized HTML",
   title: "Open a sidebar with your own content",
   description:
-    "Opens a sidebar on the page with a title and the HTML you give it. It is the same panel the site uses for its " +
-    "GitHub, LinkedIn, email and booking sidebars (a panel from the right on a desktop, a bottom sheet on a phone), " +
-    "with a dimmed backdrop and a close button; it closes with the button, a click on the backdrop, Escape, or a " +
-    "downward drag on the phone sheet. Use it to show the visitor something that does not belong in the page: a " +
-    "summary, a list of results, an answer with links. " +
-    "Input: `title` (string, up to 120 characters); `html` (the content, up to 100000 characters; headings, " +
-    "paragraphs, lists, links, images and tables are styled in the sheet's type); optional `side`: \"auto\" " +
-    "(default: right on a desktop, bottom on a phone), \"right\" or \"bottom\". " +
-    "The HTML is sanitized: scripts, styles, forms, iframes, event handlers, javascript: links and ids the page " +
-    "already uses are removed, and the result lists what was dropped in `removed`. " +
-    "Calling it again REPLACES the title and content of that same sidebar (an open one stays open, and keeps its " +
-    "edge until it is closed). Returns whether it replaced an open sidebar and the edge it uses. " +
-    "Opening it closes any other sidebar. " +
+    "Opens a sidebar with a title and the HTML you give it, the panel the site uses for its GitHub, LinkedIn " +
+    "and booking sidebars (from the right on a desktop, a bottom sheet on a phone). Use it to show the visitor " +
+    "something that does not belong in the page: a summary, results, an answer with links. `title` up to 120 " +
+    "characters, `html` up to 100000 (sanitized; `removed` lists what was dropped), `side` auto, right or " +
+    "bottom. Calling it again replaces its content. Full details: get_tool_help. " +
     SCOPE +
     ANSWER_HINT,
+  help:
+    "# open_custom_sidebar\n" +
+    "\n" +
+    "Opens a sidebar on the page with a title and the HTML you give it. It is the same panel the site uses for its GitHub, LinkedIn, email and booking sidebars (a panel from the right on a desktop, a bottom sheet on a phone), with a dimmed backdrop and a close button; it closes with the button, a click on the backdrop, Escape, or a downward drag on the phone sheet.\n" +
+    "\n" +
+    "- `title`: up to 120 characters. `html`: the content, up to 100000 characters; headings, paragraphs, lists, links, images and tables are styled in the sheet's type. `side`: `auto` (default: right on a desktop, bottom on a phone), `right` or `bottom`.\n" +
+    "- The HTML is sanitized: scripts, styles, forms, iframes, event handlers, `javascript:` links and ids the page already uses are removed, and the result lists what was dropped in `removed`.\n" +
+    "- Calling it again REPLACES the title and content of that same sidebar (an open one stays open, and keeps its edge until it is closed). Opening it closes any other sidebar.\n" +
+    "- Returns whether it replaced an open sidebar and the edge it uses. It lasts only on its page: navigating clears it.",
   inputSchema: {
     type: "object",
     properties: {
@@ -170,9 +171,9 @@ const closeSidebar = {
   summary: "close whichever sidebar is open",
   title: "Close the open sidebar",
   description:
-    "Closes whichever sidebar is open (one of the site's own or the one from open_custom_sidebar). Takes no input. " +
-    "Not an error when none is open: it says so. The content of the custom sidebar is kept, and open_custom_sidebar " +
-    "replaces it the next time.",
+    "Closes whichever sidebar is open, one of the site's own or the one from open_custom_sidebar. No input. " +
+    "Not an error when none is open. The custom sidebar's content is kept until open_custom_sidebar replaces " +
+    "it.",
   inputSchema: { type: "object", properties: {} },
   async execute() {
     const api = window.siteSidebars;
@@ -201,19 +202,22 @@ const insertElement = {
   summary: "insert sanitized HTML next to or inside an element",
   title: "Insert HTML into the page",
   description:
-    "Adds HTML to the page, next to or inside an existing element. " +
-    "Input: `html` (a fragment, up to 100000 characters); `parentSelector` (CSS selector of the reference element); " +
-    "optional `position` relative to it: \"append\" (default: as its last child), \"prepend\" (first child), " +
-    "\"before\" or \"after\" (as its sibling); optional `index` (0-based) to pick one when the selector matches " +
-    "several elements (default 0, the first). " +
-    "The HTML is sanitized (scripts, styles, forms, iframes, event handlers, javascript: links and ids the page " +
-    "already uses are removed) and `removed` lists what was dropped. Insertion into <head>, around <html>, <head> or " +
-    "<body>, inside elements that cannot hold markup (<img>, <script>...) and into the page's own error notice is " +
-    "refused. The inserted elements get a `data-webmcp-inserted` attribute; the result gives the selector that " +
-    "finds them and an `id` for remove_inserted_elements. Style them with set_css_by_selector. " +
-    "Returns where it went (parent, position), the tags inserted and that selector. " +
+    "Adds sanitized HTML to the page, next to or inside an existing element. `html` is a fragment (up to " +
+    "100000 characters), `parentSelector` the reference element, `position` append (default), prepend, before " +
+    "or after it, `index` which match to use (default 0). Returns where it went and an `id` for " +
+    "remove_inserted_elements. Style the result with set_css_by_selector. Full details: get_tool_help. " +
     SCOPE +
     MODIFY_HINT,
+  help:
+    "# insert_element\n" +
+    "\n" +
+    "Adds HTML to the page, next to or inside an existing element.\n" +
+    "\n" +
+    "- `html`: a fragment, up to 100000 characters. `parentSelector`: CSS selector of the reference element. `position`: `append` (default, as its last child), `prepend` (first child), `before` or `after` (as its sibling). `index`: 0-based, to pick one when the selector matches several elements (default 0).\n" +
+    "- The HTML is sanitized (scripts, styles, forms, iframes, event handlers, `javascript:` links and ids the page already uses are removed) and `removed` lists what was dropped.\n" +
+    "- Refused: insertion into `<head>`, around `<html>`, `<head>` or `<body>`, inside elements that cannot hold markup (`<img>`, `<script>`...) and into the page's own error notice.\n" +
+    "- The inserted elements get a `data-webmcp-inserted` attribute; the result gives the selector that finds them and an `id` for `remove_inserted_elements`. It lasts only on its page: navigating clears it.\n" +
+    "- Returns where it went (parent, position), the tags inserted and that selector.",
   inputSchema: {
     type: "object",
     properties: {
@@ -277,9 +281,8 @@ const removeInsertedElements = {
   summary: "remove what insert_element added",
   title: "Remove what insert_element added",
   description:
-    "Removes the elements added with insert_element. Input: optional `id` (the number insert_element returned) " +
-    "to remove only that insertion; without it, every inserted element on the page is removed. It does not " +
-    "undo set_text_content or close a sidebar (use close_sidebar). Returns how many elements were removed; " +
+    "Removes the elements added with insert_element: only the one with the `id` it returned, or every one when " +
+    "`id` is omitted. It does not undo set_text_content or close a sidebar. Returns how many were removed; " +
     "zero is not an error.",
   inputSchema: {
     type: "object",
@@ -318,20 +321,24 @@ const setTextContent = {
   summary: "replace the plain text of one or all elements a selector matches",
   title: "Change the text of elements",
   description:
-    "Replaces the text of an element with plain text (never HTML: `<b>` stays as the characters, it is not " +
-    "interpreted). Input: `selector`; `text` (string, up to 20000 characters); optional `index` (0-based, which " +
-    "match; default 0); optional `all: true` to change every match (up to 200) instead of one; optional " +
-    "`force: true`. " +
-    "Setting the text removes all the element's children. So an element that contains links, buttons, images, lists, " +
-    "other blocks or any structure beyond inline wording (<span>, <em>, <strong>, <code>...) is refused with an " +
-    "explanation, and nothing is changed; use a more specific selector that reaches the element that holds just " +
-    "the text (for example \"h1\" or \"p.lead\" rather than \"header\"), or `force: true` if wiping the children is " +
-    "intended. <body>, <head> and the page's error notice are never changed. With `all`, one refused match refuses " +
-    "the whole call. " +
-    "Returns the previous text of each changed element (truncated at 500 characters; up to 20 listed) so you can " +
-    "restore it by calling the tool again with that text; inline wording like <em> inside it is not restored. " +
+    "Replaces the text of an element with plain text (HTML is not interpreted). `selector`, `text` (up to " +
+    "20000 characters), `index` (default 0), `all: true` for every match (up to 200). An element with links, " +
+    "buttons, images, lists or other structure is refused, since the text replaces its children: use a more " +
+    "specific selector, or `force: true` to wipe them. Returns the previous text so you can restore it. Full " +
+    "details: get_tool_help. " +
     SCOPE +
     MODIFY_HINT,
+  help:
+    "# set_text_content\n" +
+    "\n" +
+    "Replaces the text of an element with plain text (never HTML: `<b>` stays as the characters, it is not interpreted).\n" +
+    "\n" +
+    "- `selector`; `text` (up to 20000 characters); `index` (0-based, which match; default 0); `all: true` to change every match (up to 200) instead of one; `force: true`.\n" +
+    "- Setting the text removes all the element's children. So an element that contains links, buttons, images, lists, other blocks or any structure beyond inline wording (`<span>`, `<em>`, `<strong>`, `<code>`...) is refused with an explanation, and nothing is changed; use a more specific selector that reaches the element that holds just the text (for example `h1` or `p.lead` rather than `header`), or `force: true` if wiping the children is intended.\n" +
+    "- `<body>`, `<head>` and the page's error notice are never changed. With `all`, one refused match refuses the whole call.\n" +
+    "- Returns the previous text of each changed element (truncated at 500 characters; up to 20 listed) so you " +
+    "can restore it by calling the tool again with that text; inline wording like `<em>` inside it is not " +
+    "restored. It lasts only on its page: navigating clears it.",
   inputSchema: {
     type: "object",
     properties: {

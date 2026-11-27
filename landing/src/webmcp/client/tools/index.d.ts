@@ -18,6 +18,8 @@ export type ToolSpec = {
   summary: string;
   title: string;
   description: string;
+  /** The full explanation in Markdown, for tools whose description would be too long; get_tool_help returns it. */
+  help?: string;
   inputSchema: JsonSchema;
 };
 
