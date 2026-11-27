@@ -1,7 +1,7 @@
 import { Lexer, type Tokens } from "marked";
 
 import { LANGS, type Lang } from "../../shared/lang";
-import { CONTACT, PAGES, SITE_URL, markdownPath, type PageId } from "../../shared/site";
+import { CONTACT, PAGES, SITE_URL, markdownPath, pagePath, type PageId } from "../../shared/site";
 import { headingSlug } from "../content";
 import type { Post } from "../content/types";
 import type { RenderCtx } from "../context";
@@ -32,9 +32,11 @@ function knownPagePaths(posts: Post[]): Set<string> {
 /** Root-relative URL → absolute URL, to the .md version when the page has one. */
 function absoluteUrl(href: string, known: Set<string>): string {
   if (!href.startsWith("/") || href.startsWith("//")) return href;
-  const match = /^([^?#]*)(.*)$/.exec(href)!;
-  const pathname = match[1].replace(/\/$/, "");
-  const rest = match[2];
+  // Split at the first "?" or "#": the path, then the query/fragment.
+  const cut = href.search(/[?#]/);
+  const end = cut === -1 ? href.length : cut;
+  const pathname = href.slice(0, end).replace(/\/$/, "");
+  const rest = href.slice(end);
   if (known.has(pathname)) return `${SITE_URL}${pathname}.md${rest}`;
   return `${SITE_URL}${href}`;
 }
@@ -109,7 +111,7 @@ function renderBlogIndex(ctx: RenderCtx): string {
 }
 
 function renderLab(ctx: RenderCtx, id: PageId, t: RenderCtx["t"]["labs"]["distortion" | "distortionBg"]): string {
-  const htmlUrl = `${SITE_URL}/${ctx.lang}${PAGES.find((p) => p.id === id)!.path}`;
+  const htmlUrl = `${SITE_URL}/${ctx.lang}${pagePath(id)}`;
   return [
     `# ${t.title}`,
     "",
@@ -183,16 +185,16 @@ const OPTIONAL_PAGES: readonly PageId[] = ["labs-distortion", "labs-distortion-b
  */
 const LLMS_NAME = "Emilia CB";
 
+function pageLink(ctx: RenderCtx, id: PageId): string {
+  const t = ctx.t.pages[id];
+  return `- [${t.mapTitle}](${SITE_URL}${markdownPath(ctx.lang, pagePath(id))}): ${t.blurb}`;
+}
+
 /** /llms.txt: what the site is and where the Markdown versions live. */
 export function renderLlmsTxt(ctxFor: (lang: Lang) => RenderCtx): string {
   const en = ctxFor("en");
   const es = ctxFor("es");
 
-  const pageLink = (ctx: RenderCtx, id: PageId) => {
-    const def = PAGES.find((p) => p.id === id)!;
-    const t = ctx.t.pages[id];
-    return `- [${t.mapTitle}](${SITE_URL}${markdownPath(ctx.lang, def.path)}): ${t.blurb}`;
-  };
   const mainPages = (ctx: RenderCtx) =>
     PAGES.filter((p) => !OPTIONAL_PAGES.includes(p.id)).map((p) => pageLink(ctx, p.id));
 

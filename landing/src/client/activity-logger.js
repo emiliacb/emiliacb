@@ -115,6 +115,7 @@
   // clean at the source rather than trusted as-is downstream.
   function sanitizeText(text, maxChars) {
     var clean = (text || "").replace(/\s+/g, " ").trim();
+    // oxlint-disable-next-line no-control-regex -- stripping control characters is the point
     clean = clean.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
     if (clean.length > maxChars) {
       clean = clean.slice(0, maxChars).trim() + "…";
@@ -208,6 +209,7 @@
 
   function debugLog(evt) {
     if (window.DEBUG_LOG) {
+      // oxlint-disable-next-line no-console -- opt-in debug output (window.DEBUG_LOG)
       console.log("[activity]", evt);
     }
   }
@@ -228,7 +230,7 @@
         sessionStorage.setItem(SESSION_KEY, id);
       }
       return id;
-    } catch (e) {
+    } catch {
       return null;
     }
   }
@@ -242,7 +244,7 @@
   function previousPage() {
     try {
       return sessionStorage.getItem(PREVIOUS_PAGE_KEY) || document.referrer || null;
-    } catch (e) {
+    } catch {
       return document.referrer || null;
     }
   }
@@ -251,7 +253,7 @@
 
   try {
     sessionStorage.setItem(PREVIOUS_PAGE_KEY, location.href);
-  } catch (e) {
+  } catch {
     // sessionStorage unavailable: cameFrom still works for this page, just
     // won't chain to the next one.
   }
@@ -301,7 +303,7 @@
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
       buffer = [];
-    } catch (e) {
+    } catch {
       // Quota exceeded or storage unavailable: drop the buffer instead of
       // retrying in a loop against a full localStorage.
       buffer = [];
@@ -318,7 +320,7 @@
       if (stored && stored.version === getSiteVersion() && stored.events) {
         return stored.events.length;
       }
-    } catch (e) {
+    } catch {
       // ignore, fall through to 0
     }
     return 0;

@@ -1,10 +1,10 @@
 // ponytail: AI layout (space framing the page); flip to true to preview
-export const AI_LAYOUT_ENABLED = false;
+export const AI_LAYOUT_ENABLED: boolean = false;
 
 // ponytail: kill switch for the whole AI feature (mascot button, activity panel,
 // activity logger and the layout they toggle), off while it doesn't work. Flip
 // to true to bring it back.
-export const AI_FEATURE_ENABLED = false;
+export const AI_FEATURE_ENABLED: boolean = false;
 
 export const AI_LAYOUT = {
   top: "3rem",

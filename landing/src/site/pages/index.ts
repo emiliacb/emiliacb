@@ -31,7 +31,6 @@ export async function renderSite(
   ctxFor: (lang: Lang) => RenderCtx
 ): Promise<{ pages: RenderedPage[]; notFound: Record<Lang, string> }> {
   const pages: RenderedPage[] = [];
-  const notFound = {} as Record<Lang, string>;
 
   for (const lang of LANGS) {
     const ctx = ctxFor(lang);
@@ -43,9 +42,8 @@ export async function renderSite(
     for (const post of ctx.content.posts) {
       pages.push({ path: `/${lang}/blog/${post.slug}`, html: await renderBlogPost(ctx, post) });
     }
-
-    notFound[lang] = await renderNotFound(ctx);
   }
 
-  return { pages, notFound };
+  const [en, es] = await Promise.all([renderNotFound(ctxFor("en")), renderNotFound(ctxFor("es"))]);
+  return { pages, notFound: { en, es } };
 }

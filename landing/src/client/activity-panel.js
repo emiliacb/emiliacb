@@ -84,14 +84,14 @@
       }
       var script = document.createElement("script");
       script.src = src;
-      script.onload = function () {
+      script.addEventListener("load", function () {
         resolve(window.__pretext || null);
-      };
+      });
       // Resolving null rather than rejecting: a missing measurement library is a
       // downgrade to CSS sizing, not a failed message.
-      script.onerror = function () {
+      script.addEventListener("error", function () {
         resolve(null);
-      };
+      });
       document.head.appendChild(script);
     });
     return pretextPromise;
@@ -127,7 +127,7 @@
         if (!events.length) return false;
         events.forEach(renderEvent);
         return true;
-      } catch (e) {
+      } catch {
         return false;
       }
     }
@@ -206,7 +206,7 @@
         var width = Math.min(Math.ceil(stats.maxLineWidth) + 1, metrics.maxText);
         var laid = pretext.layout(prepared, width, metrics.lineHeight);
         return { width: width, height: Math.max(laid.height, metrics.lineHeight) };
-      } catch (e) {
+      } catch {
         // Any measurement failure downgrades this message to CSS sizing instead of
         // losing it.
         return null;
@@ -308,7 +308,7 @@
             window.__activityLogger.flush();
           }
           localStorage.removeItem("activity_logs");
-        } catch (err) {
+        } catch {
           // storage unavailable: the transcript still clears
         }
         rendered = Object.create(null);

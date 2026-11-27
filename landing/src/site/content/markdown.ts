@@ -60,7 +60,10 @@ export function renderMarkdown(source: string, lang: Lang): string {
       link({ href, title, text }: Tokens.Link) {
         if (href.startsWith("mailto:")) {
           const email = href.slice("mailto:".length);
-          return String(emailLink({ email, lang, label: text, variant: "prose" }));
+          const rendered = emailLink({ email, lang, label: text, variant: "prose" });
+          // marked renderers are synchronous: an async component would print "[object Promise]".
+          if (rendered instanceof Promise) throw new Error("emailLink must render synchronously");
+          return rendered.toString();
         }
 
         const titleAttr = title ? ` title="${escapeAttr(title)}"` : "";
@@ -69,7 +72,7 @@ export function renderMarkdown(source: string, lang: Lang): string {
     },
   });
 
-  const contentHtml = marked.parse(source, { async: false }) as string;
+  const contentHtml = marked.parse(source, { async: false });
 
   const headingsListHtml = headingsList
     .filter(({ depth }) => depth === 2)

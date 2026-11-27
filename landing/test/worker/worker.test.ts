@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { env } from "cloudflare:workers";
 
-import app, { type Env } from "../../src/worker/index";
+import app from "../../src/worker/index";
 
 const BASE = "http://example.com";
 
 // Calls the Hono app with the real ASSETS binding from the fixture directory.
 function get(path: string, headers: Record<string, string> = {}) {
-  return app.fetch(new Request(`${BASE}${path}`, { headers, redirect: "manual" }), env as unknown as Env);
+  return app.fetch(new Request(`${BASE}${path}`, { headers, redirect: "manual" }), env);
 }
 
 describe("GET /", () => {

@@ -45,6 +45,8 @@ if ('serviceWorker' in navigator) {
     var sw = navigator.serviceWorker && navigator.serviceWorker.controller;
     if (!sw) return;
     requestedAt[page] = now;
+    // ServiceWorker#postMessage takes no targetOrigin (that is Window#postMessage).
+    // oxlint-disable-next-line unicorn/require-post-message-target-origin
     sw.postMessage({ type: 'prefetch', url: page });
   }
 
