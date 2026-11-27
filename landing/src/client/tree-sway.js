@@ -1035,18 +1035,26 @@ const HINT_UP = 0.5; // how far up the trunk its centre sits, from the ground
 const HINT_EDGE = 8; // px kept clear of the screen's edges
 let hint = null;
 let hintMoved = false; // once dragged, it stays where it was put
-// Where the window sits from the drawing's box, top-left to top-left: it is
-// held there as the page scrolls, so it travels with the tree, not with the
-// screen.
-let hintAt = [0, 0];
 
-/** Keeps a window position on screen: its top-left corner, for its size. */
+/** Keeps a window position on screen: its top-left corner, for its size. With
+ * `x` alone, only across: the page may have scrolled it out of view, and it is
+ * left there. */
 function onScreen(el, x, y) {
   const html = document.documentElement;
-  return [
-    Math.max(HINT_EDGE, Math.min(html.clientWidth - el.offsetWidth - HINT_EDGE, x)),
-    Math.max(HINT_EDGE, Math.min(html.clientHeight - el.offsetHeight - HINT_EDGE, y)),
-  ];
+  const across = Math.max(HINT_EDGE, Math.min(html.clientWidth - el.offsetWidth - HINT_EDGE, x));
+  if (y == null) return [across];
+  return [across, Math.max(HINT_EDGE, Math.min(html.clientHeight - el.offsetHeight - HINT_EDGE, y))];
+}
+
+/** Puts the window at a place on the screen. It is laid out on the page's
+ * scrolling box (absolute, in #scroll-wrapper: styles.css), so that place is
+ * turned into one on the page, and from there it scrolls with the page, the
+ * tree under it. */
+function putHint(x, y) {
+  const page = hint.offsetParent || document.documentElement;
+  const r = page.getBoundingClientRect();
+  hint.style.left = `${(x - r.left + page.scrollLeft - page.clientLeft).toFixed(1)}px`;
+  hint.style.top = `${(y - r.top + page.scrollTop - page.clientTop).toFixed(1)}px`;
 }
 
 // On a phone the trunk runs down behind the contact links at the foot of the
@@ -1056,40 +1064,30 @@ const PHONE = window.matchMedia("(max-width: 767px)");
 const HINT_GAP = 12; // px between the window and the links under it
 
 /** Centres the window on the trunk, wherever the drawing is on the screen now
- * (on a phone, above the contact links if the trunk runs behind them); once it
- * has been moved, only keeps it on screen. It lives on the page's body, over
- * everything, so it can be put anywhere; followHint keeps it on the tree as
- * the page scrolls. */
+ * (on a phone, above the contact links if the trunk runs behind them), and on
+ * screen when it first comes. Once it has been moved it stays where it was put.
+ * Either way it is only kept from running off the sides when the page is
+ * resized: up and down, it is where the page has scrolled it. */
 function placeHint() {
   if (!hint) return;
-  const r = box.getBoundingClientRect();
   let x;
   let y;
   if (hintMoved) {
-    x = r.left + hintAt[0];
-    y = r.top + hintAt[1];
+    const r = hint.getBoundingClientRect();
+    x = r.left;
+    y = r.top;
   } else {
     const trunk = limbs[0];
     const i = Math.round((trunk.n - 1) * HINT_UP);
+    const r = box.getBoundingClientRect();
     x = r.left + ox + trunk.rx[i] * sc - hint.offsetWidth / 2;
     y = r.top + oy + trunk.ry[i] * sc - hint.offsetHeight / 2;
     const links = PHONE.matches && document.querySelector("#content footer");
     if (links) y = Math.min(y, links.getBoundingClientRect().top - HINT_GAP - hint.offsetHeight);
   }
-  [x, y] = onScreen(hint, x, y);
-  hintAt = [x - r.left, y - r.top];
-  hint.style.left = `${x.toFixed(1)}px`;
-  hint.style.top = `${y.toFixed(1)}px`;
-}
-
-/** Scrolled: the window goes with the tree, off the screen if the tree does.
- * Listened to in capture, so the page's own scrolling box (#scroll-wrapper,
- * with the AI layout open) moves it as the window's scroll does. */
-function followHint() {
-  if (!hint) return;
-  const r = box.getBoundingClientRect();
-  hint.style.left = `${(r.left + hintAt[0]).toFixed(1)}px`;
-  hint.style.top = `${(r.top + hintAt[1]).toFixed(1)}px`;
+  if (hint.style.top) [x] = onScreen(hint, x);
+  else [x, y] = onScreen(hint, x, y);
+  putHint(x, y);
 }
 
 // The combining marks the tree's name is written with (U+0300 to U+036F), by
@@ -1136,15 +1134,14 @@ function dragHint(event) {
   const bar = event.currentTarget;
   event.preventDefault();
   bar.setPointerCapture(event.pointerId);
-  const dx = event.clientX - el.offsetLeft;
-  const dy = event.clientY - el.offsetTop;
+  const at = el.getBoundingClientRect();
+  const dx = event.clientX - at.left;
+  const dy = event.clientY - at.top;
   const move = (e) => {
+    if (hint !== el) return;
     hintMoved = true;
     const [x, y] = onScreen(el, e.clientX - dx, e.clientY - dy);
-    const r = box.getBoundingClientRect();
-    hintAt = [x - r.left, y - r.top];
-    el.style.left = `${x}px`;
-    el.style.top = `${y}px`;
+    putHint(x, y);
   };
   const end = () => {
     bar.removeEventListener("pointermove", move);
@@ -1192,16 +1189,14 @@ function offerSound() {
     if (event.key === "Escape") ignoreSound();
   });
   hintMoved = false;
-  document.body.appendChild(hint);
+  (document.getElementById("scroll-wrapper") || document.body).appendChild(hint);
   placeHint();
-  window.addEventListener("scroll", followHint, { capture: true, passive: true });
 }
 
 function dropHint() {
   if (!hint) return;
   const el = hint;
   hint = null;
-  window.removeEventListener("scroll", followHint, { capture: true });
   el.classList.add("is-gone");
   setTimeout(() => el.remove(), 400);
 }
