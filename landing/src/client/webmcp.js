@@ -8,6 +8,7 @@
 // interaction-tools.js, content-tools.js, theme-tools.js.
 import { registerTools } from "./webmcp/context.js";
 import { restoreSavedCss } from "./webmcp/css-state.js";
+import { contentTools } from "./webmcp/content-tools.js";
 import { cssTools } from "./webmcp/css-tools.js";
 import { interactionTools } from "./webmcp/interaction-tools.js";
 import { fontTools } from "./webmcp/font-tools.js";
@@ -15,4 +16,4 @@ import { fontTools } from "./webmcp/font-tools.js";
 // First, so the agent's CSS from earlier pages of this tab is back as early as a deferred script allows.
 restoreSavedCss();
 
-registerTools([...cssTools, ...interactionTools, ...fontTools]);
+registerTools([...cssTools, ...interactionTools, ...fontTools, ...contentTools]);
