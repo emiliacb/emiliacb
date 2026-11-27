@@ -200,7 +200,9 @@ const getVariables = {
     "(which reflects any override you applied) and its `declarations` (selector, condition, declared value). " +
     "Input: optional `prefix` (for example \"--color\") to list only variables whose name starts with it. " +
     "Overriding a variable with set_css (`:root { --color-x: ... }`) restyles everything that uses it, which is " +
-    "usually better than overriding many selectors. " +
+    "usually better than overriding many selectors, but a `:root` override only changes light mode: the dark " +
+    "values are declared under `:root[data-theme=\"dark\"]` and the dark media query (see the `selector` and " +
+    "`condition` of each declaration), so repeat the override there too (see set_theme_mode). " +
     SCOPE,
   inputSchema: {
     type: "object",
@@ -256,7 +258,10 @@ const setCss = {
     "but keeps the per-selector rules from set_css_by_selector; use reset_css to clear everything. The stylesheet is " +
     "added last in <head>, after the site's own styles; use !important where an inline style or a more specific rule " +
     "may win. Maximum 50000 characters. Dark mode is html[data-theme=dark], or the system preference when html has no data-theme; " +
-    "the design tokens (get_variables) are redefined for dark in :root[data-theme=dark] and the dark media query. " +
+    "the design tokens (get_variables) are redefined for dark in :root[data-theme=dark] and the dark media query, " +
+    "so a token set on :root alone only affects light mode: repeat it under :root[data-theme=dark] and in " +
+    "@media (prefers-color-scheme: dark) { :root:not([data-theme=light]) { ... } }, or use !important on :root " +
+    "(set_theme_mode switches the mode to check the result). " +
     "After applying, the page is checked: if the change makes it unusable (main content hidden, text with no contrast, " +
     "a full-screen layer blocking clicks) it is rolled back and the call is rejected with what broke. " +
     "Returns what was applied and `warnings` for declarations the browser ignores. " +
