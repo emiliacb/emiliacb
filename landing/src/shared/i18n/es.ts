@@ -76,7 +76,6 @@ export const es: Dict = {
 
   email: {
     title: "Email",
-    languages: "Escribime en español o inglés.",
     copy: "Copiar email",
     copied: "¡Copiado!",
     gmail: "Abrir en Gmail",

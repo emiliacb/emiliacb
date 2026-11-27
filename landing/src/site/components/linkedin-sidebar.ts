@@ -78,7 +78,8 @@ export default function linkedinSidebar(ctx: RenderCtx, profile: LinkedinProfile
     close: ctx.t.sidebar.close,
     body: html`
       <p class="flex flex-col gap-1 border-b border-stone-400 pb-4">
-        <span class="sidebar-number sidebar-word">${current.company}</span>
+        <span class="sidebar-number sidebar-word flex items-center gap-3"
+          >${current.logo ? html`<img src="${current.logo}" alt="" class="h-[0.8em] w-auto shrink-0" />` : null}${current.company}</span>
         <span class="text-sm text-pretty">${t.since.replace("{role}", current.role[ctx.lang]).replace("{date}", since)}</span>
       </p>
       ${timeline(ctx, before)} ${latestPost(ctx, profile.latestPost)}

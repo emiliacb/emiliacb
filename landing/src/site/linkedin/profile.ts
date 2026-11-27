@@ -14,7 +14,16 @@ const text = z.string().min(1);
 const schema = z.object({
   /** Newest first; the current job has no `to`. */
   experience: z
-    .array(z.object({ company: text, role: z.object({ en: text, es: text }), from: month, to: month.optional() }))
+    .array(
+      z.object({
+        company: text,
+        /** The company's mark, a file in public/. Only the current job's is shown, next to its name. */
+        logo: z.string().startsWith("/public/").optional(),
+        role: z.object({ en: text, es: text }),
+        from: month,
+        to: month.optional(),
+      }),
+    )
     .min(1),
   latestPost: z.object({
     url: z.string().url().startsWith("https://www.linkedin.com/"),

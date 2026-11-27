@@ -29,9 +29,8 @@ export default function emailSidebar(ctx: RenderCtx) {
     title: t.title,
     close: ctx.t.sidebar.close,
     body: html`
-      <p class="flex flex-col gap-1 border-b border-stone-400 pb-4">
-        <span class="sidebar-number sidebar-word break-all">${user}<br />@${domain}</span>
-        <span class="text-sm text-pretty">${t.languages}</span>
+      <p class="border-b border-stone-400 pb-4">
+        <span class="sidebar-number sidebar-word block break-all">${user}<br />@${domain}</span>
       </p>
       <ul class="-mt-4 sm:-mt-6 md:-mt-8 [&>li]:border-b [&>li]:border-stone-400">
         <li>

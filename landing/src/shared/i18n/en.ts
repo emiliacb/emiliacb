@@ -77,7 +77,6 @@ export const en = {
 
   email: {
     title: "Email",
-    languages: "Write to me in English or Spanish.",
     copy: "Copy email",
     copied: "Copied!",
     gmail: "Open in Gmail",
