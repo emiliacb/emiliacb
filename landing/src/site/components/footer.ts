@@ -83,7 +83,6 @@ function footerContent(ctx: RenderCtx) {
       >
         © ${new Date().getFullYear()} ${copy.license}
       </div>
-      ${/* WebMCP: see src/webmcp/README.md */ webmcp.renderFooterNote(ctx)}
     </div>
   `;
 }
