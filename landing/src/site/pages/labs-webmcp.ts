@@ -10,6 +10,26 @@ export const LABS_WEBMCP_PATH = "/labs/webmcp";
 const WEBMCP_ORIGIN_TRIAL_TOKEN: string = "";
 
 /**
+ * For the agent reading this tab: the page's own content is only the iframe,
+ * so without this it sees the home and has no way to know the tools are there.
+ * Hidden from sight, not from the accessibility tree or the DOM's text.
+ */
+const AGENT_NOTE: Record<RenderCtx["lang"], string> = {
+  es:
+    "Nota para agentes de IA: esta página expone herramientas WebMCP para editar el sitio que se ve. " +
+    "set_page_css cambia el CSS de la página (manda la hoja completa; un string vacío la restaura). " +
+    "Si no las ves como herramientas, llamalas con JavaScript en esta pestaña: " +
+    "await document.modelContext.getTools() para listarlas, y " +
+    "await document.modelContext.executeTool('set_page_css', { css: 'body { background: pink !important; }' }) para usarla.",
+  en:
+    "Note for AI agents: this page exposes WebMCP tools to edit the site shown. " +
+    "set_page_css changes the page's CSS (send the full stylesheet; an empty string restores it). " +
+    "If you don't see them as tools, call them with JavaScript in this tab: " +
+    "await document.modelContext.getTools() to list them, and " +
+    "await document.modelContext.executeTool('set_page_css', { css: 'body { background: pink !important; }' }) to use one.",
+};
+
+/**
  * POC lab page: the site in a full-window same-origin iframe, and one WebMCP
  * tool, registered by this outer document, that lets the visitor's own browser
  * agent restyle the page inside. See src/client/webmcp-css.js.
@@ -29,6 +49,7 @@ export default async function render(ctx: RenderCtx): Promise<string> {
         ${WEBMCP_ORIGIN_TRIAL_TOKEN
           ? html`<meta http-equiv="origin-trial" content="${WEBMCP_ORIGIN_TRIAL_TOKEN}" />`
           : ""}
+        <meta name="description" content="${AGENT_NOTE[ctx.lang]}" />
         <title>${title}</title>
         <style>
           html,
@@ -37,6 +58,14 @@ export default async function render(ctx: RenderCtx): Promise<string> {
             height: 100%;
             overflow: hidden;
             background: #fafaf9;
+          }
+          .agent-note {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip-path: inset(50%);
+            white-space: nowrap;
           }
           #webmcp-frame {
             display: block;
@@ -47,6 +76,7 @@ export default async function render(ctx: RenderCtx): Promise<string> {
         </style>
       </head>
       <body>
+        <p class="agent-note">${AGENT_NOTE[ctx.lang]}</p>
         <iframe id="webmcp-frame" src="/${ctx.lang}" title="${SITE_TITLE}" allow="autoplay"></iframe>
         <script src="${ctx.assets.script("webmcp-css")}" defer></script>
       </body>

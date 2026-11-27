@@ -38,10 +38,15 @@
   frame.addEventListener("load", apply);
 
   // The spec puts it on document; Chrome's first builds had it on navigator.
-  const modelContext = document.modelContext || navigator.modelContext;
+  // Without either (every browser without the WebMCP flag, today), the page
+  // brings its own, so an agent that can run JavaScript in the tab (Claude in
+  // Chrome, for one) still finds the tools and calls them. The outer document
+  // tells it how, in text it reads (labs-webmcp.ts).
+  let modelContext = document.modelContext || navigator.modelContext;
   if (!modelContext || typeof modelContext.registerTool !== "function") {
-    console.warn("[webmcp] This browser exposes no WebMCP (document.modelContext): set_page_css is not registered.");
-    return;
+    modelContext = createModelContext();
+    Object.defineProperty(document, "modelContext", { value: modelContext, configurable: true });
+    Object.defineProperty(navigator, "modelContext", { value: modelContext, configurable: true });
   }
 
   const tool = {
@@ -80,6 +85,37 @@
       return Promise.resolve({ content: [{ type: "text", text: text }] });
     },
   };
+
+  /**
+   * The part of the spec's ModelContext an agent calling from JavaScript needs:
+   * registerTool, getTools, and executeTool (by name, or by an entry of getTools),
+   * which like the spec's resolves to the result serialized as JSON.
+   */
+  function createModelContext() {
+    const tools = new Map();
+    return {
+      polyfill: true,
+      registerTool: function (definition) {
+        tools.set(definition.name, definition);
+        return Promise.resolve();
+      },
+      getTools: function () {
+        return Promise.resolve(
+          Array.from(tools.values(), function (t) {
+            return { name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema };
+          }),
+        );
+      },
+      executeTool: function (nameOrTool, input) {
+        const name = typeof nameOrTool === "string" ? nameOrTool : nameOrTool && nameOrTool.name;
+        const found = tools.get(name);
+        if (!found) return Promise.reject(new Error("No tool named " + name + ". See getTools()."));
+        return Promise.resolve(found.execute(input || {}, {})).then(function (result) {
+          return JSON.stringify(result);
+        });
+      },
+    };
+  }
 
   // The spec's registerTool returns a promise; Chrome's first builds returned
   // nothing or threw synchronously. Promise.resolve().then covers all three.
