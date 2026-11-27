@@ -454,6 +454,7 @@ const plateState = () => ({
   rang: -1, // when it last rang, on the sound's own clock
   vib: 0, // how hard it is shaking under the bow, 0 to 1
   ph: 0, // and how far round that shaking is
+  hz: 0, // at what pitch it is sounding, for the shaking
   glow: 0, // how much it is lit by the note it is sounding, 0 to 1
   gap: 1e9, // pointer to its surface, in tree units
   hold: 0,
@@ -1499,10 +1500,9 @@ function chime(dt) {
 // STEP_PX beneath, no further, wherever on the part the press was and however
 // long the part is; between, it sits between the two notes. Only the part
 // pressed shakes, like a string, and is lit from where the press landed. The
-// others answer it by sympathy, as a violin's open strings do: each part whose
-// note the held one is in tune with, at the unison, the octave, the fifth, any
-// ratio of whole numbers up to 4, rings its own note quietly, the simpler the
-// ratio the louder, and shakes and is lit a little, as much as it rings.
+// others answer it by sympathy, as a violin's open strings do, as loud as the
+// physics of it makes them (below), and shake and are lit a little, as much
+// as they ring.
 const STEP_PX = 36;
 const BOW_REACH = 8; // how near a part a press must land to ring it, tree units
 const BOW_GLIDE = 0.05; // how quickly the note slides to where the press is, s
@@ -1526,12 +1526,28 @@ const VIB_DIV = 24;
 const VIB_WOOD = 4;
 const VIB_LEAF = 0.1;
 
-// How loud a part rings in sympathy at the simplest ratio, how far out of tune
-// it still does, in cents, and how quickly it swells and lets go.
-const SYMP_VOL = 0.045;
-const SYMP_CENTS = 30;
-const SYMP_RISE = 0.12;
-const SYMP_VIB = 0.6; // its shaking, at its loudest, as a share of the pressed part's
+// Sympathy, as it happens in a string instrument. Every partial of a part's
+// voice is a mode of it: a damped oscillator at that partial's frequency,
+// whose amplitude decays with the time constant its partial dies with, tau =
+// fall / 7 (the ramp from strike to silence covers about 7 time constants), so
+// its quality factor is Q = pi f tau. Each partial of the held note forces
+// every mode of every other part. A damped oscillator driven at w answers with
+//
+//   |H(w)| = 1 / sqrt(1 + Q^2 (w/w0 - w0/w)^2)
+//
+// of what it would at its own w0; the partials forcing one mode at different
+// frequencies add in power, not in phase; and its amplitude approaches that
+// steady answer, and dies away once there is nothing to answer, with its own
+// tau. Driven, it sounds at the frequency that drives it, left alone at its
+// own. So how loud a part answers follows from how loud the held note is
+// partial by partial, how near in tune each partial is to each of its modes,
+// and how long those modes ring. The one number not derived is how much of a
+// partial's amplitude reaches a mode tuned exactly to it, through the wood:
+// SYMP_COUPLING, a tenth (-20 dB), about what an open string on a violin
+// picks up from a stopped one beside it.
+const SYMP_COUPLING = 0.1;
+const SYMP_FLOOR = 1e-4; // quieter than this is silence
+const SYMP_VIB = 0.6; // an answering part's shaking, at its loudest, as a share of the pressed part's
 const SYMP_GLOW = 0.75; // and its light
 // The light: in the ink the tree's construction is drawn in (its spirals and
 // angles, green on the light page and pink on the dark one), GLOW_ALPHA at its
@@ -1540,21 +1556,16 @@ const SYMP_GLOW = 0.75; // and its light
 const GLOW_ALPHA = 0.35;
 const GLOW_R = 70;
 
-// Every sympathetic voice still sounding: those answering the held note, and
-// those still ringing on after it was let go.
-const echoes = [];
+// Every note a press has rung that is still heard: the one held now, and those
+// let go and still dying away, each with the parts answering it.
+const notes = [];
 // Every part, by its note, low to high: the scale the press bends along.
 let scale = [];
 const bow = {
-  on: false, voice: null, part: null, at: 0, from: 0, pos: 0,
+  on: false, note: null, part: null, at: 0, from: 0, pos: 0,
   // Where on the part the press landed: along its bone and across it, or, on
   // a leaf, where on the leaf as drawn; so the light stays there as it moves.
   bj: 0, bo: 0, lx: 0, ly: 0,
-  // The other parts that can answer it, each with its own held voice.
-  symp: [],
-  // How loud the note is now, as a share of its strike, and how fast it moves
-  // towards where it is going; and the note.
-  env: 0, tc: 0.2, f: 0,
 };
 
 /** Which way along the tree a part sounds from, for the stereo. */
@@ -1563,25 +1574,43 @@ function panOf(p) {
   return Math.max(-0.7, Math.min(0.7, (x - 200) / 200));
 }
 
-/** How strongly a part tuned to `g` answers a note `f`: by the simplest ratio of whole numbers up to 4 it is in tune at. */
-function sympathy(f, g) {
-  let best = 0;
-  for (let m = 1; m <= 4; m++) {
-    for (let n = 1; n <= 4; n++) {
-      const cents = 1200 * Math.abs(Math.log2((f * m) / (g * n)));
-      best = Math.max(best, Math.exp(-((cents / SYMP_CENTS) ** 2)) / (m * n));
-    }
-  }
-  return best;
+/** A part's modes: each partial of its voice as a damped oscillator, its frequency, decay and Q. */
+function modesOf(p) {
+  const g0 = NOTE[p.key];
+  return partials(p, g0, 1).map(([mult, , , fall]) => {
+    const f = g0 * mult;
+    const tau = fall / 7;
+    return { f, tau, q: Math.PI * f * tau, a: 0, osc: null, g: null };
+  });
 }
 
-/** Part `p`'s own note, in its own voice, held silent until `level` is raised. */
-function sympVoice(p) {
+/** How much of its full answer a mode gives to a force at `w` hertz. */
+function response(w, mode) {
+  const x = w / mode.f;
+  return 1 / Math.sqrt(1 + mode.q * mode.q * (x - 1 / x) ** 2);
+}
+
+/** The steady amplitude a mode is driven to by partials `drive` of a note at `f`, each at amplitude `amp(d)`; and the frequency that drives it most. */
+function answer(mode, drive, f, amp) {
+  let power = 0;
+  let top = 0;
+  let at = mode.f;
+  for (const d of drive) {
+    const w = d.mult * f;
+    const r = amp(d) * response(w, mode);
+    power += r * r;
+    if (r > top) {
+      top = r;
+      at = w;
+    }
+  }
+  return [SYMP_COUPLING * Math.sqrt(power), at];
+}
+
+/** A part's modes made to sound, each silent until driven. */
+function sympVoice(p, modes) {
   const ac = sound.ac;
   const t = ac.currentTime;
-  const f = NOTE[p.key];
-  const level = ac.createGain();
-  level.gain.value = 0.0001;
   let to = sound.bus;
   if (ac.createStereoPanner) {
     const side = ac.createStereoPanner();
@@ -1589,19 +1618,15 @@ function sympVoice(p) {
     side.connect(sound.bus);
     to = side;
   }
-  level.connect(to);
-  const own = partials(p, f, 1);
-  const lead = own[0][3];
-  const oscs = own.map(([mult, l, , fall]) => {
-    const osc = ac.createOscillator();
-    const g = ac.createGain();
-    osc.frequency.value = f * mult;
-    g.gain.value = l * (fall / lead);
-    osc.connect(g).connect(level);
-    osc.start(t);
-    return osc;
-  });
-  return { p, f, level, oscs, tc: lead / 7, r: 0, amp: 0, live: true };
+  for (const m of modes) {
+    m.osc = ac.createOscillator();
+    m.g = ac.createGain();
+    m.osc.frequency.value = m.f;
+    m.g.gain.value = 0;
+    m.osc.connect(m.g).connect(to);
+    m.osc.start(t);
+  }
+  return { p, modes };
 }
 
 /** Holds part `p`'s note at `f`: its partials, each settling to HELD of its strike. */
@@ -1686,23 +1711,31 @@ function onBowPress(event) {
   bow.at = scale.indexOf(at);
   bow.pos = bow.at;
   bow.from = event.clientY;
-  bow.f = NOTE[at.key] || NOTE.trunk;
-  bow.env = 1;
-  bow.tc = partials(at, bow.f, 1)[0][3] / 7;
-  bow.voice = heldVoice(at, NOTE[at.key] || NOTE.trunk, panOf(at));
-  // Every other part that some note within its bend is in tune with.
+  const f0 = NOTE[at.key] || NOTE.trunk;
+  // The held note, partial by partial: its strike, where it is held, how fast
+  // it gets there and dies away, as heldVoice and stopBow shape them.
+  const own = partials(at, f0, BOW_VOL);
+  const lead = own[0][3];
+  const drive = own.map(([mult, level, , fall]) => ({
+    mult, level, held: level * HELD * (fall / lead), tau: fall / 7, a: level,
+  }));
+  const note = { part: at, f: f0, on: true, voice: heldVoice(at, f0, panOf(at)), drive, echoes: [] };
+  // Every other part some note within the bend could make heard, at the
+  // strike: the rest could not answer it above silence.
   const lo = NOTE[scale[Math.max(0, bow.at - 1)].key];
   const hi = NOTE[scale[Math.min(scale.length - 1, bow.at + 1)].key];
   for (const p of parts) {
     if (p === at) continue;
+    const modes = modesOf(p);
     let most = 0;
-    for (let k = 0; k <= 24; k++) most = Math.max(most, sympathy(lo * Math.pow(hi / lo, k / 24), NOTE[p.key]));
-    if (most > 0.05) {
-      const e = sympVoice(p);
-      bow.symp.push(e);
-      echoes.push(e);
+    for (let k = 0; k <= 96 && most <= SYMP_FLOOR; k++) {
+      const f = lo * Math.pow(hi / lo, k / 96);
+      for (const m of modes) most = Math.max(most, answer(m, drive, f, (d) => d.level)[0]);
     }
+    if (most > SYMP_FLOOR) note.echoes.push(sympVoice(p, modes));
   }
+  notes.push(note);
+  bow.note = note;
   at.rang = ac.currentTime;
   at.vib = 1;
   window.dispatchEvent(new Event("tree-note"));
@@ -1716,23 +1749,16 @@ function onBowMove(event) {
   bow.pos = Math.max(0, Math.min(scale.length - 1, bow.at + bend));
 }
 
-/** Lets go: the note dies away as a brushed one does. */
+/** Lets go: the note dies away as a brushed one does, and what answers it with it. */
 function stopBow() {
   bow.on = false;
-  const v = bow.voice;
-  bow.voice = null;
-  const symp = bow.symp;
-  bow.symp = [];
+  const note = bow.note;
+  if (!note || !note.on) return;
+  note.on = false;
+  const v = note.voice;
+  note.voice = null;
   if (!v || !sound.ac) return;
   const t = sound.ac.currentTime;
-  // What answered it rings on a moment after it, each as its own note dies.
-  for (const s of symp) {
-    s.live = false;
-    s.level.gain.cancelScheduledValues(t);
-    s.level.gain.setValueAtTime(Math.max(0.0001, s.level.gain.value), t);
-    s.level.gain.setTargetAtTime(0.0001, t, s.tc);
-    for (const o of s.oscs) o.stop(t + s.tc * 7 + 0.1);
-  }
   let end = t;
   for (const { osc, g, fall } of v.voices) {
     g.gain.cancelScheduledValues(t);
@@ -1744,57 +1770,64 @@ function stopBow() {
   v.sweep.stop(end + 0.1);
 }
 
-/** Each frame: the note the press is at on the scale, how loud it is, and what shakes. */
+/** Each frame: the note the press is at, every note still heard and what answers it, and what shakes. */
 function bowing(dt) {
-  const v = bow.voice;
-  const i = Math.min(scale.length - 2, Math.floor(bow.pos));
-  const u = bow.pos - i;
-  const lo = scale[i];
-  const hi = scale[i + 1];
-  if (v) {
-    bow.f = Math.exp((1 - u) * Math.log(NOTE[lo.key]) + u * Math.log(NOTE[hi.key]));
-    const t = sound.ac.currentTime;
-    for (const { osc, mult } of v.voices) osc.frequency.setTargetAtTime(bow.f * mult, t, BOW_GLIDE);
-    for (const s of bow.symp) {
-      // Swells slowly to as much as it is in tune, and lets go as slowly.
-      s.r = sympathy(bow.f, s.f);
-      s.level.gain.setTargetAtTime(Math.max(0.0001, SYMP_VOL * s.r * (bow.env / HELD)), t, SYMP_RISE);
-    }
-  }
-  // The note's own envelope, as heldVoice and stopBow shape its first partial.
-  const k = 1 - Math.exp(-dt / bow.tc);
-  bow.env += ((bow.on ? HELD : 0) - bow.env) * k;
-  if (bow.env < 0.01) bow.env = 0;
-  // Each answering part rings as the held note is in tune with it, swelling
-  // and letting go slowly, then on as its own note dies once that is let go.
-  const rise = 1 - Math.exp(-dt / SYMP_RISE);
-  for (let k = echoes.length - 1; k >= 0; k--) {
-    const e = echoes[k];
-    if (e.live) e.amp += ((e.r * bow.env) / HELD - e.amp) * rise;
-    else e.amp *= Math.exp(-dt / e.tc);
-    if (!e.live && e.amp < 0.01) echoes.splice(k, 1);
+  const ac = sound.ac;
+  const t = ac ? ac.currentTime : 0;
+  const held = bow.on && bow.note;
+  if (held && held.voice) {
+    const i = Math.min(scale.length - 2, Math.floor(bow.pos));
+    const u = bow.pos - i;
+    held.f = Math.exp((1 - u) * Math.log(NOTE[scale[i].key]) + u * Math.log(NOTE[scale[i + 1].key]));
+    for (const { osc, mult } of held.voice.voices) osc.frequency.setTargetAtTime(held.f * mult, t, BOW_GLIDE);
   }
   for (const p of parts) {
     p.vib = 0;
     p.glow = 0;
+    p.hz = 0;
   }
-  // Seen by the root of how loud it rings, so an octave's or a fifth's
-  // answer, quiet as it is, still shows.
-  for (const e of echoes) {
-    const seen = Math.sqrt(Math.min(1, e.amp));
-    e.p.vib = Math.max(e.p.vib, SYMP_VIB * seen);
-    e.p.glow = Math.max(e.p.glow, SYMP_GLOW * seen);
-  }
-  if (bow.part && bow.env) {
-    bow.part.vib = bow.env;
-    bow.part.glow = Math.min(1, bow.env / HELD);
+  for (let n = notes.length - 1; n >= 0; n--) {
+    const note = notes[n];
+    let heard = false;
+    // Each partial of the note moves to where it is held, or to silence.
+    for (const d of note.drive) {
+      d.a += ((note.on ? d.held : 0) - d.a) * (1 - Math.exp(-dt / d.tau));
+      if (d.a > SYMP_FLOOR) heard = true;
+    }
+    const env = note.drive[0].a / note.drive[0].level;
+    note.part.vib = Math.max(note.part.vib, env);
+    note.part.glow = Math.max(note.part.glow, Math.min(1, env / HELD));
+    note.part.hz = note.f;
+    // Each mode of each answering part moves to its steady answer with its own
+    // tau: in the page's model, and in the sound, which the same equation
+    // drives (setTargetAtTime is that first-order approach).
+    for (const e of note.echoes) {
+      let power = 0;
+      for (const m of e.modes) {
+        const [want, at] = answer(m, note.drive, note.f, (d) => d.a);
+        m.a += (want - m.a) * (1 - Math.exp(-dt / m.tau));
+        m.g.gain.setTargetAtTime(want, t, m.tau);
+        m.osc.frequency.setTargetAtTime(want > SYMP_FLOOR ? at : m.f, t, m.tau);
+        power += m.a * m.a;
+        if (m.a > SYMP_FLOOR) heard = true;
+      }
+      // Seen by the root of how loud it rings next to a unison's answer to
+      // the held note, so an octave's or a fifth's, quiet as it is, still shows.
+      const seen = Math.sqrt(Math.min(1, Math.sqrt(power) / (SYMP_COUPLING * BOW_VOL * HELD)));
+      e.p.vib = Math.max(e.p.vib, SYMP_VIB * seen);
+      e.p.glow = Math.max(e.p.glow, SYMP_GLOW * seen);
+      if (!e.p.hz) e.p.hz = NOTE[e.p.key];
+    }
+    if (!heard && !note.on) {
+      for (const e of note.echoes) for (const m of e.modes) m.osc.stop(t + 0.05);
+      notes.splice(n, 1);
+    }
   }
   // Each shakes at the note it sounds: the pressed part at the held note as it
   // bends, the others each at its own.
   for (const p of parts) {
-    if (!p.vib) continue;
-    const hz = p === bow.part ? bow.f : NOTE[p.key];
-    p.ph = (p.ph + (TAU * hz * dt) / VIB_DIV) % TAU;
+    if (p.vib < 0.01) p.vib = 0;
+    if (p.vib) p.ph = (p.ph + (TAU * p.hz * dt) / VIB_DIV) % TAU;
   }
 }
 
