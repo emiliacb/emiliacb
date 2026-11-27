@@ -177,7 +177,7 @@ Delete the folder, then remove these (grep `WebMCP: see src/webmcp/README.md`):
 2. `src/client/webmcp.js` and `src/client/webmcp-markdown.js`: the two entries.
 3. `src/site/components/layout.ts`: the `import * as webmcp` line and the three
    `webmcp.render*` calls (note, head, script). `src/site/components/footer.ts`:
-   the import and the `webmcp.renderFooterLink` call.
+   the import and the `webmcp.renderFooterLink` and `webmcp.renderFooterNote` calls.
 4. `src/site/markdown/index.ts`: the import and the `...renderWebmcpLlmsSection()`
    line in `renderLlmsTxt`.
 5. `scripts/build.ts`: the `import * as webmcp` line, the docs import, the
