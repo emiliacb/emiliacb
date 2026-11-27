@@ -1,4 +1,4 @@
-import { isDark, onThemeChange } from "./lib/theme.js";
+import { isDark, onTokensChange } from "./lib/theme.js";
 
 // The page in technical-drawing ink: whatever block the pointer touches is
 // dimensioned (its height, in CSS millimetres), the pointer carries its
@@ -772,7 +772,7 @@ import { isDark, onThemeChange } from "./lib/theme.js";
   readTheme();
   layout();
   addEventListener("resize", () => { layout(); kick(); });
-  onThemeChange(() => { readTheme(); kick(); });
+  onTokensChange(() => { readTheme(); kick(); });
   // Nothing in the page's CSS uses the cotas' face, so the browser would not
   // fetch it for a canvas: ask for it, and redraw once it is in.
   if (document.fonts) {

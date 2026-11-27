@@ -30,25 +30,25 @@ export default function tree(ctx: RenderCtx) {
       >
         <defs>
           <linearGradient id="tree-wood" gradientUnits="userSpaceOnUse" x1="32.6" y1="134.19" x2="32.6" y2="800">
-            <stop offset="0" stop-color="rgb(255,176,0)" />
-            <stop offset="1" stop-color="rgb(102,198,169)" />
+            <stop offset="0" style="stop-color: rgb(var(--tree-grad-a))" />
+            <stop offset="1" style="stop-color: rgb(var(--tree-grad-b))" />
           </linearGradient>
           <linearGradient id="tree-leaves" gradientUnits="userSpaceOnUse" x1="131.16" y1="9.81" x2="131.16" y2="335.33">
-            <stop offset="0" stop-color="rgb(255,176,0)" />
-            <stop offset="1" stop-color="rgb(102,198,169)" />
+            <stop offset="0" style="stop-color: rgb(var(--tree-grad-a))" />
+            <stop offset="1" style="stop-color: rgb(var(--tree-grad-b))" />
           </linearGradient>
           <linearGradient id="tree-leaf-right" gradientUnits="userSpaceOnUse" x1="284.43" y1="170.05" x2="315.36" y2="311.02">
-            <stop offset="0" stop-color="rgb(255,176,0)" />
-            <stop offset="1" stop-color="rgb(102,198,169)" />
+            <stop offset="0" style="stop-color: rgb(var(--tree-grad-a))" />
+            <stop offset="1" style="stop-color: rgb(var(--tree-grad-b))" />
           </linearGradient>
           <linearGradient id="tree-leaf-twig" gradientUnits="userSpaceOnUse" x1="270.39" y1="78.05" x2="300.8" y2="176.29">
-            <stop offset="0" stop-color="rgb(255,176,0)" />
-            <stop offset="1" stop-color="rgb(102,198,169)" />
+            <stop offset="0" style="stop-color: rgb(var(--tree-grad-a))" />
+            <stop offset="1" style="stop-color: rgb(var(--tree-grad-b))" />
           </linearGradient>
         </defs>
         <g data-leaf="elbow" data-limb="left" data-pivot="137 415">
           <path
-            fill="rgb(102,198,169)"
+            style="fill: rgb(var(--tree-grad-b))"
             d="M137.08,414.86C164.36,395.37 200.99,424.25 216.6,377.44C227.51,344.69 149.55,357.17 137.08,414.86Z"
           />
         </g>

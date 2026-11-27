@@ -41,7 +41,7 @@
 // With reduced motion, on touch screens and below md, this does nothing;
 // without WebGL the content still turns but does not bend.
 import { toCanvas, getFontEmbedCSS } from "html-to-image";
-import { onThemeChange } from "./lib/theme.js";
+import { onTokensChange } from "./lib/theme.js";
 import { rgbOf } from "./lib/color.js";
 
 (() => {
@@ -420,5 +420,5 @@ import { rgbOf } from "./lib/color.js";
     resizing = setTimeout(() => { measure(); take(); }, wait);
   }
   addEventListener("resize", () => retake(200), { passive: true });
-  onThemeChange(() => retake(500));
+  onTokensChange(() => retake(500));
 })();

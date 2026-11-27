@@ -20,8 +20,12 @@ src/webmcp/
     index.js            the entry logic: restore saved CSS, register the tools
     core/               context.js (document.modelContext, polyfill, error guard),
                         result.js (ok/fail), sanitize.js (HTML the agent sends)
-    css/                what set_css and friends are built on: state.js (rules,
-                        sessionStorage), declarations.js, apply.js (apply, then
+    css/                what set_css and friends are built on: state.js (variable
+                        overrides, rules, sessionStorage; announces every commit
+                        with `tokenschange` so the canvases repaint),
+                        variables.js (set_variables' checks and the light/dark
+                        blocks), tokens.js (what get_variables says about the
+                        base tokens), declarations.js, apply.js (apply, then
                         roll back if the page got unusable, unless forced),
                         health.js and contrast.js (the checks), shield.js (the
                         visitor's restore notice, shown only for a forced change)

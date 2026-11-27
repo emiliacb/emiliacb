@@ -74,3 +74,44 @@ export function onThemeChange(cb) {
     window.removeEventListener(EVENT, onEvent);
   };
 }
+
+const TOKENS_EVENT = "tokenschange";
+
+/**
+ * Tells every painter that the design tokens (the custom properties on the
+ * root) may have changed value at runtime, which the mode switch does not
+ * cover: an agent restyling the page through WebMCP. Whoever writes tokens
+ * calls this after the change is committed; the listeners below read the
+ * computed values again.
+ */
+export function notifyTokensChange() {
+  window.dispatchEvent(new CustomEvent(TOKENS_EVENT));
+}
+
+/**
+ * Calls `cb(isDark())` whenever what the canvases read from the tokens may
+ * have changed: on everything onThemeChange hears and on `tokenschange`. The
+ * calls are coalesced to one per animation frame, so a burst (a mode switch
+ * that also restyles) repaints once, and by then the browser has recomputed
+ * the styles the callback is about to read.
+ * @param {(dark: boolean) => void} cb
+ * @returns {() => void} stops listening.
+ */
+export function onTokensChange(cb) {
+  let frame = 0;
+  const schedule = () => {
+    if (frame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      cb(isDark());
+    });
+  };
+  const stopTheme = onThemeChange(schedule);
+  window.addEventListener(TOKENS_EVENT, schedule);
+  return () => {
+    stopTheme();
+    window.removeEventListener(TOKENS_EVENT, schedule);
+    if (frame) cancelAnimationFrame(frame);
+    frame = 0;
+  };
+}

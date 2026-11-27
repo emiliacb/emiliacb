@@ -3,7 +3,7 @@
 // the page and tells the agent why (unless the agent forces it). The CSS is local to the visitor's tab and follows it across the
 // site's pages (css-state.js).
 import { applyGuarded, unsupportedDeclarations } from "../css/apply.js";
-import { emptyState, commitState, getState, STYLE_ID } from "../css/state.js";
+import { emptyState, commitState, getState } from "../css/state.js";
 import { mergeRule, parseDeclarations, rulesToCss } from "../css/declarations.js";
 import { fail, ok } from "../core/result.js";
 import { MODIFY_HINT } from "../skills/hints.js";
@@ -13,7 +13,7 @@ const MAX_CSS_CHARS = 50000;
 const MAX_SELECTOR_CHARS = 500;
 const MAX_ELEMENTS = 20;
 const DEFAULT_ELEMENTS = 5;
-const SCOPE =
+export const SCOPE =
   "The CSS is applied only in this tab: it survives navigation to other pages of the site in this tab and disappears when the tab is closed. ";
 
 const INSPECTED_STYLES = [
@@ -59,86 +59,7 @@ function clampCount(value) {
   return Math.min(Math.floor(n), MAX_ELEMENTS);
 }
 
-/** True for selectors whose subject is the root element: :root, html, html.dark, :root[data-theme="x"]. */
-function isRootSelector(selector) {
-  return /^(:root|html)(?![\w-])/i.test(selector.trim());
-}
-
-function conditionOf(rule) {
-  if (rule instanceof CSSMediaRule) return `@media ${rule.conditionText || rule.media.mediaText}`;
-  if (rule instanceof CSSSupportsRule) return `@supports ${rule.conditionText}`;
-  if (rule.constructor.name === "CSSLayerBlockRule") return `@layer ${rule.name}`;
-  return null;
-}
-
-function variablesOfRule(rule, conditions, found) {
-  const selectors = rule.selectorText.split(",").filter(isRootSelector);
-  if (selectors.length === 0) return;
-  for (let i = 0; i < rule.style.length; i += 1) {
-    const name = rule.style[i];
-    if (!name.startsWith("--")) continue;
-    found.push({
-      name,
-      selector: selectors.map((s) => s.trim()).join(", "),
-      condition: conditions.length ? conditions.join(" and ") : null,
-      value: rule.style.getPropertyValue(name).trim(),
-    });
-  }
-}
-
-function walkRules(rules, conditions, found) {
-  for (const rule of Array.from(rules)) {
-    if (rule instanceof CSSStyleRule) variablesOfRule(rule, conditions, found);
-    const condition = conditionOf(rule);
-    const nested = rule.cssRules;
-    if (nested) walkRules(nested, condition ? [...conditions, condition] : conditions, found);
-  }
-}
-
-/** The site's own custom properties on the root, from every readable stylesheet. */
-function readRootVariables() {
-  const found = [];
-  let skipped = 0;
-  for (const sheet of Array.from(document.styleSheets)) {
-    if (sheet.ownerNode?.id === STYLE_ID) continue;
-    try {
-      walkRules(sheet.cssRules, [], found);
-    } catch {
-      skipped += 1;
-    }
-  }
-  return { found, skipped };
-}
-
-function groupVariables(found, prefix) {
-  const computed = getComputedStyle(document.documentElement);
-  const byName = new Map();
-  for (const entry of found) {
-    if (prefix && !entry.name.startsWith(prefix)) continue;
-    const { name, ...declaration } = entry;
-    const item = byName.get(name) ?? { name, computed: computed.getPropertyValue(name).trim(), declarations: [] };
-    item.declarations.push(declaration);
-    byName.set(name, item);
-  }
-  return Array.from(byName.values());
-}
-
-function normalizePrefix(input) {
-  const prefix = typeof input?.prefix === "string" ? input.prefix.trim() : "";
-  if (prefix === "") return "";
-  return prefix.startsWith("--") ? prefix : `--${prefix.replace(/^-+/, "")}`;
-}
-
-function summarize(variables) {
-  const groups = {};
-  for (const { name } of variables) {
-    const group = name.split("-").slice(0, 3).join("-");
-    groups[group] = (groups[group] ?? 0) + 1;
-  }
-  return groups;
-}
-
-function checkSize(text, what) {
+export function checkSize(text, what) {
   if (text.length > MAX_CSS_CHARS) {
     throw fail(`${what} is longer than ${MAX_CSS_CHARS} characters (${text.length}). Send a shorter one.`);
   }
@@ -171,14 +92,14 @@ function checkSupported(entries) {
   if (bad.length) throw fail(`${bad.join(" ")} Nothing was changed. Fix the property name or the value and try again.`);
 }
 
-const FORCE_PROPERTY = {
+export const FORCE_PROPERTY = {
   type: "boolean",
   description:
     "Apply even if the page checks flag a problem. Only for an effect you intend; the visitor is then shown a " +
     "notice with a button to restore the original style. Default false.",
 };
 
-const CHECKS =
+export const CHECKS =
   "After applying, the page is checked: main content hidden, text with almost no contrast, or a full-screen " +
   "layer blocking clicks. If the change breaks the page it is rolled back silently and the call is rejected with " +
   "what broke and how to fix it, so correct it and send it again. `force: true` applies it anyway (the problems " +
@@ -190,7 +111,8 @@ const getCss = {
   summary: "the CSS agents have applied so far",
   title: "Get the CSS applied by agents",
   description:
-    "Returns the CSS an agent has applied to this page so far: the full free-form stylesheet (set_css) and the " +
+    "Returns the CSS an agent has applied to this page so far: the variable overrides (set_variables, per mode), " +
+    "the full free-form stylesheet (set_css) and the " +
     "per-selector rules (set_css_by_selector), plus the combined stylesheet that is actually in the page. " +
     "Empty when nothing was changed (the page looks as originally designed). Takes no input. " +
     SCOPE,
@@ -199,38 +121,8 @@ const getCss = {
   execute() {
     const state = getState();
     return Promise.resolve(
-      ok({ stylesheet: state.css, selectorRules: state.rules, selectorRulesAsCss: rulesToCss(state.rules) }),
+      ok({ variables: state.variables, stylesheet: state.css, selectorRules: state.rules, selectorRulesAsCss: rulesToCss(state.rules) }),
     );
-  },
-};
-
-const getVariables = {
-  name: "get_variables",
-  summary: "the site's CSS variables (design tokens), declared and computed",
-  title: "List the site's CSS variables",
-  description:
-    "Lists the CSS custom properties (--name) the site defines on :root / html, the design tokens it is built " +
-    "from (colors, fonts, sizes). Read from the site's own stylesheets (same-origin only), including inside @media " +
-    "blocks, which are reported as the `condition` of each declaration. Each variable has its `computed` value now " +
-    "(which reflects any override you applied) and its `declarations` (selector, condition, declared value). " +
-    "Input: optional `prefix` (for example \"--color\") to list only variables whose name starts with it. " +
-    "Overriding a variable with set_css (`:root { --color-x: ... }`) restyles everything that uses it, which is " +
-    "usually better than overriding many selectors, but a `:root` override only changes light mode: the dark " +
-    "values are declared under `:root[data-theme=\"dark\"]` and the dark media query (see the `selector` and " +
-    "`condition` of each declaration), so repeat the override there too (see set_theme_mode). " +
-    SCOPE +
-    MODIFY_HINT,
-  inputSchema: {
-    type: "object",
-    properties: {
-      prefix: { type: "string", description: 'Only variables whose name starts with this, e.g. "--color".' },
-    },
-  },
-  annotations: { readOnlyHint: true },
-  execute(input) {
-    const { found, skipped } = readRootVariables();
-    const variables = groupVariables(found, normalizePrefix(input));
-    return Promise.resolve(ok({ count: variables.length, groups: summarize(variables), unreadableStylesheets: skipped, variables }));
   },
 };
 
@@ -269,15 +161,15 @@ const setCss = {
   summary: "replace the page's custom stylesheet",
   title: "Replace the page's custom CSS",
   description:
-    "Restyles the page with a CSS stylesheet. It REPLACES the free-form stylesheet applied before with this one, so " +
+    "Before writing CSS, call get_variables: colours, fonts, sizes and radii are tokens; change them with " +
+    "set_variables (which also repaints the tree, the gradient and the cotas). Use CSS only for what tokens don't " +
+    "cover. Restyles the page with a CSS stylesheet. It REPLACES the free-form stylesheet applied before with this one, so " +
     "always send the complete stylesheet (call get_css first to extend it). An empty string removes the stylesheet " +
     "but keeps the per-selector rules from set_css_by_selector; use reset_css to clear everything. The stylesheet is " +
     "added last in <head>, after the site's own styles; use !important where an inline style or a more specific rule " +
-    "may win. Maximum 50000 characters. Dark mode is html[data-theme=dark], or the system preference when html has no data-theme; " +
-    "the design tokens (get_variables) are redefined for dark in :root[data-theme=dark] and the dark media query, " +
-    "so a token set on :root alone only affects light mode: repeat it under :root[data-theme=dark] and in " +
-    "@media (prefers-color-scheme: dark) { :root:not([data-theme=light]) { ... } }, or use !important on :root " +
-    "(set_theme_mode switches the mode to check the result). " +
+    "may win. Maximum 50000 characters. Dark mode is html[data-theme=dark], or the system preference when html has no data-theme. " +
+    "Do not set design tokens here (a token on :root alone only affects light mode): use set_variables, " +
+    "which handles light and dark. " +
     CHECKS +
     "Returns what was applied and `warnings` for declarations the browser ignores. " +
     "Input: `css` (string), optional `force` (boolean). " +
@@ -305,7 +197,9 @@ const setCssBySelector = {
   summary: "set or remove declarations for one selector",
   title: "Style a selector",
   description:
-    "Sets, changes or removes CSS declarations for one selector, without touching the rest. The rules are merged " +
+    "Before writing CSS, call get_variables: colours, fonts, sizes and radii are tokens; change them with " +
+    "set_variables (which also repaints the tree, the gradient and the cotas). Use CSS only for what tokens don't " +
+    "cover. Sets, changes or removes CSS declarations for one selector, without touching the rest. The rules are merged " +
     "with those you set for the same selector before, and are applied after the stylesheet from set_css. " +
     "Input: `selector` (e.g. \"h1\"); `declarations`: an object of property to value ({\"color\": \"#222\", " +
     "\"font-size\": \"2rem\"}) or a CSS declaration string (\"color: #222; font-size: 2rem\"); optional `important` " +
@@ -349,8 +243,9 @@ const resetCss = {
   summary: "remove all custom CSS",
   title: "Restore the original design",
   description:
-    "Removes everything applied with set_css and set_css_by_selector, so the page looks as originally designed. " +
-    "Takes no input. (set_css with an empty string only removes the free-form stylesheet.) " +
+    "Removes everything applied with set_variables, set_css and set_css_by_selector, so the page looks as originally designed. " +
+    "Takes no input. (set_css with an empty string only removes the free-form stylesheet; a null value in " +
+    "set_variables removes one variable.) " +
     SCOPE,
   inputSchema: { type: "object", properties: {} },
   execute() {
@@ -359,4 +254,4 @@ const resetCss = {
   },
 };
 
-export const cssTools = [getCss, getVariables, getCssBySelector, setCss, setCssBySelector, resetCss];
+export const cssTools = [getCss, getCssBySelector, setCss, setCssBySelector, resetCss];
