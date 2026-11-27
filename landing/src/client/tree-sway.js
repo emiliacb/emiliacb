@@ -49,7 +49,7 @@
  * equation of motion shows as strong as it is in the sum.
  *
  * It can be heard. Every part has a note of its own, all from one scale, rung
- * when the cursor first touches it and, on a phone, each time it swings back
+ * when the cursor first touches it, as loud as the cursor is accelerating, and, on a phone, each time it swings back
  * after a shake, as loud as the swing was wide. A browser plays nothing until
  * the page has been pressed somewhere, so the first notes come after the first
  * click, tap or key; the switch in the page's footer turns it off, and an off
@@ -181,6 +181,14 @@ const SLACK = 50;
 // Whether the tree does hold the cursor back. Off for now: what it touches is
 // still felt, for its note, but the cursor goes where the hand goes.
 const BRAKE_CURSOR = false;
+
+// The note a part rings on first being touched is as loud as the cursor's
+// acceleration then, in tree units a second squared: silent for a hand moving
+// steadily, loudest at A1 and beyond. Its rate of change is read off the
+// smoothed velocity and smoothed again over ACCEL_EASE seconds, or the jitter
+// between two pointer events would ring every note at full.
+const A1 = 30000;
+const ACCEL_EASE = 0.03;
 
 const TRANSMIT = 0.55; // share of a push that reaches the limbs below the part pushed
 const INERTIA = 0.7; // how hard a limb lags when the one it hangs from swings
@@ -754,7 +762,7 @@ function breeze(t, x, seed, flutter) {
 // cursor has fallen behind it, (lagX, lagY). (fromX, fromY) is where the hand
 // was at the last physics step.
 const pointer = {
-  x: 0, y: 0, hx: 0, hy: 0, fromX: 0, fromY: 0, lagX: 0, lagY: 0, vx: 0, vy: 0,
+  x: 0, y: 0, hx: 0, hy: 0, fromX: 0, fromY: 0, lagX: 0, lagY: 0, vx: 0, vy: 0, ax: 0, ay: 0,
   last: -1e9, tracking: false, inBox: false, mouse: false,
 };
 
@@ -770,12 +778,20 @@ function track(event) {
   const dt = (event.timeStamp - pointer.last) / 1000;
   if (pointer.tracking && dt > 0.001 && dt < 0.12) {
     // Smoothed, or a single jittery event reads as a slap.
+    const vx = pointer.vx;
+    const vy = pointer.vy;
     pointer.vx += ((p.x - pointer.hx) / dt - pointer.vx) * 0.5;
     pointer.vy += ((p.y - pointer.hy) / dt - pointer.vy) * 0.5;
+    // And how fast that is changing, for how loud a touch rings.
+    const ease = 1 - Math.exp(-dt / ACCEL_EASE);
+    pointer.ax += ((pointer.vx - vx) / dt - pointer.ax) * ease;
+    pointer.ay += ((pointer.vy - vy) / dt - pointer.ay) * ease;
   } else {
     // A pointer coming back after a pause did not sweep across the gap.
     pointer.vx = 0;
     pointer.vy = 0;
+    pointer.ax = 0;
+    pointer.ay = 0;
     pointer.fromX = p.x;
     pointer.fromY = p.y;
   }
@@ -1358,11 +1374,12 @@ function onFirstPress(event) {
 
 /**
  * Rings a part's note, `strength` from 0 to 1: quiet at its loudest, and a
- * little louder the harder it was struck. A leaf is a small glass bell, a pure
+ * little louder the harder it was struck, or, `exact`, as loud as `strength`
+ * of its loudest and silent at nothing. A leaf is a small glass bell, a pure
  * tone with partials out of tune with it that die away sooner; wood is rounder
  * and shorter. Each sounds from its own side of the tree.
  */
-function ring(p, strength) {
+function ring(p, strength, exact = false) {
   const ac = sound.ac;
   if (!sound.want || !ac || ac.state !== "running") return;
   // Not while the window still asks: a press elsewhere starts the sound at
@@ -1374,7 +1391,10 @@ function ring(p, strength) {
   p.rang = t;
   const leaf = p.kind === "leaf";
   const f = (NOTE[p.key] || NOTE.trunk * 4) * Math.pow(2, (Math.random() - 0.5) / 200);
-  const vol = (leaf ? 0.035 : 0.05) + (leaf ? 0.07 : 0.06) * Math.min(1, strength);
+  const s = Math.max(0, Math.min(1, strength));
+  const vol = exact ? (leaf ? 0.105 : 0.11) * s : (leaf ? 0.035 : 0.05) + (leaf ? 0.07 : 0.06) * s;
+  // Too quiet to hear is not worth the voices, and the ramps cannot reach 0.
+  if (vol < 0.002) return;
   const long = leaf ? 1.6 : 1.1;
   let to = sound.bus;
   if (ac.createStereoPanner) {
@@ -2605,6 +2625,8 @@ function tick(now) {
     const fade = Math.exp(-dt / 0.045);
     pointer.vx *= fade;
     pointer.vy *= fade;
+    pointer.ax *= fade;
+    pointer.ay *= fade;
   }
   // The push: the pointer's velocity times a coefficient interpolated by its
   // speed, from K0 (still) to K1 (at V1 and beyond).
@@ -2613,6 +2635,7 @@ function tick(now) {
   const going = speed > 1 ? 1 : 0;
   const kWood = (K0 + (K1 - K0) * t) * going;
   const kLeaf = (KL0 + (KL1 - KL0) * t) * going;
+  const accel = Math.min(1, Math.hypot(pointer.ax, pointer.ay) / A1);
 
   // Fixed steps, walking the pointer along the path it took since the last
   // one, so a fast swipe cannot jump clean over a thin branch. On a fast
@@ -2663,9 +2686,10 @@ function tick(now) {
     for (const p of parts) {
       p.worn = (p.worn + p.touch * moved) * Math.exp(-H / MEND);
       if (!held) p.touch = 0;
-      // Its note, on first being touched, by the share of its speed the cursor loses.
+      // Its note, on first being touched while the cursor moves, as loud as
+      // the cursor's acceleration.
       const on = p.touch > 0.5;
-      if (on && !p.met && drag > 0.02) ring(p, drag / (1 + drag));
+      if (on && !p.met && drag > 0.02) ring(p, accel, true);
       p.met = on;
     }
     hx = toX;
