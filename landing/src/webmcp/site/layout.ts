@@ -30,14 +30,17 @@ export function renderAgentNote(): HtmlEscapedString | Promise<HtmlEscapedString
 
 /**
  * For <head>: the hashed URL of the Markdown bundle create_article loads on
- * demand, the way sidebars.js finds ui-drawer, and the two links that tell an
+ * demand, the way sidebars.js finds ui-drawer, and the links that tell an
  * agent reading the page where its docs are: the language-less Markdown
- * ("describedby") and the page in the visitor's language ("help").
+ * ("describedby"), the Markdown in the visitor's language ("alternate", titled
+ * so it is not mistaken for the page's own .md alternate) and the page in the
+ * visitor's language ("help").
  */
 export function renderHead(ctx: RenderCtx): HtmlEscapedString | Promise<HtmlEscapedString> | null {
   if (!WEBMCP_ENABLED) return null;
   return html`<meta name="asset:webmcp-markdown" content="${ctx.assets.script("webmcp-markdown")}" />
     <link rel="describedby" href="${DOCS_PATH}.md" type="text/markdown" />
+    <link rel="alternate" type="text/markdown" href="/${ctx.lang}${DOCS_PATH}.md" title="WebMCP" />
     <link rel="help" href="/${ctx.lang}${DOCS_PATH}" />`;
 }
 
