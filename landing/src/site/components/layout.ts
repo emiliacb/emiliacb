@@ -13,6 +13,11 @@ import emailSidebar from "./email-sidebar";
 import calendarSidebar from "./calendar-sidebar";
 import { AI_LAYOUT_ENABLED, AI_LAYOUT, AI_FEATURE_ENABLED } from "./frame";
 
+// English on every page: the detail lives in llms.txt, which is in English too.
+const AGENT_NOTE =
+  "Note for AI agents: this page exposes WebMCP tools. " +
+  `Read ${SITE_URL}/llms.txt to learn which ones and how to call them.`;
+
 type LayoutProps = {
   ctx: RenderCtx;
   /** Path after the language prefix: "" for the home, "/about", "/blog/<slug>", … */
@@ -324,6 +329,12 @@ document.head.appendChild(o)}initApollo();</script>
       </head>
 
       <body class="text-stone-800 dark:text-stone-100 overscroll-none md:overscroll-auto">
+        <!-- For AI agents: hidden from sight, not from the DOM text or the accessibility tree. -->
+        <p
+          style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap"
+        >
+          ${AGENT_NOTE}
+        </p>
         <div id="scroll-wrapper">
         <div id="loading-bar"></div>
         <div
@@ -399,6 +410,8 @@ document.head.appendChild(o)}initApollo();</script>
           : html`<script src="${ctx.assets.script("gradient-layers")}" defer></script>`}
         <!-- The ink cursor, on every page (src/client/ink-cursor.js). -->
         <script src="${ctx.assets.script("ink-cursor")}" defer></script>
+        <!-- WebMCP tools for browser agents, on every page (src/client/webmcp.js). -->
+        <script src="${ctx.assets.script("webmcp")}" defer></script>
         ${AI_FEATURE_ENABLED
           ? html`
               <script src="${ctx.assets.script("activity-logger")}" defer></script>

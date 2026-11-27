@@ -190,6 +190,19 @@ function pageLink(ctx: RenderCtx, id: PageId): string {
   return `- [${t.mapTitle}](${SITE_URL}${markdownPath(ctx.lang, pagePath(id))}): ${t.blurb}`;
 }
 
+/**
+ * The WebMCP tools every page registers (src/client/webmcp/*-tools.js). Keep in
+ * step with them: a test fails when a tool is missing here.
+ */
+const WEBMCP_TOOLS: readonly (readonly [name: string, summary: string])[] = [
+  ["get_css", "the CSS agents have applied so far"],
+  ["get_variables", "the site's CSS variables (design tokens), declared and computed"],
+  ["get_css_by_selector", "computed styles of the elements a selector matches"],
+  ["set_css", "replace the page's custom stylesheet"],
+  ["set_css_by_selector", "set or remove declarations for one selector"],
+  ["reset_css", "remove all custom CSS"],
+];
+
 /** /llms.txt: what the site is and where the Markdown versions live. */
 export function renderLlmsTxt(ctxFor: (lang: Lang) => RenderCtx): string {
   const en = ctxFor("en");
@@ -235,6 +248,15 @@ export function renderLlmsTxt(ctxFor: (lang: Lang) => RenderCtx): string {
       `- [Schedule a meeting](${CONTACT.calendar})`,
       `- [Resume (PDF)](${SITE_URL}/public/cv.pdf)`,
     ]),
+    "",
+    "## WebMCP tools",
+    "",
+    "Every page exposes WebMCP tools that let a browser agent restyle the page it is looking at. " +
+      "The changes live in that tab only. If your browser does not show them as tools, call them " +
+      "from JavaScript in the tab: `await document.modelContext.getTools()` lists them and " +
+      "`await document.modelContext.executeTool(name, input)` runs one.",
+    "",
+    list(WEBMCP_TOOLS.map(([name, summary]) => `- \`${name}\`: ${summary}`)),
     "",
     "## Optional",
     "",
