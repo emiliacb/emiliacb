@@ -9,13 +9,13 @@ const HOST_ID = "webmcp-shield";
 
 const COPY = {
   es: {
-    title: "Un agente aplicó un estilo que puede dificultar la lectura de la página.",
-    restore: "Restaurar estilo original",
+    title: "Un agente cambió la página de una forma que puede dificultar su uso.",
+    restore: "Restaurar la página original",
     close: "Cerrar",
   },
   en: {
-    title: "An agent applied a style that may make the page hard to read.",
-    restore: "Restore original style",
+    title: "An agent changed the page in a way that may make it hard to use.",
+    restore: "Restore the original page",
     close: "Close",
   },
 };
@@ -97,10 +97,14 @@ export function hideShield() {
   document.getElementById(HOST_ID)?.remove();
 }
 
+export function isShieldOpen() {
+  return document.getElementById(HOST_ID) !== null;
+}
+
 /**
- * Shows the shield for a change the agent forced. `actions.onRestore` clears
- * all agent CSS. The problems are not listed here: they went to the agent, and
- * the visitor only needs the way back.
+ * Shows the shield for a change the agent forced. `actions.onRestore` undoes
+ * what was forced (the agent's CSS, the elements it inserted). The problems are
+ * not listed here: they went to the agent, and the visitor only needs the way back.
  */
 export function showShield(actions) {
   hideShield();

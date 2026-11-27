@@ -3,6 +3,8 @@
 // Every piece of markup goes through sanitize.js first and the agent is told
 // what was dropped. None of it is saved: a navigation or a reload brings the
 // page back as it was.
+import { guardDomChange, settleShield } from "../css/apply.js";
+import { describeElement, describeWithText } from "../core/describe.js";
 import { fail, ok } from "../core/result.js";
 import { sanitizeHtmlWithReport } from "../core/sanitize.js";
 import { ANSWER_HINT, MODIFY_HINT } from "../skills/hints.js";
@@ -19,6 +21,10 @@ const MAX_SELECTOR_CHARS = 500;
 const MAX_ALL_MATCHES = 200;
 const SHOWN_PREVIOUS = 20;
 const PREVIOUS_CHARS = 500;
+const DOM_FORCE_ADVICE =
+  "Send a corrected change. If the effect is intended despite this, send the same call with \"force\": true; the " +
+  "change then stays and the visitor is offered a button to restore the original page.";
+const SIDEBAR_ADVICE = "Send different HTML: nothing in a sidebar may cover the page or take its clicks.";
 const SCOPE = "The change lives only in this tab's current page: navigating or reloading brings the page back as it was. ";
 
 const POSITIONS = ["append", "prepend", "before", "after"];
@@ -56,13 +62,6 @@ function requireText(value, field, max) {
   if (typeof value !== "string") throw fail(`"${field}" must be a string.`);
   if (value.length > max) throw fail(`"${field}" is longer than ${max} characters (${value.length}). Send a shorter one.`);
   return value;
-}
-
-function describeElement(el) {
-  const id = el.id ? `#${el.id}` : "";
-  const classes = Array.from(el.classList).slice(0, 4).map((name) => `.${name}`).join("");
-  const text = (el.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 50);
-  return `${el.tagName.toLowerCase()}${id}${classes}${text ? ` "${text}"` : ""}`;
 }
 
 function truncate(text, max) {
@@ -144,12 +143,19 @@ const openCustomSidebar = {
     }
     const api = window.siteSidebars;
     if (!api) throw fail("This page has no sidebars to open. Open the page again (they are part of every page of the site).");
-    let opened;
-    try {
-      opened = await api.openCustom({ title, content: fragment, side });
-    } catch {
-      throw fail("The sidebar could not open because its component failed to load (network). Try again in a moment.");
-    }
+    // The sidebar itself covers the page on purpose; what is checked is that its content (the agent's markup) does not do more.
+    const { result: opened } = await guardDomChange({
+      change: async () => {
+        try {
+          return await api.openCustom({ title, content: fragment, side });
+        } catch {
+          throw fail("The sidebar could not open because its component failed to load (network). Try again in a moment.");
+        }
+      },
+      undo: () => api.close(),
+      sidebar: true,
+      advice: SIDEBAR_ADVICE,
+    });
     return ok({
       message: opened.replaced ? "The open sidebar's content was replaced." : "Sidebar opened.",
       side: opened.side,
@@ -215,10 +221,14 @@ const insertElement = {
       parentSelector: { type: "string", description: 'CSS selector of the reference element, e.g. "main" or "article h2".' },
       position: { type: "string", enum: POSITIONS, description: "append (default), prepend, before or after the reference element." },
       index: { type: "number", description: "Which match of parentSelector to use (0-based). Default 0." },
+      force: {
+        type: "boolean",
+        description: "Keep the insertion even if the page checks flag a problem. Default false.",
+      },
     },
     required: ["html", "parentSelector"],
   },
-  execute(input) {
+  async execute(input) {
     const selector = requireSelector(input?.parentSelector, "parentSelector");
     const position = input.position ?? "append";
     if (!POSITIONS.includes(position)) throw fail(`"position" must be one of ${POSITIONS.join(", ")}.`);
@@ -235,10 +245,19 @@ const insertElement = {
     const id = nextInsertion;
     nextInsertion += 1;
     for (const el of elements) el.setAttribute(INSERTED_ATTRIBUTE, String(id));
-    parent[position](fragment);
+    const { warnings } = await guardDomChange({
+      change: () => {
+        parent[position](fragment);
+        return elements;
+      },
+      undo: (inserted) => {
+        for (const el of inserted) el.remove();
+      },
+      force: input.force === true,
+      advice: DOM_FORCE_ADVICE,
+    });
 
-    return Promise.resolve(
-      ok({
+    return ok({
         message: `Inserted ${elements.length} element(s) (${position}) "${describeElement(parent)}".`,
         id,
         tags: elements.map((el) => el.localName),
@@ -247,9 +266,9 @@ const insertElement = {
         position,
         matchesOfParentSelector: matches.length,
         removed,
+        warnings,
         note: `${removedNote(removed)} Undo with remove_inserted_elements.`,
-      }),
-    );
+      });
   },
 };
 
@@ -271,6 +290,8 @@ const removeInsertedElements = {
     const found = Array.from(document.querySelectorAll(`[${INSERTED_ATTRIBUTE}]`));
     const targets = found.filter((el) => wanted === null || el.getAttribute(INSERTED_ATTRIBUTE) === wanted);
     for (const el of targets) el.remove();
+    // Taking out what was forced in is a way back too: the visitor's restore notice goes with it.
+    settleShield();
     return Promise.resolve(ok(`Removed ${targets.length} inserted element(s)${wanted === null ? "" : ` of insertion ${wanted}`}.`));
   },
 };
@@ -318,11 +339,14 @@ const setTextContent = {
       text: { type: "string", description: "The new plain text." },
       index: { type: "number", description: "Which match to change (0-based). Default 0. Ignored with all." },
       all: { type: "boolean", description: "Change every match instead of one." },
-      force: { type: "boolean", description: "Allow wiping children such as links or lists." },
+      force: {
+        type: "boolean",
+        description: "Allow wiping children such as links or lists, and keep the change even if the page checks flag a problem.",
+      },
     },
     required: ["selector", "text"],
   },
-  execute(input) {
+  async execute(input) {
     const selector = requireSelector(input?.selector, "selector");
     const text = requireText(input.text, "text", MAX_TEXT_CHARS);
     const matches = matchesOrFail(selector);
@@ -346,21 +370,29 @@ const setTextContent = {
       throw fail(`${shown} ${advice}`);
     }
 
-    const previous = targets.map((el) => {
-      // Described before the change, so the excerpt in it is the old text too.
-      const element = describeElement(el);
-      const before = (el.textContent ?? "").trim();
-      el.textContent = text;
-      return { element, text: truncate(before, PREVIOUS_CHARS) };
+    const { result: previous, warnings } = await guardDomChange({
+      change: () =>
+        targets.map((el) => {
+          // Described before the change, so the excerpt in it is the old text too.
+          const element = describeWithText(el);
+          const before = (el.textContent ?? "").trim();
+          const children = Array.from(el.childNodes);
+          el.textContent = text;
+          return { el, children, element, text: truncate(before, PREVIOUS_CHARS) };
+        }),
+      undo: (changed) => {
+        for (const { el, children } of changed) el.replaceChildren(...children);
+      },
+      force: input.force === true,
+      advice: DOM_FORCE_ADVICE,
     });
-    return Promise.resolve(
-      ok({
+    return ok({
         message: `Text changed on ${targets.length} element(s) matching "${selector}".`,
         changed: targets.length,
-        previous: previous.slice(0, SHOWN_PREVIOUS),
+        previous: previous.slice(0, SHOWN_PREVIOUS).map(({ element, text: before }) => ({ element, text: before })),
         previousNotShown: Math.max(0, previous.length - SHOWN_PREVIOUS),
-      }),
-    );
+        warnings,
+      });
   },
 };
 

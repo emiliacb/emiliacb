@@ -2,9 +2,10 @@
 // goes through applyGuarded (css-apply.js), which undoes a change that breaks
 // the page and tells the agent why (unless the agent forces it). The CSS is kept while the visitor navigates the site in this tab and a
 // reload restores the original (css-state.js, nav-storage.js).
-import { applyGuarded, unsupportedDeclarations } from "../css/apply.js";
-import { emptyState, commitState, getState } from "../css/state.js";
+import { applyGuarded, resetAgentCss, unsupportedDeclarations } from "../css/apply.js";
+import { getState } from "../css/state.js";
 import { mergeRule, parseDeclarations, rulesToCss } from "../css/declarations.js";
+import { describeWithText } from "../core/describe.js";
 import { fail, ok } from "../core/result.js";
 import { MODIFY_HINT } from "../skills/hints.js";
 
@@ -39,18 +40,11 @@ function requireSelector(input) {
   return selector;
 }
 
-function describeElement(el) {
-  const id = el.id ? `#${el.id}` : "";
-  const classes = Array.from(el.classList).slice(0, 6).map((name) => `.${name}`).join("");
-  const text = (el.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 60);
-  return `${el.tagName.toLowerCase()}${id}${classes}${text ? ` "${text}"` : ""}`;
-}
-
 function inspectElement(el) {
   const style = getComputedStyle(el);
   const styles = {};
   for (const property of INSPECTED_STYLES) styles[property] = style.getPropertyValue(property);
-  return { element: describeElement(el), styles };
+  return { element: describeWithText(el), styles };
 }
 
 function clampCount(value) {
@@ -100,11 +94,11 @@ export const FORCE_PROPERTY = {
 };
 
 export const CHECKS =
-  "After applying, the page is checked: main content hidden, text with almost no contrast, or a full-screen " +
-  "layer blocking clicks. If the change breaks the page it is rolled back silently and the call is rejected with " +
-  "what broke and how to fix it, so correct it and send it again. `force: true` applies it anyway (the problems " +
-  "come back as `warnings`) but shows the visitor a small notice with a button to restore the original style, " +
-  "so use it only when the effect is intended, for example a deliberately faint decorative style. ";
+  "After applying, the page is checked: main content hidden, unreadable or unclickable, a page that cannot scroll, " +
+  "text with almost no contrast, or a full-screen layer blocking clicks. If the change breaks the page it is rolled " +
+  "back silently and the call is rejected with what broke and how to fix it, so correct it and send it again. " +
+  "`force: true` applies it anyway (the problems come back as `warnings`) but shows the visitor a small notice with a " +
+  "button to restore the original page, so use it only when the effect is intended. ";
 
 const getCss = {
   name: "get_css",
@@ -249,7 +243,7 @@ const resetCss = {
     SCOPE,
   inputSchema: { type: "object", properties: {} },
   execute() {
-    commitState(emptyState());
+    resetAgentCss();
     return Promise.resolve(ok("All agent CSS removed; the page looks as originally designed."));
   },
 };

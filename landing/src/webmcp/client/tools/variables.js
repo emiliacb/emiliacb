@@ -99,6 +99,9 @@ function groupVariables(found, prefix) {
 }
 
 function normalizePrefix(input) {
+  if (input?.prefix !== undefined && input.prefix !== null && typeof input.prefix !== "string") {
+    throw fail('"prefix" must be a string such as "--color".');
+  }
   const prefix = typeof input?.prefix === "string" ? input.prefix.trim() : "";
   if (prefix === "") return "";
   return prefix.startsWith("--") ? prefix : `--${prefix.replace(/^-+/, "")}`;

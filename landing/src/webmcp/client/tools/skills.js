@@ -20,6 +20,15 @@ const listSkills = {
   },
 };
 
+/** The skill called `name`, or a ToolError that lists the ones there are. */
+function findSkill(name) {
+  const known = getSkills().map((candidate) => candidate.name).join(", ");
+  if (name === "") throw fail(`"name" is required, one of: ${known}. Call list_skills to see what each is for.`);
+  const skill = getSkills().find((candidate) => candidate.name === name);
+  if (!skill) throw fail(`There is no skill named "${name}". The skills are: ${known}. Call list_skills to see them.`);
+  return skill;
+}
+
 const readSkill = {
   name: "read_skill",
   summary: "read one skill in full, as Markdown",
@@ -40,11 +49,7 @@ const readSkill = {
   annotations: { readOnlyHint: true },
   execute(input) {
     const name = typeof input?.name === "string" ? input.name.trim() : "";
-    const skill = getSkills().find((candidate) => candidate.name === name);
-    if (!skill) {
-      const known = getSkills().map((candidate) => candidate.name).join(", ");
-      throw fail(`There is no skill named "${name}". The skills are: ${known}. Call list_skills to see them.`);
-    }
+    const skill = findSkill(name);
     const file = typeof input?.file === "string" ? input.file.trim() : "";
     if (file === "" || file === "SKILL.md") return Promise.resolve(ok(skill.markdown));
     if (!(file in skill.files)) {
