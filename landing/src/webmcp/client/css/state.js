@@ -1,31 +1,44 @@
 // The agent's CSS: what is applied now, where it lives in the DOM and how it
 // survives navigation inside the tab.
 //
-// Two parts, both kept: a free-form stylesheet (set_css) and per-selector rules
-// (set_css_by_selector). Both are printed into the one <style>, stylesheet
-// first, so a per-selector rule wins a tie against the stylesheet.
+// Three parts, all kept: design-token overrides (set_variables), a free-form
+// stylesheet (set_css) and per-selector rules (set_css_by_selector). All are
+// printed into the one <style>, in that order, so a per-selector rule wins a
+// tie against the stylesheet, which wins one against a token override.
+//
+// Whatever is committed here is announced with `tokenschange`, because the
+// canvases (the tree, the cotas, the gradient) paint with the tokens' values
+// and only know they changed when told. Every way of changing the CSS passes
+// through here (the tools, the shield's restore, the restore of a saved
+// state), so this is the one place that tells them.
 //
 // sessionStorage is the right lifetime: it follows the tab through page loads
 // and is gone when the tab closes, so the visitor's next visit starts clean.
+import { notifyTokensChange } from "../../../client/lib/theme.js";
 import { rulesToCss } from "./declarations.js";
+import { emptyVariables, hasVariables, isVariables, variablesToCss } from "./variables.js";
 
 export const STYLE_ID = "webmcp-agent-css";
 const STORAGE_KEY = "webmcp:css";
 
-let current = { css: "", rules: {} };
+let current = emptyState();
 
 export function emptyState() {
-  return { css: "", rules: {} };
+  return { css: "", rules: {}, variables: emptyVariables() };
 }
 
 /** What is applied right now. The rules object is replaced, never edited, so a shallow copy is safe. */
 export function getState() {
-  return { css: current.css, rules: { ...current.rules } };
+  return {
+    css: current.css,
+    rules: { ...current.rules },
+    variables: { light: { ...current.variables.light }, dark: { ...current.variables.dark } },
+  };
 }
 
 /** The whole agent stylesheet as the browser sees it. */
 export function renderCss(state) {
-  return [state.css, rulesToCss(state.rules)].filter((part) => part !== "").join("\n");
+  return [variablesToCss(state.variables), state.css, rulesToCss(state.rules)].filter((part) => part !== "").join("\n");
 }
 
 /** Writes `state` into the page, without remembering it. Used to try a change and to roll it back. */
@@ -42,7 +55,7 @@ export function paint(state) {
 
 function save(state) {
   try {
-    if (state.css === "" && Object.keys(state.rules).length === 0) sessionStorage.removeItem(STORAGE_KEY);
+    if (state.css === "" && Object.keys(state.rules).length === 0 && !hasVariables(state.variables)) sessionStorage.removeItem(STORAGE_KEY);
     else sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
     // Storage blocked or full: the change still applies, it just will not follow the next navigation.
@@ -54,6 +67,7 @@ export function commitState(state) {
   current = state;
   paint(state);
   save(state);
+  notifyTokensChange();
 }
 
 function isRules(value) {
@@ -67,7 +81,9 @@ function isRules(value) {
 function readSaved() {
   try {
     const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "null");
-    if (saved && typeof saved.css === "string" && isRules(saved.rules)) return saved;
+    // `variables` is absent from what an earlier version saved.
+    const variables = saved?.variables ?? emptyVariables();
+    if (saved && typeof saved.css === "string" && isRules(saved.rules) && isVariables(variables)) return { ...saved, variables };
   } catch {
     // No storage, or something else wrote there: start clean.
   }
@@ -78,8 +94,9 @@ function readSaved() {
 export function restoreSavedCss() {
   const saved = readSaved();
   if (!saved) return;
-  current = { css: saved.css, rules: saved.rules };
+  current = { css: saved.css, rules: saved.rules, variables: saved.variables };
   paint(current);
+  notifyTokensChange();
   // Scripts that run later may append their own styles: take the last place back once the page is loaded.
   window.addEventListener("load", () => paint(current), { once: true });
 }

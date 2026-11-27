@@ -12,9 +12,10 @@ import { interactionTools } from "./interaction.js";
 import { skillsTools } from "./skills.js";
 import { themeTools } from "./theme.js";
 import { treeSongTools } from "./tree-song.js";
+import { variableTools } from "./variables.js";
 
 export const toolGroups = [
-  { id: "css", tools: cssTools },
+  { id: "css", tools: [...cssTools, ...variableTools] },
   { id: "theme", tools: themeTools },
   { id: "interaction", tools: interactionTools },
   { id: "fonts", tools: fontTools },

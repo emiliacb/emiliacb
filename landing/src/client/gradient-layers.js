@@ -38,7 +38,7 @@
 import { makeLens } from "./gradient/lens.js";
 import { makeRipple } from "./gradient/ripple.js";
 import { makeSound, note } from "./gradient/sound.js";
-import { isDark, onThemeChange } from "./lib/theme.js";
+import { isDark, onTokensChange } from "./lib/theme.js";
 
 (() => {
   const stack = document.getElementById("gradient-bg");
@@ -509,7 +509,7 @@ import { isDark, onThemeChange } from "./lib/theme.js";
     if (!colours[name]) colours[name] = getComputedStyle(stack).getPropertyValue(name).trim().split(/\s+/).map((c) => Number(c) / 255);
     return colours[name];
   }
-  onThemeChange(() => { for (const k in colours) delete colours[k]; });
+  onTokensChange(() => { for (const k in colours) delete colours[k]; });
 
   /* ---- the cursor's fall ---- */
 

@@ -6,7 +6,7 @@
 // plain links (to GitHub, LinkedIn, Cal.com, or mailto:), which is also what
 // they stay without JavaScript, and what a middle click or a modifier click
 // still opens.
-import { isDark, onThemeChange } from "./lib/theme.js";
+import { isDark, onTokensChange } from "./lib/theme.js";
 import { rgbOf } from "./lib/color.js";
 
 (function () {
@@ -122,7 +122,7 @@ import { rgbOf } from "./lib/color.js";
     styleCalendar();
     // The booker follows the page when its mode is changed (the visitor's
     // system, or setThemeMode), as the sheet around it does.
-    onThemeChange(styleCalendar);
+    onTokensChange(styleCalendar);
     Cal("on", {
       action: "linkReady",
       callback: function () {

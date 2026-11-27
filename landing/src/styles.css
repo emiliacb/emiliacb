@@ -87,6 +87,12 @@
                         143 (green) in light, 323 (pink) in dark.
      --g-a, --g-b       the gradient's two colours, as "r g b" channels (not a
                         colour: they are used as rgb(var(--g-a) / alpha)).
+     --tree-grad-a, --tree-grad-b   the colours of the tree's leaves and trunk
+                        (the top and the bottom of their gradient, and the sound
+                        window's bar), as "r g b" channels. They are the colours
+                        of the tree drawn for the LIGHT page: on the dark one the
+                        whole tree is inverted (--tree-invert), so pick them as
+                        for light and what shows in dark is their negative.
      --font-sans        the text face.
      --font-size-base   the root font size. Every size on the site is in rem, so
                         this scales type and spacing together. A percentage, so
@@ -124,6 +130,13 @@
         with, not the unevaluated hsl(var(...)) text.
      --tree-invert      0 in light, 1 in dark: the tree is drawn for the light
         page and flipped for the dark one, and what it sits beside follows.
+
+   LIVE. A token changed at runtime (an agent's set_variables, or any stylesheet
+   that redefines it) repaints the canvases too: the scripts that read tokens
+   listen to onTokensChange (src/client/lib/theme.js), which fires on a mode
+   change and on the window event `tokenschange`; whoever writes tokens at
+   runtime calls notifyTokensChange() after. The lens and the ripple, drawn only
+   during the cursor's fall, read the gradient's colours when it starts.
 
    MODES. <html data-theme="light"> or "dark" forces one; no attribute
    follows the system (src/client/lib/theme.js). The dark values are therefore
@@ -210,8 +223,8 @@
   --tree-l-ink: 19.6%;
   --tree-l-scroll: 15%;
   --tree-invert: 0;
-  /* The tree's own gradient (the sound window's bar, the same two colours as
-     the stops in components/tree.ts), as "r g b". */
+  /* The tree's own gradient (the stops of its leaves and trunk in
+     components/tree.ts, and the sound window's bar), as "r g b". */
   --tree-grad-a: 255 176 0;
   --tree-grad-b: 102 198 169;
 

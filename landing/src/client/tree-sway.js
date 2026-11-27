@@ -63,7 +63,7 @@
  * same SVG, standing still, and with reduced motion that is all there is.
  */
 
-import { isDark, onThemeChange } from "./lib/theme.js";
+import { isDark, onTokensChange } from "./lib/theme.js";
 import { createPlayer } from "./lib/tree-song.js";
 import {
   CEILING_HZ, ECHO, EFFECTS, FLANGE_DEPTH_MS, FLANGE_FEED, FLANGE_HZ, FLANGE_MIX, FLANGE_MS, HELD, NOTE, NOTES,
@@ -3458,7 +3458,7 @@ if (box && svg && woodEl && !reduced && setup()) {
   }
   // The system's mode changing, or the page being given one: the ink is read
   // again and the plate drawn in it at once, since at rest nothing else would.
-  onThemeChange(() => {
+  onTokensChange(() => {
     readTheme();
     drawPlate();
   });
