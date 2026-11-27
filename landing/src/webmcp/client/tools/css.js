@@ -1,6 +1,6 @@
 // WebMCP tools that read and change the page's CSS. Everything the agent sets
 // goes through applyGuarded (css-apply.js), which undoes a change that breaks
-// the page. The CSS is local to the visitor's tab and follows it across the
+// the page and tells the agent why (unless the agent forces it). The CSS is local to the visitor's tab and follows it across the
 // site's pages (css-state.js).
 import { applyGuarded, unsupportedDeclarations } from "../css/apply.js";
 import { emptyState, commitState, getState, STYLE_ID } from "../css/state.js";
@@ -170,6 +170,20 @@ function checkSupported(entries) {
   if (bad.length) throw fail(`${bad.join(" ")} Nothing was changed. Fix the property name or the value and try again.`);
 }
 
+const FORCE_PROPERTY = {
+  type: "boolean",
+  description:
+    "Apply even if the page checks flag a problem. Only for an effect you intend; the visitor is then shown a " +
+    "notice with a button to restore the original style. Default false.",
+};
+
+const CHECKS =
+  "After applying, the page is checked: main content hidden, text with almost no contrast, or a full-screen " +
+  "layer blocking clicks. If the change breaks the page it is rolled back silently and the call is rejected with " +
+  "what broke and how to fix it, so correct it and send it again. `force: true` applies it anyway (the problems " +
+  "come back as `warnings`) but shows the visitor a small notice with a button to restore the original style, " +
+  "so use it only when the effect is intended, for example a deliberately faint decorative style. ";
+
 const getCss = {
   name: "get_css",
   summary: "the CSS agents have applied so far",
@@ -262,21 +276,23 @@ const setCss = {
     "so a token set on :root alone only affects light mode: repeat it under :root[data-theme=dark] and in " +
     "@media (prefers-color-scheme: dark) { :root:not([data-theme=light]) { ... } }, or use !important on :root " +
     "(set_theme_mode switches the mode to check the result). " +
-    "After applying, the page is checked: if the change makes it unusable (main content hidden, text with no contrast, " +
-    "a full-screen layer blocking clicks) it is rolled back and the call is rejected with what broke. " +
+    CHECKS +
     "Returns what was applied and `warnings` for declarations the browser ignores. " +
-    "Input: `css` (string). " +
+    "Input: `css` (string), optional `force` (boolean). " +
     SCOPE,
   inputSchema: {
     type: "object",
-    properties: { css: { type: "string", description: "The full stylesheet, as plain CSS. Empty string removes it." } },
+    properties: {
+      css: { type: "string", description: "The full stylesheet, as plain CSS. Empty string removes it." },
+      force: FORCE_PROPERTY,
+    },
     required: ["css"],
   },
   execute(input) {
     if (typeof input?.css !== "string") throw fail('"css" must be a string with the complete stylesheet (empty to remove it).');
     checkSize(input.css, "The css");
     const next = { ...getState(), css: input.css };
-    const warnings = applyGuarded(next);
+    const warnings = applyGuarded(next, input.force === true);
     return Promise.resolve(appliedResult(next, warnings, "Stylesheet applied."));
   },
 };
@@ -292,8 +308,9 @@ const setCssBySelector = {
     "\"font-size\": \"2rem\"}) or a CSS declaration string (\"color: #222; font-size: 2rem\"); optional `important` " +
     "(default true) adds !important so the rule beats the site's own styles. A null or empty value removes that " +
     "property; empty declarations remove the selector's rules. Properties or values the browser does not understand " +
-    "are rejected. After applying, the page is checked and the change is rolled back and rejected if it breaks the " +
-    "page (see set_css). Returns what is applied. " +
+    "are rejected. " +
+    CHECKS +
+    "Optional `force` (boolean). Returns what is applied. " +
     SCOPE,
   inputSchema: {
     type: "object",
@@ -304,6 +321,7 @@ const setCssBySelector = {
         description: 'Object {property: value} or a string "property: value; ...". null/empty value removes a property.',
       },
       important: { type: "boolean", description: "Add !important to values (default true)." },
+      force: FORCE_PROPERTY,
     },
     required: ["selector", "declarations"],
   },
@@ -315,7 +333,7 @@ const setCssBySelector = {
     const rules = mergeRule(current.rules, selector, entries, input.important !== false);
     checkSize(rulesToCss(rules), "The per-selector rules");
     const next = { ...current, rules };
-    const warnings = applyGuarded(next);
+    const warnings = applyGuarded(next, input.force === true);
     const matches = document.querySelectorAll(selector).length;
     const message = matches === 0 ? `Rules saved, but "${selector}" matches no element on this page right now.` : `Rules updated for ${matches} element(s).`;
     return Promise.resolve(appliedResult(next, warnings, message));

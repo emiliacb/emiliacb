@@ -21,8 +21,9 @@ src/webmcp/
                         result.js (ok/fail), sanitize.js (HTML the agent sends)
     css/                what set_css and friends are built on: state.js (rules,
                         sessionStorage), declarations.js, apply.js (apply, then
-                        roll back if the page got unusable), health.js and
-                        contrast.js (the checks), shield.js (the rollback prompt)
+                        roll back if the page got unusable, unless forced),
+                        health.js and contrast.js (the checks), shield.js (the
+                        visitor's restore notice, shown only for a forced change)
     content/            articles.js (create_article's storage and display),
                         text.js, and the on-demand Markdown renderer:
                         render-markdown.js (the only `marked` import),

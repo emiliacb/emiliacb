@@ -70,7 +70,7 @@ function truncate(text, max) {
 
 /** Why the page's own machinery must not be touched here, or null when `el` is fair game. */
 function protectedReason(el) {
-  if (el.closest(`#${SHIELD_ID}`)) return "it is the notice the page shows when an agent's style change breaks it";
+  if (el.closest(`#${SHIELD_ID}`)) return "it is the restore notice the page shows when an agent forces a risky style change";
   if (el.closest("head")) return "it is in <head>, which is not part of what a visitor sees";
   if (el.localName === "html") return "it is the root element";
   return null;
