@@ -2,6 +2,7 @@ import { LANGS, type Lang } from "../../shared/lang";
 import { PAGES, markdownPath } from "../../shared/site";
 import type { RenderCtx } from "../../site/context";
 import { WEBMCP_ENABLED } from "../enabled";
+import { renderSkillFiles } from "./skills";
 
 /**
  * Where the list_md_pages tool fetches the manifest from. The tool has the
@@ -46,8 +47,11 @@ export function renderPagesManifest(ctxFor: (lang: Lang) => RenderCtx): Manifest
   return entries;
 }
 
-/** The files the build writes into dist for WebMCP: the manifest, or nothing when the feature is off. */
+/** The files the build writes into dist for WebMCP: the manifest and the skills' files, or nothing when the feature is off. */
 export function renderBuildFiles(ctxFor: (lang: Lang) => RenderCtx): { path: string; content: string }[] {
   if (!WEBMCP_ENABLED) return [];
-  return [{ path: MANIFEST_PATH, content: `${JSON.stringify({ pages: renderPagesManifest(ctxFor) }, null, 2)}\n` }];
+  return [
+    { path: MANIFEST_PATH, content: `${JSON.stringify({ pages: renderPagesManifest(ctxFor) }, null, 2)}\n` },
+    ...renderSkillFiles(),
+  ];
 }

@@ -5,6 +5,7 @@
 // so the site's handlers (the contact sidebars, the menu, the loading bar) run
 // exactly as for a person.
 import { fail, ok } from "../core/result.js";
+import { ANSWER_HINT } from "../skills/hints.js";
 
 // Everything a visitor can press. dropdown-trigger is the site's menu: its real
 // button lives in a shadow root, so the host element stands for it.
@@ -360,7 +361,9 @@ const clickLinkOrButton = {
     "scrolls and changes the address; a sidebar trigger opens the contact sidebar (the result says whether it opened); " +
     "a menu trigger opens or closes the menu. mailto: links hand off to the visitor's mail app. " +
     "Refuses, without clicking, a disabled element or one a visitor cannot see (click the menu trigger first for links " +
-    "inside a menu).",
+    "inside a menu)." +
+    " " +
+    ANSWER_HINT,
   inputSchema: {
     type: "object",
     properties: {

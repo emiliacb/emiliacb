@@ -4,6 +4,7 @@ import { FOOTER_NAV, SITE_TITLE, pagePath } from "../../shared/site";
 import type { RenderCtx } from "../context";
 import contact from "./contacts";
 import { languageLinks } from "./language-switcher";
+import * as webmcp from "../../webmcp/site";
 
 function footerContent(ctx: RenderCtx) {
   const { footer: copy, language, pages } = ctx.t;
@@ -64,6 +65,7 @@ function footerContent(ctx: RenderCtx) {
                   >
                 </li>`
               )}
+              ${/* WebMCP: see src/webmcp/README.md */ webmcp.renderFooterLink(ctx)}
             </ul>
           </nav>
         </div>

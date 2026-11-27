@@ -1,10 +1,22 @@
+import { LANGS } from "../../shared/lang";
 import { WEBMCP_ENABLED } from "../enabled";
+import { DOCS_ALIAS_PATH, DOCS_PATH } from "./routes";
 
 /**
- * Lines for dist/_redirects. The WebMCP lab is gone (the tools are on every
- * page now); the docs page will take over these URLs.
+ * Lines for dist/_redirects. The docs page for agents answers to /webmcp as
+ * well as /mcp: the alias, its Markdown version and the old WebMCP lab all
+ * redirect (301) to it. The language-less /webmcp goes to the language-less
+ * /mcp, which the Worker then sends to the visitor's language.
  */
 export function renderRedirects(): string[] {
   if (!WEBMCP_ENABLED) return [];
-  return ["/en/labs/webmcp /en 302", "/es/labs/webmcp /es 302"];
+  return [
+    `${DOCS_ALIAS_PATH} ${DOCS_PATH} 301`,
+    `${DOCS_ALIAS_PATH}.md ${DOCS_PATH}.md 301`,
+    ...LANGS.flatMap((lang) => [
+      `/${lang}${DOCS_ALIAS_PATH} /${lang}${DOCS_PATH} 301`,
+      `/${lang}${DOCS_ALIAS_PATH}.md /${lang}${DOCS_PATH}.md 301`,
+      `/${lang}/labs/webmcp /${lang}${DOCS_PATH} 301`,
+    ]),
+  ];
 }

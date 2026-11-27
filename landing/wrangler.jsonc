@@ -25,7 +25,9 @@
     // every PAGES path and its ".md" are listed here).
     "run_worker_first": [
       "/", "/about", "/services", "/courses", "/blog", "/blog/*", "/labs/*", "/health", "/api/*",
-      "/.md", "/about.md", "/services.md", "/courses.md", "/blog.md"
+      "/.md", "/about.md", "/services.md", "/courses.md", "/blog.md",
+      // WebMCP docs page and its Markdown (src/webmcp/site/routes.ts)
+      "/mcp", "/mcp.md"
     ]
   },
   "observability": { "enabled": true }

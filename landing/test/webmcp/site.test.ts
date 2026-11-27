@@ -74,7 +74,7 @@ describe("renderPagesManifest", () => {
     const source = readFileSync(`${root}/src/webmcp/client/tools/content.js`, "utf8");
 
     expect(source).toContain(`const MANIFEST_URL = "${MANIFEST_PATH}";`);
-    expect(renderBuildFiles(ctxFor).map((file) => file.path)).toEqual([MANIFEST_PATH]);
+    expect(renderBuildFiles(ctxFor).map((file) => file.path)).toContain(MANIFEST_PATH);
   });
 });
 
@@ -86,7 +86,7 @@ describe("page integration", () => {
     expect(markup(renderAgentNote())).toContain("/llms.txt");
     expect(markup(renderHead(ctx))).toContain('name="asset:webmcp-markdown" content="/assets/webmcp-markdown.js"');
     expect(markup(renderScript(ctx))).toContain('src="/assets/webmcp.js"');
-    expect(renderRedirects()).toContain("/en/labs/webmcp /en 302");
+    expect(renderRedirects()).toContain("/en/labs/webmcp /en/mcp 301");
   });
 });
 

@@ -6,6 +6,7 @@ import { applyGuarded, unsupportedDeclarations } from "../css/apply.js";
 import { emptyState, commitState, getState, STYLE_ID } from "../css/state.js";
 import { mergeRule, parseDeclarations, rulesToCss } from "../css/declarations.js";
 import { fail, ok } from "../core/result.js";
+import { MODIFY_HINT } from "../skills/hints.js";
 
 // A stylesheet, not a page: past this it is more likely a mistake than a design.
 const MAX_CSS_CHARS = 50000;
@@ -217,7 +218,8 @@ const getVariables = {
     "usually better than overriding many selectors, but a `:root` override only changes light mode: the dark " +
     "values are declared under `:root[data-theme=\"dark\"]` and the dark media query (see the `selector` and " +
     "`condition` of each declaration), so repeat the override there too (see set_theme_mode). " +
-    SCOPE,
+    SCOPE +
+    MODIFY_HINT,
   inputSchema: {
     type: "object",
     properties: {
@@ -279,7 +281,8 @@ const setCss = {
     CHECKS +
     "Returns what was applied and `warnings` for declarations the browser ignores. " +
     "Input: `css` (string), optional `force` (boolean). " +
-    SCOPE,
+    SCOPE +
+    MODIFY_HINT,
   inputSchema: {
     type: "object",
     properties: {
@@ -311,7 +314,8 @@ const setCssBySelector = {
     "are rejected. " +
     CHECKS +
     "Optional `force` (boolean). Returns what is applied. " +
-    SCOPE,
+    SCOPE +
+    MODIFY_HINT,
   inputSchema: {
     type: "object",
     properties: {
