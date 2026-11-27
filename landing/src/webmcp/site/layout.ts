@@ -78,6 +78,6 @@ export function renderFooterNote(ctx: RenderCtx): HtmlEscapedString | Promise<Ht
   if (!WEBMCP_ENABLED) return null;
   const note = DOCS_COPY[ctx.lang].footerNote;
   return html`<p class="mt-1">
-    ${note.before}<a href="/${ctx.lang}${DOCS_PATH}" class="underline underline-offset-2">${note.link}</a>${note.after}
+    ${note.before}<a href="/${ctx.lang}${DOCS_PATH}.md" class="underline underline-offset-2">${note.link}</a>${note.after}
   </p>`;
 }
