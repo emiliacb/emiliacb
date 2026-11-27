@@ -15,9 +15,9 @@ const schema = z
     user: z.string().min(1),
     /** Day the numbers were taken. */
     updatedAt: isoDay,
-    /** PRs merged in the 30 days before updatedAt, Marmot's "Requested by" ones included. */
+    /** PRs merged in the 30 days before updatedAt, the ones agents opened for the account included. */
     prsMerged30d: count,
-    /** PRs merged per calendar month, oldest first; the last month is the current one, so far. */
+    /** PRs merged per calendar month, agents' included, oldest first; the last month is the current one, so far. */
     prsByMonth: z.array(z.object({ month: z.string().regex(/^\d{4}-\d{2}$/), count })).min(1),
     /** GitHub's contribution calendar: one count per day from `start`, a Sunday, to updatedAt. */
     contributions: z.object({ total: count, start: isoDay, days: z.array(count).min(1) }),
