@@ -1853,8 +1853,11 @@ html.ink-cursor #ink-cursor.on {
 }
 
 /* Cal.com's booker sizes its own iframe to what it shows. */
+/* Cal.com's booker. Clipped to its box, so nothing it draws while it changes
+   month or step spills past the sheet's edges. */
 .calendar-embed {
   min-height: 24rem;
+  overflow: hidden;
 }
 
 /* PRs per month: bars on a rule, the count over each in the cotas' face. */
