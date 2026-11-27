@@ -22,7 +22,8 @@ function contactColumn(ctx: RenderCtx) {
         >
       </li>
       <li>
-        <a class="interactive hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 py-0.5 -ml-1" href="${CONTACT.github}" target="_blank">${c.github}</a>
+        <a class="interactive hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 py-0.5 -ml-1" href="${CONTACT.github}"
+          data-github-sidebar aria-haspopup="dialog" target="_blank">${c.github}</a>
       </li>
       <li class="underline underline-offset-4 mt-1">
         <a class="hover:bg-black hover:text-white hover:dark:bg-white hover:dark:text-black focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black px-1 pt-1 pb-2 -ml-1" href="${CONTACT.calendar}" target="_blank">
@@ -76,6 +77,8 @@ export default function contact(ctx: RenderCtx, { columnMode = false }: ContactO
         <a
           class="interactive flex w-fit border border-transparent px-2 py-1 hover:bg-black dark:hover:bg-white hover:text-white hover:border-black dark:hover:text-black dark:hover:border-white focus-visible:bg-black focus-visible:text-white focus-visible:dark:bg-white focus-visible:dark:text-black"
           href="${CONTACT.github}"
+          data-github-sidebar
+          aria-haspopup="dialog"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="${c.github}"

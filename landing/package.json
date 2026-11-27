@@ -15,11 +15,14 @@
     "lint:agent": "npm run lint -- --format=agent",
     "lint:fix": "npm run lint -- --fix",
     "test": "vitest run",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "github:stats": "tsx scripts/github-stats.ts"
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.8",
     "@floating-ui/dom": "^1.7.4",
+    "@ui-sdk/core": "0.1.0-beta.17",
+    "@ui-sdk/web": "0.1.0-beta.17",
     "hono": "^4.7.5",
     "html-to-image": "^1.11.13",
     "three": "^0.185.1",

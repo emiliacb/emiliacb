@@ -43,6 +43,25 @@ export const es: Dict = {
     scheduleFull: "Agendar una consulta",
   },
 
+  github: {
+    title: "GitHub",
+    description: "lo que vengo publicando",
+    close: "Cerrar",
+    prsMerged: "pull requests mergeados en los últimos 30 días",
+    monthsTitle: "Pull requests por mes",
+    monthLabel: "{month}: {count} pull requests",
+    monthSummary: "Pull requests mergeados por mes, de {from} a {to}. El mes con más tuvo {max}.",
+    contributions: "{total} contribuciones en el último año",
+    calendarSummary: "Calendario de contribuciones del último año: {total} contribuciones, un cuadrado por día.",
+    dayNone: "sin contribuciones",
+    dayOne: "1 contribución",
+    dayMany: "{count} contribuciones",
+    less: "Menos",
+    more: "Más",
+    updated: "Actualizado el",
+    viewOnGithub: "Ver en GitHub",
+  },
+
   emailLink: {
     copy: "Copiar email",
     copied: "¡Copiado!",

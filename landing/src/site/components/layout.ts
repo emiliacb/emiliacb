@@ -7,6 +7,7 @@ import tree from "./tree";
 import footer from "./footer";
 import languageSwitcher from "./language-switcher";
 import activityPanel from "./activity-panel";
+import githubSidebar from "./github-sidebar";
 import { AI_LAYOUT_ENABLED, AI_LAYOUT, AI_FEATURE_ENABLED } from "./frame";
 
 type LayoutProps = {
@@ -130,6 +131,8 @@ export default function layout({
           ? html`<link rel="alternate" type="text/markdown" href="${SITE_URL}${markdownPath(ctx.lang, path)}" />`
           : null}
         <meta name="build-id" content="${ctx.assets.buildId}" />
+        <!-- The GitHub sidebar's drawer, loaded on demand by github-sidebar.js. -->
+        <meta name="asset:ui-drawer" content="${ctx.assets.script("ui-drawer")}" />
         ${AI_FEATURE_ENABLED
           ? html`<meta name="asset:pretext" content="${ctx.assets.script("pretext")}" />`
           : null}
@@ -380,9 +383,11 @@ document.head.appendChild(o)}initApollo();</script>
         ${withFooter ? footer(ctx) : null}
         </div>
         ${languageSwitcher(ctx)}
+        ${githubSidebar(ctx)}
         ${AI_FEATURE_ENABLED ? activityPanel() : null}
         <script src="${ctx.assets.script("layout")}" defer></script>
         <script src="${ctx.assets.script("navigation")}" defer></script>
+        <script src="${ctx.assets.script("github-sidebar")}" defer></script>
         ${withCotas
           ? html`<script src="${ctx.assets.script("page-cotas")}" data-air="off" defer></script>`
           : null}

@@ -44,6 +44,25 @@ export const en = {
     scheduleFull: "Schedule a Meeting",
   },
 
+  github: {
+    title: "GitHub",
+    description: "what I've been shipping lately",
+    close: "Close",
+    prsMerged: "pull requests merged in the last 30 days",
+    monthsTitle: "Pull requests per month",
+    monthLabel: "{month}: {count} pull requests",
+    monthSummary: "Pull requests merged per month, from {from} to {to}. The busiest month had {max}.",
+    contributions: "{total} contributions in the last year",
+    calendarSummary: "Contribution calendar for the last year: {total} contributions, one square per day.",
+    dayNone: "no contributions",
+    dayOne: "1 contribution",
+    dayMany: "{count} contributions",
+    less: "Less",
+    more: "More",
+    updated: "Updated",
+    viewOnGithub: "View on GitHub",
+  },
+
   emailLink: {
     copy: "Copy email",
     copied: "Copied!",
