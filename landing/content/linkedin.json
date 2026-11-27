@@ -1,6 +1,6 @@
 {
   "experience": [
-    { "company": "Sonora", "logo": "/public/sonora-logo.svg", "role": { "en": "Founding Engineer · Forward Deployed Engineer · Senior AI Engineer", "es": "Founding Engineer · Forward Deployed Engineer · Senior AI Engineer" }, "from": "2025-10" },
+    { "company": "Sonora", "logo": "/public/sonora-logo.webp", "role": { "en": "Founding Engineer · Forward Deployed Engineer · Senior AI Engineer", "es": "Founding Engineer · Forward Deployed Engineer · Senior AI Engineer" }, "from": "2025-10" },
     { "company": "Marvik", "role": { "en": "Senior AI Engineer", "es": "Senior AI Engineer" }, "from": "2025-05", "to": "2025-10" },
     { "company": "BuildWithin", "role": { "en": "Senior Software Engineer, AI Team", "es": "Senior Software Engineer, Equipo de IA" }, "from": "2024-02", "to": "2025-05" },
     { "company": "Mercado Libre", "role": { "en": "Software Engineer", "es": "Ingeniera de Software" }, "from": "2021-03", "to": "2024-02" }

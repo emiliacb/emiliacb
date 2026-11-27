@@ -30,7 +30,7 @@ describe("linkedinSidebar", () => {
   it("puts the current job on top and the rest on the timeline", async () => {
     const html = (await linkedinSidebar(ctx("es"))).toString();
     expect(html).toContain(">Sonora</span>");
-    expect(html).toContain('src="/public/sonora-logo.svg"');
+    expect(html).toContain('src="/public/sonora-logo.webp"');
     expect(html).toContain("desde octubre de 2025");
     expect(html.match(/class="li-job"/g)).toHaveLength(linkedinProfile.experience.length - 1);
     expect(html).toContain("2021–2024");
