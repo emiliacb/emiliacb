@@ -49,11 +49,12 @@
  * equation of motion shows as strong as it is in the sum.
  *
  * It can be heard. Every part has a note of its own, all from one scale, rung
- * when the cursor first touches it, as loud as the cursor is accelerating, and, on a phone, each time it swings back
- * after a shake, as loud as the swing was wide. Pressed on, a part rings the
- * same note, held while the press is; drawn up or down from there it slides
- * along the tree's scale, and the parts it sounds shake like strings. A browser plays nothing until
- * the page has been pressed somewhere, so the first notes come after the first
+ * when the cursor first touches it, as loud as it comes in fast and is
+ * accelerating, and, on a phone, each time it swings back after a shake, as
+ * loud as the swing was wide. Pressed on, a part rings the same note, held
+ * while the press is; drawn up or down it bends a note either way, the part
+ * shakes like a string, and the others answer it by sympathy. A browser plays
+ * nothing until the page has been pressed somewhere, so the first notes come after the first
  * click, tap or key; the switch in the page's footer turns it off, and an off
  * is remembered.
  *
@@ -186,14 +187,19 @@ const SLACK = 50;
 // still felt, for its note, but the cursor goes where the hand goes.
 const BRAKE_CURSOR = false;
 
-// The note a part rings on first being touched sounds at least softly, however
-// slowly the cursor comes, and louder in proportion to the cursor's
-// acceleration then, in tree units a second squared, up to its loudest at A1
-// and beyond. Its rate of change is read off the
-// smoothed velocity and smoothed again over ACCEL_EASE seconds, or the jitter
-// between two pointer events would ring every note at full.
-const A1 = 30000;
+// The note a part rings on first being touched is struck as a body is: as
+// loud as the cursor comes in fast, V_HIT tree units a second being its
+// loudest, and louder still in proportion to how hard it is accelerating
+// into it, A1 tree units a second squared adding as much again. However
+// slowly it comes it is heard, from HIT_LEAF (a leaf) or HIT_WOOD. The
+// acceleration is read off the smoothed velocity and smoothed again over
+// ACCEL_EASE seconds, or the jitter between two pointer events would ring
+// every note at full.
+const V_HIT = 1800;
+const A1 = 20000;
 const ACCEL_EASE = 0.03;
+const HIT_LEAF = 0.012;
+const HIT_WOOD = 0.018;
 
 const TRANSMIT = 0.55; // share of a push that reaches the limbs below the part pushed
 const INERTIA = 0.7; // how hard a limb lags when the one it hangs from swings
@@ -1389,7 +1395,7 @@ function onFirstPress(event) {
 
 /**
  * Rings a part's note, `strength` from 0 to 1: quiet at its loudest, and a
- * little louder the harder it was struck, or, `exact`, from softly at nothing
+ * little louder the harder it was struck, or, `exact`, from barely at nothing
  * to its loudest at 1, in proportion. A leaf is a small glass bell, a pure
  * tone with partials out of tune with it that die away sooner; wood is rounder
  * and shorter. Each sounds from its own side of the tree.
@@ -1407,7 +1413,7 @@ function ring(p, strength, exact = false) {
   const leaf = p.kind === "leaf";
   const f = (NOTE[p.key] || NOTE.trunk * 4) * Math.pow(2, (Math.random() - 0.5) / 200);
   const s = Math.max(0, Math.min(1, strength));
-  const soft = leaf ? 0.035 : 0.05;
+  const soft = exact ? (leaf ? HIT_LEAF : HIT_WOOD) : leaf ? 0.035 : 0.05;
   const loud = exact ? (leaf ? 0.105 : 0.11) : soft + (leaf ? 0.07 : 0.06);
   const vol = soft + (loud - soft) * s;
   let to = sound.bus;
@@ -3087,7 +3093,9 @@ function tick(now) {
   const going = speed > 1 ? 1 : 0;
   const kWood = (K0 + (K1 - K0) * t) * going;
   const kLeaf = (KL0 + (KL1 - KL0) * t) * going;
-  const accel = Math.min(1, Math.hypot(pointer.ax, pointer.ay) / A1);
+  // How hard a touch now would strike: by the speed it comes in at, and more
+  // by how hard it is accelerating.
+  const hit = Math.min(1, speed / V_HIT + Math.hypot(pointer.ax, pointer.ay) / A1);
 
   // Fixed steps, walking the pointer along the path it took since the last
   // one, so a fast swipe cannot jump clean over a thin branch. On a fast
@@ -3139,9 +3147,9 @@ function tick(now) {
       p.worn = (p.worn + p.touch * moved) * Math.exp(-H / MEND);
       if (!held) p.touch = 0;
       // Its note, on first being touched while the cursor moves, however
-      // slowly: softly, and louder the more the cursor is accelerating.
+      // slowly: as hard as it was struck.
       const on = p.touch > 0.5;
-      if (on && !p.met && speed > 5 && !bow.on) ring(p, accel, true);
+      if (on && !p.met && speed > 5 && !bow.on) ring(p, hit, true);
       p.met = on;
     }
     hx = toX;
