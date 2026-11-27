@@ -11,6 +11,7 @@
 // uses a font keeps working on the next page of the tab, and the tab's end
 // ends them.
 import { fail, ok } from "../core/result.js";
+import { MODIFY_HINT } from "../skills/hints.js";
 
 const STORAGE_KEY = "webmcp:fonts";
 const LINK_ATTRIBUTE = "data-webmcp-font";
@@ -211,7 +212,9 @@ const setGoogleFont = {
     "new weights to it. Only fonts.googleapis.com is contacted. The font stays loaded on the other pages of the " +
     "site in this tab and is gone when the tab is closed. " +
     "Returns `family`, `cssFamily` (the value for font-family, with a generic fallback guessed from the name), " +
-    "`weights` and `italic`.",
+    "`weights` and `italic`." +
+    " " +
+    MODIFY_HINT,
   inputSchema: {
     type: "object",
     properties: {

@@ -88,7 +88,10 @@ describe("renderLlmsTxt", () => {
     expect(txt).toMatch(/^> /m);
     expect(txt).toContain("## Optional");
 
-    const links = [...txt.matchAll(/\]\((https:\/\/[^)]+\.md)\)/g)].map((m) => m[1].slice(SITE_URL.length));
+    // The WebMCP docs page and the skills are not site pages (src/webmcp/site/routes.ts): they have no entry in byPath.
+    const links = [...txt.matchAll(/\]\((https:\/\/[^)]+\.md)\)/g)]
+      .map((m) => m[1].slice(SITE_URL.length))
+      .filter((link) => !link.includes("/mcp"));
     expect(links.length).toBeGreaterThan(0);
     for (const link of links) expect(byPath.has(link), link).toBe(true);
     for (const post of content.posts) expect(links).toContain(`/en/blog/${post.slug}.md`);

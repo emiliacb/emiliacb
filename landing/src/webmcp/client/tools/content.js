@@ -14,6 +14,7 @@ import {
   showArticle,
 } from "../content/articles.js";
 import { fail, ok } from "../core/result.js";
+import { ANSWER_HINT } from "../skills/hints.js";
 
 // Written at build time by src/webmcp/site/manifest.ts (MANIFEST_PATH): keep the two in step.
 const MANIFEST_URL = "/webmcp/pages.json";
@@ -64,7 +65,9 @@ const listMdPages = {
     "ready for read_md_page), title, language (en or es) and kind: page, post (a journal article), " +
     "index (the journal's list of posts) or agent-article (an article you made with create_article in this tab; " +
     'its path is "agent-article:<id>", not a URL). Takes an optional "lang": en or es, or all for both ' +
-    "(default: the language of the page you are on). Your own agent-articles are always listed.",
+    "(default: the language of the page you are on). Your own agent-articles are always listed." +
+    " " +
+    ANSWER_HINT,
   inputSchema: {
     type: "object",
     properties: {
@@ -194,7 +197,9 @@ const readMdPage = {
     'its title or slug as list_md_pages shows it ("About", a post\'s slug), or an agent-article path. ' +
     "Only this site's own pages are read: another origin is refused. " +
     `A long page comes back ${PAGE_CHARS} characters at a time; when it is cut, the text ends with a line saying so ` +
-    'and which "offset" to pass to continue.',
+    'and which "offset" to pass to continue.' +
+    " " +
+    ANSWER_HINT,
   inputSchema: {
     type: "object",
     properties: {
@@ -288,7 +293,9 @@ const createArticle = {
     "removed, and the result lists what was dropped. Creating an article with the title of an existing one replaces it. " +
     "Articles appear in list_md_pages as kind agent-article and read_md_page returns their Markdown. " +
     'To show one again (for example after navigating to another page) pass only "show" with its id; ' +
-    '"show": "original" restores the page\'s own content.',
+    '"show": "original" restores the page\'s own content.' +
+    " " +
+    ANSWER_HINT,
   inputSchema: {
     type: "object",
     properties: {

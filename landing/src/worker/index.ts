@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 
 import { PAGES, markdownPath } from "../shared/site";
+import { WEBMCP_LANGLESS_ROUTES } from "../webmcp/site/routes";
 import { langFromCookie, negotiateLang, type Lang } from "../shared/lang";
 
 export type Env = { ASSETS: Fetcher };
@@ -12,6 +13,8 @@ export type Env = { ASSETS: Fetcher };
 export const LANGLESS_ROUTES: readonly string[] = [
   ...PAGES.map((page) => page.path).filter((path) => path !== ""),
   "/blog/*",
+  // WebMCP: see src/webmcp/README.md
+  ...WEBMCP_LANGLESS_ROUTES,
 ];
 
 export function matchesRoute(pattern: string, pathname: string): boolean {

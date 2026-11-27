@@ -14,7 +14,8 @@ all of it off at build time.
 ```
 src/webmcp/
   enabled.ts            WEBMCP_ENABLED, the one flag
-  styles.css            CSS the tools need (the custom sidebar), @import-ed by src/styles.css
+  styles.css            CSS the tools and the docs page need, @import-ed by src/styles.css
+  skills/               the agent skills, <name>/SKILL.md (+ other .md files), see below
   client/               runs in the browser
     index.js            the entry logic: restore saved CSS, register the tools
     core/               context.js (document.modelContext, polyfill, error guard),
@@ -28,14 +29,24 @@ src/webmcp/
                         text.js, and the on-demand Markdown renderer:
                         render-markdown.js (the only `marked` import),
                         markdown-entry.js, markdown-loader.js
+    skills/             parse.js (frontmatter), index.js (the skills' files
+                        imported as text), store.js, hints.js (the one-sentence
+                        pointers the tool descriptions end with)
     tools/              one file per tool group, and index.js, the list of
-                        enabled groups
+                        enabled groups (skills.js: list_skills, read_skill)
   site/                 runs at build time
     catalog.ts          name + summary of every tool, read from tools/index.js
     llms.ts             the "WebMCP tools" section of /llms.txt
     manifest.ts         dist/webmcp/pages.json, what list_md_pages reads
-    layout.ts           the hidden note, the <meta> and the <script> tag
-    redirects.ts        the old /labs/webmcp URLs
+    layout.ts           the hidden note, the <head> tags, the <script> tag and
+                        the footer link
+    routes.ts           where the docs page lives (/mcp), and the Worker routes
+    skills.ts           reads the skills' files; the build publishes them at
+                        /mcp/skills/<name>/SKILL.md
+    docs/               the /{lang}/mcp page and its .md, from the tool catalog
+                        (copy.ts holds its words in both languages)
+    redirects.ts        /webmcp (+ .md, per language) and the old /labs/webmcp,
+                        all 301 to /mcp
     index.ts            what the rest of the site imports
 ```
 
@@ -88,10 +99,31 @@ becomes a generic message and a console warning.
 - Polyfill: without it, `core/context.js` installs a small `document.modelContext`
   (`getTools`, `executeTool`) so an agent that can run JavaScript in the tab
   (Claude in Chrome, for one) can still call the tools.
-- `/llms.txt`: its "WebMCP tools" section lists every tool with its summary and
-  explains the JavaScript way in.
-- The hidden note: every page starts with a visually hidden paragraph that tells
-  an agent reading the page to read llms.txt.
+- `/llms.txt`: its "WebMCP tools" section links the docs page and the skills,
+  lists every tool with its summary and explains the JavaScript way in.
+- The docs page, `/{lang}/mcp` (and `/mcp.md`): how to connect, every tool with
+  its input schema, the skills, safety. Generated from the tool definitions, so
+  it cannot drift. It is not in `PAGES` (that would drag it into the manifest,
+  llms.txt's page list and the 404's site map), so the build, the Worker and
+  robots.txt get it from `site/routes.ts`. It is not a remote MCP server.
+- The hidden note: every page starts with a visually hidden paragraph that says
+  how to list and call the tools from the tab and where the docs are. The
+  `<head>` has `rel="describedby"` (`/mcp.md`) and `rel="help"` (`/{lang}/mcp`)
+  links, and the footer a visible "For AI agents" link, for the same reason: an
+  agent that is not told the tools exist does not look for them.
+- The skills: `read_skill` / `list_skills` (WebMCP has no skill primitive), and
+  the tool descriptions that change the page or answer from it end with a
+  sentence pointing at the right one (`client/skills/hints.js`).
+
+## Skills
+
+A skill is `skills/<name>/SKILL.md`: YAML frontmatter with `name` (the folder's
+name) and a one-line `description` ("Use when ..."), then Markdown. Other `.md`
+files in the folder are read with `read_skill({ name, file })`. To add one:
+write the folder, import its files in `client/skills/index.js`, and run the
+tests (they hold the folders, the bundle and the published files together). The
+files are bundled as text (esbuild's `.md` loader in `scripts/build.ts`) and
+published at `/mcp/skills/<name>/...` for agents that can install skills.
 
 ## Turning it off
 
@@ -106,18 +138,24 @@ Delete the folder, then remove these (grep `WebMCP: see src/webmcp/README.md`):
 1. `src/webmcp/` itself.
 2. `src/client/webmcp.js` and `src/client/webmcp-markdown.js`: the two entries.
 3. `src/site/components/layout.ts`: the `import * as webmcp` line and the three
-   `webmcp.render*` calls (note, head, script).
+   `webmcp.render*` calls (note, head, script). `src/site/components/footer.ts`:
+   the import and the `webmcp.renderFooterLink` call.
 4. `src/site/markdown/index.ts`: the import and the `...renderWebmcpLlmsSection()`
    line in `renderLlmsTxt`.
-5. `scripts/build.ts`: the `import * as webmcp` line, the `renderBuildFiles`
-   loop and the `...webmcp.renderRedirects()` line.
+5. `scripts/build.ts`: the `import * as webmcp` line, the docs import, the
+   `loader: { ".md": "text" }` line, the `site`/`pages` and `markdownFiles` lines
+   that add the docs pages, the `renderBuildFiles` loop and the
+   `...webmcp.renderRedirects()` line.
+5b. `src/worker/index.ts` (the `WEBMCP_LANGLESS_ROUTES` import and spread),
+    `wrangler.jsonc` (`"/mcp", "/mcp.md"` in `run_worker_first`) and
+    `public/robots.txt` (the `Allow` lines for `/mcp`).
 6. `src/site/context.ts`: `"webmcp"` and `"webmcp-markdown"` in `ClientEntry`.
 7. `src/styles.css`: the `@import "./webmcp/styles.css"` line (the file must be
    inlined by the Tailwind CLI, which it is: postcss-import is built in).
 8. `tailwind.config.cjs`: `./src/webmcp/**/*.{js,ts}` in `content`.
 9. `.oxlintrc.json`: `src/webmcp/client/**` in the `unicorn/no-array-sort` override.
-10. `vitest.config.ts`: `test/webmcp/**/*.test.ts` in the `site` project, and
-    delete `test/webmcp/`.
+10. `vitest.config.ts`: `test/webmcp/**/*.test.ts` in the `site` project, the
+    `markdownAsText` plugin, and delete `test/webmcp/`.
 
 `window.siteSidebars` in `src/client/sidebars.js` (`openCustom`, `close`) stays:
 it is a generic API of the site's sidebars that `open_custom_sidebar` happens to

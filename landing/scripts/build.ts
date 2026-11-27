@@ -12,6 +12,7 @@ import { loadContent } from "../src/site/content";
 import { renderSite } from "../src/site/pages";
 import { renderLlmsTxt, renderSiteMarkdown } from "../src/site/markdown";
 import * as webmcp from "../src/webmcp/site";
+import { renderDocsMarkdownFiles, renderDocsPages } from "../src/webmcp/site/docs";
 
 // The only file in the project allowed to read process.env.
 // Note: import.meta.dirname is scripts/, so the project root is one level up.
@@ -78,6 +79,8 @@ const { metafile } = await esbuild.build({
   entryNames: "[name]-[hash]",
   metafile: true,
   logLevel: "warning",
+  // WebMCP: see src/webmcp/README.md (the skills are imported as text)
+  loader: { ".md": "text" },
 });
 
 // Entry name ("layout") → public URL ("/assets/layout-ABC123.js").
@@ -124,7 +127,10 @@ function script(name: ClientEntry): string {
 const assets: Assets = { script, css: cssUrl, buildId };
 const content = await loadContent(root);
 const ctxFor = (lang: Lang): RenderCtx => ({ lang, t: dictionaries[lang], assets, content });
-const { pages, notFound } = await renderSite(ctxFor);
+const site = await renderSite(ctxFor);
+const { notFound } = site;
+// WebMCP: see src/webmcp/README.md
+const pages = [...site.pages, ...(await renderDocsPages(ctxFor))];
 
 const writtenPaths = new Set<string>();
 for (const page of pages) {
@@ -140,7 +146,8 @@ for (const page of pages) {
 }
 
 // Markdown versions for LLMs and agents: /en/about.md beside /en/about/index.html.
-const markdownFiles = renderSiteMarkdown(ctxFor);
+// WebMCP: see src/webmcp/README.md
+const markdownFiles = [...renderSiteMarkdown(ctxFor), ...renderDocsMarkdownFiles(ctxFor)];
 for (const file of markdownFiles) {
   if (!/^\/[a-z]{2}(\/[\w./-]*)?\.md$/.test(file.path) || file.path.split("/").includes("..")) {
     throw new Error(`Invalid markdown path: "${file.path}"`);

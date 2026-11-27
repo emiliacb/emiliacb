@@ -5,6 +5,7 @@
 // page back as it was.
 import { fail, ok } from "../core/result.js";
 import { sanitizeHtmlWithReport } from "../core/sanitize.js";
+import { ANSWER_HINT, MODIFY_HINT } from "../skills/hints.js";
 
 // The shield's host element (shield.js keeps the same id): the one thing on the
 // page an agent's markup must never go into or around.
@@ -121,7 +122,8 @@ const openCustomSidebar = {
     "Calling it again REPLACES the title and content of that same sidebar (an open one stays open, and keeps its " +
     "edge until it is closed). Returns whether it replaced an open sidebar and the edge it uses. " +
     "Opening it closes any other sidebar. " +
-    SCOPE,
+    SCOPE +
+    ANSWER_HINT,
   inputSchema: {
     type: "object",
     properties: {
@@ -204,7 +206,8 @@ const insertElement = {
     "refused. The inserted elements get a `data-webmcp-inserted` attribute; the result gives the selector that " +
     "finds them and an `id` for remove_inserted_elements. Style them with set_css_by_selector. " +
     "Returns where it went (parent, position), the tags inserted and that selector. " +
-    SCOPE,
+    SCOPE +
+    MODIFY_HINT,
   inputSchema: {
     type: "object",
     properties: {
@@ -306,7 +309,8 @@ const setTextContent = {
     "the whole call. " +
     "Returns the previous text of each changed element (truncated at 500 characters; up to 20 listed) so you can " +
     "restore it by calling the tool again with that text; inline wording like <em> inside it is not restored. " +
-    SCOPE,
+    SCOPE +
+    MODIFY_HINT,
   inputSchema: {
     type: "object",
     properties: {
